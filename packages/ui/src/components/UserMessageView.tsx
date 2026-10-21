@@ -34,19 +34,25 @@ export function useWholePrompt(message: UserMessage) {
   const textBlocks: TextContent[] = typeof message.content === "string"
     ? [{ type: "text", text: message.content }]
     : message.content.filter((b): b is TextContent => b.type === "text");
+  /** The text of one block, resolved once read, with the line endings the session file keeps. */
+  const textAt = (index: number): string => (resolvedTexts.get(index) ?? textBlocks[index].text).replace(/\r\n?/g, "\n");
   /** Whether some block is still showing the preview the frame carried rather than the text it stands for. */
   const hasUnreadText = textBlocks.some((block, index) => !resolvedTexts.has(index) && isDeferredTextBlock(block));
 
+  /**
+   * The whole prompt, read once for the blocks still showing a preview.
+   *
+   * A block already resolved — read by an earlier copy, or expanded by the reader — answers with the text it now stands
+   * for, not with the preview the frame carried: a second copy of the same prompt must not go back to the truncated
+   * version the first one just replaced.
+   */
   const readWholePrompt = (): Promise<string[]> => {
-    if (!hasUnreadText) return Promise.resolve(textBlocks.map((block) => block.text));
+    if (!hasUnreadText) return Promise.resolve(textBlocks.map((_, index) => textAt(index)));
     return loadTextBlockOriginals(reader, textBlocks).then((texts) => {
       setResolvedTexts(new Map(texts.map((text, index) => [index, text])));
       return texts;
     });
   };
-
-  /** The text of one block, resolved once read, with the line endings the session file keeps. */
-  const textAt = (index: number): string => (resolvedTexts.get(index) ?? textBlocks[index].text).replace(/\r\n?/g, "\n");
 
   /** Records the whole text an expanded block is now showing, so the bubble and a copy agree with it. */
   const resolveText = (index: number, text: string) => {

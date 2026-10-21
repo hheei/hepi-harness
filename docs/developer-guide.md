@@ -59,7 +59,7 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | 目录 | 覆盖 |
 | --- | --- |
 | `acceptance/` | `acceptance-stack.ts` 共享栈、`acceptance-release.test.ts`、Web+App 客户端验收、provider 连接验收、原生 App 验收 |
-| `chat/` | 转写滚动、子对话恢复、跨会话引用、subtree 控制、token footer |
+| `chat/` | 转写滚动、子对话恢复、跨会话引用、subtree 控制、token footer、提示整段复制 |
 | `history/` | 历史 rail、键盘、scope、导航重试、可见 turn、`window-experiment` |
 | `mcp-skills/` | MCP 验收与面板状态、扩展面板、skills 目标与 inventory race、delegate 定义 |
 | `workbench-files/` | 文件面、文件失败、transfer、docx 预览、SSH Project、workbench scope |

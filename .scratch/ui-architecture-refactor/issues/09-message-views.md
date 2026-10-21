@@ -100,6 +100,23 @@ Evidence：
 - 圖：本 worktree 無 `graphify-out/graph.json`，依倉庫規則改用 source 確認呼叫端（`ChatWindow` 只匯入 `MessageView`；
   `apps/web/e2e` 兩個 fixture 掛載 production `MessageView`）。
 
+複審修正（reviewer234，P2 material）：`UserMessageView` 的 `readWholePrompt` 快路徑原本回報
+`textBlocks.map((block) => block.text)`，即 frame 帶來的 preview，而非已解析的原文。於是第一次複製把 block 解析後，
+第二次複製、以及手動展開後的複製，都寫入截斷的 preview，而泡泡顯示的是全文。修正回原本 owner
+（`components/UserMessageView.tsx` 的 `useWholePrompt`）：無未讀 block 時改走 `textBlocks.map((_, index) => textAt(index))`，
+即 resolved 後即為原文；未新增呼叫端 guard、未改 `Props`、未改讀取時機（mount 仍 0 讀取）。
+
+回歸覆蓋（兩個觸發都經一般 UI）：
+
+- `packages/ui/src/components/UserMessageView.test.ts`（新增）：驅動真實 `useWholePrompt`，斷言第一次讀取走
+  connection reader 且只讀一次、第二次 `readWholePrompt()` 仍回全文且不再讀、以及 `resolveText`（展開控制回報的
+  路徑）之後的複製回全文且零讀取。以 baseline `f180f716` 的實作執行，兩個案例皆失敗（回 preview）。
+- `apps/web/e2e/chat/ux-message-copy.ts` + `ux-message-copy.fixture.tsx` + `ux-message-copy-prompt.ts`（新增，掛
+  `pnpm --filter @hepi/web test:message-copy`）：production `MessageView` 掛在真實 `createClient` 下，deferred block 由
+  fixture transport 回應，clipboard 為瀏覽器 `navigator.clipboard.writeText` 記錄器。依序斷言 mount 0 讀取、第一次
+  複製 1 次讀取且寫入全文（含同訊息 inline block）、第二次複製仍寫全文且仍只 1 次讀取、手動展開後複製仍寫全文。
+  同一 driver 對 baseline `f180f716` 實作重跑時，第二次與展開後複製皆寫入 preview 而失敗。
+
 剩餘限制：`ux-history-navigation-acceptance.ts` 需要先建置 `apps/web/dist` 與真實 Backend，本票未執行；它讀取的
 `data-entry-id`／`data-message-text`／`.markdown-user-message` 標記在本票保留且已由上述等價性 driver 覆蓋。整合層
 串流／展開／位置行為仍由票 12 依 C9 驗收。無 material findings。
