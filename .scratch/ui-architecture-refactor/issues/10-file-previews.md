@@ -47,8 +47,7 @@ file surfaces/failures/docx/transfer 既有 drivers、file-save/useFileBytes 案
 
 ## 交付記錄
 
-變更修訂：`worktree base 7cc775e4`；驗證跑於該工作樹 dirty state，log 目錄
-`.dev/verify/2026-10-21T05-43-31-953-verify-changed`。
+變更修訂：commit `0b2c2e28b0e9570502a3d1381979470aaddac2c9`（worktree base `7cc775e4`）。
 
 Changed paths（相對 `packages/ui/src`）：
 
@@ -72,8 +71,9 @@ Changed paths（相對 `packages/ui/src`）：
 
 Evidence：
 
-- `pnpm verify:changed` 於 revision `7cc775e4`（dirty tree）exit 0：changed-typecheck、changed-test、web-unit、
-  check-docs 全 PASS；log 在 `.dev/verify/2026-10-21T05-43-31-953-verify-changed`。
+- `pnpm verify:changed --base=7cc775e4` 於 revision `0b2c2e28`（clean tree）exit 0：changed-typecheck、
+  changed-test、web-unit、check-docs 全 PASS；log 在 `.dev/verify/2026-10-21T05-44-30-551-verify-changed`。
+  （同一 source 在 commit 前以 dirty tree 跑過一次，log `.dev/verify/2026-10-21T05-43-31-953-verify-changed`。）
 - `pnpm --filter @hepi/ui test` 367 pass、exit 0；`pnpm --filter @hepi/ui typecheck` 與 `pnpm -r typecheck` exit 0。
 - R7：`pnpm --filter @hepi/web test:docx-preview`（cookie／bearer 各讀一次、超界零讀取、無 frame/script、empty 文案）
   exit 0；`test:file-surfaces`（image 走 connection lease、meta 讀取、native save 缺省文案、App 分片寫入）exit 0；
