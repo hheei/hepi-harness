@@ -76,6 +76,25 @@ _Avoid_: workspace path, URL cwd, workspace alias
 The folder path the execution host itself reported for a project's default folder, which is what a surface shows in place of the routing path.
 _Avoid_: project root, shown path, real path
 
+**Conversation**:
+The runtime's own durable record of one agent conversation — its committed history, its runs and its control — which the
+Backend owns and is the only authority on. A surface holds a projection of it, never a second copy. The catalogue line
+about one is a **Session Row** and the client library that reads one is the **Session Transport**, so neither is a
+conversation of its own.
+_Avoid_: chat, thread, transcript, session
+
+**Session Row**:
+One conversation's line in the catalogue a surface lists: its identity, workspace, run status and relations as the
+Backend states them, plus the listing fields a sidebar orders it by. It describes a conversation and carries none of its
+history, so a change to a row's listing fields is not a change to the conversation.
+_Avoid_: session record, session info, catalogue entry
+
+**Session Transport**:
+The client library (`@hepi/session`) a surface uses to read and submit one conversation: it folds the Backend's frames
+into the state one attachment holds and sends that conversation's input. The Web page and the Diagnostic Page each
+assemble it with their own source, and it holds nothing durable.
+_Avoid_: session store, session service, agent client
+
 **Unbound Conversation**:
 A conversation recorded before any execution workspace was bound. It carries no workspace, no project identity and no project display root, and no workspace-scoped surface is asked about it.
 _Avoid_: legacy chat, sentinel workspace
@@ -165,6 +184,12 @@ _Avoid_: gateway, proxy, BFF
 The one React surface tree (`packages/ui`) that both a Web page and the desktop App mount. A host supplies only what
 makes it that host — history, ingress origin and credential — so no surface below knows which one it is in.
 _Avoid_: UI layer, front end package, Web app
+
+**Diagnostic Page**:
+The small HTML page the Backend serves itself, so an operator can inspect one conversation or the read-only workbench
+with a token they type in. It is a fallback for operating a deployment and not a client entry, not the Workbench
+surface tree, and not a second runtime.
+_Avoid_: admin UI, debug app, second front end
 
 **Web Session**:
 The identity a browser holds after exchanging the Web login material for the ingress's own HttpOnly cookie. It is same-origin, script-invisible, and ended by a logout that clears the same cookie.

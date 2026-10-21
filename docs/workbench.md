@@ -4,7 +4,7 @@ Ticket 07 selected file browsing, text preview, Git changed-file status and diff
 `packages/ui` is the one surface for both entries: the Web page and the desktop App reach the ingress, which forwards to
 the backend's authenticated `/api/workbench`, and the backend forwards to the configured gateway's authenticated
 `/v1/workbench`. Gateway credentials and workspace root paths never reach the browser, there is no browser filesystem
-access and there is no second agent runtime. (`apps/server` still serves a small authenticated diagnostic page at
+access and there is no second agent runtime. (`apps/server` still serves its own authenticated **Diagnostic Page** at
 `/workbench`; it is read-only and not a client entry.)
 
 The read-only workbench serves both kinds of gateway. `startGateway` mounts one `GatewayWorkbench` either way — over this machine's registry for a local gateway, and over the SSH registry for a remote profile — so the same `POST /v1/workbench` protocol, the same path rules and the same DTOs answer for an SSH-backed `/workspace/<id>`. Only the host differs: on an SSH gateway a preview is a bounded read through the `SshFilesystem` session the file routes already use, a listing walks the host's own directories through the same session, and the changed files and the diff run the same git argv through the `SshRunner` the worktree surface already uses. SSH auth and host-key material stay in the profile the gateway started with, so neither the backend nor the browser receives a credential or constructs a command. See [the SSH workbench](#the-ssh-workbench). No terminal state is added to durable conversation transcripts.
