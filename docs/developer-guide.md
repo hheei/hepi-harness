@@ -21,6 +21,10 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 没有多租户或 shell 沙箱:授予 bash 等于允许以 gateway 用户身份运行任意脚本。
 见 [ADR 0001](adr/0001-single-authoritative-durable-runtime.md)。
 
+Gateway file transports depend on `FilesystemServer` in `packages/gateway/src/filesystem.ts`. Construct
+`LocalFilesystem` for this machine and `SshFilesystem` for SSH profiles. The shared positive contract tests use both
+adapters, including a real loopback SSH helper session; adapter-specific resource and transport tests remain separate.
+
 ## Directory map
 
 | 位置 | 职责 | 入口 |

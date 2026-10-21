@@ -10,7 +10,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayRpcServer, LocalGateway, MAX_SNAPSHOT_BYTES, MAX_SNAPSHOT_ENTRIES, executionHost, gatewayEnvironment, resourceSnapshot } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createWorkspaceResources } from "../../../apps/server/src/workspace-resources.ts";
 import { kib, listen, report, scratchDir, timed } from "./lib/probe-lib.mjs";
 
@@ -111,7 +111,7 @@ try {
   for (const [label, skills] of [["40 skills", 40], ["1000 skills", 1000], ["5000 skills", 5000]]) {
     const tree = await host(scratch.dir, "loader-" + skills, { skills });
     const workspaces = [{ id: "local", root: tree.root }];
-    const files = new GatewayFiles(workspaces, { identity: { user: "operator", home: tree.home } });
+    const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home: tree.home } });
     const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files);
     const { origin } = await listen(gateway.server);
     const env = gatewayEnvironment({ id: "local", gatewayId: "workstation", gatewayOrigin: origin, gatewayToken: "gateway-token" }, "/");

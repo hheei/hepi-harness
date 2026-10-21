@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { GatewayRpcServer, LocalGateway, WorkspaceRegistry, WorkspaceServer } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer } from "../../../packages/gateway/src/install.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { createProjectStore, type ProjectStore } from "../src/project-store.ts";
@@ -32,7 +32,7 @@ test("a project registered after boot is an installation target at once", { time
   const gateway = new GatewayRpcServer(
     new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
     undefined,
-    new GatewayFiles(registry, { identity }),
+    new LocalFilesystem(registry, { identity }),
     new LocalInstallServer(registry, { identity }),
     new WorkspaceServer(registry, { identity }),
   );

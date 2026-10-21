@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { GatewayRpcServer, LocalGateway, SshGateway, gatewayEnvironment, type ExecutionHostEnv } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { SshFilesystem } from "../../../packages/gateway/src/ssh-filesystem.ts";
 import { pythonSshRunner } from "../../../packages/gateway/test/ssh-transport.ts";
 import { createAgentDefinitionsHandler, type AgentDefinitionAnswer } from "../src/agent-definitions-http.ts";
@@ -34,7 +34,7 @@ async function localFixture(t: { after(fn: () => unknown): void }) {
   await mkdir(join(home, ".pi", "agent"), { recursive: true });
   await mkdir(root, { recursive: true });
   const workspaces = new WorkspaceRegistry([{ id: "ws", root }]);
-  const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files);
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();

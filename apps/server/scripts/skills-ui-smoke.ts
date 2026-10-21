@@ -39,7 +39,7 @@ import { homedir, tmpdir, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GatewayRpcServer, LocalGateway, SshGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer, REMOTE_INSTALL_SCRIPT, SshInstallServer } from "../../../packages/gateway/src/install.ts";
 import { REMOTE_FILESYSTEM_SCRIPT } from "../../../packages/gateway/src/ssh-filesystem-helper.ts";
 import { SshFilesystem } from "../../../packages/gateway/src/ssh-filesystem.ts";
@@ -232,7 +232,7 @@ try {
 
   // The local execution host: a temporary account home and workspace, served by the real local gateway.
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const installs = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
   const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
   await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));

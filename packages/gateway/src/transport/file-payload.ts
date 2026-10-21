@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { DOWNLOAD_CHUNK_BYTES, hostFailure, inspectUpload, openDownload, parseUploadConflict, uploadFile, type Download, type UploadConflict } from "../file-transfer.ts";
-import type { GatewayFiles } from "../filesystem.ts";
+import type { FilesystemServer } from "../filesystem.ts";
 import { readJson, writeJson } from "./http.ts";
 
 /**
@@ -58,9 +58,9 @@ function drained(response: ServerResponse): Promise<void> {
 
 /** The payload routes of one gateway, over the filesystem capability it borrows. */
 export class FilePayloadTransport {
-	readonly #files: GatewayFiles | undefined;
+	readonly #files: FilesystemServer | undefined;
 
-	constructor(files: GatewayFiles | undefined) {
+	constructor(files: FilesystemServer | undefined) {
 		this.#files = files;
 	}
 
@@ -111,7 +111,7 @@ export class FilePayloadTransport {
 	}
 
 	/** The opened range, written as it is read: one bounded chunk at a time, and the host's reader closed either way. */
-	async #stream(files: GatewayFiles, workspaceId: string, download: Download, response: ServerResponse): Promise<void> {
+	async #stream(files: FilesystemServer, workspaceId: string, download: Download, response: ServerResponse): Promise<void> {
 		const partial = download.length !== download.size;
 		response.writeHead(partial ? 206 : 200, {
 			"content-type": "application/octet-stream",

@@ -12,6 +12,11 @@ it is editing the served script.)
 
 The read-only workbench serves both kinds of gateway. `startGateway` mounts one `GatewayWorkbench` either way — over this machine's registry for a local gateway, and over the SSH registry for a remote profile — so the same `POST /v1/workbench` protocol, the same path rules and the same DTOs answer for an SSH-backed `/workspace/<id>`. Only the host differs: on an SSH gateway a preview is a bounded read through the `SshFilesystem` session the file routes already use, a listing walks the host's own directories through the same session, and the changed files and the diff run the same git argv through the `SshRunner` the worktree surface already uses. SSH auth and host-key material stay in the profile the gateway started with, so neither the backend nor the browser receives a credential or constructs a command. See [the SSH workbench](#the-ssh-workbench). No terminal state is added to durable conversation transcripts.
 
+The gateway file transport accepts the `FilesystemServer` contract (`execute` and `close`). Local gateways construct
+`LocalFilesystem`; SSH gateways construct `SshFilesystem`. The shared positive contract in
+`packages/gateway/test/filesystem-contract.test.ts` runs the same workspace reads, staged replacement, binary transfer
+and reader operations locally and through a real loopback SSH session.
+
 ## Terminal sessions
 
 Terminal sessions are their own gateway surface, not part of the read-only workbench. `POST /v1/terminal` opens one in a

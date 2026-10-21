@@ -6,7 +6,7 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { Context } from "@earendil-works/chord";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import type { ExecutionError, ShellOutputInfo } from "@earendil-works/pi-durable/env";
-import { resolveWorkspacePath, type GatewayFiles } from "./filesystem.ts";
+import { resolveWorkspacePath, type FilesystemServer } from "./filesystem.ts";
 // The upload conflict vocabulary is part of the file surface's wire contract: a caller of the capability names one of
 // these strategies, and a relay that reads the browser's query names it the same way instead of casting a string.
 export { parseUploadConflict, UPLOAD_CONFLICT_STRATEGIES, type UploadConflictStrategy } from "./file-transfer.ts";
@@ -506,7 +506,7 @@ export class GatewayRpcServer {
 	readonly gateway: LocalGateway | SshGateway;
 	readonly #workbench?: GatewayWorkbench;
 	/** The filesystem capability this gateway borrows: the JSON file RPC's own, and the payload routes' behind it. */
-	readonly #files?: GatewayFiles;
+	readonly #files?: FilesystemServer;
 	/** The file payload routes: one file in or out as a body, over that filesystem. */
 	readonly #filePayload: FilePayloadTransport;
 	readonly #installs?: InstallServer;
@@ -535,7 +535,7 @@ export class GatewayRpcServer {
 	 * {@link #providers} and is composed beside it, so a gateway that serves no provider accounts serves no sign-ins either.
 	 */
 	readonly #providerLogins?: ProviderLoginService;
-	constructor(gateway: LocalGateway | SshGateway, workbench?: GatewayWorkbench, files?: GatewayFiles, installs?: InstallServer, workspaces?: WorkspaceServer | SshWorkspaceServer, worktrees?: WorktreeServer, terminals?: TerminalSessions, mcp?: McpHostService, providers?: ProviderAuthService, providerLogins?: ProviderLoginService) {
+	constructor(gateway: LocalGateway | SshGateway, workbench?: GatewayWorkbench, files?: FilesystemServer, installs?: InstallServer, workspaces?: WorkspaceServer | SshWorkspaceServer, worktrees?: WorktreeServer, terminals?: TerminalSessions, mcp?: McpHostService, providers?: ProviderAuthService, providerLogins?: ProviderLoginService) {
 		this.gateway = gateway;
 		this.#workbench = workbench;
 		this.#files = files;

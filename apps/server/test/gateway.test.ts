@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxProvider, fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway, gatewayEnvironment } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { createBackendServer, type ServerSnapshot } from "../src/server.ts";
@@ -56,7 +56,7 @@ async function openStream(origin: string, conversationId: string, timeoutMs: num
 test("durable tools write edit read and execute through authenticated gateway", { timeout: 3000 }, async () => {
   const root = await mkdtemp(join(tmpdir(), "hepi-tools-"));
   const workspace = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspace));
+  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(workspace));
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address(); assert.ok(address && typeof address === "object");
   const binding = { id: "local", gatewayId: "workstation", gatewayOrigin: "http://127.0.0.1:" + address.port, gatewayToken: "gateway-token" };
@@ -98,7 +98,7 @@ test("a gateway conversation adopts workspace .agents skills, expands the skill 
   const root = await mkdtemp(join(tmpdir(), "hepi-skills-gateway-"));
   const home = await mkdtemp(join(tmpdir(), "hepi-home-"));
   const workspace = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspace, { identity: { user: "operator", home } }));
+  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(workspace, { identity: { user: "operator", home } }));
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address(); assert.ok(address && typeof address === "object");
   const binding = { id: "local", gatewayId: "workstation", gatewayOrigin: "http://127.0.0.1:" + address.port, gatewayToken: "gateway-token" };

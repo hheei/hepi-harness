@@ -7,7 +7,7 @@ import { contentText, type AssistantMessage, type Message } from "@earendil-work
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall, type FauxResponseFactory, type FauxResponseStep } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, GatewayWorktrees, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { createWorkspaceResources } from "../src/workspace-resources.ts";
@@ -77,7 +77,7 @@ async function fixture(t: { after(fn: () => unknown): void }, transcript?: strin
   const gateway = new GatewayRpcServer(
     new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
     undefined,
-    new GatewayFiles(workspaces, { identity }),
+    new LocalFilesystem(workspaces, { identity }),
     undefined,
     undefined,
     new GatewayWorktrees(workspaces, host.git),

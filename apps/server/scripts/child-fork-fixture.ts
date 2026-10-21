@@ -16,7 +16,7 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { AssistantEntry, CompactionEntry, defineExtension, UserEntry, type EntryId } from "@earendil-works/pi-durable";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { GatewayRpcServer, LocalGateway, gatewayEnvironment } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer } from "../../../packages/gateway/src/install.ts";
 import { createBackendServer } from "../src/server.ts";
 import { customProviderFromEnv } from "../src/provider-config.ts";
@@ -49,7 +49,7 @@ const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
 const gateway = new GatewayRpcServer(
   new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
   undefined,
-  new GatewayFiles(workspaces, { identity: { user: "operator", home } }),
+  new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
   new LocalInstallServer(workspaces, { identity: { user: "operator", home } }),
 );
 await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));

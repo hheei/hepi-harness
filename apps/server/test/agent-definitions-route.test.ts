@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { GatewayRpcServer, LocalGateway, SshGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { SshFilesystem } from "../../../packages/gateway/src/ssh-filesystem.ts";
 import { pythonSshRunner } from "../../../packages/gateway/test/ssh-transport.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
@@ -36,7 +36,7 @@ async function fixture() {
   await mkdir(remoteRoot, { recursive: true });
 
   const localWorkspaces = new WorkspaceRegistry([{ id: "local", root: localRoot }]);
-  const local = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: localWorkspaces, allowedCommands: ["bash"] }), undefined, new GatewayFiles(localWorkspaces, { identity: { user: "operator", home: localHome } }));
+  const local = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: localWorkspaces, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(localWorkspaces, { identity: { user: "operator", home: localHome } }));
   await new Promise<void>((resolve) => local.server.listen(0, "127.0.0.1", resolve));
 
   const { runner } = pythonSshRunner({ user: "remote-operator", home: remoteHome });

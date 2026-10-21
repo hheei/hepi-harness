@@ -2,7 +2,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer } from "../../../packages/gateway/src/install.ts";
 import { createBackendServer } from "../src/server.ts";
 import { createModels, createProvider, envApiKeyAuth } from "@earendil-works/pi-ai";
@@ -27,7 +27,7 @@ const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
 const gateway = new GatewayRpcServer(
   new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
   undefined,
-  new GatewayFiles(workspaces, { identity: { user: "operator", home } }),
+  new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
   new LocalInstallServer(workspaces, { identity: { user: "operator", home } }),
 );
 await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));

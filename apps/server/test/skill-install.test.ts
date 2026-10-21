@@ -9,7 +9,7 @@ import { contentText, type AssistantMessage, type Message } from "@earendil-work
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, type FauxResponseFactory, type FauxResponseStep } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer } from "../../../packages/gateway/src/install.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
@@ -46,7 +46,7 @@ async function fixture(t: TestContext) {
   await mkdir(remoteRoot, { recursive: true });
 
   const workspaces = new WorkspaceRegistry([{ id: "local", root }, { id: "second", root: second }]);
-  const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const installs = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
   const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
@@ -63,7 +63,7 @@ async function fixture(t: TestContext) {
   const remoteGateway = new GatewayRpcServer(
     new LocalGateway({ id: "remote-host", token: "remote-token", workspaces: remoteWorkspaces, allowedCommands: ["bash"] }),
     undefined,
-    new GatewayFiles(remoteWorkspaces, { identity: remoteIdentity }),
+    new LocalFilesystem(remoteWorkspaces, { identity: remoteIdentity }),
     new LocalInstallServer(remoteWorkspaces, { identity: remoteIdentity }),
   );
   await new Promise<void>((resolve) => remoteGateway.server.listen(0, "127.0.0.1", resolve));

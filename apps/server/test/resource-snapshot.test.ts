@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayRpcServer, LocalGateway, MAX_FILE_BYTES, MAX_SNAPSHOT_BYTES, ResourceIgnoreRules, gatewayEnvironment } from "@hepi/gateway";
-import { GatewayFiles, type FileRequest } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem, type FileRequest } from "../../../packages/gateway/src/filesystem.ts";
 import { createWorkspaceResources } from "../src/workspace-resources.ts";
 import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
 
@@ -19,7 +19,7 @@ import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
 type Counts = Map<string, number>;
 
 /** A gateway filesystem that counts the method of every request it serves, without changing any answer. */
-class CountingFiles extends GatewayFiles {
+class CountingFiles extends LocalFilesystem {
   readonly counts: Counts = new Map();
   async execute(request: FileRequest): Promise<unknown> {
     this.counts.set(request.method, (this.counts.get(request.method) ?? 0) + 1);

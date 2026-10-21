@@ -160,6 +160,9 @@ back if the publish rename fails. See [execution-side installation](execution-si
 
 An SSH workspace resolves and reads its resources on the remote host. The gateway's `SshFilesystem` sends the same
 Python 3 helper it uses for files, so the host needs no Pi installation, and nothing is read from the gateway machine.
+Both adapters implement `FilesystemServer`; callers depend on that contract, while construction names
+`LocalFilesystem` or `SshFilesystem`. Resource snapshots and agent-definition requests keep their execution host
+identity and scope; this interface does not choose a different account or resource root.
 
 - **Remote identity.** The helper asks the host's own account database (`pwd.getpwuid(os.getuid())`) for the login and
   home of the account its commands run as, in its own request (`host`), and canonicalizes the home on the host. The

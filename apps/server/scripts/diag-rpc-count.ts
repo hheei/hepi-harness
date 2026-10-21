@@ -2,7 +2,7 @@
  * Resource-discovery RPC counter (PHASE 1 diagnostic, throwaway).
  *
  * Drives the real loader (apps/server/src/workspace-resources.ts discover()) through the real gateway RPC surface
- * (packages/gateway GatewayRpcServer + GatewayFiles + gatewayEnvironment) over a synthetic execution host, and counts
+ * (packages/gateway GatewayRpcServer + LocalFilesystem + gatewayEnvironment) over a synthetic execution host, and counts
  * every host round trip by method, the peak number in flight, and the wall time at a modelled RTT.
  *
  * The RTT is the measured live number (168 ms per authenticated round trip), injected as a fixed latency so the
@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem, type FilesystemServer } from "../../../packages/gateway/src/filesystem.ts";
 import { gatewayEnvironment } from "../../../packages/gateway/src/environment.ts";
 import { createWorkspaceResources } from "../src/workspace-resources.ts";
 import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
@@ -43,9 +43,9 @@ function categoryOf(request: { method: string; path?: string }): string {
   if (request.method === "readTextFile") return "contentRead";
   return request.method;
 }
-function instrumented(inner: GatewayFiles, delayMs: number) {
+function instrumented(inner: LocalFilesystem, delayMs: number) {
   const state = { total: 0, inFlight: 0, peak: 0, bytes: 0, bytesByCategory: new Map<string, number>(), bytesKept: new Map<string, number>(), byMethod: new Map<string, number>(), byCategory: new Map<string, number>(), paths: new Map<string, number>() };
-  const server: GatewayFiles = {
+  const server: FilesystemServer = {
     execute: async (request) => {
       state.total += 1;
       state.inFlight += 1;
@@ -127,7 +127,7 @@ const base = await mkdtemp(join(tmpdir(), "hepi-rpc-count-"));
 try {
   const { home, root } = await buildHost(base);
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const inner = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const inner = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const { server, state } = instrumented(inner, rttMs);
   const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, server);
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));

@@ -15,7 +15,7 @@ operator-authorized one-off smoke, not a CI test: it needs a live OpenAI-compati
 | Model | `magpie/deepseek-v4.1-flash`, a real remote OpenAI-completions endpoint reached from the backend only |
 | Model turns | 10 (step 1: 1, step 2: 2, step 3: 3, step 4: 4; step 5 is UI-driven and reloads without a model turn) |
 | Backend | real `createBackendServer` + real `Harness`, Pi-config mode, ephemeral SQLite, loopback only |
-| Gateway | real `GatewayRpcServer` over `LocalGateway` + `GatewayFiles` + `LocalInstallServer`, ephemeral account home and workspace |
+| Gateway | real `GatewayRpcServer` over `LocalGateway` + `LocalFilesystem` + `LocalInstallServer`, ephemeral account home and workspace |
 | UI | real Next production server + headless Chromium (Playwright), driving only visible controls |
 | Settlement | the conversation's durable SSE stream, not a state poll |
 | Result | **PASS — 100/100 checks, 0 failures** (`node apps/server/scripts/real-model-smoke.ts`) |
