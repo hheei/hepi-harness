@@ -6,12 +6,10 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { Context } from "@earendil-works/chord";
 import { NodeExecutionEnv } from "@earendil-works/pi-durable/env/node";
 import type { ExecutionError, ShellOutputInfo } from "@earendil-works/pi-durable/env";
-import { GatewayFiles, resolveWorkspacePath } from "./filesystem.ts";
-import { DOWNLOAD_CHUNK_BYTES, hostFailure, inspectUpload, openDownload, parseUploadConflict, uploadFile, type Download, type UploadConflict } from "./file-transfer.ts";
+import { resolveWorkspacePath, type GatewayFiles } from "./filesystem.ts";
 // The upload conflict vocabulary is part of the file surface's wire contract: a caller of the capability names one of
 // these strategies, and a relay that reads the browser's query names it the same way instead of casting a string.
-export { parseUploadConflict, UPLOAD_CONFLICT_STRATEGIES } from "./file-transfer.ts";
-export type { UploadConflictStrategy } from "./file-transfer.ts";
+export { parseUploadConflict, UPLOAD_CONFLICT_STRATEGIES, type UploadConflictStrategy } from "./file-transfer.ts";
 import { gatewayEnvironment } from "./environment.ts";
 import {
 	GatewayExecutionJournal,
@@ -29,7 +27,10 @@ import {
 	type OutputChunk,
 } from "./execution.ts";
 import { createSystemSshRunner, managedControlMaster, type SshRunner } from "./runner.ts";
-import { TerminalSessions, TERMINAL_RECONNECT_MS, TERMINAL_REPLAY_CHARS, TERMINAL_HEARTBEAT_FRAME, TERMINAL_STREAM_BUDGET_BYTES, type TerminalEvent, type TerminalExit, type TerminalFanInEvent, type TerminalOpenRequest, type TerminalReplay } from "./terminal.ts";
+import type { TerminalSessions } from "./terminal.ts";
+import { FilePayloadTransport, filePayloadRoute } from "./transport/file-payload.ts";
+import { readJson, writeJson } from "./transport/http.ts";
+import { TerminalTransport, terminalRoute } from "./transport/terminal.ts";
 import { installFailure, type InstallRequest, type InstallServer } from "./install.ts";
 import { GatewayWorkbench, type WorkbenchRequest } from "./workbench/index.ts";
 import type { WorktreeRequest, WorktreeServer } from "./worktrees.ts";
@@ -504,7 +505,10 @@ export class GatewayRpcServer {
 	readonly server: Server;
 	readonly gateway: LocalGateway | SshGateway;
 	readonly #workbench?: GatewayWorkbench;
+	/** The filesystem capability this gateway borrows: the JSON file RPC's own, and the payload routes' behind it. */
 	readonly #files?: GatewayFiles;
+	/** The file payload routes: one file in or out as a body, over that filesystem. */
+	readonly #filePayload: FilePayloadTransport;
 	readonly #installs?: InstallServer;
 	/** The workspace surface this gateway serves: the local one, or an SSH gateway's own remote one. */
 	readonly #workspaces?: WorkspaceServer | SshWorkspaceServer;
@@ -512,6 +516,8 @@ export class GatewayRpcServer {
 	readonly #worktrees?: WorktreeServer;
 	/** The terminal sessions this gateway holds, when the execution host it serves can open one at all. */
 	readonly #terminals?: TerminalSessions;
+	/** The terminal surface, over those sessions. */
+	readonly #terminal: TerminalTransport;
 	/**
 	 * The MCP capability this host owns. A gateway serving a remote SSH host serves no MCP: MCP belongs to
 	 * the Web host's own account, and in a split deployment that is the local gateway beside the Web
@@ -533,10 +539,12 @@ export class GatewayRpcServer {
 		this.gateway = gateway;
 		this.#workbench = workbench;
 		this.#files = files;
+		this.#filePayload = new FilePayloadTransport(files);
 		this.#installs = installs;
 		this.#workspaces = workspaces;
 		this.#worktrees = worktrees;
 		this.#terminals = terminals;
+		this.#terminal = new TerminalTransport(terminals);
 		this.#mcp = mcp;
 		this.#providers = providers;
 		this.#providerLogins = providerLogins;
@@ -548,29 +556,31 @@ export class GatewayRpcServer {
 		});
 	}
 
+	/** Whether this request carries the gateway's own credential; a caller without it is answered here and nowhere else. */
+	#admitted(request: IncomingMessage, response: ServerResponse): boolean {
+		if (request.headers.authorization === "Bearer " + this.gateway.token) return true;
+		writeJson(response, 401, { ok: false, code: "unauthorized" });
+		return false;
+	}
+
 	async #handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
 		const url = request.url ?? "";
+		// A transport family recognises its own routes and owns its own framing, and both of them sit behind the same
+		// credential: the token is checked here, before a body is read, so no family can be reached without it.
 		const terminal = terminalRoute(url, request.method ?? "");
 		if (terminal !== undefined) {
-			if (request.headers.authorization !== "Bearer " + this.gateway.token) {
-				response.writeHead(401, { "content-type": "application/json" });
-				response.end(JSON.stringify({ ok: false, code: "unauthorized" }));
-				return;
-			}
-			await this.#terminal(terminal, request, response);
+			if (!this.#admitted(request, response)) return;
+			await this.#terminal.handle(terminal, request, response);
 			return;
 		}
 		// The file payload routes carry a file as a body rather than as base64 inside the 1 MiB JSON request the
 		// file RPC reads. They are the same capability and the same token, so they sit beside that route rather than
 		// becoming a second file surface.
-		const payload = filePayloadRoute(new URL(url, "http://gateway").pathname, request.method ?? "");
+		const target = new URL(url, "http://gateway");
+		const payload = filePayloadRoute(target.pathname, request.method ?? "");
 		if (payload !== undefined) {
-			if (request.headers.authorization !== "Bearer " + this.gateway.token) {
-				response.writeHead(401, { "content-type": "application/json" });
-				response.end(JSON.stringify({ ok: false, code: "unauthorized" }));
-				return;
-			}
-			await this.#filePayload(payload, request, response, new URL(url, "http://gateway"));
+			if (!this.#admitted(request, response)) return;
+			await this.#filePayload.handle(payload, request, response, target);
 			return;
 		}
 		if (request.method !== "POST" || !["/v1/execute", "/v1/workbench", "/v1/files", "/v1/installs", "/v1/abort", "/v1/workspaces", "/v1/worktrees", "/v1/mcp", "/v1/providers/auth", "/v1/providers/login"].includes(url)) {
@@ -578,13 +588,9 @@ export class GatewayRpcServer {
 			response.end();
 			return;
 		}
-		if (request.headers.authorization !== "Bearer " + this.gateway.token) {
-			response.writeHead(401, { "content-type": "application/json" });
-			response.end(JSON.stringify({ ok: false, code: "unauthorized" }));
-			return;
-		}
+		if (!this.#admitted(request, response)) return;
 		const body = await readJson(request);
-    if (!body || typeof body !== "object" || (request.url === "/v1/execute" && !validExecuteRequest(body)) || ((request.url === "/v1/workspaces" || request.url === "/v1/worktrees" || request.url === "/v1/mcp" || request.url === "/v1/providers/auth" || request.url === "/v1/providers/login") && typeof (body as {operation?: unknown}).operation !== "string") || (request.url === "/v1/abort" && (typeof (body as {callId?: unknown}).callId !== "string" || !(body as {callId: string}).callId.trim()))) {
+		if (!body || typeof body !== "object" || (request.url === "/v1/execute" && !validExecuteRequest(body)) || ((request.url === "/v1/workspaces" || request.url === "/v1/worktrees" || request.url === "/v1/mcp" || request.url === "/v1/providers/auth" || request.url === "/v1/providers/login") && typeof (body as {operation?: unknown}).operation !== "string") || (request.url === "/v1/abort" && (typeof (body as {callId?: unknown}).callId !== "string" || !(body as {callId: string}).callId.trim()))) {
       response.writeHead(400, { "content-type": "application/json" });
       response.end(JSON.stringify({ ok: false, code: "invalid_request" })); return;
     }
@@ -678,89 +684,6 @@ export class GatewayRpcServer {
 		response.end(JSON.stringify(result, (_key, value) => (value instanceof Error ? { code: (value as Error & { code?: string }).code, message: value.message } : value)));
 	}
 
-	/**
-	 * One file in, or one file out, as a body.
-	 *
-	 * An upload is written to a host-created temporary file and renamed over its target only once the whole body
-	 * arrived, so a refused or interrupted upload leaves no partial file; the conflict rules and the 16 MiB ceiling are
-	 * the file surface's own. A download is read in bounded chunks through the host's reader handle, and the handle is
-	 * closed whether the range was served or the caller went away first.
-	 */
-	async #filePayload(route: FilePayloadRoute, request: IncomingMessage, response: ServerResponse, url: URL): Promise<void> {
-		const json = (status: number, body: unknown) => {
-			response.writeHead(status, { "content-type": "application/json" });
-			response.end(JSON.stringify(body));
-		};
-		const files = this.#files;
-		if (files === undefined) { json(404, { ok: false, code: "unknown_workspace", message: "this gateway serves no filesystem" }); return; }
-		const workspaceId = url.searchParams.get("workspaceId") ?? "";
-		if (workspaceId === "") { json(400, { ok: false, code: "invalid_request", message: "a request names the workspace it is about" }); return; }
-
-		if (route === "upload-check") {
-			const body = await readJson(request) as { path?: unknown; names?: unknown } | undefined;
-			if (typeof body?.path !== "string" || !Array.isArray(body.names) || body.names.some((name) => typeof name !== "string")) {
-				json(400, { ok: false, code: "invalid_request", message: "a check names the directory and the file names" });
-				return;
-			}
-			const inspected = await inspectUpload(files, workspaceId, body.path, body.names as string[]);
-			if (!inspected.ok) { json(payloadStatus(inspected.error.code), { ok: false, ...hostFailure(inspected.error, body.path) }); return; }
-			json(200, { ok: true, value: inspected.value });
-			return;
-		}
-
-		const path = url.searchParams.get("path") ?? "";
-		if (path === "") { json(400, { ok: false, code: "invalid_request", message: "a request names the file it is about" }); return; }
-
-		if (route === "upload") {
-			const strategy = parseUploadConflict(url.searchParams.get("conflict"));
-			if (strategy === null) { json(400, { ok: false, code: "invalid_request", message: "conflict names one of error, overwrite or skip" }); return; }
-			const result = await uploadFile(files, workspaceId, path, strategy, request);
-			if (result.ok) { json(200, { ok: true, value: result.value }); return; }
-			const conflict = (result as { conflict?: UploadConflict }).conflict;
-			// The host's own code and status answer; its words are put in workspace terms, because a failure it found on
-			// its own disk would otherwise state where this workspace lives on that host.
-			json(payloadStatus(result.error.code), { ok: false, ...hostFailure(result.error, path), ...(conflict ?? {}) });
-			return;
-		}
-
-		const opened = await openDownload(files, workspaceId, path, request.headers.range ?? null);
-		if (!opened.ok) { json(payloadStatus(opened.error.code), { ok: false, ...hostFailure(opened.error, path) }); return; }
-		await this.#streamFile(files, workspaceId, opened.value, response);
-	}
-
-	/** The opened range, written as it is read: one bounded chunk at a time, and the host's reader closed either way. */
-	async #streamFile(files: GatewayFiles, workspaceId: string, download: Download, response: ServerResponse): Promise<void> {
-		const partial = download.length !== download.size;
-		response.writeHead(partial ? 206 : 200, {
-			"content-type": "application/octet-stream",
-			"content-length": String(download.length),
-			"accept-ranges": "bytes",
-			...(partial ? { "content-range": "bytes " + download.offset + "-" + (download.offset + download.length - 1) + "/" + download.size } : {}),
-		});
-		let gone = false;
-		const cancelled = () => { gone = true; };
-		response.on("close", cancelled);
-		let offset = download.offset;
-		let remaining = download.length;
-		try {
-			while (remaining > 0 && !gone && !response.writableEnded) {
-				const read = await files.execute({ workspaceId, method: "reader.read", handle: download.handle, offset, length: Math.min(remaining, DOWNLOAD_CHUNK_BYTES) }) as { ok: true; value: string } | { ok: false; error: { code: string; message: string } };
-				// The status and length are already sent, so a host read that fails here ends the body rather than
-				// answering something else: the caller reads a short body, never a wrong one.
-				if (!read.ok) break;
-				const chunk = Buffer.from(read.value, "base64");
-				if (chunk.byteLength === 0) break;
-				offset += chunk.byteLength;
-				remaining -= chunk.byteLength;
-				if (!response.write(chunk)) await drained(response);
-			}
-		} finally {
-			response.off("close", cancelled);
-			await files.execute({ workspaceId, method: "reader.close", handle: download.handle }).catch(() => undefined);
-			if (!response.writableEnded && !response.destroyed) response.end();
-		}
-	}
-
 	/** Stream one call: output frames as they arrive, then the single result frame that ends the response. */
 	async #execute(incoming: IncomingMessage, request: ExecuteRequest, response: ServerResponse): Promise<void> {
 		const write = async (frame: ExecuteFrame) => {
@@ -785,236 +708,6 @@ export class GatewayRpcServer {
 		response.end();
 	}
 
-	/**
-	 * The terminal surface: open a session, stream its output, send input, apply a resize and close it.
-	 *
-	 * A gateway whose execution host serves no terminal answers `not_supported` and names the limit, and an unknown
-	 * session answers `unknown_terminal`. Output travels as server-sent events, so a caller that lost its connection
-	 * can attach again. Nothing about a session is written to a conversation's transcript, because a session belongs to
-	 * no conversation.
-	 */
-	async #terminal(route: TerminalRoute, request: IncomingMessage, response: ServerResponse): Promise<void> {
-		const sessions = this.#terminals;
-		if (sessions === undefined) {
-			response.writeHead(501, { "content-type": "application/json" });
-			response.end(JSON.stringify({ ok: false, code: "not_supported", message: "this gateway has no terminal capability: its execution host is not configured to serve one" }));
-			return;
-		}
-		const json = (status: number, body: unknown) => {
-			response.writeHead(status, { "content-type": "application/json" });
-			response.end(JSON.stringify(body));
-		};
-		if (route.kind === "open") {
-			const body = await readJson(request);
-			const open = body as Partial<TerminalOpenRequest> | undefined;
-			if (open === null || typeof open !== "object" || typeof open.gatewayId !== "string" || typeof open.workspaceId !== "string" || typeof open.cols !== "number" || typeof open.rows !== "number" || (open.cwd !== undefined && typeof open.cwd !== "string") || (open.id !== undefined && typeof open.id !== "string")) {
-				json(400, { ok: false, code: "invalid_request" });
-				return;
-			}
-			const result = await sessions.open(open as TerminalOpenRequest);
-			json(result.ok ? 200 : 409, result);
-			return;
-		}
-		if (route.kind === "describe") {
-			json(200, sessions.describe(route.id));
-			return;
-		}
-		if (route.kind === "events") {
-			await this.#terminalEvents(route.id, sessions, request, response, terminalCursor(request.url ?? "", request.headers["last-event-id"]));
-			return;
-		}
-		if (route.kind === "fanIn") {
-			await this.#terminalFanIn(sessions, request, response, terminalFanInCursors(request.url ?? ""));
-			return;
-		}
-		if (route.kind === "close") {
-			json(200, await sessions.close(route.id));
-			return;
-		}
-		const body = await readJson(request);
-		const command = body as { data?: unknown; cols?: unknown; rows?: unknown } | undefined;
-		if (route.kind === "input") {
-			if (command === null || typeof command !== "object" || typeof command.data !== "string") {
-				json(400, { ok: false, code: "invalid_request" });
-				return;
-			}
-			json(200, sessions.write(route.id, command.data));
-			return;
-		}
-		if (command === null || typeof command !== "object" || typeof command.cols !== "number" || typeof command.rows !== "number") {
-			json(400, { ok: false, code: "invalid_request" });
-			return;
-		}
-		json(200, sessions.resize(route.id, command.cols, command.rows));
-	}
-
-	/**
-	 * The page's one terminal stream: every mounted tab's frames, on one connection.
-	 *
-	 * A browser allows six connections per origin, and one stream per mounted tab spends them on terminals — including
-	 * the tabs of a panel that is closed, because a mounted tab's shell has to stay attached. This carries the same
-	 * session facts on one connection instead: each frame names its session, and each session's attachment is held for
-	 * exactly as long as the caller names it, so a mounted tab keeps its shell and a closed tab releases it, which is
-	 * the lease behaviour the per-session stream already had.
-	 *
-	 * The caller names its sessions and their cursors. Nothing is enumerated here: attaching to every session this
-	 * gateway runs would hold shells no caller asked about open past their reconnect window, including another page's.
-	 */
-	async #terminalFanIn(sessions: TerminalSessions, request: IncomingMessage, response: ServerResponse, tabs: readonly { id: string; after?: number }[]): Promise<void> {
-		const attachments: { unsubscribe(): void }[] = [];
-		const replays: { id: string; replay: TerminalReplay; exit?: TerminalExit }[] = [];
-		// The attachments are taken before a byte is written and each one names the tab's own frames, so the replay and
-		// every later event are one ordered stream: a subscriber's listener is synchronous, so nothing can arrive
-		// between the two.
-		for (const tab of tabs) {
-			const subscription = sessions.subscribe(tab.id, (event) => {
-				// One tab's exit ends that tab's frames and nothing else: this stream carries every mounted tab, so it
-				// stays open for the tabs still running and is ended by its caller going away, never by one session's
-				// exit. Ending it here would make a page whose tabs have all exited reconnect on every retry.
-				if (event.type === "output") this.#writeTerminalFrame(response, tab.id + ":" + event.offset, { type: "output", id: tab.id, data: event.data, offset: event.offset, ...(event.reset === undefined ? {} : { reset: event.reset }) } satisfies TerminalFanInEvent);
-				else this.#writeTerminalFrame(response, "", { type: "exit", id: tab.id, exitCode: event.exitCode, signal: event.signal } satisfies TerminalFanInEvent);
-			}, tab.after);
-			// A session this gateway does not know is not an error for the stream: the caller named several, and the tab
-			// that has no session is answered by its own describe read rather than by failing every other tab with it.
-			if (subscription === undefined) continue;
-			attachments.push(subscription);
-			// What the caller missed arrives before anything new, and the offset it should continue from is the replay's
-			// own, exactly as the per-session stream reports it.
-			replays.push({ id: tab.id, replay: subscription.replay, ...(subscription.exit === undefined ? {} : { exit: subscription.exit }) });
-		}
-		response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
-		// The head is flushed rather than left to the first frame: a stream that named no session this gateway runs has no
-		// frame to write, and without the flush a caller would wait on a status that never arrives instead of reading a
-		// stream it can decide about.
-		response.flushHeaders();
-		for (const { id, replay } of replays) {
-			if (replay.data !== "" || replay.reset) this.#writeTerminalFrame(response, id + ":" + replay.offset, { type: "output", id, data: replay.data, offset: replay.offset, reset: replay.reset } satisfies TerminalFanInEvent);
-		}
-		for (const { id, exit } of replays) {
-			if (exit === undefined) continue;
-			this.#writeTerminalFrame(response, "", { type: "exit", id, exitCode: exit.exitCode, signal: exit.signal } satisfies TerminalFanInEvent);
-		}
-		// The cadence belongs to the sessions this stream actually holds: a stream that named only sessions this gateway
-		// does not run holds nothing, so it has nothing to keep alive and arms nothing. It stays open — the caller named
-		// its tabs and a refusal here would fail the tabs that do exist — and is ended by the caller going away.
-		await this.#holdTerminalStream(response, request, attachments.length > 0 ? sessions.heartbeatIntervalMs : 0, () => { for (const attachment of attachments) attachment.unsubscribe(); });
-	}
-
-	/**
-	 * One session's event stream: output as the host produces it, then exactly one exit frame that ends the response.
-	 *
-	 * A caller that names a session this gateway does not know is refused before the stream opens, so a reconnecting
-	 * client gets a status it can act on rather than an empty stream. A session that has already ended delivers its
-	 * exit at once, so nothing waits for an event that will never come.
-	 */
-	async #terminalEvents(id: string, sessions: TerminalSessions, request: IncomingMessage, response: ServerResponse, after: number | undefined): Promise<void> {
-		// The attachment is taken before a byte is written, so the replay and every later event are one ordered stream:
-		// a subscriber's listener is synchronous, so nothing can arrive between the two.
-		const subscription = sessions.subscribe(id, (event) => {
-			this.#writeTerminalFrame(response, event.type === "output" ? String(event.offset) : "", event);
-			// The session's own exit is the end of its stream: the caller reads the frame that ends it rather than
-			// waiting for an event that will never come.
-			if (event.type === "exit") response.end();
-		}, after);
-		// A caller that names a session this gateway does not know is refused before the stream opens, so a reconnecting
-		// client gets a status it can act on rather than an empty stream.
-		if (subscription === undefined) {
-			response.writeHead(404, { "content-type": "application/json" });
-			response.end(JSON.stringify({ ok: false, code: "unknown_terminal" }));
-			return;
-		}
-		response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
-		response.flushHeaders();
-		// The replay is the first thing a caller sees, so what it missed arrives before anything new, and its own
-		// cursor travels in the event's id: a client that reconnects with Last-Event-ID continues from there.
-		if (subscription.replay.data !== "" || subscription.replay.reset) {
-			this.#writeTerminalFrame(response, String(subscription.replay.offset), { type: "output", data: subscription.replay.data, offset: subscription.replay.offset, reset: subscription.replay.reset } satisfies TerminalEvent);
-		}
-		// A session that has already ended delivers its exit at once, and the stream is over with it.
-		if (subscription.exit !== undefined) {
-			this.#writeTerminalFrame(response, "", subscription.exit);
-			subscription.unsubscribe();
-			response.end();
-			return;
-		}
-		await this.#holdTerminalStream(response, request, sessions.heartbeatIntervalMs, () => subscription.unsubscribe());
-	}
-
-	/**
-	 * Keep a terminal stream open for as long as its caller is there, and let go of every attachment exactly once.
-	 *
-	 * The keepalive is written on the sessions' own cadence through the same writer as every other terminal byte, so a
-	 * comment frame lands on a frame boundary this stream owns and is measured against the same byte budget. A cadence
-	 * of zero states no keepalive: a gateway with no idle bound in front of it writes nothing rather than arming a timer
-	 * whose whole purpose is a bound that is not there. A request that ends and a response that closes are the same fact
-	 * here — the caller is gone — and either one releases the attachments, so a dropped connection leaves no
-	 * subscription behind and no timer armed.
-	 */
-	async #holdTerminalStream(response: ServerResponse, request: IncomingMessage, cadence: number, detach: () => void): Promise<void> {
-		const keepalive = cadence > 0 ? setInterval(() => this.#writeTerminalComment(response), cadence) : null;
-		keepalive?.unref();
-		try {
-			await new Promise<void>((resolve) => {
-				request.once("close", resolve);
-				response.once("close", resolve);
-			});
-		} finally {
-			if (keepalive !== null) clearInterval(keepalive);
-			detach();
-			if (!response.writableEnded && !response.destroyed) response.end();
-		}
-	}
-
-	/**
-	 * One frame of a terminal stream, written by the single place that owns the shape and the byte budget.
-	 *
-	 * The field name is `id`, with nothing before the colon: a leading space would make the field name `" id"`, which
-	 * no client recognises, so a browser would never record a cursor and every automatic reconnect would arrive with no
-	 * `Last-Event-ID` and be answered with the retained tail and a reset. An empty cursor writes no id field at all,
-	 * which is what an exit frame needs.
-	 *
-	 * The frame is encoded once and measured against what this connection has not yet taken. A subscriber's listener is
-	 * synchronous and returns nothing, so the producer cannot be paced: ending the consumer is the only bounded answer,
-	 * and the caller reconnects with the cursor it read. The shell and every other reader are untouched by it.
-	 *
-	 * The rule is "already behind", not "would go over": a frame is written unless this connection is *already* holding
-	 * more than its budget. That is what keeps a frame the unit of progress. A rule that refused a frame for crossing
-	 * the budget would refuse the very first frame of an attach whose replay is larger than the budget, the caller would
-	 * have read nothing, and its reconnect would be answered with the same replay and the same refusal — a reconnect
-	 * loop caused by the bound itself. With this rule every attempt delivers at least one whole frame, so the caller's
-	 * cursors advance and a reconnect converges; what stays bounded is the *pending* bytes, which are the budget plus at
-	 * most the one frame being written.
-	 */
-	#writeTerminalFrame(response: ServerResponse, cursor: string, event: unknown): void {
-		this.#writeTerminalBytes(response, (cursor === "" ? "" : "id: " + cursor + "\n") + "data: " + JSON.stringify(event) + "\n\n");
-	}
-
-	/**
-	 * The stream's keepalive: bytes with no event, on its own frame boundary, and measured like every other frame.
-	 *
-	 * A terminal is quiet between keystrokes, and a transport that bounds an idle body would tear the stream down and
-	 * make the panel reconnect — which it answers with a reset. A comment frame defeats that bound without moving the
-	 * caller's cursor: an `id:` line here would be read as an output offset and would move every tab's reconnect
-	 * position to a place no output exists.
-	 */
-	#writeTerminalComment(response: ServerResponse): void {
-		this.#writeTerminalBytes(response, TERMINAL_HEARTBEAT_FRAME);
-	}
-
-	/** One write of a terminal stream's bytes, under the one budget every terminal byte is measured against. */
-	#writeTerminalBytes(response: ServerResponse, bytes: string): void {
-		if (response.writableEnded || response.destroyed) return;
-		if (response.writableLength > (this.#terminals?.streamBudgetBytes ?? TERMINAL_STREAM_BUDGET_BYTES)) {
-			// The consumer is not reading and cannot be paced: more than its budget is already unwritten, so nothing
-			// here would reach it anyway. The connection ends — the socket is what holds those bytes, so ending the
-			// response alone would leave them queued on a socket nobody is going to read — and the session does not, so
-			// the caller reconnects with the cursor it read and is answered from the session's own retained tail.
-			(response.socket ?? response).destroy();
-			return;
-		}
-		response.write(bytes);
-	}
-
 	async close(): Promise<void> {
 		await this.#terminals?.closeAll();
 		// A sign-in this host is running has no host left to finish on once this gateway is down, so each flow is ended
@@ -1031,119 +724,7 @@ export class GatewayRpcServer {
 	}
 }
 
-type TerminalRoute = { readonly kind: "open" } | { readonly kind: "fanIn" } | { readonly kind: "describe" | "events" | "input" | "resize" | "close"; readonly id: string };
-
-/** The file payload routes: one file in as a body, one file out as a body. */
-type FilePayloadRoute = "upload" | "upload-check" | "bytes";
-
-/** The file payload route this request names, or undefined when it names none of them. */
-function filePayloadRoute(path: string, method: string): FilePayloadRoute | undefined {
-	if (path === "/v1/files/upload") return method === "POST" ? "upload" : undefined;
-	if (path === "/v1/files/upload-check") return method === "POST" ? "upload-check" : undefined;
-	if (path === "/v1/files/bytes") return method === "GET" ? "bytes" : undefined;
-	return undefined;
-}
-
-/** The HTTP status one file payload failure keeps: the caller reads the host's own code and reason. */
-/**
- * Wait until a response can take another write, or until it is over.
- *
- * A caller that goes away mid-body is the state a download spends its time in, and its close may already have fired by
- * the time a write reports backpressure. Checking the state first is what makes this a wait that always ends: a
- * promise waiting for a `close` that already happened is a host reader nobody ever releases.
- */
-function drained(response: ServerResponse): Promise<void> {
-	if (response.writableEnded || response.destroyed) return Promise.resolve();
-	return new Promise<void>((resolve) => {
-		const done = () => { response.off("drain", done); response.off("close", done); resolve(); };
-		response.once("drain", done);
-		response.once("close", done);
-	});
-}
-
-function payloadStatus(code: string): number {
-	switch (code) {
-		case "invalid_request": return 400;
-		case "unknown_workspace": case "unknown_directory": case "not_found": case "not_a_file": return 404;
-		case "permission_denied": return 403;
-		case "conflict": case "not_replaceable": return 409;
-		case "file_too_large": return 413;
-		case "invalid_range": return 400;
-		case "unsatisfiable_range": return 416;
-		case "not_supported": return 501;
-		default: return 500;
-	}
-}
-
-/** The terminal routes this gateway answers, or undefined when the request names none of them. */
-function terminalRoute(url: string, method: string): TerminalRoute | undefined {
-	const path = url.split("?", 1)[0] ?? "";
-	if (path === "/v1/terminal") return method === "POST" ? { kind: "open" } : undefined;
-	// The page's one terminal stream. It carries every mounted tab's frames, so it is a route of its own rather than a
-	// session's: a session id in this position would read as one tab's stream and answer the wrong shape.
-	if (path === "/v1/terminal/events") return method === "GET" ? { kind: "fanIn" } : undefined;
-	if (!path.startsWith("/v1/terminal/")) return undefined;
-	const segments = path.slice("/v1/terminal/".length).split("/");
-	const id = decodeURIComponent(segments[0] ?? "");
-	if (id === "") return undefined;
-	if (segments.length === 1) return method === "DELETE" ? { kind: "close", id } : method === "GET" ? { kind: "describe", id } : undefined;
-	if (segments.length !== 2) return undefined;
-	if (segments[1] === "events") return method === "GET" ? { kind: "events", id } : undefined;
-	if (method !== "POST") return undefined;
-	if (segments[1] === "input") return { kind: "input", id };
-	if (segments[1] === "resize") return { kind: "resize", id };
-	return undefined;
-}
-
-/**
- * The output offset an event stream continues from: the standard `Last-Event-ID` a reconnecting client sends, or the
- * `after` query a client names itself. An absent or unusable cursor is no cursor, which asks for the retained tail.
- */
-function terminalCursor(url: string, lastEventId?: string | string[]): number | undefined {
-	const query = url.indexOf("?");
-	const named = query === -1 ? null : new URLSearchParams(url.slice(query + 1)).get("after");
-	// The header wins: it is the browser's own record of the last event it actually received, while `after` is the
-	// cursor the client named when it first attached. A reconnecting EventSource sends both, and the newer one is right.
-	const cursor = (typeof lastEventId === "string" && lastEventId !== "" ? lastEventId : named) ?? undefined;
-	if (cursor === null || cursor === undefined || cursor === "" || !Number.isFinite(Number(cursor))) return undefined;
-	return Number(cursor);
-}
-
-/**
- * The sessions a fan-in caller names, with the cursor it holds for each: `tabs=<id>:<after>,<id>:<after>`.
- *
- * The cursors are the caller's own record of what it received per tab, so a reconnect continues each tab exactly where
- * it left off. A tab named with no cursor, or with one that is not a number, asks for that session's retained tail and
- * is answered with `reset`, which is what the per-session stream does with an absent or unusable cursor.
- */
-function terminalFanInCursors(url: string): { id: string; after?: number }[] {
-	const query = url.indexOf("?");
-	if (query === -1) return [];
-	const named = new URLSearchParams(url.slice(query + 1)).get("tabs");
-	if (named === null || named === "") return [];
-	const tabs: { id: string; after?: number }[] = [];
-	for (const entry of named.split(",")) {
-		const separator = entry.indexOf(":");
-		const id = decodeURIComponent(separator === -1 ? entry : entry.slice(0, separator));
-		if (id === "") continue;
-		const after = separator === -1 ? "" : entry.slice(separator + 1);
-		tabs.push({ id, ...(after === "" || !Number.isFinite(Number(after)) ? {} : { after: Number(after) }) });
-	}
-	return tabs;
-}
-
 function validExecuteRequest(value: unknown): value is ExecuteRequest {
   const r = value as ExecuteRequest;
   return !!r && typeof r.gatewayId === "string" && typeof r.workspaceId === "string" && typeof r.callId === "string" && !!r.callId.trim() && Array.isArray(r.command) && r.command.length > 0 && r.command.every(c => typeof c === "string" && !c.includes("\0")) && (r.cwd === undefined || typeof r.cwd === "string") && (r.timeoutMs === undefined || Number.isFinite(r.timeoutMs) && r.timeoutMs >= 0);
-}
-
-async function readJson(request: IncomingMessage): Promise<unknown> {
-	const chunks: Buffer[] = [];
-	let bytes = 0;
-  for await (const chunk of request) { bytes += chunk.length; if (bytes > 1024 * 1024) return undefined; chunks.push(chunk as Buffer); }
-	try {
-		return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-	} catch {
-		return undefined;
-	}
 }

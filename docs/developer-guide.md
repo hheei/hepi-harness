@@ -323,6 +323,7 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 | --- | --- | --- |
 | 客户端 API | Backend `server.ts` + UI `lib/*-api.ts` | `*.http.test.ts` |
 | 本机能力 | gateway capability + ingress surface 或 Backend relay | `host-*.test.ts`、boundary test |
+| gateway 传输族 framing(文件 payload、终端流) | `packages/gateway/src/transport/{file-payload,terminal}.ts`;入口只保留路由识别、凭证校验与未知路由 | `file-transfer`、`terminal`、`terminal-stream-budget` 套件,以及同目录的纯解析测试 |
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |
 | 面板/交互 | UI `components` + `lib` | `pnpm test:web:unit`、对应 e2e |

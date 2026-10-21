@@ -399,6 +399,16 @@ it states `controlDirectory: false`, creates no socket directory at all — whic
 transport answering the host in its own process states. Only the transport changes; the surfaces, registry, close
 order and everything a caller sees stay the same.
 
+`GatewayRpcServer` keeps one listener, one composition owner and the facts that belong to every route: which
+routes exist at all, the credential check before a body is read, the outer safe failure and the unknown-route answer.
+Each transport family owns its own framing beside it — `src/transport/file-payload.ts` the upload, upload-check and
+byte-range routes (query, host failure statuses, atomic staging, chunked download and the reader release), and
+`src/transport/terminal.ts` the terminal routes (route recognition, `Last-Event-ID` before `after`, per-tab fan-in
+cursors, replay-before-live ordering, keepalive frames and the pending-byte budget). A change to a cursor rule or a
+payload status is therefore a change to one family and its contract checks, not to the dispatch that admitted the
+request; the families borrow the capability instances and dispose of nothing themselves, because the composition owner
+still closes terminals, provider logins, MCP, files, HTTP connections, the gateway and the listener in that order.
+
 Local and SSH are mutually exclusive modes of that one composition. An SSH gateway seeds its registry from its profile
 under the `remote-<profile>` id the protocol already addresses — a configured id that names anything else is refused
 by both entries with the same wording rather than silently ignored — and serves no MCP, which belongs to the Web host's
