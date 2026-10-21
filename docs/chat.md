@@ -675,11 +675,30 @@ tool-call/tool-result pairing, the process group's expansion and reveal, timesta
 
 **Only the turns near the viewport are mounted.** The window is `packages/ui/src/lib/transcript-window.ts`, and it owns
 exactly one question: which turns are mounted. It takes the turn descriptions from `chat-turn-model`, the scrolling
-element from `useAgentSession`, and the measured heights of what is on screen, and it returns the ranges to mount plus
+element the surface gives it, and the measured heights of what is on screen, and it returns the ranges to mount plus
 the spacers that stand in for everything it omits. It does not read a page of history, decide what a turn is, or own
 the scroll position; the loaded history and its cursors stay the hook's, search and the minimap keep their own owners,
 and `ChatWindow` still owns what a turn looks like. There is one renderer: `TranscriptWindowSurface` maps a range to
 elements through the same `renderTurn` the surface used before, so nothing draws a transcript twice.
+
+**Where the reader is, is the presentation's.** `packages/ui/src/hooks/useTranscriptPresentation.ts` owns the viewport:
+whether the reader is following the live tail, the tolerance a return to the tail re-attaches at, the "jump to the
+latest" offer, the scroll a placement performs, and the prompt anchor — the spacer that keeps the reader's own latest
+prompt at the top of the viewport while its answer streams in. It is a separate owner because the conversation had been
+reaching into the DOM to do it: `useAgentSession` now holds no scrolling element, no scroll-position refs and no layout
+effect, and what it states to the presentation is one fact — how many turns this surface itself staged
+(`ownSends`) — because a send of the reader's own is the one thing a viewport owes that it cannot observe for itself.
+A live turn does not pull a reader who has scrolled back (acceptance C6); a reader who returns to the tail is followed
+again; and every placement states itself to the window through `adoptScrollPosition` first, so the window treats a
+scroll the surface decided as its baseline rather than correcting it a second time.
+
+**A notice is a fact; its clock belongs to the shelf.** The conversation states notices — an unanswered turn's reason, a
+refused draft, an upload that skipped a file — as `{ id, message, type }` facts (`lib/notice-shelf.ts`) and drops one
+when a surface says it is done with it. How long a notice is drawn, how many are on screen, which one is playing its
+leave animation, and the pause a hover or a focus buys are `packages/ui/src/components/NoticeShelf.tsx`'s, because
+they are things a surface that is on screen does: a conversation handed to the background holds no countdown for a
+toast nobody is drawing (acceptance C7). A pause keeps the remaining time rather than restarting the duration, and an
+over-full shelf retires its oldest notice rather than dropping a statement nobody read.
 
 Four properties are what make it work with dynamic content:
 
@@ -1143,7 +1162,11 @@ deep-search journeys observed together. This line's own scenes are `apps/web/e2e
 the production `ChatMinimap`), `apps/web/e2e/history/ux-rail-keyboard.ts` (that same rail driven by the keyboard alone),
 `apps/web/e2e/history/ux-history-scope.ts` (the production `useHistoryNavigation` across a compaction, a late page and a jump)
 and `apps/web/e2e/history/ux-navigation-retry.ts` (the production `ChatWindow` under `StrictMode` with only its network
-boundary replaced).
+boundary replaced). The presentation owners have their own scene:
+`apps/web/e2e/chat/ux-transcript-presentation.ts` drives the production `NoticeShelf` and `useTranscriptPresentation` with
+real timers and a real scrolling element — a notice drawn and retired by the shelf's clock, held while the reader is on
+it and resumed for the time it had left, a reader scrolled back not being pulled to the tail, and a reader back at the
+tail being followed again.
 
 ## The session-switch cache
 
@@ -1259,7 +1282,10 @@ value is bound to one connection and one conversation identity, so its reader an
 chat's mount identity is the conversation it shows, which is why a reload of the same conversation re-reads instead of
 rebuilding the surface. The reload is one owner's operation, and the `/reload` command asks the same function Settings ›
 General does: Settings states the change, awaits the answer and performs nothing itself, and the operation performs the
-Backend's route, the read and the notice. What the notice claims is what the **read** established, which is a typed
+Backend's route, the read and the notice. The operation's `ReloadOutcome` is what a surface outside the chat reads
+when it awaits it — `reloaded` with the sentence the read stated, `failed` with the failure's own sentence, or
+`superseded` when another connection or conversation is on screen — so a definitions panel asking for a refresh cannot
+read a resolved promise as a success. What the notice claims is what the **read** established, which is a typed
 outcome rather than a nullable one: `accepted`, `refused` (an older window the fold rejected), `missing` (the Backend's
 `not_found`), `failed` (carrying the read's own `ReadFailure` kind), `cancelled`, and `superseded` (another connection or
 conversation is on screen, so there is nothing to claim). A `refused` window ends the read — the agent-state query is

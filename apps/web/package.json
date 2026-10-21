@@ -48,6 +48,7 @@
     "test:skills-sshd": "node ../server/scripts/skills-ui-smoke.ts --mode builtin --transport sshd",
     "test:visible-turns": "node e2e/history/ux-visible-turns.ts",
     "test:chat-scroll": "node e2e/chat/ux-chat-scroll.ts",
+    "test:transcript-presentation": "node e2e/chat/ux-transcript-presentation.ts",
     "test:window-experiment": "node e2e/history/window-experiment.ts",
     "test:files-transfer": "node e2e/workbench-files/files-transfer.ts",
     "test:file-surfaces": "node e2e/workbench-files/ux-file-surfaces.ts",
