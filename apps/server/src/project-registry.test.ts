@@ -22,14 +22,11 @@ const GATEWAY = "workstation";
 async function startGateway(host?: FakeGitHost) {
   const registry = new WorkspaceRegistry([]);
   const identity = { user: "operator", home: "/tmp" };
-  const server = new GatewayRpcServer(
-    new LocalGateway({ id: GATEWAY, token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
-    undefined,
-    undefined,
-    undefined,
-    new WorkspaceServer(registry, { identity }),
-    host === undefined ? undefined : new GatewayWorktrees(registry, host.git),
-  );
+  const server = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: GATEWAY, token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+    worktrees: host === undefined ? undefined : new GatewayWorktrees(registry, host.git),
+  });
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address && typeof address === "object");

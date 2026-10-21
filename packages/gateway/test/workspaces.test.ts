@@ -83,7 +83,12 @@ test("the workspace RPC registers a root that execution, files and workbench ser
     await writeFile(join(projectRoot, "note.txt"), "project note");
     const registry = new WorkspaceRegistry([{ id: "legacy", root: legacyRoot }]);
     const gateway = new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] });
-    const server = new GatewayRpcServer(gateway, new GatewayWorkbench(registry), new LocalFilesystem(registry), undefined, new WorkspaceServer(registry, { identity: identity(base) }));
+    const server = new GatewayRpcServer({
+      gateway,
+      workbench: new GatewayWorkbench(registry),
+      files: new LocalFilesystem(registry),
+      workspaces: new WorkspaceServer(registry, { identity: identity(base) }),
+    });
     await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
     const address = server.server.address();
     assert.ok(address && typeof address === "object");

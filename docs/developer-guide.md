@@ -334,6 +334,11 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 互斥;SSH 从 profile 播种 `remote-<profile>` registry,不提供 MCP。环境 `main.ts` 与打包 CLI 只读各自配置并处理
 信号。新主机能力加 capability、`/v1` 路由与 Backend relay;Backend 生产代码不拼执行 HTTP。
 
+`GatewayRpcServer` 只接受一个具名 `GatewayCapabilities` 对象(执行 gateway 与各 surface),入口按名字声明本机提供
+哪些能力,未设置即"本机不提供",该路由回答自己的具名上限。`close()` 由组合者独占:terminal → provider 登录 →
+MCP → files → HTTP 连接 → gateway → listener,每个能力只销毁一次;重复调用等待同一次关闭。传输族本身不销毁任何
+capability。
+
 **检查:** `pnpm --filter @hepi/gateway test`(host-client/host-files/host-terminal/process/control)、
 `pnpm --filter @hepi/gateway test:acceptance`(execution/ingress);server 的
 `gateway-client-boundary/terminal-relay/file-relay.test.ts`。
@@ -346,6 +351,7 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 | 本机能力 | gateway capability + ingress surface 或 Backend relay | `host-*.test.ts`、boundary test |
 | gateway 传输族 framing(文件 payload、终端流) | `packages/gateway/src/transport/{file-payload,terminal}.ts`;入口只保留路由识别、凭证校验与未知路由 | `file-transfer`、`terminal`、`terminal-stream-budget` 套件,以及同目录的纯解析测试 |
 | gateway 传输族 framing(其余 JSON 面)与生命周期 | `packages/gateway/src/transport/{execution,mcp,providers,control}.ts`;执行帧流与中止、MCP 断连取消、provider 登录存活于请求、控制面缺失能力命名 | `execution`、`mcp`、`provider-login`、`control` 套件、`transport/routes.test.ts` 路由纯测试,以及 `transport-lifetimes.test.ts` |
+| gateway 组合(capability 集合)与关闭顺序 | `packages/gateway/src/index.ts` 的 `GatewayCapabilities`/`close()`;入口在 `src/startup.ts` 与各夹具按名字装配 | `composition.test.ts`(关闭顺序/只销毁一次/缺失能力)、`startup.test.ts` |
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |
 | 面板/交互 | UI `components` + `lib` | `pnpm test:web:unit`、对应 e2e |

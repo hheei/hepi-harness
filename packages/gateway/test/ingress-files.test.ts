@@ -66,11 +66,11 @@ async function fixture(): Promise<Fixture> {
 
   const localRegistry = new WorkspaceRegistry([{ id: "local", root: localRoot }]);
   const localFiles = new LocalFilesystem(localRegistry, { identity });
-  const localServer = new GatewayRpcServer(
-    new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: [] }),
-    new GatewayWorkbench(localRegistry),
-    localFiles,
-  );
+  const localServer = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: [] }),
+    workbench: new GatewayWorkbench(localRegistry),
+    files: localFiles,
+  });
   await new Promise<void>(resolve => localServer.server.listen(0, "127.0.0.1", resolve));
   const localAddress = localServer.server.address();
   assert.ok(localAddress && typeof localAddress === "object");
@@ -81,11 +81,10 @@ async function fixture(): Promise<Fixture> {
   // No workbench on this SSH gateway, as a gateway composed without the surface is: browsing answers its own named
   // limit instead of a tree. The deployment's own SSH gateway mounts one (see ssh-workbench.test.ts); this fixture
   // keeps the absent-surface case, which is what a gateway without the capability must still say plainly.
-  const sshServer = new GatewayRpcServer(
-    new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles, allowedCommands: [], runner: ssh.runner, workspaces: sshRegistry }),
-    undefined,
-    new SshFilesystem({ id: SSH_GATEWAY, profiles, runner: ssh.runner, workspaces: sshRegistry }),
-  );
+  const sshServer = new GatewayRpcServer({
+    gateway: new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles, allowedCommands: [], runner: ssh.runner, workspaces: sshRegistry }),
+    files: new SshFilesystem({ id: SSH_GATEWAY, profiles, runner: ssh.runner, workspaces: sshRegistry }),
+  });
   await new Promise<void>(resolve => sshServer.server.listen(0, "127.0.0.1", resolve));
   const sshAddress = sshServer.server.address();
   assert.ok(sshAddress && typeof sshAddress === "object");

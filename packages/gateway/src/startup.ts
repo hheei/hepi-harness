@@ -215,7 +215,7 @@ export async function startGateway(settings: GatewayStartupSettings): Promise<Ru
 		// already uses, so no SSH credential reaches the backend or the browser and no second transport is opened.
 		const workbench = profile === undefined
 			? new GatewayWorkbench(registry)
-			: sshWorkbench({ workspaces: sshRegistry, profiles: [profile], files: files, runner: plainRunner! });
+			: sshWorkbench({ workspaces: sshRegistry, profiles: [profile], files, runner: plainRunner! });
 		// Worktrees are a host capability, so both kinds of gateway serve them: the local one runs git here, the SSH one
 		// runs the same git argv on the host the profile names.
 		const worktrees = settings.worktrees !== undefined
@@ -243,7 +243,9 @@ export async function startGateway(settings: GatewayStartupSettings): Promise<Ru
 		const providerLogins = providers === undefined
 			? undefined
 			: new ProviderLoginService({ agentDir: agentDirOf(localExecutionHostIdentity().home), context: localProviderAuthContext(), auth: providers });
-		rpc = new GatewayRpcServer(gateway, workbench, files, installs, admin, worktrees, terminals, mcp, providers, providerLogins);
+		// The one composition every entry shares: the capabilities this host serves, by name. A capability the mode does
+		// not serve is simply absent, and its routes answer their own named limit.
+		rpc = new GatewayRpcServer({ gateway, workbench, files, installs, workspaces: admin, worktrees, terminals, mcp, providers, providerLogins });
 		await listen(rpc, settings.port);
 	} catch (error) {
 		// A startup that did not come up leaves nothing behind: the surfaces close first — releasing the journal with

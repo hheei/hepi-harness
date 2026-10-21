@@ -38,7 +38,10 @@ async function start(t: { after(fn: () => unknown): void }, dbPath: string, reso
   const root = join(base, "workspace");
   await mkdir(root, { recursive: true });
   const workspace = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(workspace));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspace),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address && typeof address === "object");

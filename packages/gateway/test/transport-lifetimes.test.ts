@@ -39,9 +39,9 @@ async function host(capabilities: { mcp?: unknown; logins?: unknown } = {}): Pro
 	directories.push(root);
 	const registry = new WorkspaceRegistry([{ id: "local", root }]);
 	const gateway = new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
-	// The MCP and provider-login capabilities are the eighth and tenth positional arguments, where the composition owner
-	// passes them; every capability between is absent, which is a host that serves these two surfaces and nothing else.
-	const server = new GatewayRpcServer(gateway, undefined, undefined, undefined, undefined, undefined, undefined, capabilities.mcp as never, undefined, capabilities.logins as never);
+	// The composition names the two capabilities this host serves and passes nothing else, which is a host that serves
+	// these two surfaces and no other.
+	const server = new GatewayRpcServer({ gateway, mcp: capabilities.mcp as never, providerLogins: capabilities.logins as never, });
 	const http = gatewayHttp(server.server);
 	return { http, close: async () => { http.close(); await server.close(); } };
 }

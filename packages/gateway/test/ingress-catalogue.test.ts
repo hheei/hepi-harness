@@ -76,14 +76,13 @@ async function fixture(): Promise<Fixture> {
 
   const localRegistry = new WorkspaceRegistry([{ id: "legacy", root: legacyRoot }]);
   const localIdentity = { user: "operator", home: join(directory, "home") };
-  const localServer = new GatewayRpcServer(
-    new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: ["bash"] }),
-    new GatewayWorkbench(localRegistry),
-    new LocalFilesystem(localRegistry, { identity: localIdentity }),
-    undefined,
-    new WorkspaceServer(localRegistry, { identity: localIdentity }),
-    new GatewayWorktrees(localRegistry, git.git),
-  );
+  const localServer = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: ["bash"] }),
+    workbench: new GatewayWorkbench(localRegistry),
+    files: new LocalFilesystem(localRegistry, { identity: localIdentity }),
+    workspaces: new WorkspaceServer(localRegistry, { identity: localIdentity }),
+    worktrees: new GatewayWorktrees(localRegistry, git.git),
+  });
   await new Promise<void>(resolve => localServer.server.listen(0, "127.0.0.1", resolve));
   const localAddress = localServer.server.address();
   assert.ok(localAddress && typeof localAddress === "object");
@@ -92,14 +91,12 @@ async function fixture(): Promise<Fixture> {
   host.initRepository(remoteRoot, "main");
   const sshProfiles = [host.profile];
   const sshRegistry = new WorkspaceRegistry(sshWorkspaceSeed(sshProfiles));
-  const sshServer = new GatewayRpcServer(
-    new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles: sshProfiles, allowedCommands: ["bash"], runner: host.runner, workspaces: sshRegistry }),
-    undefined,
-    new SshFilesystem({ id: SSH_GATEWAY, profiles: sshProfiles, runner: host.runner, workspaces: sshRegistry }),
-    undefined,
-    new SshWorkspaceServer(sshRegistry, { profiles: sshProfiles, runner: host.runner }),
-    new SshWorktreeServer(sshRegistry, { profiles: sshProfiles, runner: host.runner }),
-  );
+  const sshServer = new GatewayRpcServer({
+    gateway: new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles: sshProfiles, allowedCommands: ["bash"], runner: host.runner, workspaces: sshRegistry }),
+    files: new SshFilesystem({ id: SSH_GATEWAY, profiles: sshProfiles, runner: host.runner, workspaces: sshRegistry }),
+    workspaces: new SshWorkspaceServer(sshRegistry, { profiles: sshProfiles, runner: host.runner }),
+    worktrees: new SshWorktreeServer(sshRegistry, { profiles: sshProfiles, runner: host.runner }),
+  });
   await new Promise<void>(resolve => sshServer.server.listen(0, "127.0.0.1", resolve));
   const sshAddress = sshServer.server.address();
   assert.ok(sshAddress && typeof sshAddress === "object");

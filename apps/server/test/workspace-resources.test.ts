@@ -85,7 +85,10 @@ async function fixture(t: { after(fn: () => unknown): void }, transcript?: strin
   // over the same account home and repository.
   const gateways: GatewayRpcServer[] = [];
   const startGateway = async (): Promise<{ id: string; gatewayId: string; gatewayOrigin: string; gatewayToken: string }> => {
-    const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, gatewayFiles());
+    const gateway = new GatewayRpcServer({
+      gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+      files: gatewayFiles(),
+    });
     gateways.push(gateway);
     await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
     const address = gateway.server.address();

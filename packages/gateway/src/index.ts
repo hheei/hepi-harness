@@ -503,12 +503,59 @@ export class SshGateway extends Gateway {
 	}
 }
 
+/**
+ * The capabilities one gateway entry composes, by name.
+ *
+ * An entry states which surfaces this host serves and hands over the instances it created, so nothing has to remember
+ * an argument position and adding a capability is a change to the entries that serve it.
+ *
+ * Every capability is *borrowed*: the families behind the routes read it and dispose of nothing, and
+ * {@link GatewayRpcServer.close} disposes the ones that own a lifetime once each. An absent capability is a host that
+ * serves no such surface, and that surface's routes answer their own named limit rather than a generic failure.
+ */
+export type GatewayCapabilities = {
+	/** The execution host this gateway serves: its ledger and abort, and the token every route is admitted with. */
+	readonly gateway: LocalGateway | SshGateway;
+	/** The read-only workbench, mounted on a local and an SSH gateway alike. */
+	readonly workbench?: GatewayWorkbench;
+	/** The filesystem the JSON file RPC reads and the payload routes stream through. */
+	readonly files?: FilesystemServer;
+	/** The installation scopes this host publishes into. */
+	readonly installs?: InstallServer;
+	/** Workspace management: browsing and registering the folders this gateway's registry holds. */
+	readonly workspaces?: WorkspaceServer | SshWorkspaceServer;
+	/** Worktrees, created and removed on the host that holds them. */
+	readonly worktrees?: WorktreeServer;
+	/**
+	 * The terminal sessions this gateway holds, when its execution host can open one at all. Closing the gateway ends
+	 * every session it still holds, so no shell outlives the process that started it.
+	 */
+	readonly terminals?: TerminalSessions;
+	/**
+	 * The MCP capability this host owns, ending with the gateway. A gateway serving a remote SSH host serves no MCP: MCP
+	 * belongs to the Web host's own account, and in a split deployment that is the local gateway beside the Web
+	 * container, not the one the backend reaches over SSH.
+	 */
+	readonly mcp?: McpHostService;
+	/**
+	 * This account's stored provider connections. An SSH gateway serves none, for the same reason: the credential file a
+	 * sign-in writes belongs to a remote account this Web host does not own.
+	 */
+	readonly providers?: ProviderAuthService;
+	/**
+	 * The provider sign-ins this host is running, which {@link GatewayRpcServer.close} ends because no host is left to
+	 * finish them once this gateway stops. The credential surface beside them needs no disposal of its own: every call
+	 * of it completes within the request that carried it.
+	 */
+	readonly providerLogins?: ProviderLoginService;
+};
+
 /** A gateway's identity and the ledger that decides which calls it may run. */
 export class GatewayRpcServer {
 	readonly server: Server;
 	readonly gateway: LocalGateway | SshGateway;
-	/** The filesystem capability this gateway borrows: the JSON file RPC's own, and the payload routes' behind it. */
-	readonly #files?: FilesystemServer;
+	/** What this entry composed: every family below reads it, and {@link close} disposes of it. */
+	readonly #capabilities: GatewayCapabilities;
 	/** The execution family: the frame stream of one call, and the abort that ends one. */
 	readonly #execution: ExecutionTransport;
 	/** The file payload routes: one file in or out as a body, over that filesystem. */
@@ -519,34 +566,20 @@ export class GatewayRpcServer {
 	readonly #mcpTransport: McpTransport;
 	/** The provider family: this account's stored connections, and the sign-ins that outlive a request. */
 	readonly #providersTransport: ProviderTransport;
-	/** The terminal sessions this gateway holds, when the execution host it serves can open one at all. */
-	readonly #terminals?: TerminalSessions;
 	/** The terminal surface, over those sessions. */
 	readonly #terminal: TerminalTransport;
-	/**
-	 * The MCP capability this host owns. A gateway serving a remote SSH host serves no MCP: MCP belongs to
-	 * the Web host's own account, and in a split deployment that is the local gateway beside the Web
-	 * container, not the one the backend reaches over SSH.
-	 */
-	readonly #mcp?: McpHostService;
-	/**
-	 * The provider sign-ins this host is running, which {@link close} ends because no host is left to finish them once this
-	 * gateway stops. The credential surface beside them needs no disposal of its own: every call of it completes within the
-	 * request that carried it.
-	 */
-	readonly #providerLogins?: ProviderLoginService;
-	constructor(gateway: LocalGateway | SshGateway, workbench?: GatewayWorkbench, files?: FilesystemServer, installs?: InstallServer, workspaces?: WorkspaceServer | SshWorkspaceServer, worktrees?: WorktreeServer, terminals?: TerminalSessions, mcp?: McpHostService, providers?: ProviderAuthService, providerLogins?: ProviderLoginService) {
-		this.gateway = gateway;
-		this.#files = files;
-		this.#execution = new ExecutionTransport(gateway);
-		this.#filePayload = new FilePayloadTransport(files);
-		this.#control = new ControlTransport({ files, installs, workspaces, worktrees, workbench });
-		this.#mcpTransport = new McpTransport(mcp);
-		this.#providersTransport = new ProviderTransport(providers, providerLogins);
-		this.#terminals = terminals;
-		this.#terminal = new TerminalTransport(terminals);
-		this.#mcp = mcp;
-		this.#providerLogins = providerLogins;
+	/** The close this gateway is running, so a second caller awaits that close instead of starting another. */
+	#closing?: Promise<void>;
+
+	constructor(capabilities: GatewayCapabilities) {
+		this.gateway = capabilities.gateway;
+		this.#capabilities = capabilities;
+		this.#execution = new ExecutionTransport(capabilities.gateway);
+		this.#filePayload = new FilePayloadTransport(capabilities.files);
+		this.#control = new ControlTransport({ files: capabilities.files, installs: capabilities.installs, workspaces: capabilities.workspaces, worktrees: capabilities.worktrees, workbench: capabilities.workbench });
+		this.#mcpTransport = new McpTransport(capabilities.mcp);
+		this.#providersTransport = new ProviderTransport(capabilities.providers, capabilities.providerLogins);
+		this.#terminal = new TerminalTransport(capabilities.terminals);
 		this.server = createServer((request, response) => {
 			void this.#handle(request, response).catch(() => {
 				if (!response.headersSent) response.writeHead(500, { "content-type": "application/json" });
@@ -596,13 +629,24 @@ export class GatewayRpcServer {
 		return await this.#providersTransport.handle(provider!, request, response);
 	}
 
-	async close(): Promise<void> {
-		await this.#terminals?.closeAll();
-		// A sign-in this host is running has no host left to finish on once this gateway is down, so each flow is ended
-		// the way a caller's own cancel would have ended it rather than left to outlive the process that started it.
-		this.#providerLogins?.stop();
-		await this.#mcp?.close();
-		await this.#files?.close();
+	/**
+	 * Stop this gateway: dispose every capability it borrowed, once each, in the order their lifetimes nest.
+	 *
+	 * Terminals first, then the provider sign-ins this host is running — each ended the way a caller's own cancel would
+	 * have ended it, because no host is left to finish it — then MCP, whose running tool calls end with the gateway.
+	 * Only then the filesystem the payload routes read through, the connections still holding a request, the execution
+	 * gateway with its ledger, and finally the listener. The families dispose of nothing themselves, so this order lives
+	 * in one place; repeating a close awaits the one already running and disposes nothing a second time.
+	 */
+	close(): Promise<void> {
+		return (this.#closing ??= this.#close());
+	}
+
+	async #close(): Promise<void> {
+		await this.#capabilities.terminals?.closeAll();
+		this.#capabilities.providerLogins?.stop();
+		await this.#capabilities.mcp?.close();
+		await this.#capabilities.files?.close();
     this.server.closeAllConnections();
 		await this.gateway.close();
 		await new Promise<void>((resolveClose) => {

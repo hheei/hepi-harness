@@ -77,14 +77,13 @@ async function fixture() {
   git.initRepository(root, "main");
   const registry = new WorkspaceRegistry([{ id: "local", root: local }]);
   const identity = { user: "operator", home };
-  const gateway = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
-    new GatewayWorkbench(registry),
-    new LocalFilesystem(registry, { identity }),
-    undefined,
-    new WorkspaceServer(registry, { identity }),
-    new GatewayWorktrees(registry, git.git),
-  );
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
+    workbench: new GatewayWorkbench(registry),
+    files: new LocalFilesystem(registry, { identity }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+    worktrees: new GatewayWorktrees(registry, git.git),
+  });
   await listening(gateway.server);
   const gatewayAddress = gateway.server.address();
   assert.ok(gatewayAddress && typeof gatewayAddress === "object");

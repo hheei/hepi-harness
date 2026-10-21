@@ -213,7 +213,7 @@ async function harness(options: {
 				...(options.clock === undefined ? {} : { clock: options.clock }),
 				...(options.graceMs === undefined ? {} : { graceMs: options.graceMs }),
 			});
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, undefined, auth, logins);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), providers: auth, providerLogins: logins, });
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address !== null && typeof address === "object");

@@ -74,14 +74,11 @@ async function fixture(t: { after(fn: () => unknown): void }, transcript?: strin
 
   const workspaces = new WorkspaceRegistry([{ id: "remote-prod", root }]);
   const identity = { user: "remote-operator", home };
-  const gateway = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
-    undefined,
-    new LocalFilesystem(workspaces, { identity }),
-    undefined,
-    undefined,
-    new GatewayWorktrees(workspaces, host.git),
-  );
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity }),
+    worktrees: new GatewayWorktrees(workspaces, host.git),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

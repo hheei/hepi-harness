@@ -129,7 +129,10 @@ try {
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
   const inner = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const { server, state } = instrumented(inner, rttMs);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, server);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: server,
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   if (address === null || typeof address !== "object") throw new Error("the gateway did not start");

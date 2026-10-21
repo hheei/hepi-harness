@@ -45,11 +45,11 @@ const root = join(directory, "workspace");
 await mkdir(root);
 const registry = new WorkspaceRegistry([{ id: "local", root }]);
 const files = new LocalFilesystem(registry, { identity: { user: "operator", home: directory } });
-const gateway = new GatewayRpcServer(
-	new LocalGateway({ id: "workstation", token: "evidence-gateway-token", workspaces: registry, allowedCommands: [] }),
-	new GatewayWorkbench(registry),
+const gateway = new GatewayRpcServer({
+	gateway: new LocalGateway({ id: "workstation", token: "evidence-gateway-token", workspaces: registry, allowedCommands: [] }),
+	workbench: new GatewayWorkbench(registry),
 	files,
-);
+});
 await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
 const gatewayAddress = gateway.server.address();
 assert.ok(gatewayAddress !== null && typeof gatewayAddress === "object");

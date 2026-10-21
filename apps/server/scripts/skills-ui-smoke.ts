@@ -234,7 +234,11 @@ try {
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
   const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const installs = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+    installs,
+  });
   await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));
   const gatewayAddress = gateway.server.address();
   if (gatewayAddress === null || typeof gatewayAddress !== "object") throw new Error("the local gateway did not start");
@@ -258,12 +262,11 @@ try {
     profiles = [{ id: "prod", host: "build.example", remoteRoot }];
   }
   const sshWorkspaces = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
-  const sshGateway = new GatewayRpcServer(
-    new SshGateway({ id: "workstation-ssh", token: "ssh-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
-    undefined,
-    new SshFilesystem({ id: "workstation-ssh", profiles, workspaces: sshWorkspaces, runner }),
-    new SshInstallServer({ profiles, workspaces: sshWorkspaces, runner }),
-  );
+  const sshGateway = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "workstation-ssh", token: "ssh-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
+    files: new SshFilesystem({ id: "workstation-ssh", profiles, workspaces: sshWorkspaces, runner }),
+    installs: new SshInstallServer({ profiles, workspaces: sshWorkspaces, runner }),
+  });
   await new Promise<void>((resolveListen) => sshGateway.server.listen(0, "127.0.0.1", resolveListen));
   const sshAddress = sshGateway.server.address();
   if (sshAddress === null || typeof sshAddress !== "object") throw new Error("the SSH gateway did not start");

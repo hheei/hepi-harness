@@ -53,7 +53,7 @@ async function fixture(options: { agentDir?: string; lockTimeoutMs?: number; ser
 				context: { env: async () => undefined, fileExists: async () => false },
 				...(options.lockTimeoutMs === undefined ? {} : { lockTimeoutMs: options.lockTimeoutMs }),
 			});
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, undefined, providers);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), providers });
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");

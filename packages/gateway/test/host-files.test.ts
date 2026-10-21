@@ -338,7 +338,7 @@ type Host = { readonly files: MemoryFiles; readonly http: GatewayHttp; close(): 
 async function host(): Promise<Host> {
 	const files = new MemoryFiles();
 	const gateway = new LocalGateway({ id: "gateway-1", token: TOKEN, workspaces: new WorkspaceRegistry([{ id: "ws", root: "/workspace" }]), allowedCommands: [] });
-	const server = new GatewayRpcServer(gateway, undefined, files);
+	const server = new GatewayRpcServer({ gateway, files });
 	const http = gatewayHttp(server.server);
 	return {
 		files,

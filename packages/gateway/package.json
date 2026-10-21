@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node src/main.ts",
     "dev": "node --watch src/main.ts",
-    "test": "node --test test/control.test.ts test/files-surface.test.ts test/filesystem-contract.test.ts test/host-client.test.ts test/host-files.test.ts test/host-terminal.test.ts test/mcp-import-resolution.test.ts test/mcp-invocation.test.ts test/mcp-list-tools.test.ts test/multipart.test.ts test/process.test.ts test/provider-credential-store.test.ts src/skill-frontmatter.test.ts src/transport/file-payload.test.ts src/transport/routes.test.ts src/transport/terminal.test.ts test/ssh.test.ts test/transport-lifetimes.test.ts test/terminal-launcher.test.ts test/terminal-stream-budget.test.ts",
+    "test": "node --test test/control.test.ts test/files-surface.test.ts test/filesystem-contract.test.ts test/host-client.test.ts test/host-files.test.ts test/host-terminal.test.ts test/mcp-import-resolution.test.ts test/mcp-invocation.test.ts test/mcp-list-tools.test.ts test/multipart.test.ts test/process.test.ts test/provider-credential-store.test.ts src/skill-frontmatter.test.ts src/transport/file-payload.test.ts src/transport/routes.test.ts src/transport/terminal.test.ts test/ssh.test.ts test/composition.test.ts test/transport-lifetimes.test.ts test/terminal-launcher.test.ts test/terminal-stream-budget.test.ts",
     "test:acceptance": "node --test $(find src test -name '*.test.ts' | sort)",
     "typecheck": "tsc --noEmit",
     "start:ingress": "node src/ingress/main.ts"

@@ -77,7 +77,10 @@ async function read<T>(response: Response, status: number): Promise<T> {
  */
 async function startLocal(t: { after(fn: () => unknown): void }, dbPath: string, root: string, home: string, script?: (faux: ReturnType<typeof fauxProvider>) => void): Promise<Fixture> {
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(workspaces, { identity: { user: "operator", home } }));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");
@@ -427,7 +430,10 @@ test("the definition is resolved on the conversation SSH execution host and the 
   const { runner } = pythonSshRunner({ user: "remote-operator", home: remoteHome });
   const profiles = [{ id: "prod", host: "build.example", remoteRoot }];
   const sshWorkspaces = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
-  const ssh = new GatewayRpcServer(new SshGateway({ id: "ssh-prod", token: "gateway-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }), undefined, new SshFilesystem({ id: "ssh-prod", profiles, workspaces: sshWorkspaces, runner }));
+  const ssh = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "ssh-prod", token: "gateway-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
+    files: new SshFilesystem({ id: "ssh-prod", profiles, workspaces: sshWorkspaces, runner }),
+  });
   await new Promise<void>((resolve) => ssh.server.listen(0, "127.0.0.1", resolve));
   const sshAddress = ssh.server.address();
   assert.ok(sshAddress !== null && typeof sshAddress === "object");

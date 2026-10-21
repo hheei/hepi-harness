@@ -55,7 +55,9 @@ test("a coding-tools call runs in its own call scope, and an environment without
   const root = join(directory, "workspace");
   await mkdir(root, { recursive: true });
   const ledger = new RecordingLedger();
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: new WorkspaceRegistry([{ id: "local", root }]), allowedCommands: ["bash"] }, ledger));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: new WorkspaceRegistry([{ id: "local", root }]), allowedCommands: ["bash"] }, ledger),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address && typeof address === "object");

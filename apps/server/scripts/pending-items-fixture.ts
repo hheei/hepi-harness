@@ -36,12 +36,11 @@ await mkdir(join(root, ".pi", "agents"), { recursive: true });
 await writeFile(join(root, ".pi", "agents", "worker.md"), "---\nname: worker\ndescription: worker\ntools:\n  - read\ncontext: fresh\n---\n\nAnswer the task briefly.\n");
 
 const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-const gateway = new GatewayRpcServer(
-  new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
-  undefined,
-  new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
-  new LocalInstallServer(workspaces, { identity: { user: "operator", home } }),
-);
+const gateway = new GatewayRpcServer({
+  gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+  files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+  installs: new LocalInstallServer(workspaces, { identity: { user: "operator", home } }),
+});
 await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));
 const gatewayAddress = gateway.server.address();
 if (gatewayAddress === null || typeof gatewayAddress !== "object") throw new Error("the gateway did not start");

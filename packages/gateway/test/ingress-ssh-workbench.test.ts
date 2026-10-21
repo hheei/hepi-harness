@@ -114,11 +114,11 @@ async function fixture(options: { mountWorkbench?: boolean } = {}): Promise<Fixt
   const identity = { user: "operator", home: join(directory, "home") };
 
   const localRegistry = new WorkspaceRegistry([{ id: "local", root: localRoot }]);
-  const localServer = new GatewayRpcServer(
-    new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: [] }),
-    new GatewayWorkbench(localRegistry),
-    new LocalFilesystem(localRegistry, { identity }),
-  );
+  const localServer = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: LOCAL_GATEWAY, token: "local-gateway-token", workspaces: localRegistry, allowedCommands: [] }),
+    workbench: new GatewayWorkbench(localRegistry),
+    files: new LocalFilesystem(localRegistry, { identity }),
+  });
   await new Promise<void>(resolve => localServer.server.listen(0, "127.0.0.1", resolve));
   const localAddress = localServer.server.address();
   assert.ok(localAddress && typeof localAddress === "object");
@@ -129,11 +129,11 @@ async function fixture(options: { mountWorkbench?: boolean } = {}): Promise<Fixt
   const sshRegistry = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
   const runner = hostRunner(host, remoteRoot);
   const sshFiles = new SshFilesystem({ id: SSH_GATEWAY, profiles, runner, workspaces: sshRegistry });
-  const sshServer = new GatewayRpcServer(
-    new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles, allowedCommands: [], runner, workspaces: sshRegistry }),
-    options.mountWorkbench === false ? undefined : sshWorkbench({ workspaces: sshRegistry, profiles, files: sshFiles, runner }),
-    sshFiles,
-  );
+  const sshServer = new GatewayRpcServer({
+    gateway: new SshGateway({ id: SSH_GATEWAY, token: "ssh-gateway-token", profiles, allowedCommands: [], runner, workspaces: sshRegistry }),
+    workbench: options.mountWorkbench === false ? undefined : sshWorkbench({ workspaces: sshRegistry, profiles, files: sshFiles, runner }),
+    files: sshFiles,
+  });
   await new Promise<void>(resolve => sshServer.server.listen(0, "127.0.0.1", resolve));
   const sshAddress = sshServer.server.address();
   assert.ok(sshAddress && typeof sshAddress === "object");

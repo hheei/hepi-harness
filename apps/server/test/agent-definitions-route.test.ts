@@ -36,13 +36,19 @@ async function fixture() {
   await mkdir(remoteRoot, { recursive: true });
 
   const localWorkspaces = new WorkspaceRegistry([{ id: "local", root: localRoot }]);
-  const local = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: localWorkspaces, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(localWorkspaces, { identity: { user: "operator", home: localHome } }));
+  const local = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: localWorkspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(localWorkspaces, { identity: { user: "operator", home: localHome } }),
+  });
   await new Promise<void>((resolve) => local.server.listen(0, "127.0.0.1", resolve));
 
   const { runner } = pythonSshRunner({ user: "remote-operator", home: remoteHome });
   const profiles = [{ ...profile, remoteRoot }];
   const sshWorkspaces = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
-  const ssh = new GatewayRpcServer(new SshGateway({ id: "ssh-prod", token: "gateway-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }), undefined, new SshFilesystem({ id: "ssh-prod", profiles, workspaces: sshWorkspaces, runner }));
+  const ssh = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "ssh-prod", token: "gateway-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
+    files: new SshFilesystem({ id: "ssh-prod", profiles, workspaces: sshWorkspaces, runner }),
+  });
   await new Promise<void>((resolve) => ssh.server.listen(0, "127.0.0.1", resolve));
 
   const addressOf = (server: GatewayRpcServer) => {
