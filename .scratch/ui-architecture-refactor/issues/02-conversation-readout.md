@@ -1,7 +1,7 @@
 # Accepted conversation readout
 
 Type: implementation
-Status: in-progress
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R2、R3 的既有 lifecycle 約束
@@ -47,7 +47,7 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
 
 ## 交付記錄
 
-變更修訂：本票實作 commit（見 git log `impl/ui-readout`，base `7cc775e4`）。
+變更修訂：`b20ae3d8`（base `7cc775e4`，branch `impl/ui-readout`）。
 
 ### Seam
 
