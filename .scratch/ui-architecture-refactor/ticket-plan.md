@@ -12,7 +12,7 @@ Scope: [規格](spec.md)；保留行為及驗證歸屬見[驗收矩陣](acceptan
 
 | 順序 | 票單 | Blocked by | Status | 主要寫入責任 |
 | --- | --- | --- | --- | --- |
-| 01 | [工作台選擇與草稿](issues/01-workbench-selection.md) | none | integrated；獨立 review 中 | 選擇模組、AppShell 選擇 handlers、Sidebar、新對話列、draft scope |
+| 01 | [工作台選擇與草稿](issues/01-workbench-selection.md) | none | in-progress；修正 7 項 material review findings | 選擇模組、AppShell 選擇 handlers、Sidebar、新對話列、draft scope |
 | 02 | [Accepted conversation readout](issues/02-conversation-readout.md) | none | resolved／integrated | accepted view/prefix/metadata、useAgentSession 資料接受、相關純規則 |
 | 03 | [對話 I/O 與 view attachment](issues/03-conversation-lifetime.md) | 01、02 | planned | useAgentSession、ChatWindow 接線、CompletionDelivery 整合、Shell 重掛移除 |
 | 04 | [Transcript 與 notice 呈現](issues/04-transcript-presentation.md) | 03 | planned | ChatWindow、history navigation 接線、scroll/notice hooks |

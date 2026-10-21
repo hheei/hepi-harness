@@ -17,6 +17,22 @@ Status: recorded — 靜態盤點結果，不是 bug closeout 或已執行驗證
 | 大檔即效能問題 | 八個檔案約 19k 行，文字 hook 計數偏高 | 維護成本有證據，runtime latency/heap 未測 | record。沒有性能承諾；有正常場景量測後另開 focused diagnosis |
 | 未觀察 run 不補完成音 | 既有 ADR 0007 的明確限制 | 背景／隱藏頁可能發生，已有產品契約 | preserve。通知覆蓋不是本工作範圍，不加每對話常駐串流 |
 
+## Ticket 01 review corrections
+
+agent-230 reviewed clean `73b94db2`（整合 counterpart `96c2348e`）。Standards 無 material findings；Spec 以下 7 項皆判為 `fix`，由 agent-221 在原 owner 修正。票 01 重開，票 03 尚未啟動。
+
+| Finding | 正常使用 trigger／evidence | User impact／修正 owner |
+| --- | --- | --- |
+| P1 draft disposal | fresh composer 尚有輸入時更換 connection；Chromium unmount 前 storage 有文字，後為空 | 未送出草稿遺失；移除 useAgentSession lifecycle cleanup 的 draft deletion，selection intent 決定清除 |
+| P1 stale promotion | A 提交待 admission 時已選擇並輸入 B；late promotion 仍替換 B | 目前 composer 被錯換且草稿可能隨 unmount 清除；promotion intent 驗證 source composer identity |
+| P2 pending open after workspace pick | open B 尚待回覆時明確選擇 A 的 worktree；state repro 顯示 late B 落地 | 使用者的 workspace 選擇被蓋掉；workspace intent retire pending generation，保持 attachment |
+| P2 remembered conversation | 明確跨 project 返回已記住 conversation 的 B；state repro 顯示仍落 composer | workspace 恢復功能失效；destination restore 在 selection owner 使用 generation fence；裸路由契約不變 |
+| P2 file tabs | Sidebar 直接發跨 project 的 conversation／workspace／New intent，舊 handleSelectWorkspace 已無 caller | 舊 project 檔案頁籤殘留在新 cwd；Shell 依 accepted project transition 清 presentation state，排除 identity hydration |
+| P2 same-conversation selection | 重按目前 conversation，state repro attachment 由 1 變 2 | ChatWindow 重掛且閱讀位置／本地 UI 重置；相同 identity 保留 attachment，explicit entry/block targets 仍處理 |
+| P2 raw-history activation | reference 發 Open raw history，focus 已設定但 activeTopPanel 非 history | 常用跳轉沒有顯示面板；raw navigation 落地時啟用 history panel |
+
+Reviewer 的 focused state/browser reproductions exit 0；原始 logs 複製至 `.dev/verify/ui-architecture-refactor/ticket01-selection-review.log`、`ticket01-draft-disposal-review.log`。file-tab／raw panel 另有 caller/gate source evidence；修正須補公共 seam／ordinary browser regression checks。不是旁路或安全邊界測試。
+
 ## 實作中新發現的記錄格式
 
 僅在有具體 finding 時追加：trigger、source／repro evidence、正常使用可能性、user impact、fix/record/investigate、負責票及重訪條件。`record` 是完整處置，不形成阻擋依賴或自動擴大實作範圍。

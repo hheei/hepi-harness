@@ -16,7 +16,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | integrated；agent-230 獨立 review 中 |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | in-progress；agent-230 發現 7 項 material regressions，worker 修正中 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -50,6 +50,7 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 - 同 revision 補跑 `node apps/web/e2e/history/ux-workbench-selection.ts`、`pnpm --filter @hepi/web test:mcp-workflow`、`pnpm --filter @hepi/web test:navigation-retry` 皆 exit 0。commands／revision／dirty state／raw logs 對照：`.dev/verify/ui-wave1-integrated/browser-metadata.json`。
 - Coordinator 執行 `graphify update .` exit 0；15,434 nodes／31,097 edges／679 communities，raw log `.dev/verify/ui-architecture-refactor/wave1-graph.log`。只更新 code graph，不將 docs semantic graph 當作已刷新。
 - 票 03 worktree `.dev/worktrees/ui-lifetime` 已從 `96c2348e` 準備，分支 `impl/ui-conversation-lifetime`，offline frozen install exit 0；待 01 review 完成再啟動實作。
+- agent-230 review：Standards 無 material findings；Spec 7 項 material regressions。完整 disposition 見 [review notes](review-notes.md#ticket-01-review-corrections)。01 已重新開啟並交回 agent-221；03 暫緩。以上 checks 通過不表示已涵蓋這些行為，仍綁定原 tested revision。review reproductions 原始 logs 已保存至 `.dev/verify/ui-architecture-refactor/ticket01-selection-review.log`、`ticket01-draft-disposal-review.log`。
 
 ### Native 驗收準備
 
