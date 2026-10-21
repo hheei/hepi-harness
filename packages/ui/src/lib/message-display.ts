@@ -1,4 +1,13 @@
-import type { AgentMessage, AssistantContentBlock, AssistantMessage, ThinkingContent, ToolCallContent } from "./types";
+import type {
+  AgentMessage,
+  AssistantContentBlock,
+  AssistantMessage,
+  CustomMessage,
+  TextContent,
+  ThinkingContent,
+  ToolCallContent,
+  UserMessage,
+} from "./types";
 
 interface DisplayOptions {
   isStreaming?: boolean;
@@ -78,4 +87,52 @@ export function splitFinalAssistantBlocks(
 
 export function countToolCallBlocks(blocks: AssistantContentBlock[]): number {
   return blocks.filter((block): block is ToolCallContent => block.type === "toolCall").length;
+}
+
+/** When this message was written, as the surface names it: a time today, a date otherwise. */
+export function formatMessageTime(ts?: number): string | null {
+  if (!ts) return null;
+  const d = new Date(ts);
+  const now = new Date();
+  const isToday = d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return time;
+  const date = d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
+  return `${date} ${time}`;
+}
+
+/**
+ * The configured display name of the model that answered, falling back to `provider/model`.
+ *
+ * A configured name may be keyed `provider:model` or by the bare id the response names, and a response model can carry
+ * a vendor prefix, so the match accepts a suffix as well as an exact id.
+ */
+export function getModelDisplayName(
+  provider: string,
+  responseModel: string,
+  modelNames?: Record<string, string>,
+): string {
+  const normalizedProvider = provider.toLowerCase();
+  const normalizedResponse = responseModel.toLowerCase();
+  const configured = Object.entries(modelNames ?? {}).flatMap(([key, name]) => {
+    const separator = key.indexOf(":");
+    return separator > 0 && key.slice(0, separator).toLowerCase() === normalizedProvider
+      ? [{ id: key.slice(separator + 1).toLowerCase(), name }]
+      : [];
+  });
+  return configured.find((model) => model.id === normalizedResponse)?.name
+    ?? configured.find((model) => normalizedResponse.endsWith(`/${model.id}`))?.name
+    ?? Object.entries(modelNames ?? {}).find(([key]) => key.toLowerCase() === normalizedResponse)?.[1]
+    ?? `${provider}/${responseModel}`;
+}
+
+/** The whole text of a message's own content, in order. */
+export function getMessageText(content: CustomMessage["content"] | UserMessage["content"]): string {
+  if (typeof content === "string") return content;
+  return content
+    .filter((b): b is TextContent => b.type === "text")
+    .map((b) => b.text)
+    .join("\n");
 }

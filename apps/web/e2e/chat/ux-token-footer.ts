@@ -290,7 +290,8 @@ try {
     await page.locator('[data-fixture-locale="en"]').click();
 
     console.log("== the aggregate session toolbar is untouched");
-    const appShell = await readFile(join(webRoot, "components", "AppShell.tsx"), "utf8");
+    // AppShell is a shared UI panel; the Web host only mounts it.
+    const appShell = await readFile(join(webRoot, "..", "..", "packages", "ui", "src", "components", "AppShell.tsx"), "utf8");
     check(
       appShell.includes("viewBox=\"0 0 10 10\"") && appShell.includes("strokeWidth=\"1.2\""),
       "the aggregate toolbar keeps its own 10-grid, 1.2-stroke glyphs",

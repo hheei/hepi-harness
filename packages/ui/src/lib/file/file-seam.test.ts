@@ -202,6 +202,13 @@ test("the surfaces that show files assemble no address of their own", async () =
     "components/ChatWindow.tsx",
     "components/MarkdownBody.tsx",
     "components/MessageView.tsx",
+    "components/AssistantMessageView.tsx",
+    "components/UserMessageView.tsx",
+    "components/CustomMessageView.tsx",
+    "components/MessageTextBlocks.tsx",
+    "components/MessageImages.tsx",
+    "components/MessageDiffView.tsx",
+    "components/ToolCallBlockView.tsx",
     "lib/file/file-upload-client.ts",
   ];
   for (const file of owned) {

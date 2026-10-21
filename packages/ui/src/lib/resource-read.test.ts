@@ -121,15 +121,21 @@ test("a refused image is a named state, and a failing reader is unavailable", as
 });
 
 test("the surfaces that render read blocks reach them through the connection, never through a raw global fetch", async () => {
-  const sources = await Promise.all([
-    readFile(new URL("../components/MessageView.tsx", import.meta.url), "utf8"),
+  // The surfaces are the message views that own a read block: an answer's thinking, an answer's or prompt's deferred
+  // text, and an image named by a read block. The entry point only dispatches by role and reads nothing itself.
+  const [thinking, textBlocks, images, deferredText] = await Promise.all([
+    readFile(new URL("../components/ThinkingBlockView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/MessageTextBlocks.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/MessageImages.tsx", import.meta.url), "utf8"),
     readFile(new URL("./deferred-text.ts", import.meta.url), "utf8"),
   ]);
-  for (const source of sources) {
+  for (const source of [thinking, textBlocks, images, deferredText]) {
     assert.doesNotMatch(source, /\bfetch\s*\(/, "a resource consumer reached for the global fetch");
     assert.doesNotMatch(source, /["'`]\/api\/sessions\//, "a resource consumer assembled a relative read-block URL");
   }
-  assert.match(sources[0], /useOptionalResourceReader\(\)/, "MessageView does not read its connection's reader");
-  assert.match(sources[0], /thinkingUrl\(/, "thinking is not addressed by the protocol's own read block");
-  assert.match(sources[1], /readResourceText\(/, "the deferred-text loader does not read through the connection's reader");
+  assert.match(thinking, /useOptionalResourceReader\(\)/, "the thinking view does not read its connection's reader");
+  assert.match(thinking, /thinkingUrl\(/, "thinking is not addressed by the protocol's own read block");
+  assert.match(textBlocks, /useOptionalResourceReader\(\)/, "the text view does not read its connection's reader");
+  assert.match(images, /openResourceImage\(/, "the image view does not lease through the connection's reader");
+  assert.match(deferredText, /readResourceText\(/, "the deferred-text loader does not read through the connection's reader");
 });
