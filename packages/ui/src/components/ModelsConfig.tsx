@@ -1769,29 +1769,38 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
     refreshAuthProviders();
   }, [refreshAuthProviders]);
 
+  /**
+   * Read `models.json` as the file holds it, and say so.
+   *
+   * It is the panel's one read of that file, used by the mount and by the readback a write that the runtime could not
+   * apply owes: that answer means the file changed and the running backend did not, so what the panel shows from then
+   * on has to be the file's own content rather than the draft it sent. A draft that is not the file's is exactly what a
+   * person would otherwise edit on top of a write whose effect nobody confirmed.
+   */
+  const readConfig = useCallback(() => request("/api/models-config")
+    .then(async (r) => {
+      const d = await r.json() as ModelsJson & { error?: string };
+      if (!r.ok || d.error) throw new Error(d.error ?? `HTTP ${r.status}`);
+      return d;
+    })
+    .then((d) => {
+      const normalized = d.providers ? d : { ...d, providers: {} };
+      setConfig(normalized);
+      savedProvidersRef.current = new Set(Object.keys(normalized.providers ?? {}));
+      savedModelIdsRef.current = savedModelIds(normalized);
+      const keys = Object.keys(normalized.providers ?? {});
+      setSelection((current) => current && customSelectionExists(normalized, current)
+        ? current
+        : keys[0]
+          ? { type: "provider", name: keys[0] }
+          : null);
+    })
+    .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e))), [request]);
+
   useEffect(() => {
-    request("/api/models-config")
-      .then(async (r) => {
-        const d = await r.json() as ModelsJson & { error?: string };
-        if (!r.ok || d.error) throw new Error(d.error ?? `HTTP ${r.status}`);
-        return d;
-      })
-      .then((d) => {
-        const normalized = d.providers ? d : { ...d, providers: {} };
-        setConfig(normalized);
-        savedProvidersRef.current = new Set(Object.keys(normalized.providers ?? {}));
-        savedModelIdsRef.current = savedModelIds(normalized);
-        const keys = Object.keys(normalized.providers ?? {});
-        setSelection((current) => current && customSelectionExists(normalized, current)
-          ? current
-          : keys[0]
-            ? { type: "provider", name: keys[0] }
-            : null);
-      })
-      .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
+    readConfig().finally(() => setLoading(false));
     refreshAuthProviders();
-  }, [refreshAuthProviders, request]);
+  }, [readConfig, refreshAuthProviders]);
 
   useEffect(() => {
     if (selection) setLastSettingsSelection("models", JSON.stringify(selection));
@@ -1929,29 +1938,38 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
         body: JSON.stringify(draft),
       });
       const d = await res.json() as { success?: boolean; applied?: boolean; error?: string };
-      if (!res.ok || d.error) setSaveError(d.error ?? `HTTP ${res.status}`);
+      if (!res.ok || (d.error !== undefined && d.applied !== false)) setSaveError(d.error ?? `HTTP ${res.status}`);
       else {
-        // The backend reports a write it could not apply as saved-but-not-applied rather than as success. Showing the
-        // plain Saved state there would claim an effect the running backend does not have.
-        if (d.applied === false) setSaveError(t("models.savedNotApplied", { error: d.error ?? "" }));
-        else setSavedOk(true);
         setTimeout(() => setSavedOk(false), 2000);
-        // models.json just changed under the switches: providers may have been
-        // renamed, models added, deleted or renamed. Re-verify the stored
-        // patterns against the new catalog and re-read.
-        const renames = [...renamesRef.current].map(([from, to]) => ({ from, to }));
-        const modelRenames = collectModelRenames(draft, savedModelIdsRef.current, renamesRef.current);
-        savedProvidersRef.current = new Set(Object.keys(draft.providers ?? {}));
-        savedModelIdsRef.current = savedModelIds(draft);
-        renamesRef.current.clear();
-        enabledModels.resync(renames, modelRenames);
+        // The backend reports a write it could not apply as saved-but-not-applied rather than as success, and the two
+        // are different facts about the same file: only an applied save is a catalog the running backend now serves.
+        if (d.applied === false) {
+          setSaveError(t("models.savedNotApplied", { error: d.error ?? "" }));
+          // Saved but not applied: the file is the authority for what this panel now edits, so it is read back rather
+          // than the draft being assumed — and the switches are left alone, because the catalog they are verified
+          // against is still the one the runtime is serving.
+          void readConfig();
+        } else {
+          setSavedOk(true);
+          // The catalog the runtime serves just changed: this page's one rule says so, which drops the held answer and
+          // re-reads every mounted composer — while Settings is open, not when it closes.
+          invalidateModelCatalog();
+          // models.json changed under the switches too: providers may have been renamed, models added, deleted or
+          // renamed, so the stored patterns are re-verified against the catalog that save produced.
+          const renames = [...renamesRef.current].map(([from, to]) => ({ from, to }));
+          const modelRenames = collectModelRenames(draft, savedModelIdsRef.current, renamesRef.current);
+          savedProvidersRef.current = new Set(Object.keys(draft.providers ?? {}));
+          savedModelIdsRef.current = savedModelIds(draft);
+          renamesRef.current.clear();
+          enabledModels.resync(renames, modelRenames);
+        }
       }
     } catch (e) {
       setSaveError(String(e));
     } finally {
       setSaving(false);
     }
-  }, [applyProviderRename, config, enabledModels, loadError, providerNameDraft, request, t]);
+  }, [applyProviderRename, config, enabledModels, loadError, providerNameDraft, readConfig, request, t]);
 
   const providers = Object.entries(config.providers ?? {});
   // `12/40` next to a provider makes a narrowed selector visible at a glance.

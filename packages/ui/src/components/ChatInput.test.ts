@@ -97,6 +97,16 @@ test("the catalog's own failures and the newest run's outcome are stated above t
   assert.equal((render().match(/role="alert"/g) ?? []).length, 0, "a composer with nothing to report states nothing");
 });
 
+test("a catalog read that failed offers the one step that can change it, and nothing else", () => {
+  // The recovery is a read of the same catalog. The composer states it beside the failure it recovers from, and a
+  // caller that states no recovery is offered no control whose only outcome would be nothing.
+  const recoverable = render({ modelError: "the catalog could not be read", onModelRetry: () => {} });
+  assert.match(recoverable, /the catalog could not be read/);
+  assert.match(recoverable, /<button[^>]*>Retry<\/button>/, "a recoverable catalog failure offers Retry: " + recoverable.slice(0, 400));
+  const plain = render({ modelError: "the catalog could not be read" });
+  assert.doesNotMatch(plain, /Retry/, "a caller with no recovery offered one anyway");
+});
+
 test("the model picker appears only when the conversation offers a choice", () => {
   const model = { provider: "p", modelId: "m1" };
   const modelList = [{ id: "m1", name: "Model One", provider: "p", input: ["text", "image"] }];

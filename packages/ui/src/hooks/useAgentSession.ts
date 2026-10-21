@@ -75,7 +75,7 @@ import {
 } from "../lib/lifecycle-acquisition";
 import { readProjection, rekeyProjection, saveProjection } from "../lib/lifecycle-store";
 import { useWorkbenchConnection, useWorkbenchScope } from "../lib/workbench-scope";
-import { invalidateModelCatalog, modelsScopeOf, pageModelsCache } from "../lib/models-cache";
+import { modelsScopeOf, pageModelsCache, subscribeModelCatalog } from "../lib/models-cache";
 import { readCatalogAnswer, type CatalogAnswer } from "../lib/catalog-answer";
 import type { ScopedCache } from "@hepi/session/settings";
 import { hasUnfinishedWork } from "../lib/lifecycle-projection";
@@ -268,7 +268,6 @@ export interface UseAgentSessionOptions {
   onAgentEnd?: () => void;
   onSessionCreated?: (session: SessionInfo, sourceDraftKey: string) => void;
   onSessionForked?: (newSessionId: string) => void;
-  modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
@@ -370,7 +369,7 @@ type SlashCommandsResponse = {
 export function useAgentSession(opts: UseAgentSessionOptions) {
   const {
     session, newSessionCwd, newSessionDraftKey, onAgentEnd, onSessionCreated, onSessionForked,
-    modelsRefreshKey, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
+    onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
     onOpenSettings,
   } = opts;
 
@@ -2315,36 +2314,58 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     return () => onConversationReloadChange?.(null);
   }, [onConversationReloadChange, reloadConversation]);
 
-  // Closing Settings is the page's "the deployment's models may have changed" signal: the cached catalog is what that
-  // edit replaced, so the refresh reads the deployment again rather than the answer the edit superseded.
-  const modelsRefreshKeyRef = useRef(modelsRefreshKey);
-  useEffect(() => {
-    if (modelsRefreshKeyRef.current === modelsRefreshKey) return;
-    modelsRefreshKeyRef.current = modelsRefreshKey;
-    modelsCache().invalidate();
-  }, [modelsRefreshKey]);
+  /**
+   * This composer's catalog read with its bounded retry: one operation, so a mount, an explicit retry and a change this
+   * page applied all ask the deployment the same way.
+   *
+   * The retry loop is not a second policy beside this read — it *is* this function, which is why a re-read retries on
+   * the same delays the first read does. Each attempt ends on an answer, on the connection going away, or on the
+   * caller's own controller; nothing here decides what the surface holds.
+   */
+  const readModels = useCallback(async (signal: AbortSignal) => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await loadModels(signal);
+        return;
+      } catch {
+        // The read this loop waits on is the connection's, so the only aborts that end this load are this consumer's
+        // own and the connection's own going away. Another consumer's exit retires nothing here, and the next ask may
+        // still be answered.
+        if (signal.aborted || client.disposed) return;
+        if (attempt >= MODELS_RETRY_DELAYS_MS.length) return;
+        await delay(MODELS_RETRY_DELAYS_MS[attempt]);
+        if (signal.aborted || client.disposed) return;
+      }
+    }
+  }, [client, loadModels]);
+
+  /**
+   * The read a mounted composer re-runs when a model-domain change says what it holds is old.
+   *
+   * It lives under the mount's own controller, so the same teardown that retires the first read retires a re-read too;
+   * a composer that went away re-reads nothing, which is also what makes a change on a page with no mounted reader cost
+   * no request. The re-read asks the deployment because the change invalidated the page's cache; what it must never do
+   * is move the conversation onto another model, so nothing here writes a selection — the catalog arrives and the picker
+   * offers what it now holds.
+   */
+  const catalogRefreshRef = useRef<() => void>(() => {});
+  const retryModels = useCallback(() => catalogRefreshRef.current(), []);
 
   // Load the model list with bounded retries; loadModels exposes each failure.
   useEffect(() => {
     const controller = new AbortController();
-    (async () => {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          await loadModels(controller.signal);
-          return;
-        } catch {
-          // The read this loop waits on is the connection's, so the only aborts that end this load are this consumer's
-          // own and the connection's own going away. Another consumer's exit retires nothing here, and the next ask may
-          // still be answered.
-          if (controller.signal.aborted || client.disposed) return;
-          if (attempt >= MODELS_RETRY_DELAYS_MS.length) return;
-          await delay(MODELS_RETRY_DELAYS_MS[attempt]);
-          if (controller.signal.aborted || client.disposed) return;
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, [client, loadModels, modelsRefreshKey]);
+    catalogRefreshRef.current = () => { void readModels(controller.signal); };
+    void readModels(controller.signal);
+    return () => {
+      controller.abort();
+      catalogRefreshRef.current = () => {};
+    };
+  }, [readModels]);
+
+  // A `models.json` save the Backend applied, a stored or removed credential, and an `enabledModels` write each state
+  // their change through the catalog's own rule; this is the reader half, so a composer on screen shows the list the
+  // change produced instead of waiting for Settings to close.
+  useEffect(() => subscribeModelCatalog(() => catalogRefreshRef.current()), []);
 
 const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
 
@@ -2372,5 +2393,7 @@ const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
     addNotice, dismissNotice,
     handleThinkingLevelChange, loadTools, loadSlashCommands, loadContext, landWindow,
     retryRead, dismissReadFailure,
+    // The catalog's own recovery: re-read the deployment, changing no selection and resending nothing.
+    retryModels,
   };
 }

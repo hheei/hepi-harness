@@ -83,8 +83,17 @@ function streamRegistry(t: TestContext, { createSource, onAnswered = () => {} }:
 const cache = await jiti("../lib/session-view-cache.ts") as typeof import("../lib/session-view-cache.ts");
 /** The connection this mount is inside: every scoped store the hook reaches keys by this same string. */
 const TEST_SCOPE = "test|backend|account";
+// The hook and the catalog's own module are one bundle, so the rule a change is stated through and the reader that
+// follows it are one module instance: a case can state a change and observe that this compositor re-read because of it.
 const hookBundle = buildSync({
-  entryPoints: [path.join(webRoot, "hooks", "useAgentSession.ts")], bundle: true, write: false,
+  stdin: {
+    contents: [
+      "export * from " + JSON.stringify(path.join(webRoot, "hooks", "useAgentSession.ts")) + ";",
+      "export { invalidateModelCatalog } from " + JSON.stringify(path.join(webRoot, "lib", "models-cache.ts")) + ";",
+    ].join("\n"),
+    resolveDir: webRoot, loader: "ts",
+  },
+  bundle: true, write: false,
   platform: "node", format: "cjs", external: ["react"], alias: { "@": webRoot },
 }).outputFiles[0].text;
 /** A settled copy of one hook value: what the surface states, with no prototype from the sandbox it was built in. */
@@ -215,6 +224,9 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     close() { this.readyState = 2; }
     emit(event: unknown) { this.onmessage?.({ data: JSON.stringify(event) }); }
   }
+  // The catalog answers this case states, one per read, for the cases that observe a re-read's list arriving. Empty by
+  // default: every other case reads the same empty catalog it always did.
+  const catalogAnswers: StubResponse[] = [];
   const sandbox: Record<string, unknown> = {
     module: { exports: {} as Record<string, unknown> }, exports: {}, require: (name: string) => name === "react" ? react : require(name), console,
     URLSearchParams, URL, AbortController, DOMException, crypto: globalThis.crypto, queueMicrotask, EventSource: SandboxSource,
@@ -224,7 +236,7 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     fetch: async (url: string | URL | Request, init?: RequestInit) => {
       const target = String(url), body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : undefined;
       requests.push({ url: target, method: init?.method ?? "GET", body, viaClient: inClient });
-      if (target.startsWith("/api/models")) return respond({ models: {}, modelList: [] });
+      if (target.startsWith("/api/models")) return catalogAnswers.shift() ?? respond({ models: {}, modelList: [] });
       return responder(target, init, body);
     },
   };
@@ -273,7 +285,9 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   } as unknown as Parameters<typeof workbenchConnection>[0], { profile: "test", backendId: "backend", accountScope: "account" });
   const useAgentSession = (sandbox.module as { exports: Record<string, unknown> }).exports.useAgentSession as (given: Mount["options"]) => AgentSession;
   return {
-    requests, sources, clientRequests, timers, anotherConnection,
+    requests, sources, clientRequests, timers, anotherConnection, catalogAnswers,
+    /** State, through the rule, that the deployment's model list changed under every mounted reader. */
+    invalidateCatalog: () => ((sandbox.module as { exports: Record<string, unknown> }).exports.invalidateModelCatalog as () => void)(),
     mount(extra: MountOptions = {}, connection = defaultConnection()): Mount {
       let unmounted = false;
       const m = {
@@ -1151,6 +1165,62 @@ test("the model catalogue is read through the connection, and cached per connect
   assert.equal(readsFor("https://gateway-b.example").length, 1, "the second connection's catalogue did not come from its own cache");
   assert.deepEqual(plain(again.out.modelList.map(model => model.id)), ["a1"]);
   assert.deepEqual(plain(other.out.modelList.map(model => model.id)), ["b1"]);
+});
+
+test("a model change re-reads a mounted composer in place, and moves no selection", async (t) => {
+  // The catalog this page holds is the answer a `models.json` save or a credential change supersedes. A composer on
+  // screen must show the list the change produced **while** Settings is still open, and it must not silently move the
+  // conversation onto another model: the change says the list is old, not what this session should run.
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "old", name: "Old" }], modelList: [{ provider: "p", id: "old", name: "Old" }] }));
+  const m = h.mount();
+  await h.pump(m);
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models"));
+  assert.equal(reads().length, 1, "the mount read its catalogue once");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["old"]);
+  assert.equal(modelOf(m).modelId, "kept", "the conversation is on the model it was on");
+
+  // The change: a local fixture read answers the list the write produced, and the rule says the held answer is old.
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "new", name: "New" }], modelList: [{ provider: "p", id: "new", name: "New" }] }));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads().length, 2, "a mounted composer did not re-read after the change");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["new"], "the composer kept the list the change replaced");
+  assert.equal(modelOf(m).modelId, "kept", "the change moved the conversation onto another model");
+  assert.equal(h.requests.filter(request => request.method !== "GET").length, 0, "the refresh wrote something");
+
+  // A page with no mounted reader re-reads nothing: the change costs a page that is not showing a composer no request.
+  m.unmount();
+  h.catalogAnswers.push(respond({ models: [], modelList: [] }));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads().length, 2, "an unmounted composer re-read for a change");
+});
+
+test("a catalog read that failed is stated where the model is chosen, and its retry is one more read", async (t) => {
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  h.catalogAnswers.push(respond({ error: "the catalogue could not be read" }, 500));
+  const m = h.mount();
+  await h.pump(m);
+  // The readiness of this read is not a promise the retry loop keeps: it waits a bounded delay, and the surface states
+  // the failure it was given rather than an empty list as though the deployment offered no models.
+  assert.match(String(m.out.modelError), /the catalogue could not be read/);
+  assert.deepEqual(plain(m.out.modelList), [], "a failed read is not stated as an empty catalogue");
+  assert.equal(modelOf(m).modelId, "kept", "a failed catalogue read dropped the conversation's model");
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models")).length;
+  const before = reads();
+
+  // The recovery is a read of the same catalog: no submission, no write, and no other route beside it.
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "kept", name: "Kept" }], modelList: [{ provider: "p", id: "kept", name: "Kept" }] }));
+  const writes = h.requests.filter(request => request.method !== "GET").length;
+  m.out.retryModels();
+  await h.pump(m);
+  assert.equal(reads(), before + 1, "the retry asked the deployment once");
+  assert.equal(h.requests.filter(request => request.method !== "GET").length, writes, "the retry resent or wrote something");
+  assert.equal(m.out.modelError, null, "the read that answered is the recovery from the one that did not");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["kept"]);
 });
 
 /**

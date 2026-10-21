@@ -476,8 +476,9 @@ try {
   device.state.expired = false;
 
   // ---- Observation 3. The composer's own catalog reflects the change without a reload. -------------------------
-  // A conversation exists, its composer holds the page's catalog, and a credential change made in Settings is visible in
-  // that composer when Settings closes — no browser reload, no restart.
+  // A conversation exists, its composer holds the page's catalog, and a credential change made in Settings re-reads that
+  // catalog **while Settings is still open** — the mounted reader is told the held answer is old, not told to wait for a
+  // dialog to close. No browser reload, no restart, and the conversation's own model is left where it was.
   await closeSettings();
   const newSession = page.locator(".sidebar-new-button");
   if (!(await newSession.isEnabled())) {
@@ -517,18 +518,38 @@ try {
   check(beforeComposerOptions.length === 0, "the composer offers no model while no credential is stored in this mode: " + JSON.stringify(beforeComposerOptions.slice(0, 6)));
   const documentBeforeChange = await page.evaluate(() => performance.timeOrigin);
 
-  // Store the key through the panel, then close Settings: the page's cached catalog is dropped on the change and the
-  // composer's next read asks the deployment again — no reload, no restart.
+  /** How many catalog reads the page has asked for, as its own network traffic states them. */
+  const catalogReads = (): number => browserRequests.filter((entry) => new URL(entry.url).pathname === "/api/models").length;
+  const readsBeforeKey = catalogReads();
+  // Store the key through the panel. The composer behind the still-open dialog is a mounted reader of the catalog, so
+  // the change re-reads it there: what this waits for is that read arriving before anything closes.
   await openModels();
   await pickProvider(/DeepSeek/);
   const keyField = detail().locator('input[type="password"]').first();
   await keyField.fill(TYPED_KEY);
+  /** Every write this page made to a conversation's own settings: a catalog change must add none of them. */
+  const settingsWrites = (): number => browserRequests.filter((entry) => entry.method !== "GET" && /\/api\/conversations\/[^/]+\/settings$/.test(entry.url)).length;
+  const settingsWritesBefore = settingsWrites();
   await detail().getByRole("button", { name: "Save", exact: true }).click();
   await detail().getByText(/stored|configured/i).first().waitFor({ timeout: 60_000 });
+  const readsWithSettingsOpen = await (async () => {
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+      if (catalogReads() > readsBeforeKey) return catalogReads();
+      await delay(200);
+    }
+    return catalogReads();
+  })();
+  check(readsWithSettingsOpen > readsBeforeKey, "a stored credential re-read the catalog with Settings still open (" + readsBeforeKey + " → " + readsWithSettingsOpen + " reads)");
+  check(await page.getByRole("navigation", { name: "Settings" }).isVisible(), "and the dialog that made the change was never closed to see it");
   await closeSettings();
   await page.locator("textarea").first().waitFor({ timeout: 30_000 });
+  // A change says what the deployment offers, never what this conversation should run: the re-read picked nothing on
+  // the person's behalf, so no model write was made and the composer is still on its automatic selection.
+  check(settingsWrites() === settingsWritesBefore, "the catalog change wrote no model selection (" + settingsWritesBefore + " → " + settingsWrites() + " settings writes)");
+  check(await page.locator(".model-selector").count() > 0, "and the composer still offers its own readout, now holding the list the change produced");
   // The bound is under the catalog cache's own lifetime (60s), so a stale answer cannot pass by expiring: what makes
-  // this read fresh is the invalidation the change caused, not the passage of time.
+  // this list fresh is the invalidation the change caused, not the passage of time.
   const afterComposerOptions = await (async () => {
     const deadline = Date.now() + 20_000;
     for (;;) {
@@ -542,7 +563,9 @@ try {
   check(storedAuth()[KEY_PROVIDER]?.key === TYPED_KEY, "the key the panel saved through the ingress is in the account's file, not only in the page's state");
   check(offeredBy(await catalog(), KEY_PROVIDER).includes("acceptance-model"), "the Backend's catalog agrees with the composer: the credential and its models are one account's facts");
 
-  // And the removal is visible the same way: the model it authenticated leaves the composer's list.
+  // And the removal is visible the same way: the model it authenticated leaves the composer's list, again from a
+  // mounted reader told by the change rather than by a closed dialog.
+  const readsBeforeRemoval = catalogReads();
   await openModels();
   await page.locator(".config-sidebar-item").filter({ hasText: "DeepSeek" }).first().click();
   await detail().getByRole("button", { name: "Disconnect", exact: true }).click();
@@ -555,6 +578,15 @@ try {
     return false;
   })();
   check(removedFromPanel, "the panel's own Disconnect drops the stored key");
+  const readsWithSettingsOpenAgain = await (async () => {
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+      if (catalogReads() > readsBeforeRemoval) return catalogReads();
+      await delay(200);
+    }
+    return catalogReads();
+  })();
+  check(readsWithSettingsOpenAgain > readsBeforeRemoval, "and the removal re-read the catalog of the mounted composer while Settings was open (" + readsBeforeRemoval + " → " + readsWithSettingsOpenAgain + " reads)");
   await closeSettings();
   await page.locator("textarea").first().waitFor({ timeout: 30_000 });
   const afterRemovalOptions = await (async () => {
@@ -567,6 +599,15 @@ try {
   })();
   check(!afterRemovalOptions.some((name) => name.includes("Acceptance Model")), "and the composer's list no longer offers it after the removal, still without a reload: " + JSON.stringify(afterRemovalOptions.slice(0, 6)));
   check(await page.evaluate(() => performance.timeOrigin) === documentBeforeChange, "the same admitted document saw both ends of the change");
+
+  // Closing a Settings dialog that edited nothing changes nothing: the refresh belongs to the write, so a dismissal of
+  // an untouched panel asks the deployment for no catalog and moves no answer this page holds.
+  const readsBeforeIdleClose = catalogReads();
+  await openModels();
+  await detail().waitFor({ timeout: 30_000 });
+  await closeSettings();
+  await delay(3_000);
+  check(catalogReads() === readsBeforeIdleClose, "closing an unedited Settings made no catalog read (" + readsBeforeIdleClose + " → " + catalogReads() + ")");
 
   // ---- Observation 4. Nothing secret reached a log, a request body or a stored file this run owns. --------------
   const childrenLog = readFileSync(join(stack.artifacts, "children.log"), "utf8");

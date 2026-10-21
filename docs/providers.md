@@ -180,9 +180,9 @@ one thing only — whether that process wrote into *this* backend's account.
   stores on the Web host is not this backend's concern, and no refresh route, invalidation signal or restart would change
   that: it is a property of which account the deployment chose (docs/deployment.md).
 
-That is the whole backend side of a credential change. The change invalidates the *page's* cached catalog (the client
-rule docs/client-ingress.md states); it owes this backend nothing, and no wire between them carries a credential either
-way. Both halves are held by `apps/server/test/provider-availability.test.ts`, which writes through the Gateway's own
+That is the whole backend side of a credential change. The change invalidates the *page's* cached catalog and re-reads
+it in whatever is mounted (the client rule docs/client-ingress.md states), including a composer behind an open Settings
+dialog; it owes this backend nothing, and no wire between them carries a credential either way. Both halves are held by `apps/server/test/provider-availability.test.ts`, which writes through the Gateway's own
 service and reads through the Backend's own route in each mode.
 
 ## Verification

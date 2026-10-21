@@ -32,7 +32,7 @@ import { SettingsPanel } from "@hepi/ui/components/SettingsPanel";
 import { ModelsConfig } from "@hepi/ui/components/ModelsConfig";
 import { ExtensionsConfig } from "@hepi/ui/components/ExtensionsConfig";
 import { EnabledModelsSection, useEnabledModels } from "@hepi/ui/components/EnabledModelsSection";
-import { modelsScopeOf, pageModelsCache } from "@hepi/ui/lib/models-cache";
+import { modelsScopeOf, pageModelsCache, subscribeModelCatalog } from "@hepi/ui/lib/models-cache";
 import { I18nProvider } from "@hepi/ui/hooks/useI18n";
 import "./ux-panel-ingress.fixture.css";
 
@@ -63,6 +63,14 @@ export interface Gate {
   /** The page's own cached model catalog, so a driver can state what a credential change left behind. */
   cachedCatalog(): { reads: number; entries: number };
   readCatalog(): Promise<void>;
+  /**
+   * Put a mounted catalog reader on the page: it follows the model domain's own rule and re-reads the page's cache, which
+   * is exactly what a composer on screen does. Until this is called the page holds a cache and no reader, so a change
+   * costs it no request — the other half of the same contract.
+   */
+  followCatalog(): void;
+  /** What the next `models.json` save is answered with: the running runtime took it, or the file was written and it was not. */
+  answerModelSave(applied: boolean): void;
   /** The sign-in host: what its flow was given, and whether it ended up storing a credential. */
   signInHostState(): { answers: string[]; stored: boolean; open: boolean; step: number };
 }
@@ -80,6 +88,12 @@ const gate: Gate = {
   providerHostState: () => ({ ...keyHostState }),
   cachedCatalog: () => ({ reads: catalogReads, entries: pageModelsCache().size }),
   readCatalog: async () => { await pageModelsCache().load(modelsScopeOf(identity), "/workspace/local", async () => { catalogReads += 1; return { models: [], defaultModel: null }; }); },
+  followCatalog: () => {
+    if (following) return;
+    following = true;
+    subscribeModelCatalog(() => void gate.readCatalog());
+  },
+  answerModelSave: (applied) => { modelsFileState.applied = applied; },
   signInHostState: () => ({ answers: signInHost.answers.slice(), stored: signInHost.stored, open: signInHost.flowId !== null && signInHost.ended === null, step: signInHost.step }),
 };
 window.__uxPanelIngress = gate;
@@ -131,6 +145,11 @@ const OAUTH_PROVIDER = "fixture-oauth";
 const SIGN_IN_PROVIDER = "fixture-signin";
 const keyHostState: { configured: boolean; storedType: string | null; maskedHint: string | null } =
   { configured: false, storedType: null, maskedHint: null };
+/** The models.json this origin's Backend serves, and what it says about applying the next write. */
+const modelsFileState: { file: { providers: Record<string, unknown> }; applied: boolean } = {
+  file: { providers: { openai: { models: [{ id: "gpt-4o", name: "GPT-4o" }] } } },
+  applied: true,
+};
 const signInHostState = { configured: false, storedType: null as string | null };
 
 /**
@@ -250,7 +269,14 @@ function answer(url: string, init?: RequestInit): Response {
   // cookie-session question and offers no cookie logout. An unlisted route is a request the fixture did not expect.
   if (path === "/api/tools/settings" && method === "GET") return json(toolSettings);
   if (path === "/api/models-config" && method === "GET") {
-    return json({ providers: { openai: { models: [{ id: "gpt-4o", name: "GPT-4o" }] } } });
+    return json(modelsFileState.file);
+  }
+  // The Backend's own save: the file is written either way, and whether the running runtime took it is its answer.
+  if (path === "/api/models-config" && method === "PUT") {
+    modelsFileState.file = JSON.parse(String(init?.body ?? "{}")) as { providers: Record<string, unknown> };
+    return json(modelsFileState.applied
+      ? { success: true, applied: true }
+      : { success: true, applied: false, error: "the running runtime could not apply this file" });
   }
   if (path === "/api/auth/providers" && method === "GET") return json(providerSections());
   // The API-key write path of this origin's provider host: it accepts the key, stores a masked hint, and answers the
@@ -259,6 +285,11 @@ function answer(url: string, init?: RequestInit): Response {
     const sent = JSON.parse(String(init?.body ?? "{}")) as { apiKey?: unknown };
     if (typeof sent.apiKey !== "string" || sent.apiKey.trim() === "") {
       return json({ success: false, code: "invalid_request", error: "The request must carry an API key" }, 400);
+    }
+    // The host's own retryable refusal: another writer holds `auth.json`. The panel states it as a retry and the stored
+    // credential is left exactly as it was, which is what makes "a failed write claims no applied change" observable.
+    if (sent.apiKey === "sk-refused-locked") {
+      return json({ success: false, code: "lock_unavailable", error: "another writer holds auth.json on this host" }, 503);
     }
     keyHostState.configured = true;
     keyHostState.storedType = "api_key";
@@ -396,6 +427,8 @@ const noop = () => undefined;
 
 /** How many times the page's own catalog cache has actually asked, so a drop is visible as a second read. */
 let catalogReads = 0;
+/** Whether a mounted reader is following the catalog, as the composer of an open page does. */
+let following = false;
 
 function Fixture() {
   const [view, setView] = useState<View>("general");

@@ -9,7 +9,14 @@
  */
 import { useI18n } from "../../hooks/useI18n";
 
-function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "warning"; title: string; body: string; onClose?: () => void }) {
+function ModelNoticeBanner({ tone, title, body, onClose, action }: {
+  tone: "error" | "warning";
+  title: string;
+  body: string;
+  onClose?: () => void;
+  /** The one step this notice can offer: stated by the notice that knows it can be recovered from. */
+  action?: { label: string; onClick: () => void };
+}) {
   const color = tone === "error" ? "239,68,68" : "234,179,8";
   return (
     <div
@@ -49,6 +56,15 @@ function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "wa
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontWeight: 600 }}>{title}</div>
         <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{body}</div>
+        {action && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            style={{ marginTop: 4, padding: "2px 7px", background: "none", border: `1px solid rgba(${color},0.4)`, borderRadius: 4, color: `rgb(${color})`, fontSize: 11, cursor: "pointer" }}
+          >
+            {action.label}
+          </button>
+        )}
       </div>
       {onClose && (
         <button
@@ -74,10 +90,24 @@ function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "wa
   );
 }
 
-export function ModelErrorBanner({ error }: { error?: string | null }) {
+/**
+ * The catalog could not be read: what failed, and the one step that can change it.
+ *
+ * The recovery is a read of the same catalog, never a resend and never a different selection — a list that failed to
+ * arrive says nothing about the model the conversation is on, so the selection on screen stays and this only offers the
+ * deployment another chance to state its list.
+ */
+export function ModelErrorBanner({ error, onRetry }: { error?: string | null; onRetry?: () => void }) {
   const { t } = useI18n();
   if (!error) return null;
-  return <ModelNoticeBanner tone="error" title={t("chat.modelError")} body={error} />;
+  return (
+    <ModelNoticeBanner
+      tone="error"
+      title={t("chat.modelError")}
+      body={error}
+      action={onRetry === undefined ? undefined : { label: t("i18n.retryLoad"), onClick: onRetry }}
+    />
+  );
 }
 
 /**

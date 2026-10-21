@@ -4,7 +4,7 @@ import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url);
 const { connectionScopeOf, createScopedCache } = await jiti.import<typeof import("../../../session/src/settings.ts")>("../../../session/src/settings.ts");
-const { modelsScopeOf, createModelsCache, invalidateModelCatalog, pageModelsCache } = await jiti.import<typeof import("./models-cache.ts")>("./models-cache.ts");
+const { modelsScopeOf, createModelsCache, invalidateModelCatalog, pageModelsCache, subscribeModelCatalog } = await jiti.import<typeof import("./models-cache.ts")>("./models-cache.ts");
 
 /**
  * The scoped settings cache, at its public seam.
@@ -103,6 +103,20 @@ test("the page's cache is the instance a credential change drops", async () => {
   assert.equal(reads, 2, "a credential change did not supersede the cached catalog");
   // Another connection's answer goes too: a stored key is one account's fact, and the page holds one account's cache.
   assert.equal(cache.size, 1);
+});
+
+test("a change reaches the readers that follow the catalog, and no reader that stopped", () => {
+  // The cache answers "what did the deployment say"; this is the other half — "who is holding that answer on screen".
+  // A mounted reader re-reads through its own bounded read, so the rule only has to say that it happened, exactly once
+  // per change, and never to a reader that unsubscribed.
+  let reads = 0;
+  const stop = subscribeModelCatalog(() => { reads += 1; });
+  invalidateModelCatalog();
+  assert.equal(reads, 1, "a change did not reach the mounted reader");
+  assert.equal(pageModelsCache().size, 0, "the change left the page's cached answer in place");
+  stop();
+  invalidateModelCatalog();
+  assert.equal(reads, 1, "a change reached a reader that had stopped following");
 });
 
 test("a catalog read running when the credential changed cannot become the answer served afterwards", async () => {

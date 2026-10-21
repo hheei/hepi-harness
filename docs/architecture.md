@@ -536,8 +536,11 @@ Backend re-resolves which models a credential authenticates from the account it 
 — in Pi mode that account is the very file the Gateway writes and it is re-read rather than cached, in environment mode no
 file is consulted at all (docs/providers.md) — so a credential change needs no route, no invalidation message and no
 restart on the server side. What a credential change does make stale is the catalog *this page* cached, and the owning
-surface drops it: `packages/ui/src/lib/models-cache.ts` holds the one instance and `invalidateModelCatalog()` is what a
-key save or removal, a sign-in and a sign-out each call, the same rule a `models.json` save already followed. A catalog
+surface states it: `packages/ui/src/lib/models-cache.ts` holds the one page cache and the mounted readers that follow it,
+and `invalidateModelCatalog()` is what a key save or removal, a sign-in and a sign-out each call — the same rule an
+applied `models.json` save and an `enabledModels` write follow. A mounted reader re-reads at once, so a composer shows
+the new list without Settings being closed; nothing moves the conversation's own model, and a page with no mounted reader
+asks nothing until its next read. A catalog
 *pass* (fetching which models exist at a provider) is a separate capability, needs a network read of a third party, stays
 a named limit, and its control is withheld on that limit rather than reported as a provider's endpoint being unreachable.
 See [.scratch/provider-connection/issues/04-model-refresh.md](../.scratch/provider-connection/issues/04-model-refresh.md),
