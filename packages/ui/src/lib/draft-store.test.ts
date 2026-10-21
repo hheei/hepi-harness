@@ -3,11 +3,9 @@ import test from "node:test";
 import { createJiti } from "jiti";
 
 const jiti = createJiti(import.meta.url);
-const store = await jiti.import<typeof import("./draft-store.ts")>("./draft-store.ts");
+const { createDraftStore } = await jiti.import<typeof import("./draft-store.ts")>("./draft-store.ts");
 type ChatDraft = import("./draft-store.ts").ChatDraft;
-
-/** The store shape the drafts are handed, as the module's own storage contract states it. */
-type StoredEntry = { readonly key: string; readonly value: string };
+type DraftStore = import("./draft-store.ts").DraftStore;
 
 /** The tab's own browser store, as the draft store reads it. */
 type TestStorage = {
@@ -54,16 +52,21 @@ const KEY = "new:composer-1:/repo";
 // The connection every draft in these cases belongs to. The store is scoped, so its storage entries carry this prefix.
 const SCOPE = "web|backend-a|account-a";
 
-/** One fresh store over a stated tab, which is what every case starts from. */
-function fresh(storage: TestStorage = createStorage()): TestStorage {
-  store.resetDraftStoreForTests();
-  store.setDraftScope(SCOPE);
-  store.hydrateDrafts(storage);
-  return storage;
+/**
+ * One connection's store over a stated tab, which is what every case starts from.
+ *
+ * A store belongs to one connection, so a second connection — or the same one after a reload — is a second instance over
+ * the same tab. Nothing is reset between them: the browser store is the tab's, the instances are the connections.
+ */
+function fresh(storage: TestStorage = createStorage(), scope: string = SCOPE): DraftStore {
+  const store = createDraftStore(scope);
+  store.hydrate(storage);
+  return store;
 }
 
 test("a draft survives a reload of the same tab, in another tab's own store, and keeps the synchronous contract", () => {
-  const tab = fresh(createStorage());
+  const tab = createStorage();
+  const store = fresh(tab);
   store.setDraft(KEY, { value: "unsent text", images: [image] });
   // The synchronous read the rest of the app performs sees it before any browser round trip.
   assert.deepEqual(store.getDraft(KEY), { value: "unsent text", images: [image] });
@@ -76,28 +79,22 @@ test("a draft survives a reload of the same tab, in another tab's own store, and
   assert.equal(tab.values.size, 0, "clear drops both stored halves");
 
   store.setDraft(KEY, { value: "unsent text", images: [image] });
-  // What the browser holds, read back by a second page of the same tab: this is the refresh.
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(tab);
-  assert.deepEqual(store.getDraft(KEY), { value: "unsent text", images: [image] }, "the tab's own draft comes back");
+  // What the browser holds, read back by a second store of the same connection: this is the refresh.
+  assert.deepEqual(fresh(tab).getDraft(KEY), { value: "unsent text", images: [image] }, "the tab's own draft comes back");
 
   // Another tab has its own sessionStorage, so the same key is empty there rather than showing this tab's text.
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(createStorage());
-  assert.equal(store.getDraft(KEY), null, "another tab's store holds none of this tab's draft");
+  assert.equal(fresh(createStorage()).getDraft(KEY), null, "another tab's store holds none of this tab's draft");
 
   // A draft that is emptied is removed from the browser store, so a reload cannot resurrect it.
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(tab);
-  store.setDraft(KEY, { value: "", images: [] });
+  const emptied = fresh(tab);
+  emptied.setDraft(KEY, { value: "", images: [] });
   assert.equal(tab.values.size, 0, "an emptied draft leaves nothing to restore");
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(tab);
-  assert.equal(store.getDraft(KEY), null, "clearing then reloading restores nothing");
+  assert.equal(fresh(tab).getDraft(KEY), null, "clearing then reloading restores nothing");
 });
 
 test("the text half is written per change while the attachment half is written only when it changes", () => {
-  const tab = fresh(createStorage());
+  const tab = createStorage();
+  const store = fresh(tab);
   store.setDraft(KEY, { value: "a", images: [image] });
   const afterFirst = tab.writes;
   assert.equal(afterFirst, 2, "the first write stores text and images");
@@ -109,8 +106,9 @@ test("the text half is written per change while the attachment half is written o
 });
 
 test("a browser that refuses the write drops the stale entry and reports the limit instead of implying the draft is kept", () => {
-  const tab = fresh(createStorage());
-  const issues = [];
+  const tab = createStorage();
+  const store = fresh(tab);
+  const issues: (string | null)[] = [];
   store.subscribeDraftStorageIssue(() => issues.push(store.getDraftStorageIssue(KEY)));
 
   store.setDraft(KEY, { value: "first", images: [] });
@@ -124,23 +122,21 @@ test("a browser that refuses the write drops the stale entry and reports the lim
   // The draft itself is not lost: it is still this page's to send.
   assert.deepEqual(store.getDraft(KEY), { value: "second", images: [image] });
   // The entry that no longer describes the composer is gone, so a reload cannot restore the older text as current.
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(tab);
-  assert.equal(store.getDraft(KEY), null, "the stale entry was removed rather than left to be restored");
+  assert.equal(fresh(tab).getDraft(KEY), null, "the stale entry was removed rather than left to be restored");
 
   // A write that succeeds again clears the report.
-  store.resetDraftStoreForTests();
+  const recovered = fresh(tab);
   tab.quotaExceeded = true;
-  store.hydrateDrafts(tab);
-  store.setDraft(KEY, { value: "held", images: [] });
-  assert.ok(store.getDraftStorageIssue(KEY));
+  recovered.setDraft(KEY, { value: "held", images: [] });
+  assert.ok(recovered.getDraftStorageIssue(KEY));
   tab.quotaExceeded = false;
-  store.setDraft(KEY, { value: "held", images: [] });
-  assert.equal(store.getDraftStorageIssue(KEY), null, "a recovered write clears the report");
+  recovered.setDraft(KEY, { value: "held", images: [] });
+  assert.equal(recovered.getDraftStorageIssue(KEY), null, "a recovered write clears the report");
 });
 
 test("attachments a browser refused are not re-serialized on every keystroke after the refusal", () => {
-  const tab = fresh(createStorage());
+  const tab = createStorage();
+  const store = fresh(tab);
   // Realistic volume: several attachments whose base64 outweighs the ~5M-character sessionStorage budget.
   const heavy = Array.from({ length: 10 }, () => ({ data: "A".repeat(1_300_000), mimeType: "image/png" }));
   tab.quotaExceeded = true;
@@ -157,15 +153,13 @@ test("attachments a browser refused are not re-serialized on every keystroke aft
   tab.quotaExceeded = false;
   store.setDraft(KEY, { value: "hello th", images: [image] });
   assert.equal(store.getDraftStorageIssue(KEY), null, "the retry after the attachments changed clears the report");
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(tab);
-  assert.deepEqual(store.getDraft(KEY), { value: "hello th", images: [image] }, "and the smaller draft is stored");
+  assert.deepEqual(fresh(tab).getDraft(KEY), { value: "hello th", images: [image] }, "and the smaller draft is stored");
 });
 
 test("an unreadable or malformed stored entry is ignored rather than restored as a wrong draft", () => {
   // The stored entry names are the store's own: the prefix, then this connection's scope, then the caller's key.
   const stored = (kind: string, key: string) => "pi-web:composer-draft:" + kind + ":" + SCOPE + "/" + key;
-  const tab = fresh(createStorage({
+  const store = fresh(createStorage({
     [stored("value", "good")]: JSON.stringify("kept"),
     [stored("images", "good")]: JSON.stringify([image, { data: "not base64!", mimeType: "image/png" }, { data: "YWJj", mimeType: "text/plain" }]),
     [stored("value", "broken")]: "{ not json",
@@ -183,30 +177,27 @@ test("an unreadable or malformed stored entry is ignored rather than restored as
 });
 
 test("a server render with no browser store still reads and writes drafts synchronously", () => {
-  store.resetDraftStoreForTests();
-  store.hydrateDrafts(null);
+  const store = createDraftStore(SCOPE);
+  store.hydrate(null);
   store.setDraft(KEY, { value: "server", images: [] });
   assert.deepEqual(store.getDraft(KEY), { value: "server", images: [] });
   store.clearDraft(KEY);
   assert.equal(store.getDraft(KEY), null);
-  store.resetDraftStoreForTests();
 });
 
-test("switching connection starts the composers empty and leaves the previous connection's drafts to it", () => {
-  const tab = fresh(createStorage());
-  store.setDraft(KEY, { value: "first connection", images: [image] });
-  // Switching connection is the same page, a different connection: nothing of the old composer may be adopted, because
+test("two connections hold their own drafts under one tab, and a switch adopts neither from the other", () => {
+  const tab = createStorage();
+  const a = fresh(tab);
+  a.setDraft(KEY, { value: "first connection", images: [image] });
+  // A different connection is a different store over the same tab: nothing of the old composer may be adopted, because
   // the conversation this key names on the new connection may not be the one the text was written for.
-  store.setDraftScope("web|backend-b|account-a");
-  assert.equal(store.getDraft(KEY), null, "the new connection starts empty");
-  store.setDraft(KEY, { value: "second connection", images: [] });
-  assert.equal(draftOf(store.getDraft(KEY)).value, "second connection");
+  const b = fresh(tab, "web|backend-b|account-a");
+  assert.equal(b.getDraft(KEY), null, "the new connection starts empty");
+  b.setDraft(KEY, { value: "second connection", images: [] });
+  assert.equal(draftOf(b.getDraft(KEY)).value, "second connection");
   // The first connection's draft is still its own, not overwritten by the second connection's write.
-  store.setDraftScope(SCOPE);
-  assert.equal(draftOf(store.getDraft(KEY)).value, "first connection");
-  // A reload of the second connection reads only its own entries out of the same tab store.
-  store.resetDraftStoreForTests();
-  store.setDraftScope("web|backend-b|account-a");
-  store.hydrateDrafts(tab);
-  assert.equal(draftOf(store.getDraft(KEY)).value, "second connection");
+  assert.equal(draftOf(a.getDraft(KEY)).value, "first connection");
+  // A reload of either connection reads only its own entries out of the same tab store.
+  assert.equal(draftOf(fresh(tab).getDraft(KEY)).value, "first connection");
+  assert.equal(draftOf(fresh(tab, "web|backend-b|account-a").getDraft(KEY)).value, "second connection");
 });

@@ -7,12 +7,12 @@ import ts from "typescript";
 
 const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, tsconfigPaths: true });
 const {
-  canClearBuiltinCommandInput, canRunBuiltinSlashCommandWhileStreaming, composerScopeInstalled,
+  canClearBuiltinCommandInput, canRunBuiltinSlashCommandWhileStreaming,
   getUserMessageText, getUserMessageDraftImages, offersBuiltinSlashCommandWhileStreaming,
   submitsSlashCommandOnEnter,
 } = await jiti.import<typeof import("./ChatInput.tsx")>("./ChatInput.tsx");
 const { isBareMcpCommand } = await jiti.import<typeof import("../lib/mcp-command.ts")>("../lib/mcp-command.ts");
-const { clearDraft, draftScope, getDraft, hydrateDrafts, mergeRestoredSubmissionDraft, rekeyDraft, setDraft, setDraftScope, resetDraftStoreForTests } = await jiti.import<typeof import("../lib/draft-store.ts")>("../lib/draft-store.ts");
+const { createDraftStore, mergeRestoredSubmissionDraft } = await jiti.import<typeof import("../lib/draft-store.ts")>("../lib/draft-store.ts");
 
 /** One callback out of the composer, run against the deps a case states instead of the props a mount would pass. */
 type Deps = Record<string, unknown>;
@@ -141,15 +141,13 @@ test("editing and failed submission recovery preserve text, duplicate images, an
   assert.deepEqual(restored, { value: "failed submission\n\nnew draft", images: [image, image, image] });
   const provisionalKey = "new:/tmp/ui-recovery";
   const sessionKey = "ui-recovery-session";
-  try {
-    setDraft(provisionalKey, restored);
-    assert.deepEqual(rekeyDraft(provisionalKey, sessionKey, { value: "", images: [] }), restored);
-    assert.equal(getDraft(provisionalKey), null);
-    assert.deepEqual(getDraft(sessionKey), restored);
-  } finally {
-    clearDraft(provisionalKey);
-    clearDraft(sessionKey);
-  }
+  const store = createDraftStore("test|backend|account");
+  store.setDraft(provisionalKey, restored);
+  assert.deepEqual(store.rekeyDraft(provisionalKey, sessionKey, { value: "", images: [] }), restored);
+  assert.equal(store.getDraft(provisionalKey), null);
+  assert.deepEqual(store.getDraft(sessionKey), restored);
+  store.clearDraft(provisionalKey);
+  store.clearDraft(sessionKey);
 });
 
 test("composer Enter actions preserve queue, built-in, completion, and IME priorities", () => {
@@ -192,43 +190,3 @@ test("composer Enter actions preserve queue, built-in, completion, and IME prior
   }
 });
 
-test("a composer reads and writes its draft only inside its own connection's scope", () => {
-  // The store is a page-wide singleton keyed by the connection, so the composer has to ask which connection it is
-  // installed for. Before the first descriptor is answered there is none, and after a profile switch the store holds the
-  // previous one until the new connection installs its scope: in both windows the key names a conversation this
-  // composer is not showing, and a read would adopt another connection's unsent text — which the write that follows
-  // would then file under the new connection.
-  resetDraftStoreForTests();
-  // The tab's own store, so the previous connection's entry is still there when the user switches back.
-  const values = new Map<string, string>();
-  const storage: Storage = {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => { values.set(key, value); },
-    removeItem: (key: string) => { values.delete(key); },
-    clear: () => values.clear(),
-    key: (index: number) => [...values.keys()][index] ?? null,
-    get length() { return values.size; },
-  };
-  const connectionA = "profile-a|backend-1|acct";
-  const connectionB = "profile-b|backend-1|acct";
-  assert.equal(draftScope(), "", "a page that has read no descriptor has installed no scope");
-  assert.equal(composerScopeInstalled(draftScope(), connectionA), false, "a composer adopts nothing before the scope exists");
-
-  setDraftScope(connectionA);
-  hydrateDrafts(storage);
-  setDraft("conv", { value: "unsent on A", images: [] });
-  assert.equal(composerScopeInstalled(draftScope(), connectionA), true);
-  assert.equal(getDraft("conv")?.value, "unsent on A");
-
-  // The switch: the store now holds B, and the composer that belonged to A must neither read nor write through it.
-  setDraftScope(connectionB);
-  assert.equal(composerScopeInstalled(draftScope(), connectionA), false, "a stale composer writes nothing under the new scope");
-  assert.equal(getDraft("conv"), null, "and the new connection starts from empty for the same conversation id");
-  assert.equal(composerScopeInstalled(draftScope(), connectionB), true);
-  setDraft("conv", { value: "unsent on B", images: [] });
-
-  // Switching back finds each connection's own text, untouched by the other's composer.
-  setDraftScope(connectionA);
-  assert.equal(getDraft("conv")?.value, "unsent on A");
-  resetDraftStoreForTests();
-});

@@ -26,7 +26,6 @@ import {
   setSessionViewSnapshot,
   type SessionViewSnapshot,
 } from "../lib/session-view-cache";
-import { clearDraft, rekeyDraft, restoreDraftSubmission } from "../lib/draft-store";
 import { emptyStreamState, reduceSseFrame, type SessionState } from "@hepi/session";
 import { classifyReadFailure, type ReadFailure } from "../lib/read-recovery";
 import type { LandedWindow } from "../lib/history-navigation";
@@ -400,6 +399,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   // The conversation API of this connection: the Backend's own `/api/conversations…` vocabulary, assembled with the
   // connection. A caller below reads the contract rather than the retired Next BFF's paths.
   const api = connection.api;
+  // This connection's composer drafts. The store is the connection's own, so a promotion, a rekey or a refused
+  // submission's restore can only touch entries of the connection the composer is showing.
+  const drafts = connection.drafts;
   const isNew = session === null && newSessionCwd !== null;
   const initialChoices = isNew ? opts.initialNewSessionChoices ?? null : null;
 
@@ -827,9 +829,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     if (input) {
       input.restoreSubmission(text, draftImages, destinationDraftKey);
     } else if (destinationDraftKey) {
-      restoreDraftSubmission(destinationDraftKey, text, draftImages);
+      drafts.restoreSubmission(destinationDraftKey, text, draftImages);
     }
-  }, [newSessionDraftKey, opts.chatInputRef, resolveComposerDraftKey]);
+  }, [drafts, newSessionDraftKey, opts.chatInputRef, resolveComposerDraftKey]);
 
   /**
    * The transcript on screen: the accepted window (the projection's own committed transcript) with the reader's paged
@@ -1149,7 +1151,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       draftKeyAliasesRef.current.set(provisionalDraftKey, sid);
       const input = opts.chatInputRef?.current;
       if (input) input.rekeyDraft(provisionalDraftKey, sid);
-      else rekeyDraft(provisionalDraftKey, sid);
+      else drafts.rekeyDraft(provisionalDraftKey, sid);
       // The pending turns follow the composer to its session the same way, so the remount that promotion causes reads
       // them back under the key the conversation now has.
       rekeyProjection(scope, provisionalDraftKey, sid);
@@ -2220,7 +2222,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (abandonedDraftKey) {
         queueMicrotask(() => {
           if (!sessionHookMountedRef.current && !newSessionPromotedRef.current) {
-            clearDraft(abandonedDraftKey);
+            drafts.clearDraft(abandonedDraftKey);
           }
         });
       }

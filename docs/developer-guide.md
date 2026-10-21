@@ -27,7 +27,7 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | --- | --- | --- |
 | `apps/web` | Vite Web 宿主、路由、Service Worker、安装清单 | `src/main.tsx`、`vite.config.ts`、`public/sw.js` |
 | `apps/app` | Tauri 壳、OS 凭据库、窗口策略、原生保存与打包 | `src/main.tsx`、`src/connection.ts`、`src/save-host.ts`、`src-tauri/src/` |
-| `packages/ui` | 两宿主共享工作台、投影、面板与纯规则 | `src/workbench.tsx`、`src/client.ts`、`src/lib/workbench-scope.ts`、`src/components/AppShell.tsx` |
+| `packages/ui` | 两宿主共享工作台、投影、面板与纯规则 | `src/workbench.tsx`、`src/client.ts`、`src/lib/workbench-scope.ts`、`src/lib/workbench-selection.ts`、`src/components/AppShell.tsx` |
 | `packages/session` | 快照、SSE、重连、控制与资源读取 | `src/browser.ts`、`src/agent-event-connection.ts`、`src/control.ts`、`src/resources.ts` |
 | `packages/protocol` | 版本化帧、路径与类型 | `src/index.ts`、`src/navigation.ts`、`src/files.ts`、`src/gateway.ts` |
 | `packages/gateway` | ingress、执行、文件、终端、SSH、MCP、provider 凭据 | `src/ingress/index.ts`、`src/client.ts`、`src/startup.ts`、`src/index.ts` |
@@ -92,8 +92,10 @@ App 壳从 OS 凭据库提供 `{profile, origin, token}` 到 `globalThis.__HEPI_
 `profile`、`backendId`、`accountScope` 并以 `|` 连接;generation 只做读栅栏,不属于身份。
 
 每条连接创建一个 client,树以 scope 为 key;换连接重挂载,旧草稿、缓存、图片 lease 随旧 client 销毁。
-`workbenchConnection`(`lib/workbench-scope.ts`)装配 `client/scope/files/api`;未挂载时调用
-`useWorkbenchConnection()` 抛错。新面板放 `components`,纯规则放 `lib`,宿主事实才进 `WorkbenchHostConfig`。
+`workbenchConnection`(`lib/workbench-scope.ts`)装配 `client/scope/files/api/drafts`;`drafts` 是该连接的草稿实例
+(`lib/draft-store.ts` 的 `createDraftStore(scope)`),不存在渲染期安装的全局 scope;未挂载时调用
+`useWorkbenchConnection()` 抛错。工作台读哪一条会话/草稿 composer 由 `lib/workbench-selection.ts` 的选择 store 唯一持有
+(shell 与 sidebar 读同一 readout、发同一 intent),规则见 [Chat](chat.md#the-workbenchs-one-selection)。新面板放 `components`,纯规则放 `lib`,宿主事实才进 `WorkbenchHostConfig`。
 
 **检查:** `pnpm --filter @hepi/ui test`、`pnpm test:web:unit`、`pnpm --filter @hepi/web typecheck`;
 浏览器场景见 `apps/web/e2e/workbench-files/ux-workbench-scope.ts`。

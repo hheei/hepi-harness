@@ -116,7 +116,7 @@ ModelsConfig 的 ProviderDetail（305 行）處理 editable draft、discovery re
 
 ## F6：測試揭露缺少行為介面
 
-[AppShell.session-delete.test.ts](../../packages/ui/src/components/AppShell.session-delete.test.ts) 第 10 行起按 source marker 截取 callback，再用 VM、假的 setters、refs 執行。驗證了重要的刪除後切換行為，但重排 callback、改註解就可能令測試失去入口。
+`AppShell.session-delete.test.ts`（已由架構收斂票 01 刪除）第 10 行起按 source marker 截取 callback，再用 VM、假的 setters、refs 執行。驗證了重要的刪除後切換行為，但重排 callback、改註解就可能令測試失去入口。
 
 這比測試檔案數或 mock 數更能說明問題：重要轉換沒有 React 外可呼叫的介面。選擇模組應承接這些 case，取代 source extraction，不疊另一套測試。
 

@@ -9,7 +9,6 @@ import { createClient, WorkbenchRequestError } from "./client";
 import { connectionIdentityOf, connectionScopeKey, type ConnectionIdentity, type ScopedDescriptor } from "./lib/connection-scope";
 import { connectionKeyOf } from "./lib/connection-lifetime";
 import { readoutOf, type ConnectionReadout, type DescriptorClient } from "./lib/connection-readout";
-import { setDraftScope } from "./lib/draft-store";
 import { admissionOf, type Admission } from "./lib/web-session-gate";
 import { WorkbenchCapabilitiesProvider, WorkbenchNavigationProvider, type WorkbenchHost, type WorkbenchNavigation } from "./lib/navigation";
 import type { FileSaveHost } from "./lib/file/file-save";
@@ -184,12 +183,6 @@ export function Workbench({ config: stated, navigation }: { config: WorkbenchHos
     // object literal, so its identity changes every render and a dependency on it would re-report an unchanged readout.
     if (readout !== null) configRef.current.onConnectionReadout?.(readout);
   }, [readout]);
-  // The scope is installed during render rather than in an effect below: effects run from the leaves up, so a composer
-  // that waited for one would read its draft under the previous connection's scope — or under none at all on the first
-  // mount — and then save that text under this one. Installing it before the tree exists is what makes the first render
-  // of every composer a read inside its own connection.
-  if (scope !== null) setDraftScope(scope);
-
   /**
    * The connection's client, created and disposed by **one effect pair**.
    *

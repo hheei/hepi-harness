@@ -515,10 +515,55 @@ ticket 03 it is one bounded target read whose failures are that coordinator's ow
 [the full-history navigation outline](#the-full-history-navigation-outline)). The channel stays on the page read because
 it is the read's own statement; it is not a second reader.
 
-**Drafts and identity survive a read failure.** The draft store and the session-switch cache are keyed by the composer
-and the conversation, and nothing in this path clears either: the text a reader had unsent is still under the key it was
-written under, and the "back" action opens the composer of the conversation's own folder, which is the same fallback the
-sidebar's delete already uses.
+
+## The workbench's one selection
+
+Which workspace the workbench is showing, which conversation or fresh composer sits in it, and which restore or open the
+reader is waiting on are owned in one place: `packages/ui/src/lib/workbench-selection.ts` (`createWorkbenchSelection`,
+read through `useSelectionState` and acted on through `useWorkbenchSelection`). The shell and the sidebar read the same
+readout and send intents to the same store; no surface reports a selection back to another, so the shape this build
+replaced — the sidebar owning a cwd, telling it to the shell, the shell answering with suppression flags so a report did
+not read as a switch, and the sidebar then moving its own local cwd to match a prop — cannot come back.
+
+The precedence on a first frame is the store's own: a `?cwd=`/`?session=` URL beats the tab's memory, and a `cwd` in
+that URL beats the session beside it (the cwd is a fresh composer's target, so nothing is read); with nothing explicit the
+tab's own memory is adopted — the composer it was showing, then the conversation it had. The workspace-wide memory
+(`pi-web:last-open-by-workspace`) is what a bare route restores a conversation from once the catalogue answers, and the
+accepted selection is what is written back.
+
+The rules with user-visible consequences all live here:
+
+- **Identity hydration is not a switch.** When the sidebar resolves the project a row's cwd belongs to, the conversation
+  stays open, no transcript remounts and no URL is rewritten. A move to another **checkout of the same project** keeps the
+  conversation too; a move to another **project** replaces the workspace and starts a fresh composer there.
+- **A read the reader already left changes nothing.** An open that answers after the reader picked somewhere else
+  selects nothing, rewrites no URL and states no failure — the fence is the target the reader is on, not the request.
+- **Four draft operations stay four different things.** A carried composer takes its live draft to the new folder and
+  leaves that folder's parked draft parked rather than merging into what the user is writing; New in a folder parks what
+  was on screen and starts a separate identity; a promotion adopts the conversation the composer became and touches no
+  draft; deleting a conversation leaves only when it is the one on screen and keeps every draft.
+- **A failed open states its kind.** `missing` offers the way back, `unreachable` and `refused` offer a Retry that repeats
+  the read and nothing else, and staying put is a complete answer: the failure belongs to the request, not the selection.
+- **A navigation target is applied once.** A plain re-selection resets no reading position; an explicit entry is carried
+  to the window, and an entry the window may not hold gives the raw-history surface its own position instead.
+
+Three things stay outside it deliberately: a view's own imperatives (focus, an open menu, a measured panel) belong to the
+surface that shows them; the catalogue's listing and polling belong to the sidebar, which hands its rows to the store
+(`setCatalogue`) so a restore can use them; and a *transition* of presentation — a project switch clearing the previous
+project's file tabs — is the shell's policy, read from `projectKey`.
+
+The conversation's unsent draft is not part of a read failure: the draft store and the session-switch cache are keyed by
+the composer and the conversation, and nothing in this path clears either, so the way back opens the composer of the
+conversation's own folder with its text still stored under the key it was written under.
+
+These rules are tested at that seam (`packages/ui/src/lib/workbench-selection.test.ts`), over a real scoped draft store and
+the two memories' own stores: URL / tab / workspace precedence, a stale open, identity hydration against a same-project
+worktree and a different project, carry / park / New / promotion, delete, the failure kinds and their retry, and a target
+applied once. The browser half is `apps/web/e2e/history/ux-workbench-selection.ts`: the shell mounted whole in Chromium
+over a real `createClient`, asserting what only a browser holds — a `?session=` deep link, a real reload returning to the
+composer with its text, a new tab inventing no restore, New parking what was on screen, and a deletion landing in a
+composer while the removed conversation's own draft is still stored. Its conversation answers are a fixture; the loading
+and restore are the shipped ones.
 
 ## Bounded history, older pages, and the read blocks
 
@@ -1119,7 +1164,8 @@ copy it before the write; the cache's contract is that what it is given is immut
 ## Composer drafts across a refresh
 
 A composer's unsent text and images are the page's scratch, not conversation state, and `packages/ui/src/lib/draft-store.ts`
-is their one owner. That store belongs to **this** build: a page still showing an older Web revision holds its draft in
+is their one owner — an **instance per connection**, created with it and read from it (`workbenchConnection.drafts`), never a
+module scope a render installs. That store belongs to **this** build: a page still showing an older Web revision holds its draft in
 memory only, so before refreshing an open page across a Web-origin switch, copy the unsent text and save any attached
 image by hand ([runbook](deployment-runbook.md#existing-open-pages-at-a-web-contract-switch)). Every operation on it stays synchronous — read, write, move (`rekeyDraft`) and clear — and the
 browser store is a **mirror** of that memory rather than a second source: the memory answers every read, and a draft is
@@ -1132,11 +1178,13 @@ draft key, because they change at very different rates: the text entry is rewrit
 the attachment entry is written only when the attachment list actually changes and is the expensive one — one combined
 entry would re-serialize every attachment on every keystroke.
 
-The key is the composer's own. An existing conversation is keyed by its session id; a fresh composer is keyed by its
-transient `new:<id>:<cwd>`, whose id distinguishes consecutive composers in one folder. That id cannot be rebuilt from
-the folder, so the tab's own navigation memory carries the key alongside the cwd it already remembered
-(`packages/ui/src/lib/tab-session.ts`, `withTabOpen`): a reload returns to the composer the tab was showing and reads its
-draft back. A key remembered for another folder is refused rather than applied.
+The key is the composer's own, and the store's entry name keeps the connection scope beside it. An existing conversation is
+keyed by its session id; a fresh composer is keyed by its transient `new:<id>:<cwd>`, whose id distinguishes consecutive
+composers in one folder, and a composer the reader left but the folder has not seen again is keyed by `parked-new:<cwd>`.
+That draft id cannot be rebuilt from the folder, so the tab's own navigation memory carries it alongside the cwd it already
+remembered (`packages/ui/src/lib/tab-session.ts`, `withTabOpen`): a reload returns to the composer the tab was showing and
+reads its draft back. A key remembered for another folder is refused rather than applied, and every one of these keys is
+owned by the selection — see [the workbench's one selection](#the-workbenchs-one-selection).
 
 A browser that refuses the write — a quota is the real case, since an attachment list can outweigh the storage a tab is
 given — is not silently obeyed. The stale entries for that key are dropped, because they no longer describe the

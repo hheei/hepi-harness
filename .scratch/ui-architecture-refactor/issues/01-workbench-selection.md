@@ -1,7 +1,7 @@
 # 工作台選擇與草稿
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R1、替換策略
@@ -24,10 +24,10 @@ Acceptance: [行為矩陣](../acceptance.md) — N1–N10、R11 的選擇／draf
 
 ## 驗收條件
 
-- [ ] Sidebar 與 Shell 讀同一 canonical selection，選擇不靠 props → local cwd → effect 回報的循環。
-- [ ] 資料型 composer move 不經 Sidebar controlRef 中轉；focus/picker imperative 使用者仍有正確焦點。
-- [ ] identity hydration、同 project worktree、跨 project、stale restore/open、draft carry/park/promotion 具矩陣證據。
-- [ ] VM 截取 callback 的選擇／刪除測試已替換；scope 的改動不清除既有使用者草稿。
+- [x] Sidebar 與 Shell 讀同一 canonical selection，選擇不靠 props → local cwd → effect 回報的循環。
+- [x] 資料型 composer move 不經 Sidebar controlRef 中轉；focus/picker imperative 使用者仍有正確焦點。
+- [x] identity hydration、同 project worktree、跨 project、stale restore/open、draft carry/park/promotion 具矩陣證據。
+- [x] VM 截取 callback 的選擇／刪除測試已替換；scope 的改動不清除既有使用者草稿。
 
 ## 驗證與證據
 
@@ -47,4 +47,44 @@ Acceptance: [行為矩陣](../acceptance.md) — N1–N10、R11 的選擇／draf
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
+
+### 變更
+
+- `lib/workbench-selection.ts`（新）：`createWorkbenchSelection` 為唯一選擇擁有者——conversation／composer／workspace identity、first-frame 優先序（URL > tab 記憶）、tab 與 workspace 記憶寫回、open 的 generation fence 與失敗分類、draft carry／park／promotion／delete 規則，以及 React 綁定（`WorkbenchSelectionProvider`、`useSelectionState`、`useSelectionStateOf`、`useWorkbenchSelection`、`useWorkbenchSelectionStore`）。
+- `lib/draft-store.ts`：改為 `createDraftStore(scope, storage)` 實例，每個連線一個（`workbenchConnection.drafts`），刪除模組全域可變 scope 與 `setDraftScope`／`composerScopeInstalled`；key 格式與儲存 entry 前綴不變。
+- `lib/workbench-scope.ts`：`WorkbenchConnection` 持有 `drafts`。
+- `components/AppShell.tsx`：刪除本機 selection／restore／tab-session／workspace-context 狀態與 effects、`effectiveNewSessionCwd`、`parkedNewSessionDraftKey` 等重複計算；改由 store 讀寫。已刪 `onCwdChange`／`selectedSessionId`／`onSelectSession` 等 prop。
+- `components/SessionSidebar.tsx`：刪除 local `selectedCwd`、prop 同步 effect、`onCwdChange` 回報 loop、`createTempSessionId` 與 `startNewSessionIn` 資料中轉；改讀 selection、發 intent，`SessionSidebarControl` 只留 UI imperative。
+- `components/ChatInput.tsx`：改讀 `useComposerDrafts()`。
+- `hooks/useAgentSession.ts`：draft 三個呼叫改走 `connection.drafts`（readout 不動）。
+- `lib/conversation-catalogue.ts`：接收 `mergeCatalogueRow`（原 `components/session-catalog-helpers.ts`，已刪）。
+- `workbench.tsx`：刪 render-time `setDraftScope`。
+- 文件：`docs/chat.md`「The workbench's one selection」與 draft store 實例化；`docs/developer-guide.md` 責任路徑。
+
+### 證據
+
+- `packages/ui/src/lib/workbench-selection.test.ts`（新，12 案）：N1 URL 優先序與 `?cwd=`、N2 reload 回到同一 composer 且不取資料夾 park、N3 stale open 不落地、N4 identity hydration 不重掛、N5 同 project worktree 保留對話、N6 跨 project 換 workspace、N7 New／carry／park 與跨資料夾 park 不誤取、N8 promotion 不動草稿、N9 刪除僅在開啟者時離開且不清草稿、N10 失敗分類與 retry。
+- `apps/web/e2e/history/ux-workbench-selection.ts`（新，Chromium + 真 `createClient`）：`?session=` 深連結、真 reload 取回草稿、新分頁不 invent restore、`?cwd=` 不讀對話、New 自成一 identity、刪除後落在 composer 且被刪對話草稿仍在 scope entry。
+- `draft-store.test.ts`、`ChatInput.test.ts` 遷移至實例 API。
+- 已刪：`components/AppShell.session-delete.test.ts`（VM source extraction）、`components/session-catalog-helpers.ts`。
+
+### Checks
+
+- `pnpm verify:changed`：changed-typecheck / changed-test / web-unit / check-docs 全 pass，exit 0；log `.dev/verify/2026-10-21T09-51-19-122-verify-changed`（dirty `7cc775e4`）。
+- Focused browser：`ux-workbench-selection.ts`、`ux-workbench-scope.ts`、`ux-sidebar-ingress.ts`、`ux-raw-history-sidebar-focus.ts` 全 PASS。
+- 負向驗證：移除 `WorkbenchSelectionProvider` 時 `ux-raw-history-sidebar-focus.ts` 逾時失敗，證明 browser scene 真的守住 context 接線。
+
+### 已解 findings
+
+- AppShell 建 store 但未包 provider → mount 時 `useSelectionState` 拋錯（已包 `WorkbenchSelectionProvider`，AppShell 自身改用 `useSelectionStateOf`）。
+- `useWorkbenchSelectionStore` 的 deps 捕獲第一輪 closure（navigate/onLanded/query 失效）→ 改 read-through Proxy。
+- 同 project 的 workspace identity hydration 誤判為換 workspace → `adoptWorkspaceIdentity` 同步更新對話 `projectKey`。
+- 同資料夾 New 誤把 park 併回新 composer → 僅在真的換資料夾時 rekey park。
+- browser driver 曾假設 request 帶 method 前綴，兩個 no-read 斷言因此恆真 → 已修正並由實際輸出驗證。
+
+### 剩餘限制
+
+- 只換 readout 的 owner；`useAgentSession` 的 conversation I/O 生命週期仍屬票 03。
+- workspace-wide 記憶（`pi-web:last-open-by-workspace`）仍在明確工作區切換時才還原對話，裸路由不 invent restore（與 HEAD 一致）。
+- `docs/migration-status` 未新增能力限制：本票沒有移除任何能力。

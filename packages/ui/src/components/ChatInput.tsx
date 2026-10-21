@@ -5,15 +5,8 @@ import type { BuiltinSlashCommandResult, QueuedMessages, SlashCommandInfo } from
 import type { QueuedItemProjection } from "@hepi/protocol";
 import type { TextContent, UserMessage } from "../lib/types";
 import {
-  clearDraft,
-  draftScope,
-  getDraft,
-  getDraftStorageIssue,
   mergeRestoredSubmissionDraft,
   mergeRestoredSubmissionText,
-  rekeyDraft as rekeyStoredDraft,
-  setDraft,
-  subscribeDraftStorageIssue,
   type ChatDraftImage,
 } from "../lib/draft-store";
 import {
@@ -36,7 +29,7 @@ import { useEnterSendMode } from "../hooks/useEnterSendMode";
 import { useI18n } from "../hooks/useI18n";
 import { useChatAppearance } from "../hooks/useChatAppearance";
 import { useFontPreferences } from "../hooks/useFontPreferences";
-import { useExecutionTarget, useOptionalWorkbenchConnection, useWorkbenchScope } from "../lib/workbench-scope";
+import { useComposerDrafts, useExecutionTarget, useOptionalWorkbenchConnection } from "../lib/workbench-scope";
 import { SelectorRow } from "./SelectorRow";
 import { ModelSelector, type ModelSelectorOption } from "./ModelSelector";
 import { workspaceIdFromCwd } from "../lib/skill-inventory";
@@ -744,19 +737,6 @@ export function ModelScopeWarningBanner({ warnings }: { warnings?: string[] }) {
   );
 }
 
-/**
- * Whether a composer holding `key` may touch its stored draft right now.
- *
- * A draft key is only meaningful inside one connection's scope, so the composer reads and writes only while the store is
- * installed for **its own** connection. Before the first descriptor is answered the store has no scope at all, and a tree
- * still mounted from the previous connection has the old one: in both cases the text under that key belongs to a
- * conversation this composer is not showing, and adopting it would put one connection's unsent words in another's box —
- * and then save them there.
- */
-export function composerScopeInstalled(installedScope: string, composerScope: string): boolean {
-  return installedScope !== "" && installedScope === composerScope;
-}
-
 export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   onSend, onAbort, onSteer, onFollowUp, isStreaming, model, isAutoModelSelection, modelNames, modelList, modelError, runFailure, modelScopeWarnings, onModelChange, modelSwitching,
   thinkingLevel, isAutoThinkingSelection = false, onThinkingLevelChange, availableThinkingLevels, thinkingLevelMap,
@@ -774,10 +754,10 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   const { ui: uiFontFamily, uiWeight } = useFontPreferences();
   const isMobile = useIsMobile();
   const enterSendMode = useEnterSendMode();
-  // The connection this composer's draft belongs to. It is read here, in the composer, because a draft is stored under
-  // that connection's scope: a composer that read or wrote its draft while the page still held the previous (or no)
-  // scope would adopt another connection's unsent text and then save it under the new one.
-  const scope = useWorkbenchScope();
+  // This connection's drafts. The store is the connection's own, so a composer mounted under one connection cannot read
+  // or write another's: the entry name carries that connection's scope, and a tree the page already replaced writes to
+  // entries nothing on screen reads.
+  const drafts = useComposerDrafts();
   // The composer starts empty and adopts its draft in a layout effect below, before the first paint. Reading the
   // stored draft during the first render would make the client tree differ from the server HTML the tab hydrated,
   // because the store this draft now lives in does not exist on the server.
@@ -900,7 +880,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     rekeyDraft(previousKey: string, nextKey: string) {
       if (previousKey === nextKey) return;
       if (draftKeyRef.current !== previousKey) {
-        rekeyStoredDraft(previousKey, nextKey);
+        drafts.rekeyDraft(previousKey, nextKey);
         return;
       }
 
@@ -908,7 +888,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
         value: valueRef.current,
         images: attachedImagesRef.current.map(imageToDraftImage),
       };
-      const moved = rekeyStoredDraft(previousKey, nextKey, currentDraft) ?? { value: "", images: [] };
+      const moved = drafts.rekeyDraft(previousKey, nextKey, currentDraft) ?? { value: "", images: [] };
       const unchanged = moved.value === currentDraft.value
         && moved.images.length === currentDraft.images.length
         && moved.images.every((image, index) => (
@@ -939,7 +919,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       const destinationDraftKey = targetDraftKey ?? currentDraftKey;
       const targetsCurrentComposer = destinationDraftKey === currentDraftKey;
       const storedDraft = !targetsCurrentComposer && destinationDraftKey
-        ? getDraft(destinationDraftKey)
+        ? drafts.getDraft(destinationDraftKey)
         : null;
       const restoredDraft = mergeRestoredSubmissionDraft(
         text,
@@ -952,7 +932,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       // The first optimistic message switches ChatWindow out of its empty-state
       // layout and remounts this component. Persist synchronously so recovery is
       // not lost if this instance is the one being unmounted.
-      if (destinationDraftKey) setDraft(destinationDraftKey, restoredDraft);
+      if (destinationDraftKey) drafts.setDraft(destinationDraftKey, restoredDraft);
       if (!targetsCurrentComposer) return;
       const restoredImages = images?.length
         ? [
@@ -1065,8 +1045,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     setValue("");
     setAtQuery(null);
     setHistoryMenuOpen(false);
-    if (draftKey) clearDraft(draftKey);
-    if (draftKeyRef.current && draftKeyRef.current !== draftKey) clearDraft(draftKeyRef.current);
+    if (draftKey) drafts.clearDraft(draftKey);
+    if (draftKeyRef.current && draftKeyRef.current !== draftKey) drafts.clearDraft(draftKeyRef.current);
     clearImages();
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -1074,39 +1054,33 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   }, [clearImages, draftKey]);
 
   useEffect(() => {
-    // A composer that has not adopted its stored draft yet owns no draft to save, and one that adopted it under another
-    // connection's scope must not write it into this one: the text on screen belongs to the connection it was read from.
-    if (!draftKey || adoptedDraftKey !== draftKey || !composerScopeInstalled(draftScope(), scope)) return;
-    setDraft(draftKey, {
+    // A composer that has not adopted its stored draft yet owns no draft to save: the empty live value it is holding is
+    // not the user's text, and writing it first would replace the very draft this composer is about to read.
+    if (!draftKey || adoptedDraftKey !== draftKey) return;
+    drafts.setDraft(draftKey, {
       value,
       images: attachedImages.map(imageToDraftImage),
     });
-  }, [adoptedDraftKey, attachedImages, draftKey, scope, value]);
+  }, [adoptedDraftKey, attachedImages, draftKey, drafts, value]);
 
   useEffect(() => {
     if (!draftKey) {
       setDraftStorageIssue(null);
       return undefined;
     }
-    const read = () => setDraftStorageIssue(getDraftStorageIssue(draftKey));
+    const read = () => setDraftStorageIssue(drafts.getDraftStorageIssue(draftKey));
     read();
-    return subscribeDraftStorageIssue(read);
-  }, [draftKey]);
+    return drafts.subscribeDraftStorageIssue(read);
+  }, [draftKey, drafts]);
 
   useLayoutEffect(() => {
     const previousDraftKey = draftKeyRef.current;
     const first = !adoptedDraftRef.current;
     if (!first && previousDraftKey === draftKey) return;
-    // A composer whose key belongs to one connection may only read it while that connection is the installed scope. A
-    // mount that happens before the descriptor is answered (or a stale tree still holding the previous scope) has no
-    // draft of its own to adopt: adopting one would take another connection's unsent text, and the write that follows
-    // would file it under this one.
-    if (!composerScopeInstalled(draftScope(), scope)) return;
-
     // The first run adopts; it must not write back first, because this composer has not read its draft yet and the
     // empty live value it is holding would replace the very text and images being restored.
     if (!first && previousDraftKey) {
-      setDraft(previousDraftKey, {
+      drafts.setDraft(previousDraftKey, {
         value: valueRef.current,
         images: attachedImagesRef.current.map(imageToDraftImage),
       });
@@ -1114,7 +1088,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     adoptedDraftRef.current = true;
     setAdoptedDraftKey(draftKey);
 
-    const draft = draftKey ? getDraft(draftKey) : null;
+    const draft = draftKey ? drafts.getDraft(draftKey) : null;
     draftKeyRef.current = draftKey;
     const nextValue = draft?.value ?? "";
     const nextImages = draftImagesToAttachedImages(draft?.images);

@@ -4,6 +4,7 @@ import type { ResourceReader } from "@hepi/session/resources";
 import type { WorkbenchClient } from "../client";
 import { connectionScopeKey, type ConnectionIdentity } from "./connection-scope";
 import { createConversationApi, type ConversationApi } from "./conversation-api";
+import { createDraftStore, type DraftStore } from "./draft-store";
 import { createFileSeam, type FileSeam } from "./file/file-seam";
 
 /**
@@ -37,6 +38,15 @@ export interface WorkbenchConnection {
    * surface that outlives its connection cannot write through the previous one.
    */
   readonly api: ConversationApi;
+  /**
+   * The composers this connection holds drafts for.
+   *
+   * It belongs to the connection because a draft key is only meaningful inside one: the entry's own name carries this
+   * scope, so a composer rendered under this connection can write only here, and a tree the page already replaced
+   * writes to entries nothing on screen reads. Stating it once, on the value every surface reads, is what replaced a
+   * module-global scope a render installed.
+   */
+  readonly drafts: DraftStore;
 }
 
 /**
@@ -53,6 +63,7 @@ export function workbenchConnection(client: WorkbenchClient, identity: Connectio
     identity,
     files: createFileSeam(client),
     api: createConversationApi(client),
+    drafts: createDraftStore(connectionScopeKey(identity)),
   };
 }
 
@@ -82,6 +93,16 @@ export function useWorkbenchConnection(): WorkbenchConnection {
 /** The opaque scope key, for a store that only needs to name its own entries. */
 export function useWorkbenchScope(): string {
   return useWorkbenchConnection().scope;
+}
+
+/**
+ * This connection's composer drafts — the one store every composer of this connection reads and writes.
+ *
+ * A surface reads it from the connection rather than from a module: the store *is* the connection's, so the previous
+ * question ("is the installed scope still mine?") has no state to be wrong about.
+ */
+export function useComposerDrafts(): DraftStore {
+  return useWorkbenchConnection().drafts;
 }
 
 /**

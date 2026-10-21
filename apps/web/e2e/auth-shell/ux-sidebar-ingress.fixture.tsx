@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 import { createClient } from "@hepi/ui/client";
 import { connectionIdentityOf } from "@hepi/ui/lib/connection-scope";
 import { WorkbenchConnectionProvider, workbenchConnection } from "@hepi/ui/lib/workbench-scope";
+import { createWorkbenchSelection, WorkbenchSelectionProvider } from "@hepi/ui/lib/workbench-selection";
 import { DirectoryPicker } from "@hepi/ui/components/DirectoryPicker";
 import { NewProjectDialog } from "@hepi/ui/components/NewProjectDialog";
 import { SessionSidebar } from "@hepi/ui/components/SessionSidebar";
@@ -133,6 +134,15 @@ const connection = workbenchConnection(createClient({
 
 const noop = () => undefined;
 
+/** The one selection the sidebar reads: this fixture opens no conversation and remembers nothing. */
+const selection = createWorkbenchSelection({
+  drafts: connection.drafts,
+  conversation: { open: async () => { throw new Error("the fixture opens no conversation"); }, list: async () => ({ sessions: [] }) },
+  validateCwd: async (path) => ({ cwd: path }),
+  navigate: () => undefined,
+  query: () => new URLSearchParams(),
+});
+
 /** The sidebar's own shared document, read through the production hook so the pin write is the hook's own request. */
 function SidebarStateProbe() {
   const uiState = useSessionUiState();
@@ -158,7 +168,7 @@ function Fixture() {
       <button type="button" className="fixture-view-new-project" onClick={() => setView("new-project")}>new project</button>
       {view === "sidebar" && (
         <div style={{ height: 600, display: "flex" }}>
-          <SessionSidebar selectedSessionId={null} onSelectSession={noop} />
+          <SessionSidebar />
           <SidebarStateProbe />
         </div>
       )}
@@ -172,8 +182,10 @@ const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("the fixture root element is missing");
 createRoot(rootElement).render(
   <WorkbenchConnectionProvider value={connection}>
-    <I18nProvider>
-      <Fixture />
-    </I18nProvider>
+    <WorkbenchSelectionProvider value={selection}>
+      <I18nProvider>
+        <Fixture />
+      </I18nProvider>
+    </WorkbenchSelectionProvider>
   </WorkbenchConnectionProvider>,
 );

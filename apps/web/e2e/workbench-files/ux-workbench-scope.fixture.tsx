@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { createClient, type WorkbenchClient } from "@hepi/ui/client";
 import { connectionIdentityOf, connectionScopeKey } from "@hepi/ui/lib/connection-scope";
-import { getDraft, setDraft, setDraftScope } from "@hepi/ui/lib/draft-store";
+import { createDraftStore } from "@hepi/ui/lib/draft-store";
 import { getSessionViewSnapshot, setSessionViewSnapshot } from "@hepi/ui/lib/session-view-cache";
 import { useHostNavigation } from "@hepi/ui/host-router";
 
@@ -36,29 +36,29 @@ function Fixture() {
     log.scopesDiffer = scopeA !== scopeB;
 
     // A draft and a remembered view written on the first connection, under a conversation id both connections have.
-    setDraftScope(scopeA);
-    setDraft(scopeA === scopeB ? "never" : "conv", { value: "unsent on A", images: [] });
+    // Each connection owns its own store: the scope is fixed when it is created, never set at render time.
+    const draftsA = createDraftStore(scopeA);
+    const draftsB = createDraftStore(scopeB);
+    draftsA.setDraft(scopeA === scopeB ? "never" : "conv", { value: "unsent on A", images: [] });
     setSessionViewSnapshot(scopeA, {
       sessionId: "conv", revision: "rev-a", messages: [{ role: "user", content: "A's history" }], entryIds: ["e1"],
       leafId: "e1", oldestEntryId: "e1", hasMore: false, historyHead: "h1", thinkingLevel: "off", model: null,
       loadedEntryIds: ["e1"], prefixEntryIds: [], prefixMessages: [], prefixHistoryHead: null,
     });
-    log.draftOnA = getDraft("conv")?.value ?? null;
+    log.draftOnA = draftsA.getDraft("conv")?.value ?? null;
     log.viewOnA = getSessionViewSnapshot(scopeA, "conv")?.messages[0]?.role === "user"
       ? String((getSessionViewSnapshot(scopeA, "conv")?.messages[0] as { content?: unknown }).content ?? "")
       : null;
 
     // Switch connection. Nothing of the first may be readable, because the ids are only unique within one Backend and
     // a profile switch is exactly a different connection.
-    setDraftScope(scopeB);
-    log.draftOnB = getDraft("conv")?.value ?? null;
+    log.draftOnB = draftsB.getDraft("conv")?.value ?? null;
     log.viewOnB = getSessionViewSnapshot(scopeB, "conv");
     log.storageKeys = Object.keys(window.sessionStorage).length;
 
     // Write on the second connection and switch back: each connection still holds only its own.
-    setDraft(scopeB === scopeA ? "never" : "conv", { value: "unsent on B", images: [] });
-    setDraftScope(scopeA);
-    log.draftBackOnA = getDraft("conv")?.value ?? null;
+    draftsB.setDraft(scopeB === scopeA ? "never" : "conv", { value: "unsent on B", images: [] });
+    log.draftBackOnA = draftsA.getDraft("conv")?.value ?? null;
 
     // A client's resources belong to the connection that loaded them: disposing one revokes its blobs and refuses its
     // later requests, and does not touch the other.

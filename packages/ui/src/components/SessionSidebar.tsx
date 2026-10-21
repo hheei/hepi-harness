@@ -64,6 +64,7 @@ import { focusIfLost } from "../lib/stacked-dialog";
 import { createRequestId, operationFailure } from "../lib/conversation-api";
 import { catalogueRow, type CatalogueEntry } from "../lib/conversation-catalogue";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useSelectionState, useWorkbenchSelection, type SelectConversationOptions } from "../lib/workbench-selection";
 import { useI18n } from "../hooks/useI18n";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useScrollbarVisibility } from "../hooks/useScrollbarVisibility";
@@ -141,42 +142,10 @@ function ToolbarIconButton({
   );
 }
 
-/** How a pick in the sidebar opens a session. */
-export interface SelectSessionOptions {
-  /** Leave a phone's drawer open: the sidebar has more to show (a fork's revealed row and its toast). */
-  keepSidebarOpen?: boolean;
-  /**
-   * Open the raw-history surface positioned on the selected entry.
-   *
-   * The transcript shows the *active* range, so an entry a compaction dropped or a fork left behind is not in it. A
-   * navigation that must land on such an entry — opening a reference that names one — is answered by the surface that
-   * still holds the whole history rather than by the window, which would show nothing at all.
-   */
-  rawHistoryFocus?: boolean;
-}
-
 interface Props {
-  selectedSessionId: string | null;
-  onSelectSession: (session: SessionInfo, isRestore?: boolean, entryId?: string, blockIndex?: number, options?: SelectSessionOptions) => void;
-  /** projectKey: the target's project identity when it is known (a group's "+", the composer's bar). */
-  onNewSession?: (sessionId: string, cwd: string, projectKey?: string | null, options?: NewSessionOptions) => void;
-  /** What the bar above a fresh composer moves through (`SessionSidebarControl`). */
+  /** What the bar above a fresh composer reaches through (`SessionSidebarControl`). */
   controlRef?: Ref<SessionSidebarControl>;
-  /** The sidebar's cwd as the bar above a fresh composer shows it; reported when that changes. */
-  onNewSessionContextChange?: (context: NewSessionContext | null) => void;
-  initialSessionId?: string | null;
-  /** The URL already named a cwd, so the first load must not adopt anything else. */
-  skipInitialSessionRestore?: boolean;
-  onInitialRestoreDone?: () => void;
   refreshKey?: number;
-  onSessionDeleted?: (sessionId: string) => void;
-  selectedCwd?: string | null;
-  onCwdChange?: (
-    cwd: string | null,
-    projectRoot?: string | null,
-    projectKey?: string | null,
-    projectDisplayRoot?: string | null,
-  ) => void;
   onOpenFile?: (filePath: string, fileName: string, options?: { sourceSessionId?: string | null; modeHint?: "diff" }) => void;
   onOpenTerminal?: (cwd: string) => void;
   explorerRefreshKey?: number;
@@ -188,22 +157,21 @@ interface Props {
 }
 
 /**
- * How the bar above a fresh composer (components/NewSessionContextBar.tsx)
- * moves it: the sidebar keeps the cwd and the project identity, so every
- * move goes through here, as the sidebar's own "+" buttons do.
+ * What the bar above a fresh composer (components/NewSessionContextBar.tsx) reaches through the sidebar for.
+ *
+ * Only the two things that are genuinely the sidebar's own are here: the folder picker it already owns, and the worktree
+ * listing and creation it already reads. A move is **not** one of them — it is an intent the selection carries out — so
+ * nothing about which session or folder is current travels through this handle.
  */
 export interface SessionSidebarControl {
-  /** Identity, then the sidebar's cwd, then `onNewSession`, as any new session. */
-  startNewSessionIn(target: NewSessionTarget): void;
   /**
-   * Opens the folder picker; the validated folder goes to `onPicked`, which
-   * decides whether to start there. Focus goes back to `returnFocusTo` when
-   * the picker closes without moving the composer.
+   * Opens the folder picker; the validated folder goes to `onPicked`. Focus goes back to `returnFocusTo` when the picker
+   * closes without moving the composer.
    */
   openFolderForNewSession(onPicked: (target: NewSessionTarget) => void, returnFocusTo: HTMLElement | null): void;
   /** "Use default directory": today's ~/pi-cwd folder, validated as the folder picker's, goes to `onPicked`. */
   openDefaultDirectoryForNewSession(onPicked: (target: NewSessionTarget) => void): void;
-  /** Lists the worktrees of the sidebar's cwd again (the composer's worktree menu opening). */
+  /** Lists the worktrees of the sidebar's workspace again (the composer's worktree menu opening). */
   refreshWorktrees(): void;
   /** Creates a worktree of `project` and lists it at once; the caller starts the session in it. */
   createWorktree(project: ProjectChoice, branch: string): Promise<CreatedWorktree | { error: string }>;
@@ -324,14 +292,6 @@ export function sameIdsOr(previous: Set<string>, ids: readonly string[]): Set<st
   return previous;
 }
 
-/** Temporary id for a session that does not exist yet: pi is spawned lazily
- *  when the user sends the first message, so no backend call is needed. */
-function createTempSessionId(): string {
-  return typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-}
-
 function shortTitle(title: string, max: number): string {
   return title.length > max ? `${title.slice(0, max)}…` : title;
 }
@@ -379,8 +339,17 @@ function buttonAnchor(element: HTMLElement, align: "start" | "end"): SidebarMenu
   return { kind: "rect", rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }, align };
 }
 
-export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSession, controlRef, onNewSessionContextChange, initialSessionId, skipInitialSessionRestore, onInitialRestoreDone, refreshKey, onSessionDeleted, selectedCwd: selectedCwdProp, onCwdChange, onOpenFile, onOpenTerminal, explorerRefreshKey, onExplorerRefresh, onAtMention, onAtMentions, onRunningSessionIdsChange, onSessionsChange }: Props) {
+export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTerminal, explorerRefreshKey, onExplorerRefresh, onAtMention, onAtMentions, onRunningSessionIdsChange, onSessionsChange }: Props) {
   const { t } = useI18n();
+  // The workbench's one selection. This surface reads it — which conversation is open, which folder is in effect — and
+  // sends it intents; it holds no selection of its own beyond the search, expansion and menus that are this panel's
+  // presentation.
+  const selection = useWorkbenchSelection();
+  const selectionState = useSelectionState();
+  const selectedSessionId = selectionState.conversation?.id ?? null;
+  // The workspace in effect: a conversation's own folder, or the fresh composer's. It is the same value the shell and the
+  // bar above the composer read.
+  const selectedCwd = selectionState.cwd;
   const isMobile = useIsMobile();
   // The catalogue this sidebar reads is the connection's own: the list, its running poll and the folder validation are
   // requests to the Gateway this page was admitted to, under its credential — never to whatever origin happens to serve
@@ -405,7 +374,6 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
   // project order is first saved from the full details.
   const [sessionDetailsLoaded, setSessionDetailsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCwd, setSelectedCwd] = useState<string | null>(null);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const newProjectReturnFocusRef = useRef<HTMLElement | null>(null);
   // The projects the backend recorded for this Web origin's host. Every folder of one project carries that project's
@@ -786,8 +754,6 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
     if (explorerRefreshKey !== undefined) setExplorerKey((k) => k + 1);
   }, [explorerRefreshKey]);
 
-  const restoredRef = useRef(false);
-
   const projectSelection = useCallback((root: string, key: string, displayRoot?: string, retained = false): ProjectSelection => ({
     root,
     key,
@@ -826,41 +792,24 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
   // the sessions tab exists even before it has a session.
   const selectedProject = useMemo(() => projectFor(selectedCwd), [projectFor, selectedCwd]);
 
-  // A worktree/session refresh can hydrate the stable key without changing
-  // cwd, so notify when either changes. The parent treats same-cwd key changes
-  // as identity hydration rather than a workspace switch.
+  // A worktree or session read can resolve which project this folder belongs to without the folder changing. That is
+  // identity, not a choice: the selection is told the key the memories and the same-project checks are stated in, and it
+  // moves nothing, remounts nothing and rewrites no URL. The last value is kept here so an unchanged answer is not sent
+  // again.
   const lastNotifiedProjectRef = useRef<{ cwd: string | null; key: string | null } | null>(null);
   useEffect(() => {
+    if (selectedCwd === null) return;
     const project = projectFor(selectedCwd);
     const previous = lastNotifiedProjectRef.current;
     if (previous?.cwd === selectedCwd && previous.key === (project?.key ?? null)) return;
     lastNotifiedProjectRef.current = { cwd: selectedCwd, key: project?.key ?? null };
-    onCwdChange?.(
-      selectedCwd,
-      project?.root ?? null,
-      project?.key ?? null,
-      project?.displayRoot ?? null,
-    );
-  }, [selectedCwd, onCwdChange, projectFor]);
-
-  // Sync the worktree switcher to the selected session's cwd. Sessions of all
-  // worktrees in a project share one group, so clicking a session from another
-  // worktree should move the effective cwd there. Only fires when the prop
-  // value changes, so a manual switcher change is not snapped back. The prop
-  // goes null when the shell switches project from here; forgetting the last
-  // value then lets a restored session in a worktree that was synced before
-  // move the cwd again, so the files tab shows the checkout the chat uses.
-  const lastSyncedCwdPropRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!selectedCwdProp) {
-      lastSyncedCwdPropRef.current = null;
-      return;
-    }
-    if (selectedCwdProp !== lastSyncedCwdPropRef.current) {
-      lastSyncedCwdPropRef.current = selectedCwdProp;
-      setSelectedCwd(selectedCwdProp);
-    }
-  }, [selectedCwdProp]);
+    selection.acceptWorkspaceIdentity({
+      cwd: selectedCwd,
+      projectKey: project?.key ?? null,
+      projectRoot: project?.root ?? null,
+      displayRoot: project?.displayRoot ?? null,
+    });
+  }, [selectedCwd, projectFor, selection]);
 
   // Load worktrees for the current effective cwd
   const [wtRefreshKey, setWtRefreshKey] = useState(0);
@@ -925,24 +874,6 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
     return () => { cancelled = true; };
   }, [selectedCwd, wtRefreshKey, refreshKey, workspaceApi, workspaces, projects]);
 
-  // The first load opens what the URL names, and nothing else. A page with no session in its URL — the bare "/" a
-  // first visit or a bookmark lands on — adopts no project and opens no conversation: the sessions are listed where
-  // they are, and the user picks one. Adopting the most recent project here opened a project nobody chose, which on a
-  // deployment is its own configured workspace, and left the composer bound to it.
-  useEffect(() => {
-    if (allSessions.length === 0 || selectedCwd !== null || skipInitialSessionRestore) return;
-    if (!initialSessionId || restoredRef.current) return;
-    // Restoring the named session sets the cwd to match that session.
-    restoredRef.current = true;
-    const target = allSessions.find((s) => s.id === initialSessionId);
-    if (target) {
-      setSelectedCwd(target.cwd);
-      onSelectSession(target, true);
-      return;
-    }
-    // Session not found — notify parent so it can show the placeholder
-    onInitialRestoreDone?.();
-  }, [allSessions, selectedCwd, initialSessionId, skipInitialSessionRestore, onSelectSession, onInitialRestoreDone]);
 
   // Prefer an exact UI selection while a refetch is in flight. Once the
   // response catches up, the server-resolved path handles Windows case and
@@ -1005,13 +936,20 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
         ...(data.displayRoot === undefined ? {} : { displayRoot: data.displayRoot }),
         ...(data.retained === true ? { retained: true } : {}),
       });
-      setSelectedCwd(data.cwd);
+      // A validated folder is a workspace the reader chose: the selection carries out the move, and this panel only
+      // reports what it resolved.
+      selection.selectWorkspace({
+        cwd: data.cwd,
+        projectKey: data.projectKey,
+        projectRoot: data.projectRoot,
+        displayRoot: data.displayRoot ?? null,
+      });
     } catch (e) {
       setCustomPathError(e instanceof Error ? e.message : String(e));
     } finally {
       setCustomPathValidating(false);
     }
-  }, [customPathOpen, customPathValue, customPathValidating, focusAfterCommit]);
+  }, [customPathOpen, customPathValue, customPathValidating, focusAfterCommit, selection]);
 
   const handleCustomPathClick = useCallback(() => {
     setCustomPathOpen("files");
@@ -1058,7 +996,10 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
       await workspaceApi.removeWorktree(workspaceId, path, force);
       // The checkout is gone, so the folder record that made it a target went with it: the project's own list is
       // refetched as well as the worktrees, and a composer that was in that checkout falls back to the project root.
-      if (currentWorktreePath === path) setSelectedCwd(project.root);
+      // A composer that was in the removed checkout falls back to the project's own root.
+      if (currentWorktreePath === path) {
+        selection.selectWorkspace({ cwd: project.root, projectKey: project.key, projectRoot: project.root, displayRoot: project.displayRoot ?? null });
+      }
       setWorktreeState((prev) => (prev === null ? prev : { ...prev, worktrees: prev.worktrees.filter((worktree) => worktree.path !== path) }));
       void listProjects();
       setWtRefreshKey((k) => k + 1);
@@ -1068,44 +1009,51 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
       if (e instanceof WorkspaceRefusal && e.dirty && !force) return "dirty";
       return { error: e instanceof Error ? e.message : String(e) };
     }
-  }, [currentWorktreePath, workspaceApi, t, listProjects]);
+  }, [currentWorktreePath, workspaceApi, t, listProjects, selection]);
 
   const refreshWorktrees = useCallback(() => setWtRefreshKey((k) => k + 1), []);
 
-  // The files tab's picks move the sidebar's cwd, with the identity the
-  // picker read from the project list or the worktree listing: a pinned
-  // project without sessions keeps its server key, as in startNewSessionIn.
+  // The files tab's picks choose a workspace, with the identity the picker read from the project list or the worktree
+  // listing: a pinned project without sessions keeps its server key.
   const handleFilesPick = useCallback(({ cwd, projectKey, projectRoot, projectDisplayRoot }: NewSessionTarget) => {
     if (projectKey && projectRoot) setValidatedProject({ cwd, root: projectRoot, key: projectKey, ...(projectDisplayRoot === undefined ? {} : { displayRoot: projectDisplayRoot }) });
-    setSelectedCwd(cwd);
-  }, []);
+    selection.selectWorkspace({
+      cwd,
+      projectKey: projectKey ?? null,
+      projectRoot: projectRoot ?? null,
+      displayRoot: projectDisplayRoot ?? null,
+    });
+  }, [selection]);
 
-  // Clicking a session moves the effective cwd to that session's worktree.
-  // Done on the click path (not via the selectedCwd prop sync) so it also
-  // works when the prop value won't change — e.g. re-clicking the already
-  // open session after manually switching worktrees.
-  const handleSelectSessionFromList = useCallback((s: SessionInfo, entryId?: string, blockIndex?: number, options?: SelectSessionOptions) => {
+  // Clicking a session opens it: the selection owns the target, so this is the intent and nothing else. The row is added
+  // to this list when a fork's answer named one the listing has not carried yet, so the tree it belongs to shows it.
+  const handleSelectSessionFromList = useCallback((s: SessionInfo, entryId?: string, blockIndex?: number, options?: SelectConversationOptions) => {
     setAllSessions((current) => current.some((session) => session.id === s.id) ? current : [s, ...current]);
-    if (s.cwd) setSelectedCwd(s.cwd);
-    onSelectSession(s, false, entryId, blockIndex, options);
-  }, [onSelectSession]);
+    selection.selectConversation(s, {
+      ...(entryId === undefined ? {} : { entryId }),
+      ...(blockIndex === undefined ? {} : { blockIndex }),
+      ...(options?.rawHistory === true ? { rawHistory: true } : {}),
+      ...(options?.keepSidebarOpen === true ? { keepSidebarOpen: true } : {}),
+    });
+  }, [selection]);
 
-  // Every "new session" goes through here. The cwd moves first, on the click
-  // path like a session pick, and the shell gets the target's project so it
-  // adopts it up front: a session in another project closes the previous
-  // project's file tabs instead of being mistaken for identity hydration.
+  // Every "new session" goes through here: a fresh composer in the target, with the target's project so a session in
+  // another project is not mistaken for identity hydration.
   const startNewSessionIn = useCallback(({ cwd, projectKey, projectRoot, projectDisplayRoot, carryComposer }: NewSessionTarget) => {
     // A worktree without sessions has no other source of identity yet.
     if (projectKey && projectRoot) setValidatedProject({ cwd, root: projectRoot, key: projectKey, ...(projectDisplayRoot === undefined ? {} : { displayRoot: projectDisplayRoot }) });
-    setSelectedCwd(cwd);
-    onNewSession?.(createTempSessionId(), cwd, projectKey, carryComposer ? { carryComposer: true } : undefined);
-  }, [onNewSession]);
+    selection.startComposer({
+      cwd,
+      projectKey: projectKey ?? null,
+      projectRoot: projectRoot ?? null,
+      displayRoot: projectDisplayRoot ?? null,
+    }, carryComposer === true ? { carry: true } : undefined);
+  }, [selection]);
   // The handle below is made once: it calls the newest closure.
   const startNewSessionInRef = useRef(startNewSessionIn);
   startNewSessionInRef.current = startNewSessionIn;
 
   useImperativeHandle(controlRef, () => ({
-    startNewSessionIn: (target) => startNewSessionInRef.current(target),
     openFolderForNewSession: (onPicked, returnFocusTo) => {
       folderPickRef.current = onPicked;
       folderReturnFocusRef.current = returnFocusTo;
@@ -1291,12 +1239,12 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
       projects: projectChoiceList,
     };
   }, [selectedCwd, selectedProject, showWorktreeSwitcher, worktreeState, currentWorktreePath, projectChoiceList]);
-  const newSessionContextRef = useRef(newSessionContext);
-  newSessionContextRef.current = newSessionContext;
+  // The project and worktrees of the workspace in effect are published to the selection, which is what the bar above a
+  // fresh composer reads. One report for the two surfaces that show it, and no shell in between.
   const newSessionContextSignature = newSessionContextKey(newSessionContext);
   useEffect(() => {
-    onNewSessionContextChange?.(newSessionContextRef.current);
-  }, [newSessionContextSignature, onNewSessionContextChange]);
+    selection.setWorkspaceContext(newSessionContext);
+  }, [newSessionContextSignature, newSessionContext, selection]);
 
   // Picking a session in another group makes its project current. The group
   // that was current keeps its look instead of folding up under the pointer
@@ -1538,12 +1486,14 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
       // The row leaves at once, and the shared state is re-read because the removal cleared this session's entries.
       setAllSessions((current) => current.filter((item) => item.id !== session.id));
       void refreshUiState();
-      onSessionDeleted?.(session.id);
+      // The removal is the selection's to hear: it leaves only the conversation it was showing, and every other
+      // conversation — and every draft — keeps its place.
+      selection.conversationDeleted(session.id);
       void loadSessions();
     } catch (error) {
       showToast(t("sidebar.deleteFailed", { error: error instanceof Error ? error.message : String(error) }));
     }
-  }, [loadSessions, onSessionDeleted, refreshUiState, showToast, t]);
+  }, [loadSessions, refreshUiState, selection, showToast, t]);
 
   // Only Shift skips the confirmation (Shift+click, Shift+Enter or Shift+D in the menu).
   const requestDelete = useCallback((family: SessionFamily, shiftKey: boolean) => {
@@ -1883,7 +1833,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
   // "Open in Files" of another project is a deliberate project switch, the
   // same as choosing it in the files tab's project list.
   const openProjectInFiles = (project: SidebarProject) => {
-    if (!project.current) setSelectedCwd(project.root);
+    if (!project.current) selection.selectWorkspace({ cwd: project.root, projectKey: project.key, projectRoot: project.root, displayRoot: project.displayRoot ?? null });
     filesTabFocusRef.current = "project-button";
     switchTab("files");
   };
@@ -2115,7 +2065,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
     onMoveGroup: moveProject,
   } as const;
 
-  const explorerCwd = selectedCwd ?? selectedCwdProp ?? null;
+  const explorerCwd = selectedCwd;
   // The toolbar row's search button searches the files on the files tab:
   // the head has no search of its own.
   const searchesFiles = sidebarTab === "files" && explorerCwd !== null;
@@ -2326,7 +2276,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
             context={newSessionContext ?? { project: null, worktrees: null, currentWorktreePath: null, projects: projectChoiceList }}
             mobile={isMobile}
             label={t("sidebar.projectAndWorktree")}
-            placeholder={initialSessionId && !restoredRef.current ? "" : t("sidebar.selectProject")}
+            placeholder={selectionState.restoring ? "" : t("sidebar.selectProject")}
             homeDir={homeDir}
             projectActivity={projectActivity}
             worktreeHint={inactiveWorktreeSelector}

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import { useGlobalKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { SessionSidebar, type SelectSessionOptions, type SessionSidebarControl } from "./SessionSidebar";
+import { SessionSidebar, type SessionSidebarControl } from "./SessionSidebar";
 import { ChatWindow } from "./ChatWindow";
 import { NewSessionContextBar, type NewSessionContextControl } from "./NewSessionContextBar";
 import type { ChatScrollPosition } from "../lib/chat/chat-scroll-position";
@@ -39,12 +39,8 @@ import {
   shouldShowBrowserNotification,
   showBrowserNotification,
 } from "../lib/browser-notifications";
-import { getInitialNavigation, withTabOpen } from "../lib/initial-navigation";
 import { useWorkbenchNavigation, useWorkbenchQuery } from "../lib/navigation";
 import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
-import { clearTabOpenSession, getTabOpen, setTabOpenNewSession, setTabOpenSession } from "../lib/tab-session";
-import { mergeCatalogRow } from "./session-catalog-helpers";
-import { getDraft, hydrateDrafts, rekeyDraft } from "../lib/draft-store";
 import {
   contextForCwd,
   type NewSessionContext,
@@ -55,12 +51,15 @@ import {
   type WorktreeChoice,
   worktreeCwd,
 } from "../lib/new-session-context";
+import { workspaceKeyOf } from "../lib/workspace-memory";
 import {
-  clearLastOpen,
-  getLastOpenSession,
-  setLastOpenSession,
-  workspaceKeyOf,
-} from "../lib/workspace-memory";
+  useSelectionStateOf,
+  useWorkbenchSelectionStore,
+  WorkbenchSelectionProvider,
+  type SelectConversationOptions,
+  type StartComposerOptions,
+  type WorkspaceTarget,
+} from "../lib/workbench-selection";
 import {
   getDefaultRightPanelWidth,
   getRightPanelMaxWidth,
@@ -96,27 +95,62 @@ type AutoNameStatus =
 
 const TOP_BAR_ICON_BUTTON_SIZE = 36;
 const AGENT_PANEL_WIDTH = 420;
-function parkedNewSessionDraftKey(cwd: string): string {
-  return `parked-new:${cwd}`;
-}
-
-/**
- * The composer a remembered tab key names for this folder, or null when it names nothing this folder may use.
- * A fresh composer's key is \`new:<id>:<cwd>\`, so only a key whose folder matches is this tab's composer here: any
- * other key belongs to another workspace and is not adopted.
- */
-function rememberedNewSessionKey(key: string | null, cwd: string): { draftId: string } | null {
-  if (!key || !key.startsWith("new:") || !key.endsWith(":" + cwd)) return null;
-  const draftId = key.slice("new:".length, key.length - cwd.length - 1);
-  return draftId ? { draftId } : null;
-}
-
 export function AppShell() {
   const { navigate } = useWorkbenchNavigation();
   // The logical query comes from the router the host chose, so a packaged App fragment query is the same value a Web
   // page search string is. Nothing here reads window.location, which in the App names the bundle and not the view.
   const locationQuery = useWorkbenchQuery();
-  const [initialNavigation, setInitialNavigation] = useState(() => getInitialNavigation(locationQuery));
+  // The one selection: which workspace, which conversation or fresh composer, and which read the reader waits on. Every
+  // surface below reads this and sends it an intent; nothing reports a selection back up.
+  const connection = useWorkbenchConnection();
+  const queryRef = useRef(locationQuery);
+  queryRef.current = locationQuery;
+  const selection = useWorkbenchSelectionStore({
+    drafts: connection.drafts,
+    conversation: {
+      open: async (sessionId) => await connection.api.open(sessionId) as unknown as SessionInfo,
+      list: async () => ({ sessions: (await connection.api.list()).sessions as SessionInfo[] }),
+    },
+    validateCwd: async (path) => {
+      const answer = await connection.client.request("/api/cwd/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cwd: path }),
+      });
+      const data = await answer.json().catch(() => ({})) as {
+        cwd?: string;
+        projectRoot?: string;
+        projectKey?: string;
+        displayRoot?: string;
+        error?: string;
+      };
+      if (!answer.ok || !data.cwd) throw new Error(data.error ?? "HTTP " + answer.status);
+      return { cwd: data.cwd, projectKey: data.projectKey ?? null, projectRoot: data.projectRoot ?? null, displayRoot: data.displayRoot ?? null };
+    },
+    navigate,
+    query: () => queryRef.current,
+    onLanded: (_kind, { keepSidebarOpen }) => {
+      if (isMobile && !keepSidebarOpen) setSidebarOpen(false);
+    },
+  });
+  const selectionState = useSelectionStateOf(selection);
+  const selectedSession = selectionState.conversation;
+  const composer = selectionState.composer;
+  const activeCwd = selectionState.cwd;
+  const activeDisplayCwd = selectionState.displayCwd;
+  const openFailure = selectionState.openFailure;
+  const openRetrying = selectionState.openRetrying;
+  const rawHistoryFocus = selectionState.rawHistoryFocus;
+  const workspaceContext = selectionState.workspace;
+  const workspaceMove = selectionState.move;
+  const initialCwdStatus = selectionState.initialCwd.status;
+  const initialCwdError = selectionState.initialCwd.error;
+  const initialSessionRestored = !selectionState.restoring;
+  // The attachment the chat is mounted for: a new conversation, a fork or a fresh composer. Identity hydration and a
+  // same-project worktree move leave it alone, which is what keeps a chat from remounting for either.
+  const sessionKey = selectionState.attachment;
+  const newSessionCwd = composer?.cwd ?? null;
+  const newSessionDraftKey = composer?.draftKey ?? null;
   // Keep the system-theme subscription mounted for the lifetime of the app.
   useTheme();
   // Restore fonts even when Settings and the chat composer have not been opened.
@@ -146,11 +180,6 @@ export function AppShell() {
       // Keep the current page usable when storage is unavailable.
     }
   }, []);
-  const [selectedSession, setSelectedSession] = useState<SessionInfo | null>(null);
-  // Latest selection readable from async callbacks whose captured state is
-  // stale (e.g. a delete that completes after the user navigated away).
-  const selectedSessionRef = useRef(selectedSession);
-  selectedSessionRef.current = selectedSession;
   // One completion tone, however the completion was observed: the open conversation's own surface and a background
   // watch of another conversation both claim here, and the first to name an answer is the one that sounds it. The
   // absence-based path that predates this delivery asks before it sounds, so the changeover cannot double a tone.
@@ -162,7 +191,6 @@ export function AppShell() {
   // once, so the stream, the panel's requests and the conversation's stream present one identity, and a connection switch
   // closes this stream and opens the next one rather than carrying a tab's cursor into a scope where it means something
   // else. That value is the client's own object, which is what makes the switch a change of identity rather than a render.
-  const connection = useWorkbenchConnection();
   const terminalConnection = connection.client.connection;
   const terminalFanIn = useTerminalFanIn(terminalConnection);
   // The stream is created by the effect that shows this connection, so a render can precede it: a tab mounted in that
@@ -241,15 +269,14 @@ export function AppShell() {
   const [sessionCatalog, setSessionCatalog] = useState<SessionInfo[]>([]);
   const handleSessionsChange = useCallback((sessions: SessionInfo[]) => {
     setSessionCatalog(sessions);
+    // The sidebar lists the catalogue; the selection hears it too, because a workspace restore resolves its remembered
+    // conversation from rows that are already here rather than from a second read that would have to race this one.
+    selection.setCatalogue(sessions);
     // The sidebar hydrates metadata after the selected session has already
     // mounted. Merge that update into the active session without changing the
     // ChatWindow key or restarting its history load.
-    setSelectedSession((current) => {
-      if (!current) return current;
-      const refreshed = sessions.find((session) => session.id === current.id);
-      return refreshed ? mergeCatalogRow(current, refreshed) : current;
-    });
-  }, []);
+    selection.refreshConversationRow(sessions);
+  }, [selection]);
   const sessionsWithSelection = useMemo(() => {
     if (!selectedSession) return sessionCatalog;
     return [
@@ -299,73 +326,39 @@ export function AppShell() {
       return ids;
     });
   }, [completionDelivery]);
-  // The temporary id distinguishes consecutive fresh composers in one cwd.
-  const [newSessionCwd, setNewSessionCwd] = useState<string | null>(null);
-  const [newSessionDraftId, setNewSessionDraftId] = useState("initial");
-  const activeNewSessionDraftKeyRef = useRef<string | null>(null);
-  // The fresh composer's own key, derived in one place: the composer is mounted under it, the tab memory records it and
-  // the draft is stored under it, so a reload can bring back the composer the tab was showing.
-
-  // The bar above a fresh composer (NewSessionContextBar): the sidebar reports
-  // what it shows and carries out its moves, which remount the composer. Its
-  // model and reasoning picks, as it last reported them, go along with the
-  // draft to the composer that replaces it, which takes them once.
+  // The bar above a fresh composer (NewSessionContextBar): the sidebar keeps the folder picker and the worktree listing,
+  // and every move is an intent the selection carries out, which is what replaces a fresh composer.
   const sidebarControlRef = useRef<SessionSidebarControl | null>(null);
-  const [sidebarNewSessionContext, setSidebarNewSessionContext] = useState<NewSessionContext | null>(null);
-  // The bar's last move until the sidebar reports that cwd (a commit later),
-  // so the bar of the new composer shows the target's project, and a worktree
-  // it just created, from its first frame.
-  const newSessionMoveRef = useRef<NewSessionMove | null>(null);
-  const handleSidebarNewSessionContext = useCallback((context: NewSessionContext | null) => {
-    if (context && context.cwd === newSessionMoveRef.current?.cwd) newSessionMoveRef.current = null;
-    setSidebarNewSessionContext(context);
-  }, []);
   const newSessionBarFocusRef = useRef<NewSessionContextControl | null>(null);
+  // The picks the composer it replaces had. They travel with a carried draft, and they are taken once by the composer
+  // that receives them: a later report from that composer clears the handover rather than re-sending it.
   const newSessionChoicesRef = useRef<NewSessionChoices | null>(null);
   const [carriedNewSessionChoices, setCarriedNewSessionChoices] = useState<NewSessionChoices | null>(null);
   const handleNewSessionChoicesChange = useCallback((choices: NewSessionChoices) => {
     newSessionChoicesRef.current = choices;
     setCarriedNewSessionChoices(null);
   }, []);
-  const [initialCwdStatus, setInitialCwdStatus] = useState<"idle" | "validating" | "ready" | "error">(
-    () => initialNavigation.requestedCwd ? "validating" : "idle",
-  );
-  const [initialCwdError, setInitialCwdError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [sessionKey, setSessionKey] = useState(0);
   const sessionScrollPositionsRef = useRef(new Map<string, ChatScrollPosition>());
   const handleSessionScrollPositionChange = useCallback((sessionId: string, position: ChatScrollPosition) => {
     sessionScrollPositionsRef.current.set(sessionId, position);
   }, []);
-  /**
-   * A conversation the shell could not open, and the id it was asked for.
-   *
-   * Opening a conversation the catalogue does not carry is its own read — the by-id answer that resolves a deep link or
-   * a reference — and it used to fail into a console line, leaving the reader on whatever was already selected with no
-   * sign that the link did nothing. The state is held here, beside the selection it failed to replace, so the panel can
-   * offer the two honest steps: read again, or stay where you were.
-   */
-  const [openFailure, setOpenFailure] = useState<{ sessionId: string; entryId?: string; failure: ReadFailure } | null>(null);
-  const [openRetrying, setOpenRetrying] = useState(false);
-  const [searchTarget, setSearchTarget] = useState<{ sessionId: string; entryId: string; blockIndex?: number } | null>(null);
+  // Where a navigation must land inside its conversation, read from the selection: the entry the reader asked for, and
+  // whether the raw-history surface is the one that can show it.
+  const navigationTarget = selectionState.navigation;
+  const searchTarget = navigationTarget === null
+    ? null
+    : { sessionId: navigationTarget.sessionId, entryId: navigationTarget.entryId ?? "", ...(navigationTarget.blockIndex === undefined ? {} : { blockIndex: navigationTarget.blockIndex }) };
   const handleSearchTargetHandled = useCallback((target: { sessionId: string; entryId: string }) => {
-    setSearchTarget((current) => current === target ? null : current);
-  }, []);
-  /**
-   * The entry the raw-history surface must position on, when a navigation names an entry the window does not carry.
-   *
-   * The window's own search target is cleared the moment it cannot find an entry in the active range — correctly, since
-   * the window really cannot show it — so a navigation to a compacted or inherited entry needs a position of its own,
-   * held here and handed to the panel. A new object per request is what makes the same entry re-openable twice.
-   */
-  const [rawHistoryFocus, setRawHistoryFocus] = useState<{ sessionId: string; entryId: string } | null>(null);
+    selection.navigationHandled(target.sessionId, target.entryId);
+  }, [selection]);
   const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const [modelsRefreshKey, setModelsRefreshKey] = useState(0);
   const [projectTrust, setProjectTrust] = useState<ProjectTrustStatus | null>(null);
   const [projectTrustDialogOpen, setProjectTrustDialogOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(() => !initialNavigation.sidebarCollapsed);
-  const desktopSidebarOpenRef = useRef(!initialNavigation.sidebarCollapsed);
+  const [sidebarOpen, setSidebarOpen] = useState(() => !locationQuery.get("sidebar"));
+  const desktopSidebarOpenRef = useRef(sidebarOpen);
   // Recorded on `focusin`: `inert` blurs its contents, so at close time `activeElement` has already left.
   const sidebarHoldsFocusRef = useRef(false);
   useEffect(() => {
@@ -640,7 +633,7 @@ export function AppShell() {
 
   useEffect(() => {
     setMobileToolbarMoreOpen(false);
-  }, [isMobile, isNarrowMobile, selectedSession?.id, newSessionDraftId]);
+  }, [isMobile, isNarrowMobile, selectedSession?.id, newSessionDraftKey]);
 
   useEffect(() => {
     if (!activeTopPanel || !topBarRef.current) return;
@@ -732,11 +725,6 @@ export function AppShell() {
     if (isMobile) { setRightPanelOpen(false); setSidebarOpen(false); }
   }, [isMobile]);
 
-  const initialSessionId = initialNavigation.sessionId;
-  const [activeCwd, setActiveCwd] = useState<string | null>(null);
-  // The active project's own folder on its host, for display: `activeCwd` is a routing path
-  // (/workspace/<id>) and is only ever sent to an API. Null while nothing reported one.
-  const [activeDisplayCwd, setActiveDisplayCwd] = useState<string | null>(null);
   // A terminal tab is addressed by its routing cwd and named by its own workspace: the folder the host reported for
   // that tab, never the currently selected project's. Switching projects therefore leaves an open terminal's label
   // alone.
@@ -747,261 +735,34 @@ export function AppShell() {
     kind: "terminal" as const,
     closing: Boolean(tab.closing),
   }))];
-  const activeProjectKeyRef = useRef<string | null>(null);
-  /** The composer key this tab remembered at load, adopted once the folder it names has been validated. */
-  const rememberedNewSessionKeyRef = useRef<string | null>(null);
-  // True once the initial ?session= URL param has been resolved (or confirmed absent)
-  const [initialSessionRestored, setInitialSessionRestored] = useState<boolean>(() => !initialSessionId);
-  // sessionStorage is empty during SSR. Applying the tab's remembered session
-  // in the useState initializer made the first client tree differ from the
-  // server HTML (sidebar "select project" vs ""). Restore after mount instead.
+
+  /**
+   * Apply the page's first navigation, once, after mount.
+   *
+   * The tab's own stores and the tab memory do not exist on the server, so reading them during the first render would
+   * make the client tree differ from the HTML it hydrated. The selection reads them here instead, and the drafts it
+   * brings back are adopted before any composer mounts.
+   */
   useLayoutEffect(() => {
-    // Both stores are per-tab and only exist in the browser, so they are read after mount rather than during the first
-    // render: the server has neither, and a tree that rendered them would be a hydration mismatch. The drafts are
-    // adopted here too, so the composer this navigation brings back reads the tab's own text and images.
-    hydrateDrafts();
-    const tabOpen = getTabOpen();
-    // A fresh composer's key is per composer (`new:<id>:<cwd>`), so the id can only come from the tab: this is the one
-    // place it survives a reload, and the composer it names is the one that comes back with its draft.
-    if (tabOpen?.kind === "new") rememberedNewSessionKeyRef.current = tabOpen.draftKey ?? null;
-    const next = withTabOpen(initialNavigation, tabOpen);
-    if (next === initialNavigation) return;
-    setInitialNavigation(next);
-    if (next.sessionId) setInitialSessionRestored(false);
-  }, [initialNavigation]);
-  // Suppresses sessionKey bump in handleCwdChange during the initial URL restore
-  const suppressCwdBumpRef = useRef(false);
-  // Guards the async workspace restore so a slow response from an earlier
-  // switch cannot resurrect a session into a project the user already left.
-  const workspaceRestoreTokenRef = useRef(0);
+    selection.start();
+  }, [selection]);
 
-  const invalidateWorkspaceRestore = useCallback(() => {
-    workspaceRestoreTokenRef.current += 1;
-  }, []);
+  // The workspace's last open conversation is restored by the selection itself, from the catalogue the sidebar lists —
+  // so this only has to hand it the listing and tell it the workspace moved.
 
-  // Persist every active-session transition, including new and forked sessions
-  // that bypass the sidebar selection handler. Transient sessions do not yet
-  // carry projectKey, so use the active project identity until hydration.
-  // The workspace memory is shared by every tab; the tab memory keeps this
-  // tab's own session so a reload does not follow another tab's last pick.
-  // New session is a selection too: remember the composer cwd so reload stays
-  // on that UI instead of resurrecting the previous chat.
-  useEffect(() => {
-    if (selectedSession) {
-      const projectKey = selectedSession.projectKey
-        ?? activeProjectKeyRef.current
-        ?? workspaceKeyOf(selectedSession);
-      setLastOpenSession(projectKey, selectedSession.id);
-      setTabOpenSession(selectedSession.id);
-      return;
-    }
-  }, [selectedSession]);
-
-  useEffect(() => {
-    const requestedCwd = initialNavigation.requestedCwd;
-    if (!requestedCwd) return;
-
-    const controller = new AbortController();
-    setInitialCwdStatus("validating");
-    setInitialCwdError(null);
-
-    void connection.client.request("/api/cwd/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cwd: requestedCwd }),
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const data = await response.json().catch(() => ({})) as { cwd?: string; error?: string };
-        if (!response.ok || !data.cwd) {
-          throw new Error(data.error ?? `HTTP ${response.status}`);
-        }
-
-        // The sidebar will notify us when it adopts this cwd. Avoid remounting
-        // the just-created empty chat during that initial synchronization.
-        suppressCwdBumpRef.current = true;
-        // A reload comes back to the composer this tab was showing, not to a new one: the remembered key names the
-        // folder it belongs to, and a key for another folder is refused so one workspace's draft is never attached to
-        // another's composer. Only an id the tab actually had is reused — invented ids would be a second composer.
-        const remembered = rememberedNewSessionKey(rememberedNewSessionKeyRef.current, data.cwd);
-        const draftId = remembered ? remembered.draftId : `initial:${requestedCwd}`;
-        setNewSessionDraftId(draftId);
-        activeNewSessionDraftKeyRef.current = `new:${draftId}:${data.cwd}`;
-        setNewSessionCwd(data.cwd);
-        setInitialCwdStatus("ready");
-        if (!locationQuery.get("cwd")) {
-          navigate(`?cwd=${encodeURIComponent(data.cwd)}`);
-        }
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setInitialCwdError(error instanceof Error ? error.message : String(error));
-        setInitialCwdStatus("error");
-      });
-
-    return () => controller.abort();
-  }, [initialNavigation, navigate]);
-
-  // Restore the workspace's last open session after switching to it. Called
-  // from handleCwdChange once the outgoing context has been reset. The session
-  // is looked up against the live list so a deleted or drifted session falls
-  // back to the default welcome page instead of erroring.
-  const restoreWorkspaceContext = useCallback((projectKey: string, cwd: string) => {
-    const token = ++workspaceRestoreTokenRef.current;
-    const lastOpenSessionId = getLastOpenSession(projectKey);
-    if (!lastOpenSessionId) return;
-    const adopt = (d: { sessions: SessionInfo[] } | null) => {
-      if (token !== workspaceRestoreTokenRef.current) return; // stale switch
-      const s = d?.sessions.find((x) => x.id === lastOpenSessionId);
-      if (!s) {
-        // The list loaded but the remembered session is gone — forget it.
-        // When the list itself failed (d === null) keep the memory so a
-        // later switch retries the restore.
-        if (d) clearLastOpen(projectKey);
-        return;
-      }
-      if (workspaceKeyOf(s) !== projectKey) {
-        // Defensive: the remembered session drifted out of this workspace.
-        clearLastOpen(projectKey);
-        return;
-      }
-      // Keep the temporary composer's draft in its cwd, even when the
-      // remembered session belongs to another worktree of this project.
-      const activeDraftKey = activeNewSessionDraftKeyRef.current;
-      if (activeDraftKey) {
-        rekeyDraft(activeDraftKey, parkedNewSessionDraftKey(cwd));
-      }
-      activeNewSessionDraftKeyRef.current = null;
-      // Selecting the session must remount the chat with the session
-      // present: useAgentSession loads content in a mount-only effect, so
-      // the null-session welcome mount from the switch would never load
-      // the restored session's messages.
-      setSelectedSession(s);
-      setSessionKey((k) => k + 1);
-      if (locationQuery.get("session") !== s.id) {
-        navigate(`?session=${encodeURIComponent(s.id)}`);
-      }
-    };
-    // Fast path: the sidebar already delivered the catalogue — restore
-    // without waiting on a fresh /api/sessions round trip.
-    if (sessionCatalog.length > 0) {
-      adopt({ sessions: sessionCatalog });
-      return;
-    }
-    void api.list()
-      .then((catalogue) => ({ sessions: catalogue.sessions as SessionInfo[] }))
-      .then(adopt)
-      .catch(() => {
-        // Network hiccup: keep the remembered session for a later retry.
-      });
-  }, [locationQuery, navigate, sessionCatalog]);
-
-  const handleCwdChange = useCallback((
-    cwd: string | null,
-    projectRoot?: string | null,
-    projectKey?: string | null,
-    projectDisplayRoot?: string | null,
-  ) => {
-    invalidateWorkspaceRestore();
-    const currentFreshCwd = newSessionCwd ?? activeCwd;
-    setActiveCwd(cwd);
-    setActiveDisplayCwd(projectDisplayRoot ?? null);
-    // Skip if cwd is null (initial mount).
-    if (!cwd) return;
-    const newProject = projectKey ?? projectRoot ?? cwd;
-    const currentProject = activeProjectKeyRef.current
-      ?? (selectedSession ? workspaceKeyOf(selectedSession) : null);
-    activeProjectKeyRef.current = newProject;
-
-    // Keep the project identity in sync during the initial URL restore without
-    // remounting the just-created or restored chat.
-    if (suppressCwdBumpRef.current) {
-      suppressCwdBumpRef.current = false;
-      return;
-    }
-    // The server may hydrate a normalized key after a custom cwd is already
-    // active. Updating identity for the exact same cwd is not a user switch.
-    if (currentFreshCwd === cwd && currentProject !== newProject) return;
-    // Existing sessions stay open when the worktree selector moves within the
-    // same project. A fresh composer must remount when its effective cwd moves,
-    // otherwise its already-created runtime would keep sending to the old cwd.
-    if (
-      currentProject === newProject
-      && (selectedSession !== null || currentFreshCwd === cwd)
-    ) {
-      return;
-    }
-    // A folder's project identity is resolved from whichever route answered:
-    // the session list, the worktree route, a validated pick. While the open
-    // conversation is still the one this notification is about, that is
-    // identity hydration, not a workspace switch — closing the chat and
-    // rewriting the URL there is the reported home flicker.
-    if (selectedSession !== null) {
-      const selectedKey = selectedSession.projectKey ?? workspaceKeyOf(selectedSession);
-      if (cwd === selectedSession.cwd || newProject === selectedKey) return;
-    }
-    // Close any session that belongs to a different project — it no longer
-    // matches the selected project directory.
-    const previousDraftKey = activeNewSessionDraftKeyRef.current;
-    if (previousDraftKey && currentFreshCwd) {
-      rekeyDraft(previousDraftKey, parkedNewSessionDraftKey(currentFreshCwd));
-    }
-    const draftId = typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-    const draftKey = `new:${draftId}:${cwd}`;
-    rekeyDraft(parkedNewSessionDraftKey(cwd), draftKey);
-    setNewSessionDraftId(draftId);
-    activeNewSessionDraftKeyRef.current = draftKey;
-    setSelectedSession(null);
-    setNewSessionCwd((prev) => {
-      if (prev && prev !== cwd) return null;
-      return prev;
-    });
-    setSessionKey((k) => k + 1);
-    setSystemPrompt(null);
-    setSystemTools(null);
-    setSystemInfoLoading(false);
-    setActiveTopPanel(null);
-    if (currentProject !== newProject) {
-      // File tabs are keyed by absolute path, so tabs opened in the previous
-      // project must not linger. Same-project worktree switches keep them.
-      setFileTabs([]);
-      if (!activeFileTabId || activeFileTabId.startsWith("file:")) {
-        setActiveFileTabId(null);
-        setRightPanelOpen(false);
-      }
-      // Restore the workspace we switched to: its last open session, or keep
-      // the default welcome page when none is remembered.
-      restoreWorkspaceContext(newProject, cwd);
-    }
-    navigate("");
-  }, [activeCwd, activeFileTabId, invalidateWorkspaceRestore, locationQuery, navigate, newSessionCwd, selectedSession, restoreWorkspaceContext]);
-
-  const handleSelectSession = useCallback((session: SessionInfo, isRestore = false, entryId?: string, blockIndex?: number, options?: SelectSessionOptions) => {
-    // A selection that landed is the recovery from an open that did not: the panel was about the target the reader
-    // asked for, and this is that target, or the one they chose instead.
-    setOpenFailure(null);
-    setSearchTarget(entryId ? { sessionId: session.id, entryId, blockIndex } : null);
-    // A navigation that must land on a named entry also positions the raw-history surface, because the entry it names
-    // may be one the window does not carry at all. Every other navigation clears the position: it belongs to one
-    // request, not to the session.
-    if (entryId !== undefined && options?.rawHistoryFocus === true) {
-      setRawHistoryFocus({ sessionId: session.id, entryId });
-      setActiveTopPanel("history");
-    } else {
-      setRawHistoryFocus(null);
-    }
-    invalidateWorkspaceRestore();
-    const activeDraftKey = activeNewSessionDraftKeyRef.current;
-    const activeDraftCwd = newSessionCwd ?? (selectedSession === null ? activeCwd : null);
-    if (activeDraftKey && activeDraftCwd) {
-      rekeyDraft(activeDraftKey, parkedNewSessionDraftKey(activeDraftCwd));
-    }
-    activeNewSessionDraftKeyRef.current = null;
-    // Adopt an explicitly selected session before the sidebar reports its cwd.
-    const projectKey = workspaceKeyOf(session);
-    if (activeProjectKeyRef.current !== projectKey) {
+  /**
+   * A workspace switch the reader made, from the sidebar's pickers or the files tab.
+   *
+   * The selection decides what it costs: a conversation of the same project stays open while the folder around it
+   * moves; anything else is replaced by the destination's own restore.
+   */
+  const handleSelectWorkspace = useCallback((target: WorkspaceTarget) => {
+    const previousProject = selection.getState().projectKey;
+    selection.selectWorkspace(target);
+    const nextProject = selection.getState().projectKey;
+    if (previousProject !== null && nextProject !== null && previousProject !== nextProject) {
+      // File tabs are keyed by absolute path, so tabs opened in the previous project must not linger. Same-project
+      // worktree switches keep them.
       setFileTabs([]);
       if (!activeFileTabId || activeFileTabId.startsWith("file:")) {
         setActiveFileTabId(null);
@@ -1009,148 +770,76 @@ export function AppShell() {
       }
       setActiveTopPanel(null);
     }
-    activeProjectKeyRef.current = projectKey;
-    // Re-clicking the already-open session must not remount the chat and
-    // re-run the full load/positioning cycle. Only skip when the effective
-    // cwd context already matches — otherwise a pending cwd move still needs
-    // the full re-select flow.
-    if (!isRestore && selectedSession) {
-      const sameProject =
-        workspaceKeyOf(selectedSession) === workspaceKeyOf(session);
-      if (selectedSession.id === session.id && sameProject) {
-        if (isMobile) setSidebarOpen(false);
-        return;
-      }
-    }
-    setNewSessionCwd(null);
-    setSelectedSession(session);
-    setSessionKey((k) => k + 1);
-    setSystemPrompt(null);
-    setSystemTools(null);
-    setSystemInfoLoading(false);
-    setInitialSessionRestored(true);
-    // On mobile, collapse the overlay drawer so the chat is revealed after pick
-    // (unless the sidebar still has something to show: a fork's row and toast).
-    if (isMobile && !isRestore && !options?.keepSidebarOpen) setSidebarOpen(false);
-    if (isRestore) {
-      // Suppress the redundant sessionKey bump that would come from the
-      // onCwdChange effect firing after setSelectedCwd in the sidebar
-      suppressCwdBumpRef.current = true;
-    }
-    // A navigation that already names this session writes nothing; a restore always writes it, because a restore from
-    // tab memory lands on the bare route and reload or a copied link has to carry the session the tab was showing.
-    if (!isRestore || locationQuery.get("session") !== session.id) {
-      navigate(`?session=${encodeURIComponent(session.id)}`);
-    }
-  }, [activeCwd, activeFileTabId, invalidateWorkspaceRestore, locationQuery, navigate, isMobile, newSessionCwd, selectedSession]);
+  }, [activeFileTabId, selection]);
 
-  const handleNewSession = useCallback((sessionId: string, cwd: string, projectKey?: string | null, options?: NewSessionOptions) => {
-    invalidateWorkspaceRestore();
-    const draftKey = `new:${sessionId}:${cwd}`;
-    // Leaving a fresh composer for another cwd parks its draft there, as a
-    // workspace switch does; New in the same cwd still starts empty. The bar
-    // above the composer moves the composer instead: its draft (the live
-    // text, as promoteNewSession takes it) and its model picks go along.
-    const activeDraftKey = activeNewSessionDraftKeyRef.current;
-    const activeDraftCwd = newSessionCwd ?? (selectedSession === null ? activeCwd : null);
-    if (options?.carryComposer && selectedSession === null && activeDraftKey) {
-      const input = chatInputRef.current;
-      if (input) input.rekeyDraft(activeDraftKey, draftKey);
-      else rekeyDraft(activeDraftKey, draftKey);
-      setCarriedNewSessionChoices(newSessionChoicesRef.current);
-    } else if (activeDraftKey && activeDraftCwd && activeDraftCwd !== cwd) {
-      rekeyDraft(activeDraftKey, parkedNewSessionDraftKey(activeDraftCwd));
-    }
-    // Adopt the target project before the sidebar reports its cwd, as an
-    // explicit session pick does: a new session in another project (a group's
-    // "+" in the sidebar) closes the previous project's file tabs. Without a
-    // key (Ctrl+Alt+N) the current cwd keeps its project.
-    const targetProject = projectKey ?? (cwd === activeCwd ? activeProjectKeyRef.current : null) ?? cwd;
-    if (activeProjectKeyRef.current !== targetProject) {
-      setFileTabs([]);
-      if (!activeFileTabId || activeFileTabId.startsWith("file:")) {
-        setActiveFileTabId(null);
-        setRightPanelOpen(false);
-      }
-    }
-    activeProjectKeyRef.current = targetProject;
-    // A draft parked in this cwd comes back, unless one was carried here: it
-    // stays parked for the next time, never merged into what was carried.
-    if (!getDraft(draftKey)) rekeyDraft(parkedNewSessionDraftKey(cwd), draftKey);
-    activeNewSessionDraftKeyRef.current = draftKey;
-    setNewSessionDraftId(sessionId);
-    setSelectedSession(null);
-    setNewSessionCwd(cwd);
-    setSessionKey((k) => k + 1);
-    setSystemPrompt(null);
-    setSystemTools(null);
-    setSystemInfoLoading(false);
-    setActiveTopPanel(null);
-    if (isMobile) setSidebarOpen(false);
-    navigate(`?cwd=${encodeURIComponent(cwd)}`);
-  }, [activeCwd, activeFileTabId, invalidateWorkspaceRestore, isMobile, navigate, newSessionCwd, selectedSession]);
+  /**
+   * Identity, not a choice: the sidebar resolved which project the folder in effect belongs to.
+   *
+   * It never moves the selection, never remounts the chat and never rewrites the URL; it only records the key the
+   * memories and the same-project checks are stated in.
+   */
+  const handleWorkspaceIdentity = useCallback((target: WorkspaceTarget) => {
+    selection.acceptWorkspaceIdentity(target);
+  }, [selection]);
+
+  const handleNewSession = useCallback((target: WorkspaceTarget, options?: StartComposerOptions) => {
+    if (options?.carry === true) setCarriedNewSessionChoices(newSessionChoicesRef.current);
+    selection.startComposer(target, options);
+  }, [selection]);
 
   // Global keyboard shortcuts (handles Esc, Ctrl+Alt+N etc.)
   useGlobalKeyboardShortcuts({
-    onNewSession: (cwd: string) => handleNewSession(`kb-${Date.now()}`, cwd),
+    onNewSession: (cwd: string) => handleNewSession({ cwd }),
     activeCwd,
   });
 
   // Client-built transient SessionInfo (new session / fork) lacks the
-  // server-computed projectKey, which the same-project check in
-  // handleCwdChange relies on. Hydrate it from the session list so switching
-  // worktrees right after creating a session doesn't close the chat.
+  // server-computed projectKey, which the same-project check relies on.
+  // Hydrate it from the session list so switching worktrees right after
+  // creating a session doesn't close the chat.
   const hydrateSelectedSession = useCallback((sessionId: string) => {
     void api.list()
       .then((catalogue) => ({ sessions: catalogue.sessions as SessionInfo[] }))
       .then((d) => {
         const full = d?.sessions.find((s) => s.id === sessionId);
         if (!full) return;
-        setSelectedSession((prev) => (
-          prev?.id === sessionId
-            ? { ...prev, ...full, transient: full.transient ?? false }
-            : prev
-        ));
+        selection.refreshConversationRow(d.sessions);
       })
       .catch(() => {});
-  }, []);
+  }, [selection]);
 
-  const handleOpenSession = useCallback(async (sessionId: string, entryId?: string, options?: SelectSessionOptions) => {
-    // Prefer the catalogue the sidebar already delivered: selecting from it
-    // avoids a full detail round trip just to obtain the SessionInfo.
-    const catalogued = sessionCatalog.find((s) => s.id === sessionId);
+  /**
+   * Open a conversation by id: a deep link, a reference, a citation, the raw-history surface's own rows.
+   *
+   * The catalogue the sidebar already delivered answers first, so a row click costs no detail read; anything else is the
+   * by-id read, which is the conversation's identity *and* its row. The selection fences both by the target the reader
+   * is on, so an answer for a target they already left changes nothing.
+   */
+  const handleOpenSession = useCallback(async (sessionId: string, entryId?: string, options?: { rawHistoryFocus?: boolean }) => {
+    const selectOptions: SelectConversationOptions = {
+      ...(entryId === undefined ? {} : { entryId }),
+      ...(options?.rawHistoryFocus === true ? { rawHistory: true } : {}),
+    };
+    const catalogued = sessionCatalog.find((session) => session.id === sessionId);
     if (catalogued && !catalogued.transient) {
-      setOpenFailure(null);
-      handleSelectSession(catalogued, false, entryId, undefined, options);
+      selection.selectConversation(catalogued, selectOptions);
       return;
     }
-    try {
-      // The by-id read is the conversation's identity *and* its catalogue row, so the deep link resolves to the row the
-      // list would have shown for it instead of to a second list read that would have to race this one.
-      const opened = await api.open(sessionId);
-      // The navigation may have moved on while this read was in flight: the failure state belongs to the request, so
-      // it is cleared only by the answer that is still the reader's intent.
-      setOpenFailure((current) => (current?.sessionId === sessionId ? null : current));
-      handleSelectSession(opened, false, entryId, undefined, options);
-    } catch (error) {
-      // A target that is gone and a target that could not be read are different states: the first is answered, the
-      // second can be retried. Neither is a console line — the reader clicked a link and is owed an answer.
-      console.error("[pi-web] failed to open session:", error instanceof Error ? error.message : error);
-      setOpenFailure({ sessionId, ...(entryId === undefined ? {} : { entryId }), failure: classifyReadFailure(error) });
-    }
-  }, [handleSelectSession, sessionCatalog]);
+    await selection.openConversation(sessionId, selectOptions);
+  }, [selection, sessionCatalog]);
+
+  /** Open a row a panel already holds: the child tree, a delegate's existing child, a search hit. */
+  const handleSelectConversation = useCallback((session: SessionInfo, entryId?: string, blockIndex?: number) => {
+    selection.selectConversation(session, {
+      ...(entryId === undefined ? {} : { entryId }),
+      ...(blockIndex === undefined ? {} : { blockIndex }),
+    });
+  }, [selection]);
 
   /** Read the conversation the shell failed to open again. Only the read is repeated — never the navigation's writes. */
   const retryOpenSession = useCallback(async () => {
-    const pending = openFailure;
-    if (pending === null || openRetrying) return;
-    setOpenRetrying(true);
-    try {
-      await handleOpenSession(pending.sessionId, pending.entryId);
-    } finally {
-      setOpenRetrying(false);
-    }
-  }, [handleOpenSession, openFailure, openRetrying]);
+    await selection.retryOpen();
+  }, [selection]);
 
   /**
    * Leave a conversation for the composer of the folder it belonged to.
@@ -1159,41 +848,18 @@ export function AppShell() {
    * cannot be read at all. Both land the reader in a context the shell already knows how to open, and neither touches
    * the unsent draft, which is stored under its own key and is still there when they come back.
    */
-  const fallBackToComposer = useCallback((session: SessionInfo) => {
-    clearTabOpenSession(session.id);
-    const cwd = session.cwd;
-    const draftId = typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-    setNewSessionDraftId(draftId);
-    activeNewSessionDraftKeyRef.current = cwd ? `new:${draftId}:${cwd}` : null;
-    setSelectedSession(null);
-    setNewSessionCwd(cwd ?? null);
-    setSessionKey((k) => k + 1);
-    setSystemPrompt(null);
-    setSystemTools(null);
-    setSystemInfoLoading(false);
-    setActiveTopPanel(null);
-    navigate(cwd ? `?cwd=${encodeURIComponent(cwd)}` : "");
-  }, [navigate]);
-
   /** The recovery a failed conversation read offers: back to a context that is not broken. */
   const leaveUnreadableSession = useCallback(() => {
-    const active = selectedSessionRef.current;
-    if (active !== null) fallBackToComposer(active);
-  }, [fallBackToComposer]);
+    selection.leaveUnreadableConversation();
+  }, [selection]);
 
-  // Called by ChatWindow when a new session gets its real id from pi
-  const handleSessionCreated = useCallback((session: SessionInfo, sourceDraftKey: string) => {
+  // Called by ChatWindow when a new session gets its real id from pi: the fresh composer became this conversation, and
+  // the promotion is the one place that handover happens.
+  const handleSessionCreated = useCallback((session: SessionInfo) => {
     setRefreshKey((k) => k + 1);
-    if (activeNewSessionDraftKeyRef.current !== sourceDraftKey) return;
-    invalidateWorkspaceRestore();
-    activeNewSessionDraftKeyRef.current = null;
-    setNewSessionCwd(null);
-    setSelectedSession(session);
+    selection.acceptPromotion(session);
     hydrateSelectedSession(session.id);
-    navigate(`?session=${encodeURIComponent(session.id)}`);
-  }, [invalidateWorkspaceRestore, navigate, hydrateSelectedSession]);
+  }, [hydrateSelectedSession, selection]);
 
   const deliverSessionNotification = useCallback(({
     targetSession,
@@ -1217,7 +883,7 @@ export function AppShell() {
         tag,
         onClick: () => {
           window.focus();
-          if (targetSession) handleSelectSession(targetSession);
+          if (targetSession) selection.selectConversation(targetSession);
         },
       });
     };
@@ -1229,7 +895,7 @@ export function AppShell() {
         if (p === "granted") fire();
       });
     }
-  }, [handleSelectSession]);
+  }, [selection]);
 
   const handleAgentEnd = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -1261,7 +927,7 @@ export function AppShell() {
       const title = body.title.trim();
       setRefreshKey((key) => key + 1);
       if (activeSessionIdRef.current !== sessionId) return;
-      setSelectedSession((current) => current?.id === sessionId ? { ...current, name: title } : current);
+      selection.renameConversation(sessionId, title);
       setSessionStats((current) => current?.sessionId === sessionId ? { ...current, sessionName: title } : current);
       setAutoNameStatus({ kind: "success" });
       autoNameTimerRef.current = setTimeout(() => setAutoNameStatus({ kind: "idle" }), 1800);
@@ -1300,19 +966,21 @@ export function AppShell() {
   }, []);
 
   const handleSessionForked = useCallback((newSessionId: string) => {
-    invalidateWorkspaceRestore();
-    activeNewSessionDraftKeyRef.current = null;
     setRefreshKey((k) => k + 1);
-    setSessionKey((k) => k + 1);
-    setNewSessionCwd(null);
-    setSelectedSession((prev) => ({
-      ...(prev ?? { path: "", cwd: "", created: "", modified: "", messageCount: 0, firstMessage: "" }),
+    // The copy is what the reader is shown: the selection adopts it as a conversation, and its own row is hydrated from
+    // the catalogue so the same-project check does not mistake a transient row for another project.
+    selection.conversationForked({
+      path: "",
       id: newSessionId,
+      cwd: activeCwd ?? "",
+      created: "",
+      modified: "",
+      messageCount: 0,
+      firstMessage: "",
       transient: false,
-    }));
+    });
     hydrateSelectedSession(newSessionId);
-    navigate(`?session=${encodeURIComponent(newSessionId)}`);
-  }, [invalidateWorkspaceRestore, navigate, hydrateSelectedSession]);
+  }, [activeCwd, hydrateSelectedSession, selection]);
 
   const handleAskInNewChat = useCallback(async (
     prompt: string,
@@ -1325,20 +993,12 @@ export function AppShell() {
     handleSessionForked(forked.value.conversationId);
   }, [handleSessionForked, translate]);
 
-  const handleInitialRestoreDone = useCallback(() => {
-    setInitialSessionRestored(true);
-  }, []);
-
   const handleSessionDeleted = useCallback((sessionId: string) => {
-    invalidateWorkspaceRestore();
     setRefreshKey((k) => k + 1);
-    // The DELETE can outlive a session switch: this callback's captured
-    // selectedSession is from the delete click. Read the latest selection
-    // and only fall back to the empty composer when the user is still on
-    // the deleted session at the moment removal completes.
-    const active = selectedSessionRef.current;
-    if (active?.id === sessionId) fallBackToComposer(active);
-  }, [fallBackToComposer, invalidateWorkspaceRestore]);
+    // The DELETE can outlive a session switch. The selection reads its own current state, so a removal that completes
+    // after the reader moved on leaves the conversation they are on alone, and only the deleted one is left.
+    selection.conversationDeleted(sessionId);
+  }, [selection]);
 
   const handleOpenFile = useCallback((
     filePath: string,
@@ -1419,18 +1079,9 @@ export function AppShell() {
     toggleTopPanel("history");
   }, [selectedSession, toggleTopPanel]);
 
-  // Show chat area if a session is selected, or if we have a cwd to start a new session in
-  const effectiveNewSessionCwd = newSessionCwd ?? (selectedSession === null && activeCwd ? activeCwd : null);
-  const newSessionDraftKey = selectedSession === null && effectiveNewSessionCwd
-    ? `new:${newSessionDraftId}:${effectiveNewSessionCwd}`
-    : null;
-  useLayoutEffect(() => {
-    activeNewSessionDraftKeyRef.current = newSessionDraftKey;
-    // The composer's own key travels with the folder: it is what tells a reload which fresh composer this tab had, and
-    // without it the restored cwd would open an empty composer beside the draft it was holding. It is the key this
-    // render mounts the composer under, so the tab cannot remember a neighbouring id.
-    if (effectiveNewSessionCwd && newSessionDraftKey) setTabOpenNewSession(effectiveNewSessionCwd, newSessionDraftKey);
-  }, [effectiveNewSessionCwd, newSessionDraftKey]);
+  // Show chat area if a conversation is selected, or if the fresh composer has a folder to start in.
+  const effectiveNewSessionCwd = selectedSession === null ? newSessionCwd : null;
+  const composerDraftKeyNow = selectedSession === null ? newSessionDraftKey : null;
 
   // The bar above a fresh composer. Only a fresh composer moves, and only
   // somewhere else: the folder in use would remount it for nothing. The
@@ -1438,16 +1089,16 @@ export function AppShell() {
   const handlePickNewSessionContext = useCallback((target: NewSessionTarget, from: NewSessionContextControl) => {
     if (selectedSession !== null || !effectiveNewSessionCwd || target.cwd === effectiveNewSessionCwd) return;
     newSessionBarFocusRef.current = from;
-    // A worktree just created already left its move, with the branch.
-    if (target.projectKey && target.projectRoot && newSessionMoveRef.current?.cwd !== target.cwd) {
-      newSessionMoveRef.current = {
-        cwd: target.cwd,
-        project: { key: target.projectKey, root: target.projectRoot, ...(target.projectDisplayRoot === undefined ? {} : { displayRoot: target.projectDisplayRoot }) },
-        branch: null,
-      };
-    }
-    sidebarControlRef.current?.startNewSessionIn({ ...target, carryComposer: true });
-  }, [effectiveNewSessionCwd, selectedSession]);
+    // The composer's own draft and picks move with it: the bar's pick is the carry, and the target's parked draft stays
+    // parked for the next visit rather than merging into what the user is writing.
+    setCarriedNewSessionChoices(newSessionChoicesRef.current);
+    selection.startComposer({
+      cwd: target.cwd,
+      ...(target.projectKey === undefined ? {} : { projectKey: target.projectKey }),
+      ...(target.projectRoot === undefined ? {} : { projectRoot: target.projectRoot }),
+      ...(target.projectDisplayRoot === undefined ? {} : { displayRoot: target.projectDisplayRoot }),
+    }, { carry: true });
+  }, [effectiveNewSessionCwd, selectedSession, selection]);
   // The folder picker answers later: its pick runs the newest closure, guard included.
   const pickNewSessionContextRef = useRef(handlePickNewSessionContext);
   pickNewSessionContextRef.current = handlePickNewSessionContext;
@@ -1463,22 +1114,14 @@ export function AppShell() {
   const handleCreateNewSessionWorktree = useCallback(async (project: ProjectChoice, branch: string) => {
     const control = sidebarControlRef.current;
     if (!control) throw new Error("The session sidebar is not mounted");
-    const result = await control.createWorktree(project, branch);
-    // The bar moves there next, before any report lists it, and the checkout it just made travels with the move: a
-    // conversation binds the workspace the checkout was recorded as, so that — not the directory — is where the
-    // composer goes, and the first bar after the create lists the checkout the way the next listing will.
-    if ("path" in result) {
-      const created: WorktreeChoice = { path: result.path, branch: result.branch ?? branch, isMain: false, ...(result.workspaceId === undefined ? {} : { workspaceId: result.workspaceId }) };
-      newSessionMoveRef.current = { cwd: worktreeCwd(created), project, branch: created.branch, worktree: created };
-    }
-    return result;
+    return await control.createWorktree(project, branch);
   }, []);
   const handleNewSessionBarFocusDone = useCallback(() => {
     newSessionBarFocusRef.current = null;
   }, []);
   const newSessionContextBar = selectedSession === null && effectiveNewSessionCwd ? (
     <NewSessionContextBar
-      context={contextForCwd(sidebarNewSessionContext, effectiveNewSessionCwd, newSessionMoveRef.current)}
+      context={contextForCwd(workspaceContext, effectiveNewSessionCwd, workspaceMove)}
       mobile={isMobile}
       initialFocus={newSessionBarFocusRef.current}
       onInitialFocusDone={handleNewSessionBarFocusDone}
@@ -1551,18 +1194,8 @@ export function AppShell() {
   const sidebarContent = (
     <>
       <SessionSidebar
-        selectedSessionId={selectedSession?.id ?? null}
-        onSelectSession={handleSelectSession}
-        onNewSession={handleNewSession}
         controlRef={sidebarControlRef}
-        onNewSessionContextChange={handleSidebarNewSessionContext}
-        initialSessionId={initialSessionId}
-        skipInitialSessionRestore={initialNavigation.requestedCwd !== null}
-        onInitialRestoreDone={handleInitialRestoreDone}
         refreshKey={refreshKey}
-        onSessionDeleted={handleSessionDeleted}
-        selectedCwd={selectedSession?.cwd ?? newSessionCwd ?? null}
-        onCwdChange={handleCwdChange}
         onOpenFile={handleOpenFile}
         onOpenTerminal={handleOpenTerminal}
         explorerRefreshKey={explorerRefreshKey}
@@ -2159,6 +1792,7 @@ export function AppShell() {
   };
 
   return (
+    <WorkbenchSelectionProvider value={selection}>
     <>
     <style>{`
       @keyframes session-info-pop {
@@ -2426,7 +2060,7 @@ export function AppShell() {
                     subagents={activeSessionFamily.subagents}
                     selectedSessionId={selectedSession.id}
                     runningSessionIds={runningSessionIds}
-                    onSelectSession={handleSelectSession}
+                    onSelectSession={handleSelectConversation}
                   />
                   {/*
                     Subtree control sits **below** the tree it names: a row stays a row, and navigation stays available
@@ -2439,7 +2073,7 @@ export function AppShell() {
                       root={activeSessionFamily.root}
                       descendants={activeSessionFamily.subagents.map((session) => ({ id: session.id, session }))}
                       runningSessionIds={runningSessionIds}
-                      onSelectSession={handleSelectSession}
+                      onSelectSession={handleSelectConversation}
                       onControlled={handleSubtreeControlled}
                     />
                   )}
@@ -2452,7 +2086,7 @@ export function AppShell() {
                   canDelegate={canDelegate}
                   isChild={selectedSession.relation?.kind === "subagent"}
                   existingChildren={delegateTargets}
-                  onOpenChild={(session) => handleSelectSession(session)}
+                  onOpenChild={(session) => handleSelectConversation(session)}
                   onCreated={handleDelegated}
                 />
               )}
@@ -2689,7 +2323,7 @@ export function AppShell() {
               variant="surface"
               retrying={openRetrying}
               onRetry={readFailureRetryable(openFailure.failure) ? () => { void retryOpenSession(); } : undefined}
-              onBack={() => setOpenFailure(null)}
+              onBack={() => selection.dismissOpenFailure()}
             />
           ) : showChat ? (
             <ChatWindow
@@ -2739,7 +2373,7 @@ export function AppShell() {
             >
                <div style={{ fontSize: 14, color: "var(--text)" }}>{translate("workspace.opening")}</div>
               <div style={{ maxWidth: "min(720px, 100%)", overflowWrap: "anywhere", fontFamily: "var(--font-mono)", fontSize: 12 }}>
-                {initialNavigation.requestedCwd}
+                {selectionState.initialCwd.requested}
               </div>
             </div>
           ) : initialCwdStatus === "error" ? (
@@ -2749,7 +2383,7 @@ export function AppShell() {
             >
                <div style={{ fontSize: 14, color: "#dc2626" }}>{translate("workspace.unable")}</div>
               <div style={{ maxWidth: "min(720px, 100%)", overflowWrap: "anywhere", fontFamily: "var(--font-mono)", fontSize: 12 }}>
-                {initialNavigation.requestedCwd}
+                {selectionState.initialCwd.requested}
               </div>
               <div style={{ maxWidth: 720, fontSize: 12 }}>{initialCwdError}</div>
             </div>
@@ -2921,7 +2555,7 @@ export function AppShell() {
           setSettingsSection(null);
           setModelsRefreshKey((key) => key + 1);
         }}
-        onSessionReloaded={() => setSessionKey((key) => key + 1)}
+        onSessionReloaded={() => selection.reloadAttachment()}
         projectTrust={projectTrust}
         onProjectTrustChanged={handleProjectTrustChanged}
       />
@@ -2938,5 +2572,6 @@ export function AppShell() {
       />
     )}
     </>
+    </WorkbenchSelectionProvider>
   );
 }
