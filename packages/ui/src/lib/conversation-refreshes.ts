@@ -36,13 +36,13 @@ import type { ReloadOutcome } from "../hooks/useAgentSession";
 export type ConversationRefreshOutcome = ReloadOutcome | { readonly status: "not_open" };
 
 /**
- * One conversation's refresh, as the chat that owns it publishes it.
+ * One conversation's refresh, as the chat that owns it publishes it: exactly the operation the chat performs, with the
+ * outcome it reports.
  *
- * It reports its own failure rather than throwing, so the surface that asked cannot mistake a rejection for an outcome
- * it never received. It may answer `not_open` itself: the operation a shell publishes is the chat's own while one is
- * mounted, and nothing once it is gone.
+ * It answers its own failure rather than throwing, so the surface that asked cannot mistake a rejection for an outcome
+ * it never received. `not_open` is not one of its answers: that is what this registry says when no chat published one.
  */
-export type ConversationRefresh = () => Promise<ConversationRefreshOutcome>;
+export type ConversationRefresh = () => Promise<ReloadOutcome>;
 
 export type ConversationRefreshes = {
   /** The mounted chat of `conversationId` publishes its own refresh, replacing whatever was held for that id. */
