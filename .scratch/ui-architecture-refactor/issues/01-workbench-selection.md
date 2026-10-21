@@ -100,7 +100,7 @@ Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
 
 新增證據：`workbench-selection.test.ts` 5 案（遲到 promotion、明確選擇撤 pending open、返回 workspace 還原記憶對話、project transition 判定、重選保留 attachment）；`useAgentSession.lifecycle.test.ts` 1 案（unmount 不刪 fresh composer 草稿，已用移除修正反向確認會失敗）；browser scene 兩步（換 connection 後前一個 connection 的未送文字仍在；search hit 失敗 → 「Open the raw history instead」→ 面板開啟且定位到該 entry，已用移除面板修正反向確認會失敗）。
 
-Checks：`pnpm verify:changed` exit 0（`.dev/verify/2026-10-21T10-29-55-311-verify-changed`）；browser `ux-workbench-selection`、`ux-workbench-scope`、`ux-sidebar-ingress`、`ux-raw-history-sidebar-focus`、`ux-navigation-retry` 全 exit 0（`.dev/verify/2026-10-21T18-30-16-browser-regressions`）。
+Checks（修正後 revision `28ade187`，工作樹乾淨）：`pnpm verify:changed --base=HEAD~1` exit 0（`.dev/verify/2026-10-21T10-31-24-502-verify-changed`）；browser `ux-workbench-selection`、`ux-workbench-scope`、`ux-sidebar-ingress`、`ux-raw-history-sidebar-focus`、`ux-navigation-retry` 全 exit 0（`.dev/verify/2026-10-21T18-31-36-browser-regressions-final`）。
 
 ### 剩餘限制
 
