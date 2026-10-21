@@ -1,8 +1,8 @@
 # 訊息 block 呈現模組
 
 Type: implementation
-Status: planned
-Blocked by: [Transcript 與 notice 呈現](04-transcript-presentation.md)
+Status: in-progress
+Blocked by: none — preserve current MessageView public props; transcript integration verified in ticket 04 and system acceptance
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R7 訊息部分
 Acceptance: [行為矩陣](../acceptance.md) — C9、C6 的展開與位置
@@ -16,6 +16,8 @@ Acceptance: [行為矩陣](../acceptance.md) — C9、C6 的展開與位置
 導航：先在工作區以 `~/.local/bin/graphify query "MessageView.tsx" --budget 1000` 定位並確認 source。圖位於主工作區 `graphify-out/graph.json`；其他 worktree 依倉庫規則指向主圖。新發現問題另作窄查詢，子工作不並發 rebuild graph。
 
 ## 工作
+
+本票可與 01／03 並行：沿用現有 MessageView props，只改訊息呈現 owner 與直接測試；ChatWindow、useAgentSession、AppShell 由其他票擁有。04 完成時驗證 transcript 接線，12 再驗 streaming／展開／位置的整體行為。本票不提前設計 runtime 介面。
 
 1. 按實際 text/thinking/tool/deferred/diff 呈現責任分內部模組，不更改 wire 或 lifecycle 投影。
 2. 保留 entry/message identity、memo、工具展開與資源延遲讀取／失敗的呈現。
