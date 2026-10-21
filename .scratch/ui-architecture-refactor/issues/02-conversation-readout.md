@@ -81,17 +81,38 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
 
 ### Checks / evidence
 
-Tested revision：`7cc775e425512087f91365ccc06b9323a9bc11a4` + 本票未提交變更（dirty tree），2026-10-21。
+日期 2026-10-21。所有路徑相對於 worktree `/home/chlo/Documents/dev/hepi-harness/.dev/worktrees/ui-readout`。
+`.dev/` 已被 gitignore，這些檔案只在本機 worktree 存在，不入 commit。
 
-- `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-readout` → exit 0；
-  changed-typecheck / changed-test / web-unit / check-docs 全 PASS；raw logs `.dev/verify/ui-readout/*.log`，
-  report `verify.json`。
-- `pnpm --filter @hepi/ui test` → 375 tests, 0 fail（含新 `conversation-readout.test.ts` 7 案與 hook lifecycle 27 案）。
-- `pnpm --filter @hepi/ui typecheck` → exit 0。
-- Browser journeys（皆 PASS，raw 輸出見 ticket 附件路徑說明）：
-  `pnpm --filter @hepi/web test:history-scope`、`test:navigation-retry`、`test:history-rail`、
-  `test:chat-scroll`（需先 `pnpm --filter @hepi/web build`）。
-- 未執行：真實 backend compaction 下的 live browser journey（僅以合法 head 變更 frame 覆蓋，見 hook lifecycle 案例）。
+**A. Canonical verify（乾淨樹）** — revision `b20ae3d84f6f338bb8b13628959e9e1333cd244b`，`dirty: false`，
+`dirtyFiles: []`（見該目錄 `verify.json`）：
+
+- `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-readout-final` → exit 0。
+  - `.dev/verify/ui-readout-final/verify.json`（report）
+  - `.dev/verify/ui-readout-final/changed-typecheck.log`、`changed-test.log`、`web-unit.log`、`check-docs.log`
+  - 四步 changed-typecheck / changed-test / web-unit / check-docs 皆 exit 0。
+
+**B. 實作中的 dirty 樹 verify** — revision `7cc775e425512087f91365ccc06b9323a9bc11a4` + 未提交變更，
+`verify.json` 記 `dirty: true` 並列出 7 個變更檔；四步同樣 exit 0。logs 在 `.dev/verify/ui-readout/`。
+這是 A 之前的快照，不是交付修訂的證據。
+
+**C. Browser journeys** — revision `cd09f3a89be29f6828578f0603690e3e4c59fa7f`，`git status --porcelain` 空（0 檔），
+2026-10-21T14:00+08:00 重新捕獲到檔案（`revision.txt` 記錄 revision/dirty/date）：
+
+- `.dev/verify/ui-readout-browser/history-scope.log`（`pnpm --filter @hepi/web test:history-scope`）→ `== result: PASS`
+- `.dev/verify/ui-readout-browser/navigation-retry.log`（`test:navigation-retry`）→ `== result: PASS`
+- `.dev/verify/ui-readout-browser/history-rail.log`（`test:history-rail`）→ `HISTORY-RAIL BROWSER CHECKS PASSED`
+- `.dev/verify/ui-readout-browser/web-build.log`（`pnpm --filter @hepi/web build`）→ exit 0，`✓ built in`
+- `.dev/verify/ui-readout-browser/chat-scroll.log`（`test:chat-scroll`，需上述 build）→ `all checks passed`
+
+先前執行同一組 browser journeys 時輸出只留在終端、未寫檔，fixture 的 `/tmp/hepi-*-<rand>` 目錄也已由腳本
+自行刪除（未帶 `--keep`），因此沒有更早的原始檔案可引用；C 是交付修訂上重新執行的捕獲。
+
+**D. 套件層級**（同一 worktree）：
+`pnpm --filter @hepi/ui test` → 375 tests / 0 fail（含新 `conversation-readout.test.ts` 7 案、hook lifecycle 27 案）；
+`pnpm --filter @hepi/ui typecheck` → exit 0。
+
+**未執行**：真實 backend compaction 下的 live browser journey（僅以合法 head 變更 frame 覆蓋，見 hook lifecycle 案例）。
 
 ### Scenario evidence
 
