@@ -43,11 +43,7 @@ MCP helpers/interface 行為測試、既有 test:mcp-acceptance／test:mcp-tool-
 
 ## Review notes
 
-目前無實作 findings。新項目依 [review policy](../../../docs/agents/review-policy.md) 分類，跨票記錄見[評估記錄](../review-notes.md)；record 不形成 blocking edge。
-
-## 交付記錄
-
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+獨立 reviewer agent-228 對 `7cc775e4..71f2597e` 審閱：Standards／Spec 均無 material findings。確認 fencing、readback、hidden-tab polling、dispose、獨立 Test 及 undo 行為符合規格；未重跑 suites，複用本票驗證。真實 upstream OAuth 與 native Tauri journey 未驗證。
 
 ## 交付記錄
 

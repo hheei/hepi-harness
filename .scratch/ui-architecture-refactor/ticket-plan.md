@@ -13,12 +13,12 @@ Scope: [規格](spec.md)；保留行為及驗證歸屬見[驗收矩陣](acceptan
 | 順序 | 票單 | Blocked by | Status | 主要寫入責任 |
 | --- | --- | --- | --- | --- |
 | 01 | [工作台選擇與草稿](issues/01-workbench-selection.md) | none | in-progress | 選擇模組、AppShell 選擇 handlers、Sidebar、新對話列、draft scope |
-| 02 | [Accepted conversation readout](issues/02-conversation-readout.md) | none | in-progress | accepted view/prefix/metadata、useAgentSession 資料接受、相關純規則 |
+| 02 | [Accepted conversation readout](issues/02-conversation-readout.md) | none | in-progress；已整合，修正 review finding 中 | accepted view/prefix/metadata、useAgentSession 資料接受、相關純規則 |
 | 03 | [對話 I/O 與 view attachment](issues/03-conversation-lifetime.md) | 01、02 | planned | useAgentSession、ChatWindow 接線、CompletionDelivery 整合、Shell 重掛移除 |
 | 04 | [Transcript 與 notice 呈現](issues/04-transcript-presentation.md) | 03 | planned | ChatWindow、history navigation 接線、scroll/notice hooks |
 | 05 | [Composer 互動與命令介面](issues/05-composer-interaction.md) | 03 | planned | ChatInput、draft 接線、附件／補全／原生編輯 |
 | 06 | [模型與 provider 工作流](issues/06-model-workflow.md) | 03、05 | planned | ModelsConfig、models-cache、模型讀者、移除 modelsRefreshKey |
-| 07 | [MCP 工作流](issues/07-mcp-workflow.md) | none | in-progress | McpConfig、MCP helpers、sign-in/add/import/test 工作流 |
+| 07 | [MCP 工作流](issues/07-mcp-workflow.md) | none | resolved／integrated | McpConfig、MCP helpers、sign-in/add/import/test 工作流 |
 | 08 | [Definitions target 與刷新接線](issues/08-definition-refresh.md) | 03 | planned | Skills/Agents/Extensions、SettingsPanel reload、ExecutionTarget 使用者 |
 | 09 | [訊息 block 呈現模組](issues/09-message-views.md) | 04 | planned | MessageView、其內部葉節點與既有測試 |
 | 10 | [檔案 preview 呈現模組](issues/10-file-previews.md) | none | resolved／integrated | FileViewer、preview leaves、useDocxPreview 接線；保留 FileSeam；native save 留票 12 |

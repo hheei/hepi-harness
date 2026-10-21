@@ -1,7 +1,7 @@
 # Accepted conversation readout
 
 Type: implementation
-Status: resolved
+Status: in-progress — 已整合，修正分頁耗盡後 live frame 重設 pagination claim 的 review finding
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R2、R3 的既有 lifecycle 約束

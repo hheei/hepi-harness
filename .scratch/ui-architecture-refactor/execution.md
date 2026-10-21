@@ -17,8 +17,8 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | in-progress |
-| Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | in-progress |
-| MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | in-progress |
+| Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | integrated；review 發現分頁 claim 回歸，worker 修正中 |
+| MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
 
 agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依賴尚未完成的票。
@@ -33,6 +33,13 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 - `pnpm verify:changed --base=7cc775e4` 在 worker 的 clean `0b2c2e28` exit 0；原始紀錄保留於 worktree，另複製到主工作區 `.dev/verify/2026-10-21T05-44-30-551-verify-changed/`。主工作區 `git diff 0b2c2e28 HEAD -- packages/ui apps/web apps/app packages/session packages/protocol` 為空，故複用相同 source 的驗證，不把它改稱 root 新跑的結果。
 - 在 evidence revision `ba1e9076`（clean tree）補跑並保存五項 browser-driver logs（15、25、25、17、16 checks），連同 repo/UI typecheck 與 367 UI tests，位於 `.dev/verify/2026-10-21T13-55-manual-ticket10/`。產品 source 與整合版一致。實際 Tauri save 尚未跑，交票 12。
 - agent-226 已在 worker worktree 對 `7cc775e4..ba1e9076` 完成只讀獨立 review：Standards、Spec 皆無 actionable findings。確認 request fencing、docx metadata 預檢、lease byte reads 與共用 save control 保留。Review 未重跑 suites，複用票 10 的既有驗證；不是全系統驗收或原生 save 證據。
+
+### Tickets 02、07 整合
+
+- 02：`b20ae3d8`、`cd09f3a8` 與 evidence-only `97ba0f92` 已整合為 `5d4bc355`、`9cee62b0`、`1eb7145d`。worker clean `b20ae3d8` 的 changed checks exit 0，log `.dev/verify/ui-readout-final/`；browser evidence revision `cd09f3a8`（clean），log `.dev/verify/ui-readout-browser/`。原始 worker 證據已複製至主工作區，不改其 revision。
+- agent-227 review：Standards 無 material findings；Spec 發現同 head 的 live frame 會以 window.hasMore 覆蓋已耗盡的 page claim，讓 oldest-history sentinel 再次請求。正常 scroll-back 同時 streaming 可觸發，判為 fix；交 agent-222 在 readout owner 修正並補案例。ticket 02 暫不關閉，ticket 03 仍等待 01、02。
+- 07：`4526a4af`、`71f2597e` 已整合為 `31a363d4`、`e8c9f2b8`。worker clean `4526a4af` 的 changed checks exit 0，log `.dev/verify/2026-10-21T05-58-28-923-verify-changed/`；focused workflow evidence `.dev/verify/mcp07/`。agent-228 review 的 Standards／Spec 均無 material findings，未重跑 suites。真實 upstream OAuth 與 native MCP journey 未執行。
+- 整合 02、07、10 後執行 `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-wave1-partial`：revision `e8c9f2b8`，dirty 僅既有 `.scratch/durable-ledger-simplification/`；exit 0，changed-typecheck／changed-test（UI 383、App 26）／web-unit（14）／check-docs 全 pass。此為該 revision 結果，不取代上述 pagination finding 的修正驗證。
 
 ### Native 驗收準備
 
