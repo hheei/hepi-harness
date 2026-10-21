@@ -21,7 +21,7 @@ Scope: [規格](spec.md)；保留行為及驗證歸屬見[驗收矩陣](acceptan
 | 07 | [MCP 工作流](issues/07-mcp-workflow.md) | none | in-progress | McpConfig、MCP helpers、sign-in/add/import/test 工作流 |
 | 08 | [Definitions target 與刷新接線](issues/08-definition-refresh.md) | 03 | planned | Skills/Agents/Extensions、SettingsPanel reload、ExecutionTarget 使用者 |
 | 09 | [訊息 block 呈現模組](issues/09-message-views.md) | 04 | planned | MessageView、其內部葉節點與既有測試 |
-| 10 | [檔案 preview 呈現模組](issues/10-file-previews.md) | none | in-progress | FileViewer、preview leaves、useDocxPreview 接線；保留 FileSeam |
+| 10 | [檔案 preview 呈現模組](issues/10-file-previews.md) | none | resolved／integrated | FileViewer、preview leaves、useDocxPreview 接線；保留 FileSeam；native save 留票 12 |
 | 11 | [Shell layout 與 panel 接線](issues/11-shell-composition.md) | 01–10 | planned | AppShell 最終組裝、panel/tab presentation、layout/focus 接線 |
 | 12 | [系統驗收與交付記錄](issues/12-system-acceptance.md) | 11 | planned | 驗收證據、 owning docs、剩餘限制；僅必要整合修正 |
 

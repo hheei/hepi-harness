@@ -43,7 +43,7 @@ file surfaces/failures/docx/transfer 既有 drivers、file-save/useFileBytes 案
 
 ## Review notes
 
-目前無實作 findings。新項目依 [review policy](../../../docs/agents/review-policy.md) 分類，跨票記錄見[評估記錄](../review-notes.md)；record 不形成 blocking edge。
+獨立 reviewer agent-226 對 `7cc775e4..ba1e9076` 審閱：Standards 與 Spec（R7／R8 reviewed paths）皆無 actionable findings。確認 text state／request fencing、docx metadata 預檢、lease byte reads 及共用 save control 保留。未重跑 suites，依本票既有 checks；實際 Tauri save 仍由票 12 驗證，browser fixtures 不取代 native 證據。
 
 ## 交付記錄
 
@@ -74,6 +74,11 @@ Evidence：
 - `pnpm verify:changed --base=7cc775e4` 於 revision `0b2c2e28`（clean tree）exit 0：changed-typecheck、
   changed-test、web-unit、check-docs 全 PASS；log 在 `.dev/verify/2026-10-21T05-44-30-551-verify-changed`。
   （同一 source 在 commit 前以 dirty tree 跑過一次，log `.dev/verify/2026-10-21T05-43-31-953-verify-changed`。）
+- 在同一產品 source 的 evidence revision `ba1e9076`（clean tree）重新執行 focused drivers：
+  `pnpm --filter @hepi/web test:docx-preview`（15 checks）、`test:file-surfaces`（25）、`test:file-failures`（25）、
+  `test:files-transfer`（17）、`test:workbench-scope`（16）、`pnpm -r typecheck`、
+  `pnpm --filter @hepi/ui typecheck`、`pnpm --filter @hepi/ui test`（367 pass）皆 exit 0。每項 log 含 command、
+  revision、dirty state 與 exit code，收於 `.dev/verify/2026-10-21T13-55-manual-ticket10/`。
 - `pnpm --filter @hepi/ui test` 367 pass、exit 0；`pnpm --filter @hepi/ui typecheck` 與 `pnpm -r typecheck` exit 0。
 - R7：`pnpm --filter @hepi/web test:docx-preview`（cookie／bearer 各讀一次、超界零讀取、無 frame/script、empty 文案）
   exit 0；`test:file-surfaces`（image 走 connection lease、meta 讀取、native save 缺省文案、App 分片寫入）exit 0；
