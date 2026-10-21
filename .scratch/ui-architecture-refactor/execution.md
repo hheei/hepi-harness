@@ -16,7 +16,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | in-progress |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | integrated；agent-230 獨立 review 中 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -42,7 +42,17 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 - 07：`4526a4af`、`71f2597e` 已整合為 `31a363d4`、`e8c9f2b8`。worker clean `4526a4af` 的 changed checks exit 0，log `.dev/verify/2026-10-21T05-58-28-923-verify-changed/`；focused workflow evidence `.dev/verify/mcp07/`。agent-228 review 的 Standards／Spec 均無 material findings，未重跑 suites。真實 upstream OAuth 與 native MCP journey 未執行。
 - 整合 02、07、10 後執行 `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-wave1-partial`：revision `e8c9f2b8`，dirty 僅既有 `.scratch/durable-ledger-simplification/`；exit 0，changed-typecheck／changed-test（UI 383、App 26）／web-unit（14）／check-docs 全 pass。此為該 revision 結果，不取代上述 pagination finding 的修正驗證。
 
+### Ticket 01 與首波整合
+
+- 01 implementation `7d6bd29c`、driver cleanup `73b94db2` 已整合為 `f1f6b02b`、`96c2348e`。hook import conflict 僅合併已移除的全域 draft operations 與已移除的 decidePrefix import；保留 readout owner 及 connection.drafts 三個呼叫。agent-230 正作獨立 review。
+- Worker clean `73b94db2` 的 changed checks exit 0，原始 report 複製至主工作區 `.dev/verify/2026-10-21T09-59-18-076-verify-changed/`；browser logs `.dev/verify/2026-10-21T17-58-48-browser-selection/`。
+- 首波 01／02（含 pagination fix）／07／10 的整合 revision `96c2348e`，dirty 僅既有 durable-ledger scratch：`node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-wave1-integrated` exit 0；changed-typecheck、changed-test（UI 395／App 26）、web-unit（14）、check-docs 全 pass。
+- 同 revision 補跑 `node apps/web/e2e/history/ux-workbench-selection.ts`、`pnpm --filter @hepi/web test:mcp-workflow`、`pnpm --filter @hepi/web test:navigation-retry` 皆 exit 0。commands／revision／dirty state／raw logs 對照：`.dev/verify/ui-wave1-integrated/browser-metadata.json`。
+- Coordinator 執行 `graphify update .` exit 0；15,434 nodes／31,097 edges／679 communities，raw log `.dev/verify/ui-architecture-refactor/wave1-graph.log`。只更新 code graph，不將 docs semantic graph 當作已刷新。
+- 票 03 worktree `.dev/worktrees/ui-lifetime` 已從 `96c2348e` 準備，分支 `impl/ui-conversation-lifetime`，offline frozen install exit 0；待 01 review 完成再啟動實作。
+
 ### Native 驗收準備
+
 
 在 `daa355e` 的工作站環境，`command -v cargo rustc Xvfb xdpyinfo xdotool xwd ffmpeg dbus-daemon gnome-keyring-daemon gdbus` 及 `ls -l .dev/cargo-target/debug/hepi-app` 均 exit 0；raw log：`.dev/verify/ui-architecture-refactor/environment.log`。共用 debug binary 存在，但未將它當作本次 source 的建置證據。最終整合後需依既有 artifact build script 重新嵌入 App UI 並標記修訂，再跑普通 native journey。
 
