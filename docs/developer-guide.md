@@ -36,6 +36,27 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | `deploy` | 服务端镜像与 Compose | [Container deployment](container-deployment.md) |
 | `docs` | 当前指南、限定 revision/日期的证据、ADR | [索引](README.md) |
 
+### `packages/ui/src`:按功能命名,不按功能分目录
+
+`lib` 有 194 个直接子文件、`components` 95 个、`hooks` 23 个,87 个 `*.test.mjs` 与被测文件同目录(`lib` 65、`components` 16、`hooks` 4、`src` 1、`lib/i18n/messages` 1)。同目录测试是刻意的:一个文件可以直接 `node --test` 跑通。
+
+| 位置 | 放什么 |
+| --- | --- |
+| `src/workbench.tsx`、`src/client.ts`、`src/index.ts`、`src/host-router.tsx` | 挂载、连接与包入口,不进子目录 |
+| `src/components` | React 面板(69 个 `.tsx`);新面板放这里 |
+| `src/hooks` | 需要 React 生命周期的采集与面板状态 |
+| `src/lib` | 纯规则、投影、客户端 API、面板契约;无 React 的放这里,`lib/i18n` 是唯一子目录 |
+| `src/styles` | 全局样式 |
+
+在 `lib` 根部按名字找文件时,候选面是 129 个非测试文件,其中前缀已自然成簇:`mcp-` 10、`file-` 8、`session-` 7、`chat-` 5、`provider-` 4、`terminal-` 3、`lifecycle-` 3、`connection-` 3。这些簇**尚未**收进一级特性目录;何时值得收、代价是什么,记在
+[目录导航评审记录](../.scratch/repo-navigation-map/notes.md)。改目录前先按 [review policy](agents/review-policy.md) 判断收益,不要为一致性做全量搬迁。
+
+### `apps/web/e2e`:共享工作台的验收,不是 Web 包的私有测试
+
+`apps/web/src` 只有 6 个文件(挂载、路由适配、PWA),而 `apps/web/e2e` 有 113 个文件(73 个 `.mjs`、25 个 `*.fixture.tsx`、15 个 `*.fixture.css`);测的行为多数属于 `packages/ui`。`ux-` 前缀是历史标签,今天不区分"ux 与否"。
+
+`apps/web/package.json` 有 68 条脚本,其中 62 条 `test:*`、57 个不同的 e2e 目标,且**没有** `test` 脚本,所以 `pnpm -r test` 到不了这里;Web `*.test.mjs` 由 `pnpm test:web:unit` 覆盖。单个浏览器场景跑对应的 `test:*` 脚本,不要在 `apps/web` 里手写 `next start`。其中一组仍 spawn 工作区已没有的 `next`,属 [CI 记录](ci.md#what-this-workflow-does-not-verify) 里的已知清理项,不计入覆盖;改名或分组前先核对 CI 选中的 driver 与验证 selector。
+
 ## Client hosts and the shared workbench
 
 `apps/web/src/main.tsx` 声明 Web 的同源 ingress、cookie、`conversationSource()` 与以 origin 命名的 profile。
