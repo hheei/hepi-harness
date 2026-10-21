@@ -16,7 +16,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 複審確認 5 項修正；worker 修正剩餘 3 項 |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 剩餘 3 項修正已整合並驗證，agent-230 窄幅複審中 |
 | 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
@@ -59,6 +59,10 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+01 最後 3 項 correction 的 code `20120fdc`／docs `684906cb` 已整合為 `bdd7c7ac`／`0bd46ac2`。selection 先決定已交付 catalogue 中的目的地，再 adopt conversation/composer；park 僅處理 departing composer，目的地 parked text/images 不經 transient composer 消耗。Shell 將 project cleanup 與新 raw request presentation 合併在相同 accepted transition，保持 dismissal。worker 原始 checks/browser logs 已複製 `.dev/verify/2026-10-21T11-03-52-404-verify-changed/`、`.dev/verify/2026-10-21T19-03-01-browser-followup/`；agent-230 僅複查原剩餘 3 項。
+
+整合 revision `0bd46ac2`（dirty 僅既有 durable-ledger scratch）changed checks 與 selection browser 皆 exit 0；report `.dev/verify/ui-selection-final-integrated/verify.json`，browser raw log `.dev/verify/ui-architecture-refactor/selection-final-selection.log`。Coordinator graph update exit 0，log `.dev/verify/ui-architecture-refactor/selection-final-graph.log`。03 worker 已知新的 Shell project presentation section，繼續獨立實作；未宣稱 03／09 已完成。
 
 agent-230 對 clean `1179fdcb` 的複審確認原 findings 1／2／3／5／6 fixed；4（conversation → workspace 跳過 remembered row）、7（cross-project raw panel 被 project cleanup 清除）尚未完整修正，另新增 P1：先 adopt transient composer 消耗 destination parked draft，再 restore remembered conversation，造成草稿 key 無法到達。三項皆為正常選擇／跳轉流程，判定 fix，交 agent-221 在 selection／presentation owner 修正並補精確 regression。Repro logs `.dev/verify/ui-architecture-refactor/ticket01-followup-state.log`、`ticket01-followup-raw.log`。
 
