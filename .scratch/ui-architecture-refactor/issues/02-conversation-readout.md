@@ -125,7 +125,7 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
   `test:navigation-retry`、`test:history-scope`。
 - N8 accepted identity：accepted statement identity 仍由 fold 決定，readout 不另存；`dataOf(m).projectionId` 案例不變。
 
-### Review finding（已修，`<pending-sha>`）
+### Review finding（已修，`5af5a0f6`）
 
 **Finding（reviewer227，owner 級）**：`acceptSession` 在保留 prefix 時仍回傳 `hasMore: window.hasMore`。
 讀者已用一頁讀到歷史開頭（`prependOlderPage(... hasMore: false)`）後，任何 live frame 都把 sentinel 重新打開 →
