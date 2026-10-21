@@ -5588,6 +5588,14 @@ Merged source `07943df4`: `pnpm verify:changed --base=62c2c588` exit 0 (UI 465/4
 Web unit 14/14, selected typechecks). Report and raw step logs:
 `.dev/verify/2026-10-21T19-21-04-372-verify-changed/verify.json`. Graph update also exited 0.
 
+Final browser evidence at clean `8a64b0e2`: `pnpm --filter @hepi/web test:panel-ingress` exit 0
+(77 checks), `pnpm --filter @hepi/web test:provider-acceptance` exit 0 (70 checks, zero failures).
+The preceding Web build exited 0. `pnpm verify:changed --base=b3ab7871 --log-dir=.dev/verify/ticket06-final`
+also exited 0 (UI 465, App 29, Web unit 14, typecheck and docs). Raw logs are worktree-local under
+`.dev/worktrees/ui-model-workflow/.dev/verify/ticket06-final/`: `verify.json`, `changed-test.log`,
+`changed-typecheck.log`, `panel-ingress.log`, `provider-acceptance.log`, and `web-build.log`.
+These final runs supersede the earlier revision's evidence above.
+
 **Not claimed.** No deployment was restarted or inspected, no App-host journey ran, and nothing was built or run on
 `remote-host`. The unit cases in `packages/ui/src/lib/models-cache.test.ts` and
 `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts` state the same contract at their own seams and ran inside
