@@ -93,6 +93,11 @@ only performs publication. Deprecating a broken version with `npm deprecate` is 
 
 ## Verification boundaries
 
+Desktop artifact acceptance consumes a named prebuilt package on workstation/CI; see
+[App artifact verification](../apps/app/README.md#verify-the-artifact). The verification operation owns product
+assertions; its private packaged-run environment owns display, credentials, fixtures, processes and temporary install
+roots. Report finalization follows teardown, with `runCleanup.completed` recording whether cleanup succeeded.
+
 Local tests verify packing, startup, networking and persistence. They cannot prove npm Trusted Publisher identity or
 GHCR permissions without running on the configured GitHub repository. No registry publish, remote push or production
 service change is performed as part of implementing these files.
