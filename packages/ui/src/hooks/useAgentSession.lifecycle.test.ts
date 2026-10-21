@@ -9,6 +9,7 @@ import type { ServerSnapshot } from "@hepi/protocol";
 import type { AgentMessage, SessionInfo } from "../lib/types.ts";
 import type { ReadFailure } from "../lib/read-recovery.ts";
 import type { ChatInputHandle } from "../components/ChatInput.tsx";
+import type { ReloadOutcome } from "./useAgentSession.ts";
 
 const webRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const require = createRequire(import.meta.url);
@@ -149,6 +150,14 @@ function deferredRead() {
 // Run the actual bundled hook with independent React and transport state per fixture.
 function harness(t: TestContext, responder: (url: string, init: RequestInit | undefined, body: Record<string, unknown> | undefined) => StubResponse | Promise<StubResponse>) {
   const requests: Request[] = [], sources: Source[] = [];
+  /**
+   * Every timer this hook scheduled, in order.
+   *
+   * A pending timer is a resource: it outlives the render that made it and fires against whatever the surface holds by
+   * then. The cases that state a notice read it to prove the toast's clock is not one of this hook's — a conversation
+   * handed to the background must not be holding a countdown for a toast nobody is drawing (acceptance C7).
+   */
+  const timers: { ms: number }[] = [];
   // Every conversation request this hook makes is the connection's own. The client below is the only way to reach the
   // sandbox's `fetch`, so a request recorded without it is a surface that reached around the connection.
   const clientRequests: string[] = [];
@@ -210,7 +219,8 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     module: { exports: {} as Record<string, unknown> }, exports: {}, require: (name: string) => name === "react" ? react : require(name), console,
     URLSearchParams, URL, AbortController, DOMException, crypto: globalThis.crypto, queueMicrotask, EventSource: SandboxSource,
     document: { visibilityState: "visible", title: "", addEventListener() {}, removeEventListener() {} }, navigator: {},
-    setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+    setTimeout: (handler: () => void, ms?: number) => { timers.push({ ms: ms ?? 0 }); void handler; return timers.length; }, clearTimeout() {},
+    setInterval: () => 1, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
     fetch: async (url: string | URL | Request, init?: RequestInit) => {
       const target = String(url), body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : undefined;
       requests.push({ url: target, method: init?.method ?? "GET", body, viaClient: inClient });
@@ -263,7 +273,7 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   } as unknown as Parameters<typeof workbenchConnection>[0], { profile: "test", backendId: "backend", accountScope: "account" });
   const useAgentSession = (sandbox.module as { exports: Record<string, unknown> }).exports.useAgentSession as (given: Mount["options"]) => AgentSession;
   return {
-    requests, sources, clientRequests, anotherConnection,
+    requests, sources, clientRequests, timers, anotherConnection,
     mount(extra: MountOptions = {}, connection = defaultConnection()): Mount {
       let unmounted = false;
       const m = {
@@ -454,6 +464,11 @@ test("creation and follow-up refusals restore text and attachments exactly once"
       assert.deepEqual(plain(restored[0][1]), [{ data: "AQID", mimeType: "image/png" }], kind);
       // The refusal the Backend stated is what the surface shows, whichever route carried it.
       assert.ok(plain(m.out.notices).some(n => n.type === "error" && n.message.includes(kind === "creation" ? "unavailable" : "bad image")), kind);
+      // The notice is a fact this hook states and nothing more: the toast it becomes is drawn by the shelf, so no
+      // countdown of its own is scheduled here. A hook that timed it would leave that clock running when the
+      // conversation is handed over to the background, which is the resource the ticket takes out of this owner.
+      assert.deepEqual(h.timers.map(timer => timer.ms).filter(ms => ms >= 180 && ms <= 5000), [],
+        kind + ": the conversation schedules no notice countdown, and no exit animation: " + JSON.stringify(h.timers));
     } finally { m.unmount(); }
   }
 });
@@ -1255,7 +1270,7 @@ test("an explicit reload is one operation on the conversation, not a new attachm
   // What it must not be is a remount — a new attachment would leave a new stream, a new projection and a reader who lost
   // their place — so the stream this mount joined is asserted to be the only one it ever opened.
   const h = harness(t, normal);
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);
@@ -1299,17 +1314,21 @@ test("a reload reports what the read after it established, and a read that faile
       if (answer === "refused") return respond({ error: "the projection is unreadable" }, 422);
       throw new TypeError("Failed to fetch");
     });
-    const reloads: ((() => Promise<void>) | null)[] = [];
+    const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
     const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
     await h.pump(m);
     const reload = reloads.at(-1);
     assert.ok(reload, "the surface registers its own reload");
     const reloadsBefore = h.requests.filter(r => r.url === "/api/conversations/conv/reload").length;
-    await reload();
+    const outcome = plain(await reload());
     await h.pump(m);
     // One reload route, asked by this operation alone: the surface that triggered it does not ask for a second one.
     assert.equal(h.requests.filter(r => r.url === "/api/conversations/conv/reload").length, reloadsBefore + 1,
       answer + ": the Backend's reload route was asked exactly once");
+    // The operation states its outcome to the caller as well as to the reader: a surface outside the chat that awaits it
+    // — a definitions panel asking for a refresh — has to be able to tell a reload this conversation picked up from one
+    // that failed, rather than reading a resolved promise as a success.
+    assert.equal(outcome.status, answer === "accepted" ? "reloaded" : "failed", answer + ": the caller reads what the operation established: " + JSON.stringify(outcome));
     const notice = plain(m.out.notices).at(-1);
     assert.ok(notice, answer + ": the reload reports what happened");
     if (answer === "accepted") {
@@ -1343,7 +1362,7 @@ test("a reload route that rejects is reported, and no read is asked for what it 
     if (url === "/api/conversations/conv/reload") return respond({ error: "the runtime is restarting" }, 503);
     return normal(url, init);
   });
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);
@@ -1378,7 +1397,7 @@ test("a reload whose read answers after a connection switch states nothing", asy
     if (!url.endsWith("/state")) return normal(url, init);
     return ++reads === 1 ? stale.promise : respond(nativeFrame({ text: "the new connection" }));
   });
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);
@@ -1416,7 +1435,7 @@ test("a reload whose window the fold refused claims nothing, and asks for no sta
     ? respond({ resources: { skills: 3, prompts: 2 } })
     : !url.endsWith("/state") ? normal(url, init)
       : respond(nativeFrame({ revision: ++reads === 1 ? 9 : 1, text: reads === 1 ? "current" : "old" })));
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);
@@ -1448,7 +1467,7 @@ test("a reload route that rejects after a connection switch states nothing on th
   cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
   const stale = deferredRead();
   const h = harness(t, (url, init) => url === "/api/conversations/conv/reload" ? stale.promise : normal(url, init));
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);

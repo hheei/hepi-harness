@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo, useReducer } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, useReducer } from "react";
 import type {
   AgentMessage,
   ExtensionStatusItem,
@@ -80,18 +80,13 @@ import { readCatalogAnswer, type CatalogAnswer } from "../lib/catalog-answer";
 import type { ScopedCache } from "@hepi/session/settings";
 import { hasUnfinishedWork } from "../lib/lifecycle-projection";
 import type { CompletionNotice } from "../lib/completion-delivery";
+import type { NoticeFact } from "../lib/notice-shelf";
 import type { AgentEventSubscription } from "@hepi/session/browser";
 import type { QueuedItemProjection, ServerSnapshot } from "@hepi/protocol";
 import type { AgentEventLike } from "../lib/agent-event-wire";
 import { bareMcpOpensSettings } from "../lib/mcp-command";
 import { isShellCommandDraft } from "../lib/composer-limits";
 import type { SettingsSection } from "../lib/settings-navigation";
-import {
-  CHAT_SCROLL_REATTACH_TOLERANCE,
-  CHAT_SCROLL_TAIL_TOLERANCE,
-  getLiveFollowAttached,
-  shouldShowScrollToLatest,
-} from "../lib/chat/chat-lazy-load";
 import {
   INITIAL_STREAMING_STATE,
   streamReducer,
@@ -190,7 +185,7 @@ type ConversationReadOutcome =
  * it without deciding a second time what happened. `superseded` is the operation having nothing to say: another
  * connection, or a newer window, is what the surface shows.
  */
-type ReloadOutcome =
+export type ReloadOutcome =
   | { readonly status: "reloaded"; readonly message: string }
   | { readonly status: "failed"; readonly message: string }
   | { readonly status: "superseded" };
@@ -213,24 +208,15 @@ export type QueuedItems = readonly QueuedItemProjection[];
 /** One conversation's committed input control, as the wire states it. */
 export type ControlState = ServerSnapshot["control"];
 
-export type NoticeType = "info" | "success" | "warning" | "error";
+export type NoticeType = NoticeFact["type"];
 
-export type NoticeItem = {
-  id: string;
-  message: string;
-  type: NoticeType;
-  exiting?: boolean;
-};
-
-type NoticeState = {
-  visible: NoticeItem[];
-  pending: NoticeItem[];
-};
-
-type NoticeAction =
-  | { type: "add"; notice: NoticeItem }
-  | { type: "mark_oldest_exiting" }
-  | { type: "remove"; id: string };
+/**
+ * One notice the conversation stated. It is a **fact** — an id, a sentence, a kind — and carries no presentation: nothing
+ * here says how long it is drawn, which one is leaving, or how many are on screen. Those belong to the shelf that draws
+ * them (`components/NoticeShelf.tsx`), which is what keeps a toast's clock out of a session that can be handed over to
+ * the background (spec R3, acceptance C7).
+ */
+export type NoticeItem = NoticeFact;
 
 export type AgentPhase =
   /** This surface's own turn is staged and the run does not exist yet: nothing has been asked of a model. */
@@ -292,10 +278,18 @@ export interface UseAgentSessionOptions {
    * Registers this conversation's explicit reload — the Backend's own resource reload followed by the read that states
    * it — so a surface outside the chat (Settings) asks for one operation instead of remounting the conversation.
    */
-  onConversationReloadChange?: (reload: (() => Promise<void>) | null) => void;
+  /**
+   * Registers this conversation's explicit reload — the Backend's own resource reload followed by the read that states
+   * it — so a surface outside the chat (Settings, the definitions panels) asks for one operation instead of remounting
+   * the conversation, and reads the outcome that operation established.
+   *
+   * The outcome is the operation's whole answer rather than a bare completion, because a caller that reports success has
+   * to be able to tell a reload this conversation picked up from one that failed or that another connection superseded.
+   * A `() => Promise<void>` would make every failure look like a success at the call site.
+   */
+  onConversationReloadChange?: (reload: (() => Promise<ReloadOutcome>) | null) => void;
   /** Opens Settings on a section; a bare `/mcp` the built-in MCP extension owns opens Settings › MCP. */
   onOpenSettings?: (section: SettingsSection) => void;
-  deferInitialScroll?: boolean;
   /** A fresh composer's model and reasoning picks to start with: the composer it replaces had them. */
   initialNewSessionChoices?: NewSessionChoices | null;
   /** A fresh composer reports its own model and reasoning picks, on mount and as they change. */
@@ -325,9 +319,6 @@ const EVENT_STREAM_READY_TIMEOUT_MS = 60_000;
 const EVENT_STREAM_RECONNECT_DELAY_MS = 1_000;
 // Retry temporary model-list failures without requiring a page refresh.
 const MODELS_RETRY_DELAYS_MS = [2_000, 5_000, 10_000];
-const MAX_NOTICES = 5;
-const NOTICE_VISIBLE_MS = 5000;
-const NOTICE_EXIT_ANIMATION_MS = 180;
 function createNoticeId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -337,52 +328,6 @@ function createNoticeId(): string {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function markOldestNoticeExiting(notices: NoticeItem[]): NoticeItem[] {
-  const index = notices.findIndex((notice) => !notice.exiting);
-  if (index === -1) return notices;
-  return notices.map((notice, i) => (
-    i === index ? { ...notice, exiting: true } : notice
-  ));
-}
-
-function fillPendingNotices(visible: NoticeItem[], pending: NoticeItem[]): NoticeState {
-  let nextVisible = visible;
-  let nextPending = pending;
-  while (nextPending.length > 0 && nextVisible.length < MAX_NOTICES) {
-    const [next, ...rest] = nextPending;
-    nextVisible = [...nextVisible, next];
-    nextPending = rest;
-  }
-  if (nextPending.length > 0 && !nextVisible.some((notice) => notice.exiting)) {
-    nextVisible = markOldestNoticeExiting(nextVisible);
-  }
-  return { visible: nextVisible, pending: nextPending };
-}
-
-function noticeReducer(state: NoticeState, action: NoticeAction): NoticeState {
-  switch (action.type) {
-    case "add": {
-      if (state.visible.some((notice) => notice.exiting) || state.visible.length >= MAX_NOTICES) {
-        return {
-          visible: state.visible.some((notice) => notice.exiting)
-            ? state.visible
-            : markOldestNoticeExiting(state.visible),
-          pending: [...state.pending, action.notice],
-        };
-      }
-      return { ...state, visible: [...state.visible, action.notice] };
-    }
-    case "mark_oldest_exiting":
-      return { ...state, visible: markOldestNoticeExiting(state.visible) };
-    case "remove": {
-      const visible = state.visible.filter((notice) => notice.id !== action.id);
-      return fillPendingNotices(visible, state.pending);
-    }
-    default:
-      return state;
-  }
 }
 
 export interface ChatInputHandle {
@@ -581,11 +526,25 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     : view.phase === "running"
       ? agentPhase ?? { kind: "waiting_model" }
       : null;
-  const [promptAnchorActive, setPromptAnchorActive] = useState(false);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  /**
+   * How many turns this surface itself has staged.
+   *
+   * It is the one fact the viewport needs from the conversation and cannot derive: a send of the reader's own owes their
+   * prompt its place at the top of the viewport while the answer streams in. Everything else about the viewport —
+   * following the tail, the scroll it performs, the spacer that makes the room — is the transcript presentation's own
+   * (`hooks/useTranscriptPresentation.ts`), so no scroll ref or scroll decision lives in this hook (spec R4).
+   */
+  const [ownSends, setOwnSends] = useState(0);
   const [slashCommands, setSlashCommands] = useState<SlashCommandInfo[]>([]);
   const [slashCommandsLoading, setSlashCommandsLoading] = useState(false);
-  const [noticeState, dispatchNotice] = useReducer(noticeReducer, { visible: [], pending: [] });
+  /**
+   * The notices the conversation stated, oldest first.
+   *
+   * It holds **facts** and nothing else: how long one is drawn, which is leaving and how many are on screen are the
+   * shelf's own presentation, so this list neither schedules a timer nor marks an entry as exiting. A surface that stops
+   * drawing (a connection handed over, a view unmounted) therefore leaves no clock running here (spec R3/R4).
+   */
+  const [notices, setNotices] = useState<readonly NoticeFact[]>([]);
   const [extensionStatuses, setExtensionStatuses] = useState<ExtensionStatusItem[]>([]);
   const [extensionWidgets, setExtensionWidgets] = useState<ExtensionWidgetItem[]>([]);
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessages>({ steering: [], followUp: [] });
@@ -608,23 +567,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const handleAgentEventRef = useRef<((event: AgentEvent) => void) | null>(null);
   /** How one native state this stream holds becomes the surface's payload. Bound below, read by the join above. */
   const publishStreamStateRef = useRef<((conversationId: string, held: SessionState<AgentMessage>) => void) | null>(null);
-  const initialScrollDoneRef = useRef(Boolean(opts.deferInitialScroll));
-  const lastUserMsgRef = useRef<HTMLDivElement | null>(null);
-  const pendingScrollToUserRef = useRef(false);
-  /**
-   * Whether the reader is following the live edge.
-   *
-   * It starts at the tail for a conversation opened fresh, because that is where such a reader is. It starts **false**
-   * when the surface is deferring the initial scroll to restore a saved position, and that is not a detail: "following
-   * the tail" is a fact about where the reader actually is, and a restore is about to put them somewhere else. A
-   * default of true means the first transcript change follows the tail — a jump away from the position being restored,
-   * which is the one thing restoring must not do. The scroll handler below establishes the real attachment from the
-   * position as soon as there is one.
-   */
-  const isNearBottomRef = useRef(!opts.deferInitialScroll);
-  const previousScrollTopRef = useRef(0);
-  const liveFollowFrameRef = useRef<number | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const ensuringNewSessionRef = useRef<Promise<string | null> | null>(null);
   // The command list as last loaded, and the get_commands request under way, if
   // any. A bare /mcp reads them to tell whose /mcp it is (handleBuiltinSlashCommand).
@@ -658,17 +600,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   useEffect(() => {
     if (isNew) onNewSessionChoicesChange?.({ model: newSessionModel, thinkingLevel: newSessionThinkingLevel });
   }, [isNew, newSessionModel, newSessionThinkingLevel, onNewSessionChoicesChange]);
-
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    // Scroll the chat container itself instead of scrolling a sentinel element
-    // into view: that propagates to every scrollable ancestor, and on mobile
-    // the keyboard-shifted document layer visibly jumps the whole app while
-    // streaming content follows the tail.
-    container.scrollTo({ top: container.scrollHeight, behavior });
-    previousScrollTopRef.current = container.scrollTop;
-  }, []);
 
   // The conversation's own selected model and reasoning level, read from the **accepted** lifecycle facts rather than
   // from a second copy of them: the projection is the one place that decides whether a frame is this conversation's
@@ -1445,17 +1376,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     };
   }, [closeEvents, joinEvents, session?.id]);
 
+  /** State one notice fact. How it is drawn, and for how long, is not this owner's question. */
   const addNotice = useCallback((notice: { id?: string; message: string; type?: NoticeType }) => {
     const message = notice.message.trim();
     if (!message) return;
-    dispatchNotice({
-      type: "add",
-      notice: {
-        id: notice.id ?? createNoticeId(),
-        message,
-        type: notice.type ?? "info",
-      },
-    });
+    const fact: NoticeFact = { id: notice.id ?? createNoticeId(), message, type: notice.type ?? "info" };
+    // Stated once per id, so a repeated statement of the same fact does not queue a second toast for it.
+    setNotices((held) => (held.some((drawn) => drawn.id === fact.id) ? held : [...held, fact]));
+  }, []);
+
+  /** The shelf is finished with a fact: it is dropped here, which is the only thing that removes a notice. */
+  const dismissNotice = useCallback((id: string) => {
+    setNotices((held) => (held.some((drawn) => drawn.id === id) ? held.filter((drawn) => drawn.id !== id) : held));
   }, []);
 
   /**
@@ -1688,8 +1620,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     });
     setAgentPhase(isSlashCommandPrompt ? { kind: "running_command" } : { kind: "waiting_model" });
     dispatch({ type: "start" });
-    pendingScrollToUserRef.current = true;
-    setPromptAnchorActive(true);
+    // A staged turn of this reader's own is the viewport's cue: its prompt is followed once the transcript holds it.
+    setOwnSends((sent) => sent + 1);
 
     const piImages = images?.map((img) => ({ type: "image" as const, data: img.data, mimeType: img.mimeType }));
     let sentSessionId: string | null = null;
@@ -2240,73 +2172,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [isNew]);
 
-  const scrollToMessage = useCallback((element: HTMLElement, viewportOffset = 16) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    if (liveFollowFrameRef.current !== null) {
-      cancelAnimationFrame(liveFollowFrameRef.current);
-      liveFollowFrameRef.current = null;
-    }
-    initialScrollDoneRef.current = true;
-    pendingScrollToUserRef.current = false;
-    isNearBottomRef.current = false;
-    setPromptAnchorActive(false);
-    container.scrollTo({
-      top: element.getBoundingClientRect().top
-        - container.getBoundingClientRect().top
-        + container.scrollTop
-        - viewportOffset,
-      behavior: "instant",
-    });
-    previousScrollTopRef.current = container.scrollTop;
-  }, []);
-
-  const scrollUserMsgToTop = useCallback(() => {
-    const container = scrollContainerRef.current;
-    const el = lastUserMsgRef.current;
-    if (!container || !el) return;
-    const elAbsTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-    const targetTop = Math.min(Math.max(0, elAbsTop - 16), maxScrollTop);
-
-    if (liveFollowFrameRef.current !== null) {
-      cancelAnimationFrame(liveFollowFrameRef.current);
-      liveFollowFrameRef.current = null;
-    }
-    isNearBottomRef.current = true;
-    previousScrollTopRef.current = targetTop;
-    container.scrollTo({ top: targetTop, behavior: "auto" });
-  }, []);
-
-  const handleScrollPositionChange = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const { scrollTop, clientHeight, scrollHeight } = container;
-      const isAgentRunning = stepRef.current.view.activity !== null;
-      const wasAttached = isNearBottomRef.current;
-      const isAttached = getLiveFollowAttached(
-        wasAttached,
-        previousScrollTopRef.current,
-        scrollTop,
-        clientHeight,
-        scrollHeight,
-        isAgentRunning
-          ? CHAT_SCROLL_REATTACH_TOLERANCE
-          : CHAT_SCROLL_TAIL_TOLERANCE,
-      );
-      isNearBottomRef.current = isAttached;
-      previousScrollTopRef.current = scrollTop;
-      const shouldShow = shouldShowScrollToLatest(scrollTop, clientHeight, scrollHeight);
-      setShowScrollToBottom((previous) => (previous === shouldShow ? previous : shouldShow));
-      if (!wasAttached && isAttached && isAgentRunning) {
-        scrollToBottom("auto");
-      } else if (!isAttached && liveFollowFrameRef.current !== null) {
-        cancelAnimationFrame(liveFollowFrameRef.current);
-        liveFollowFrameRef.current = null;
-      }
-    }
-  }, [scrollToBottom]);
-
   /**
    * Adopt the pending turns of the conversation now on screen. A send belongs to the conversation it was made in, so a
    * different conversation adopts its own set — normally empty — and never inherits another one's. A fresh composer
@@ -2402,10 +2267,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           prefixHistoryHead: current.prefix?.historyHead ?? null,
         });
       }
-      if (liveFollowFrameRef.current !== null) {
-        cancelAnimationFrame(liveFollowFrameRef.current);
-        liveFollowFrameRef.current = null;
-      }
       closeEvents();
     };
     // The mount reads once per connection. Everything else this effect holds — the session prop, the projection it
@@ -2441,46 +2302,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * superseded, publishes nothing here: the surface has moved on and claims nothing either.
    */
   const onConversationReloadChange = opts.onConversationReloadChange;
-  const reloadConversation = useCallback(async () => {
+  const reloadConversation = useCallback(async (): Promise<ReloadOutcome> => {
     const sid = sessionIdRef.current;
-    if (sid === null) return;
-    // The same operation the command line asks for. A failure is reported inside it, so the surface that asked here
-    // does not have to know how a reload can fail — and a rejection cannot escape into a caller that awaited it.
-    await reloadResources(sid);
+    // A surface with no conversation on screen has nothing to reload, and says so rather than reporting a success.
+    if (sid === null) return { status: "superseded" };
+    // The same operation the command line asks for, and its outcome is passed through: the caller reads what the
+    // operation established instead of inferring it from a promise that resolved.
+    return await reloadResources(sid);
   }, [reloadResources]);
   useEffect(() => {
     onConversationReloadChange?.(reloadConversation);
     return () => onConversationReloadChange?.(null);
   }, [onConversationReloadChange, reloadConversation]);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    previousScrollTopRef.current = container.scrollTop;
-    container.addEventListener("scroll", handleScrollPositionChange, { passive: true });
-    return () => {
-      container.removeEventListener("scroll", handleScrollPositionChange);
-    };
-  }, [messages.length, loading, handleScrollPositionChange]);
-
-  useEffect(() => {
-    if (!agentRunning) setPromptAnchorActive(false);
-  }, [agentRunning]);
-
-  useLayoutEffect(() => {
-    if (messages.length > 0) {
-      if (pendingScrollToUserRef.current) {
-        pendingScrollToUserRef.current = false;
-        initialScrollDoneRef.current = true;
-        scrollUserMsgToTop();
-      } else if (!initialScrollDoneRef.current) {
-        initialScrollDoneRef.current = true;
-        scrollToBottom("instant");
-      } else if (view.activity === null && isNearBottomRef.current) {
-        scrollToBottom("auto");
-      }
-    }
-  }, [messages.length, agentRunning, scrollToBottom, scrollUserMsgToTop]);
 
   // Closing Settings is the page's "the deployment's models may have changed" signal: the cached catalog is what that
   // edit replaced, so the refresh reads the deployment again rather than the answer the edit superseded.
@@ -2513,51 +2346,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     return () => controller.abort();
   }, [client, loadModels, modelsRefreshKey]);
 
-  // Pause notice expiry while hovered or focused.
-  // The remainingMs/startedAt/oldestId refs implement a true pause-and-resume instead of resetting the 5s timer.
-  const [pausedNoticeId, setPausedNoticeId] = useState<string | null>(null);
-  const noticeRemainingMsRef = useRef(NOTICE_VISIBLE_MS);
-  const noticeTimerStartedAtRef = useRef<number | null>(null);
-  const noticeOldestIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (noticeState.visible.length === 0) {
-      noticeOldestIdRef.current = null;
-      return;
-    }
-    const exiting = noticeState.visible.find((notice) => notice.exiting);
-    if (exiting) {
-      const t = setTimeout(() => {
-        dispatchNotice({ type: "remove", id: exiting.id });
-      }, NOTICE_EXIT_ANIMATION_MS);
-      return () => clearTimeout(t);
-    }
-    const oldest = noticeState.visible[0];
-    if (!oldest) return;
-    // Oldest visible notice changed; restart the countdown
-    if (noticeOldestIdRef.current !== oldest.id) {
-      noticeOldestIdRef.current = oldest.id;
-      noticeRemainingMsRef.current = NOTICE_VISIBLE_MS;
-    }
-    if (noticeState.visible.some((notice) => notice.id === pausedNoticeId)) return;
-    noticeTimerStartedAtRef.current = Date.now();
-    const t = setTimeout(() => {
-      dispatchNotice({ type: "mark_oldest_exiting" });
-    }, noticeRemainingMsRef.current);
-    return () => {
-      clearTimeout(t);
-      // Accrue the elapsed time so the countdown resumes from the remaining time
-      if (noticeTimerStartedAtRef.current !== null) {
-        noticeRemainingMsRef.current = Math.max(
-          0,
-          noticeRemainingMsRef.current - (Date.now() - noticeTimerStartedAtRef.current),
-        );
-        noticeTimerStartedAtRef.current = null;
-      }
-    };
-  }, [noticeState.visible, pausedNoticeId]);
-
-  const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
+const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
 
   return {
     // State
@@ -2566,25 +2355,22 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     contextUsage, systemPrompt, forkingEntryId,
     currentModel, displayModel, modelSwitching, sessionStats,
     slashCommands, slashCommandsLoading, queuedMessages, queuedItems, control,
-    notices: noticeState.visible, extensionStatuses, extensionWidgets,
+    notices, extensionStatuses, extensionWidgets,
     isAutoModelSelection: isNew && newSessionModel === null,
     isAutoThinkingSelection: isNew && newSessionThinkingLevel === null,
     statusPhase,
     isNew,
-    promptAnchorActive,
-    showScrollToBottom,
+    /** How many turns this surface itself staged: the viewport's one cue from the conversation (spec R4). */
+    ownSends,
     // Refs
-    sessionIdRef, scrollContainerRef,
-    lastUserMsgRef, pendingScrollToUserRef, initialScrollDoneRef,
+    sessionIdRef,
     // Actions
     handleSend, handleAbort, handleFork, handleModelChange,
     handleSteer, handleFollowUp, handlePromptWithStreamingBehavior,
     handleRecallQueue, handleEditItem, handleCancelItem, handleContinue,
     handleBuiltinSlashCommand,
-    addNotice,
-    setNoticePaused: setPausedNoticeId,
+    addNotice, dismissNotice,
     handleThinkingLevelChange, loadTools, loadSlashCommands, loadContext, landWindow,
     retryRead, dismissReadFailure,
-    scrollToBottom, scrollUserMsgToTop, scrollToMessage,
   };
 }

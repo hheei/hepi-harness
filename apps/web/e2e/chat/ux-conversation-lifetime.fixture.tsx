@@ -16,6 +16,7 @@ import { useWorkbenchConnection, workbenchConnection, WorkbenchConnectionProvide
 import { CompletionDelivery } from "@hepi/ui/lib/completion-delivery";
 import type { Step } from "@hepi/ui/lib/lifecycle-projection";
 import type { AgentEventLike } from "@hepi/ui/lib/agent-event-wire";
+import type { ReloadOutcome } from "@hepi/ui/hooks/useAgentSession";
 
 const CONVERSATION = "conv-a";
 
@@ -35,8 +36,8 @@ export type LifetimeGate = {
   readonly tones: { conversationId: string; answerKey: string }[];
   /** Deliver one event on a conversation's stream, as the Backend states it. */
   emit(conversationId: string, event: unknown): void;
-  /** Ask the chat for its explicit reload, the way Settings › General does. */
-  reload(): Promise<void>;
+  /** Ask the chat for its explicit reload, the way Settings › General does, and read the outcome it established. */
+  reload(): Promise<ReloadOutcome | null>;
   /** Show another conversation, or the fresh composer, without a new chat surface being built for it. */
   show(conversationId: string | null): void;
   /** Replace the connection the shell is inside, as picking another Backend does. */
@@ -119,7 +120,7 @@ const client = createClient({ origin: "", credential: { kind: "cookie" }, fetch:
 const identity = { profile: "ux-lifetime", backendId: "ux-lifetime", accountScope: "ux-lifetime" };
 const session = { path: "/workspace/conv-a.jsonl", id: CONVERSATION, cwd: "/workspace", created: "2026-01-01T00:00:00Z", modified: "2026-01-01T00:00:00Z", messageCount: 1, firstMessage: "an earlier question" };
 
-let reloadRef: { current: (() => Promise<void>) | null } = { current: null };
+let reloadRef: { current: (() => Promise<ReloadOutcome>) | null } = { current: null };
 let setShown: (conversationId: string | null) => void = () => {};
 let switchConnection: () => void = () => {};
 /** The connection a switch moves to: another Backend and account, so another client, another scope and another stream. */
@@ -135,7 +136,7 @@ const gate: LifetimeGate = {
     if (source === undefined) throw new Error("no stream is open for " + conversationId);
     source.onmessage?.({ data: JSON.stringify(event) } as MessageEvent<string>);
   },
-  async reload() { await reloadRef.current?.(); },
+  async reload() { return await reloadRef.current?.() ?? null; },
   show(conversationId: string | null) { setShown(conversationId); },
   switchConnection() { switchConnection(); },
   get openStreams() {
@@ -160,7 +161,7 @@ function Host() {
   // when the user picks another Backend or profile — and the shell's tree is **not** remounted, so this is the switch
   // case for the shell's own owned values, the completion registry among them.
   const connection = useWorkbenchConnection();
-  const reload = useRef<(() => Promise<void>) | null>(null);
+  const reload = useRef<(() => Promise<ReloadOutcome>) | null>(null);
   reloadRef = reload;
   // The registry this shell is showing. It belongs to the connection it was built for, so a switch builds the next one
   // over the new client rather than handing the replaced client's watches a connection they do not describe. The shell
