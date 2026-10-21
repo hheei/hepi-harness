@@ -191,7 +191,13 @@ test("the surfaces that show files assemble no address of their own", async () =
   const { readFileSync } = await import("node:fs");
   const owned = [
     "components/FileExplorer.tsx",
-    "components/FileViewer.tsx",
+    "components/SourceFilePreview.tsx",
+    "components/DiffFilePreview.tsx",
+    "components/MarkdownFilePreview.tsx",
+    "components/ImageFilePreview.tsx",
+    "components/MediaFilePreview.tsx",
+    "components/DocumentFilePreview.tsx",
+    "components/TextFilePreview.tsx",
     "components/ChatInput.tsx",
     "components/ChatWindow.tsx",
     "components/MarkdownBody.tsx",

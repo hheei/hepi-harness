@@ -1,7 +1,7 @@
 # 檔案 preview 呈現模組
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R7 檔案部分
@@ -47,4 +47,40 @@ file surfaces/failures/docx/transfer 既有 drivers、file-save/useFileBytes 案
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+變更修訂：`worktree base 7cc775e4`；驗證跑於該工作樹 dirty state，log 目錄
+`.dev/verify/2026-10-21T05-43-31-953-verify-changed`。
+
+Changed paths（相對 `packages/ui/src`）：
+
+- `components/FileViewer.tsx`：只作格式選擇（44 行），不再持有任何格式工作流。
+- 新葉節點：`components/TextFilePreview.tsx`（bounded chunk + git patch + 三種模式 + scroll/selection/wrap 狀態）、
+  `components/SourceFilePreview.tsx`、`components/DiffFilePreview.tsx`、`components/MarkdownFilePreview.tsx`、
+  `components/ImageFilePreview.tsx`、`components/MediaFilePreview.tsx`（audio/video 同一職責，以 kind 區分）、
+  `components/DocumentFilePreview.tsx`。
+- 共用接線：`components/FilePreviewToolbar.tsx`（路徑列、watcher 缺席、FileSaveControl）、
+  `components/file-preview-styles.ts`（行號與字串樣式、dark theme）、`components/file-source-selection.ts`（來源行選取）。
+- 測試入口遷移：`lib/file/file-save.test.ts`、`lib/file/file-seam.test.ts` 的同一組斷言改指向實際擁有者（新葉節點），
+  非鏡像或檔案形狀測試。
+- 文件：`docs/workbench.md`（格式葉節點清單、docx 預檢位置）、`docs/developer-guide.md`（components 目錄與 format leaves）。
+
+已刪路徑：`FileViewer.tsx` 內的 `TextFileViewer`、`ImageViewer`、`AudioViewer`、`VideoViewer`、`DocumentViewer`、
+`DiffView`、`SourceCodeRenderer`、`MarkdownImage`、`DownloadLink`、`WatchState` 及其本地樣式常數；無 wrapper／shim 保留。
+
+保留契約：`FileSeam` 仍是唯一 endpoint owner；`useFileBytes` 的 abort + lease release 未改；docx metadata 預檢仍在任何
+位元組請求之前（先 `?type=meta`，超界不發 read）；browser download 與 Tauri `FileSaveHost` 仍由 `FileSaveControl`／
+`useFileSave` 決定，取消不誤報成功。未新增 plugin registry 或 transport facade。
+
+Evidence：
+
+- `pnpm verify:changed` 於 revision `7cc775e4`（dirty tree）exit 0：changed-typecheck、changed-test、web-unit、
+  check-docs 全 PASS；log 在 `.dev/verify/2026-10-21T05-43-31-953-verify-changed`。
+- `pnpm --filter @hepi/ui test` 367 pass、exit 0；`pnpm --filter @hepi/ui typecheck` 與 `pnpm -r typecheck` exit 0。
+- R7：`pnpm --filter @hepi/web test:docx-preview`（cookie／bearer 各讀一次、超界零讀取、無 frame/script、empty 文案）
+  exit 0；`test:file-surfaces`（image 走 connection lease、meta 讀取、native save 缺省文案、App 分片寫入）exit 0；
+  `test:file-failures`（failed／gone／truncated，Retry 與 Reload folder 落到 shell 回呼）exit 0；
+  `test:files-transfer`（upload、range、download 導覽、watch 501）exit 0；`test:workbench-scope` exit 0。
+- R8 部分：browser download 與 fixture `FileSaveHost` 的 save／取消已由上述 driver 覆蓋並通過。
+
+剩餘限制：實際 Tauri 原生儲存（真 shell picker 與 app_save_* IPC 寫盤）本票未執行，須由整合驗收票 12 依矩陣 R8
+在 App 環境承接；本票不宣稱該列已驗證。無其他 material findings，無新增 record 級項目。
+

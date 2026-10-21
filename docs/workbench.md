@@ -101,12 +101,18 @@ on the browser path.
 | Copied surface | Browser request | What answers it |
 | --- | --- | --- |
 | FileExplorer tree | `GET /api/files/<routing path>?type=list` | the workbench `files` operation, filtered per directory |
-| FileViewer text source | `GET /api/files/<routing path>?type=read` or `?type=meta` | the workbench `read` operation |
+| FileViewer text source (`TextFilePreview`) | `GET /api/files/<routing path>?type=read` or `?type=meta` | the workbench `read` operation |
 | FileExplorer changes | `GET /api/git/status` | the workbench `changes` operation |
 | `@` mention index | `GET /api/file-index` | the workbench `files` operation, ranked by the protocol's own scorer |
 | FileViewer diff mode | `GET /api/git/diff` | the workbench `diff` operation |
 | upload control, composer drop | `POST /api/files/<routing dir>?type=upload&conflict=` | one byte request per file, to the host that holds the folder |
 | download link, binary preview | `GET /api/files/<routing path>?type=download` or `?type=read` | the host's own byte payload route |
+
+Each format's rendering is its own module under `packages/ui/src/components`, and `FileViewer` only decides which
+one a routing path belongs to: `ImageFilePreview`, `MediaFilePreview` (audio and video, one leaf because they are one
+job), `DocumentFilePreview` (PDF frame or Word text) and `TextFilePreview`, which hands the chunk it read to
+`SourceFilePreview`, `DiffFilePreview` or `MarkdownFilePreview`. All of them keep the same path row, the same absent
+watcher and the same save control, and none of them reads a file except through the seam below.
 
 On the browser's side every one of those requests is made by one named seam on the connection,
 `packages/ui/src/lib/file/file-seam.ts`: the explorer, the viewer, the composer's `@` menu, a dropped upload and a markdown
@@ -333,7 +339,7 @@ Two deliberate limits on what a remote document may do in this browser:
   preview says what it is — a "text preview" badge and, for a document with no text, a message rather than a blank
   frame a reader has to interpret.
 - **It is bounded, and refused before the bytes are asked for.** One number, `DOCX_PREVIEW_MAX_BYTES` (10 MiB),
-  declared once in `packages/protocol/src/files.ts`. `FileViewer` reads `?type=meta` first and refuses an over-bound
+  declared once in `packages/protocol/src/files.ts`. `DocumentFilePreview` reads `?type=meta` first and refuses an over-bound
   document without issuing a read at all; `readDocxBytes` then enforces the same bound twice more — from a
   `content-length` claim, and while the body arrives, cancelling the stream at the bound so a response that lied
   about its length cannot hand an unbounded buffer to the parser. The refusal names the size it read and offers the
@@ -361,7 +367,7 @@ under the 10 MiB preview bound is answerable on a local and an SSH workspace ali
 
 The **packaged App reads documents too**, and there is no App-side gap to wait for: `apps/app` builds the same
 `@hepi/ui` workbench, whose graph reaches the viewer through `workbench` -> `components/AppShell` ->
-`components/FileViewer`, and `mammoth` is therefore declared by `packages/ui` — the package that imports it — in
+`components/FileViewer` -> `components/DocumentFilePreview`, and `mammoth` is therefore declared by `packages/ui` — the package that imports it — in
 `dependencies`, not by a host that merely builds it. `apps/app/test/docx-preview-bundle.test.ts` asserts *which*
 reader the App's bundle gets, using the App's own tsconfig and `platform: browser`: `mammoth/browser/*` is a
 metafile input and neither `lib/unzip.js` nor `lib/docx/files.js` is, because the Node pair reaches for `Buffer` and

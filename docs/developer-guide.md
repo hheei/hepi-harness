@@ -43,12 +43,12 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | 位置 | 放什么 |
 | --- | --- |
 | `src/workbench.tsx`、`src/client.ts`、`src/index.ts`、`src/host-router.tsx` | 挂载、连接与包入口,不进子目录 |
-| `src/components` | React 面板;新面板放这里 |
+| `src/components` | React 面板;新面板放这里。格式专属的预览叶节点与面板同目录,文件名即格式(`FileViewer` 只选叶节点) |
 | `src/hooks` | 需要 React 生命周期的采集与面板状态 |
 | `src/lib` | 纯规则、投影、客户端 API、面板契约;无 React 的放这里,子目录只有 `lib/file`(文件面)、`lib/chat`(轮次模型与滚动)、`lib/provider`(凭据与登录面板契约)与 `lib/i18n` |
 | `src/styles` | 全局样式 |
 
-`file-`、`chat-`、`provider-` 文件保留名字,收进对应特性目录;`lib/*` 通配 `exports` 与 `@hepi/ui/*` 路径映射继续解析嵌套路径。共享 MCP DTO 与纯导入解析器由 `@hepi/protocol` 导出,面板聚合行为归 Gateway ingress;调用端直接导入所有者,Gateway 不依赖 UI。其余小簇保留现有位置,下一批迁移依据见 [目录导航评审记录](../.scratch/repo-navigation-map/notes.md)。
+`file-`、`chat-`、`provider-` 文件保留名字,收进对应特性目录;文件预览按格式分叶:`components/FileViewer.tsx` 只按协议判定格式并交给 `ImageFilePreview`、`MediaFilePreview`、`DocumentFilePreview` 或 `TextFilePreview`,后者再交给 `SourceFilePreview`、`DiffFilePreview`、`MarkdownFilePreview`;字串/换行/行号样式在 `file-preview-styles.ts`,来源行选取在 `file-source-selection.ts`。全部仍只经 `lib/file/file-seam.ts` 读字节;`lib/*` 通配 `exports` 与 `@hepi/ui/*` 路径映射继续解析嵌套路径。共享 MCP DTO 与纯导入解析器由 `@hepi/protocol` 导出,面板聚合行为归 Gateway ingress;调用端直接导入所有者,Gateway 不依赖 UI。其余小簇保留现有位置,下一批迁移依据见 [目录导航评审记录](../.scratch/repo-navigation-map/notes.md)。
 
 ### `apps/web/e2e`:共享工作台的验收,不是 Web 包的私有测试
 

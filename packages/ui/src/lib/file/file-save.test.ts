@@ -98,9 +98,13 @@ function bodyOf(size: number, chunkSize: number): ReadableStream<Uint8Array> {
 test("the surfaces offer one save control and build no save address of their own", async () => {
   const { readFileSync } = await import("node:fs");
   const read = (relative: string): string => readFileSync(new URL("../../" + relative, import.meta.url), "utf8");
-  // The viewer and the explorer both offer the control; neither builds an anchor or a native call itself, so the two
+  // Every preview leaf and the explorer offer the control; none builds an anchor or a native call itself, so the two
   // paths are decided in one place rather than per surface.
-  for (const file of ["components/FileViewer.tsx", "components/FileExplorer.tsx"]) {
+  for (const file of [
+    "components/TextFilePreview.tsx",
+    "components/FilePreviewToolbar.tsx",
+    "components/FileExplorer.tsx",
+  ]) {
     const source = read(file);
     assert.match(source, /FileSaveControl/, file + " offers the shared save control");
     assert.doesNotMatch(source, /href=\{download\.url\}/, file + " builds no download anchor of its own");
