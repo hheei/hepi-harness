@@ -32,8 +32,14 @@ export async function readJson(request: IncomingMessage): Promise<unknown> {
 	}
 }
 
-/** Answer one request with a JSON body at the status its route's contract names. */
-export function writeJson(response: ServerResponse, status: number, body: unknown): void {
+/**
+ * Answer one request with a JSON body at the status its route's contract names.
+ *
+ * A `replacer` is the one thing a family may state about how its answer is written: a capability that hands back an
+ * `Error` is serialized by the code and message it carries rather than as an empty object, and that rule belongs to the
+ * family whose capability can produce one.
+ */
+export function writeJson(response: ServerResponse, status: number, body: unknown, replacer?: (this: unknown, key: string, value: unknown) => unknown): void {
 	response.writeHead(status, { "content-type": "application/json" });
-	response.end(JSON.stringify(body));
+	response.end(JSON.stringify(body, replacer));
 }
