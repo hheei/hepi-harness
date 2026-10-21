@@ -1,0 +1,1823 @@
+{
+  "revision": "a57100bb4917d408ee51c19beeda30d3efecc857",
+  "scope": "packages/ui/src .ts/.tsx excluding .test. and .d.ts",
+  "method": "File line counts and regex counts of useState, useRef, useEffect/useLayoutEffect call sites; per file, including child functions; signals only, not runtime count or cyclomatic complexity",
+  "files": [
+    {
+      "path": "components/AppShell.tsx",
+      "lines": 2942,
+      "state": 44,
+      "effect": 25,
+      "ref": 28,
+      "imports": 59
+    },
+    {
+      "path": "components/ChatInput.tsx",
+      "lines": 2855,
+      "state": 27,
+      "effect": 27,
+      "ref": 21,
+      "imports": 23
+    },
+    {
+      "path": "hooks/useAgentSession.ts",
+      "lines": 2466,
+      "state": 37,
+      "effect": 16,
+      "ref": 44,
+      "imports": 30
+    },
+    {
+      "path": "components/SessionSidebar.tsx",
+      "lines": 2440,
+      "state": 37,
+      "effect": 25,
+      "ref": 45,
+      "imports": 36
+    },
+    {
+      "path": "components/ModelsConfig.tsx",
+      "lines": 2189,
+      "state": 28,
+      "effect": 9,
+      "ref": 11,
+      "imports": 16
+    },
+    {
+      "path": "components/MessageView.tsx",
+      "lines": 2178,
+      "state": 26,
+      "effect": 5,
+      "ref": 6,
+      "imports": 29
+    },
+    {
+      "path": "components/McpConfig.tsx",
+      "lines": 2149,
+      "state": 17,
+      "effect": 11,
+      "ref": 19,
+      "imports": 16
+    },
+    {
+      "path": "components/ChatWindow.tsx",
+      "lines": 1961,
+      "state": 14,
+      "effect": 28,
+      "ref": 30,
+      "imports": 38
+    },
+    {
+      "path": "lib/i18n/messages/zh-CN.ts",
+      "lines": 1696,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/i18n/messages/en.ts",
+      "lines": 1696,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/i18n/messages/zh-TW.ts",
+      "lines": 1696,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/mcp-config-helpers.ts",
+      "lines": 1454,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "components/FileViewer.tsx",
+      "lines": 1425,
+      "state": 16,
+      "effect": 12,
+      "ref": 8,
+      "imports": 26
+    },
+    {
+      "path": "components/ChatMinimap.tsx",
+      "lines": 1227,
+      "state": 8,
+      "effect": 7,
+      "ref": 17,
+      "imports": 10
+    },
+    {
+      "path": "components/FileExplorer.tsx",
+      "lines": 1050,
+      "state": 25,
+      "effect": 9,
+      "ref": 3,
+      "imports": 13
+    },
+    {
+      "path": "components/SkillsConfig.tsx",
+      "lines": 1042,
+      "state": 27,
+      "effect": 8,
+      "ref": 1,
+      "imports": 12
+    },
+    {
+      "path": "components/SessionTree.tsx",
+      "lines": 1006,
+      "state": 6,
+      "effect": 9,
+      "ref": 13,
+      "imports": 13
+    },
+    {
+      "path": "lib/session-tree.ts",
+      "lines": 856,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 5
+    },
+    {
+      "path": "components/SettingsUi.tsx",
+      "lines": 802,
+      "state": 0,
+      "effect": 1,
+      "ref": 2,
+      "imports": 2
+    },
+    {
+      "path": "components/SidebarMenu.tsx",
+      "lines": 776,
+      "state": 2,
+      "effect": 7,
+      "ref": 7,
+      "imports": 3
+    },
+    {
+      "path": "components/mcp-add-helpers.ts",
+      "lines": 702,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 7
+    },
+    {
+      "path": "lib/lifecycle-projection.ts",
+      "lines": 646,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/McpAddServer.tsx",
+      "lines": 636,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 11
+    },
+    {
+      "path": "lib/history-navigation.ts",
+      "lines": 594,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/markdown.ts",
+      "lines": 593,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 11
+    },
+    {
+      "path": "lib/conversation-mcp.ts",
+      "lines": 587,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/ProjectWorktreePicker.tsx",
+      "lines": 577,
+      "state": 1,
+      "effect": 1,
+      "ref": 7,
+      "imports": 8
+    },
+    {
+      "path": "components/EnabledModelsSection.tsx",
+      "lines": 550,
+      "state": 9,
+      "effect": 3,
+      "ref": 3,
+      "imports": 7
+    },
+    {
+      "path": "components/SettingsPanel.tsx",
+      "lines": 526,
+      "state": 10,
+      "effect": 6,
+      "ref": 1,
+      "imports": 23
+    },
+    {
+      "path": "hooks/useGroupDrag.ts",
+      "lines": 504,
+      "state": 1,
+      "effect": 4,
+      "ref": 4,
+      "imports": 3
+    },
+    {
+      "path": "lib/transcript-window.ts",
+      "lines": 472,
+      "state": 4,
+      "effect": 4,
+      "ref": 7,
+      "imports": 2
+    },
+    {
+      "path": "lib/completion-delivery.ts",
+      "lines": 456,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 7
+    },
+    {
+      "path": "components/OAuthDetail.tsx",
+      "lines": 454,
+      "state": 2,
+      "effect": 3,
+      "ref": 8,
+      "imports": 12
+    },
+    {
+      "path": "components/AgentsConfig.tsx",
+      "lines": 453,
+      "state": 17,
+      "effect": 2,
+      "ref": 0,
+      "imports": 11
+    },
+    {
+      "path": "components/McpConversationTools.tsx",
+      "lines": 434,
+      "state": 5,
+      "effect": 3,
+      "ref": 8,
+      "imports": 5
+    },
+    {
+      "path": "components/ExtensionsConfig.tsx",
+      "lines": 414,
+      "state": 11,
+      "effect": 2,
+      "ref": 0,
+      "imports": 9
+    },
+    {
+      "path": "components/mcp-sign-in-helpers.ts",
+      "lines": 390,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/ProjectTrustDialog.tsx",
+      "lines": 387,
+      "state": 1,
+      "effect": 4,
+      "ref": 3,
+      "imports": 6
+    },
+    {
+      "path": "components/SubtreeControlPanel.tsx",
+      "lines": 385,
+      "state": 2,
+      "effect": 2,
+      "ref": 2,
+      "imports": 8
+    },
+    {
+      "path": "components/ToolDefinitionsPanel.tsx",
+      "lines": 380,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/draft-store.ts",
+      "lines": 364,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/chat/chat-turn-model.ts",
+      "lines": 360,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/types.ts",
+      "lines": 355,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/MermaidBlock.tsx",
+      "lines": 344,
+      "state": 5,
+      "effect": 2,
+      "ref": 2,
+      "imports": 7
+    },
+    {
+      "path": "components/ModelSelector.tsx",
+      "lines": 343,
+      "state": 3,
+      "effect": 2,
+      "ref": 2,
+      "imports": 4
+    },
+    {
+      "path": "components/AgentSessionPanel.tsx",
+      "lines": 341,
+      "state": 1,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "components/RawHistoryPanel.tsx",
+      "lines": 332,
+      "state": 9,
+      "effect": 4,
+      "ref": 7,
+      "imports": 7
+    },
+    {
+      "path": "components/NewProjectDialog.tsx",
+      "lines": 315,
+      "state": 11,
+      "effect": 3,
+      "ref": 0,
+      "imports": 5
+    },
+    {
+      "path": "components/ReferencePanel.tsx",
+      "lines": 314,
+      "state": 12,
+      "effect": 1,
+      "ref": 0,
+      "imports": 6
+    },
+    {
+      "path": "components/McpSignIn.tsx",
+      "lines": 308,
+      "state": 1,
+      "effect": 2,
+      "ref": 5,
+      "imports": 9
+    },
+    {
+      "path": "lib/durable-projection.ts",
+      "lines": 292,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 6
+    },
+    {
+      "path": "components/TerminalPanel.tsx",
+      "lines": 291,
+      "state": 4,
+      "effect": 3,
+      "ref": 6,
+      "imports": 9
+    },
+    {
+      "path": "hooks/useResizablePanel.ts",
+      "lines": 291,
+      "state": 3,
+      "effect": 5,
+      "ref": 3,
+      "imports": 2
+    },
+    {
+      "path": "lib/lifecycle-acquisition.ts",
+      "lines": 287,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/workspace-api.ts",
+      "lines": 281,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 5
+    },
+    {
+      "path": "lib/skill-inventory.ts",
+      "lines": 278,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/terminal-fan-in.ts",
+      "lines": 272,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/file/file-seam.ts",
+      "lines": 268,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "client.ts",
+      "lines": 267,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "workbench.tsx",
+      "lines": 263,
+      "state": 4,
+      "effect": 3,
+      "ref": 1,
+      "imports": 14
+    },
+    {
+      "path": "lib/conversation-api.ts",
+      "lines": 259,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 7
+    },
+    {
+      "path": "lib/apply-patch.ts",
+      "lines": 250,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/QuickDelegatePanel.tsx",
+      "lines": 246,
+      "state": 9,
+      "effect": 2,
+      "ref": 1,
+      "imports": 8
+    },
+    {
+      "path": "hooks/useHistoryNavigation.ts",
+      "lines": 246,
+      "state": 2,
+      "effect": 4,
+      "ref": 6,
+      "imports": 4
+    },
+    {
+      "path": "components/DirectoryPicker.tsx",
+      "lines": 238,
+      "state": 7,
+      "effect": 1,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "lib/file/file-save.ts",
+      "lines": 230,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/new-session-context.ts",
+      "lines": 229,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/SidebarIcons.tsx",
+      "lines": 227,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/subtree-control.ts",
+      "lines": 217,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "components/ExtensionWidgets.tsx",
+      "lines": 215,
+      "state": 2,
+      "effect": 2,
+      "ref": 2,
+      "imports": 4
+    },
+    {
+      "path": "hooks/useFileBytes.ts",
+      "lines": 200,
+      "state": 3,
+      "effect": 3,
+      "ref": 2,
+      "imports": 4
+    },
+    {
+      "path": "lib/stacked-dialog.ts",
+      "lines": 200,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/scroll-settlement.ts",
+      "lines": 196,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/provider/provider-auth.ts",
+      "lines": 196,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/provider/provider-login.ts",
+      "lines": 192,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "hooks/useSessionUiState.ts",
+      "lines": 191,
+      "state": 4,
+      "effect": 1,
+      "ref": 6,
+      "imports": 3
+    },
+    {
+      "path": "lib/file/file-links.ts",
+      "lines": 186,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/ChildRecoveryPanel.tsx",
+      "lines": 179,
+      "state": 2,
+      "effect": 1,
+      "ref": 0,
+      "imports": 6
+    },
+    {
+      "path": "components/models-config-helpers.ts",
+      "lines": 170,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useTheme.ts",
+      "lines": 169,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "hooks/useViewportHeight.ts",
+      "lines": 167,
+      "state": 0,
+      "effect": 1,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/ProviderUsageSummary.tsx",
+      "lines": 163,
+      "state": 4,
+      "effect": 1,
+      "ref": 1,
+      "imports": 4
+    },
+    {
+      "path": "lib/docx-preview.ts",
+      "lines": 163,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/workbench-scope.ts",
+      "lines": 156,
+      "state": 1,
+      "effect": 1,
+      "ref": 1,
+      "imports": 7
+    },
+    {
+      "path": "lib/conversation-catalogue.ts",
+      "lines": 155,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/history-rail.ts",
+      "lines": 155,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/session-view-cache.ts",
+      "lines": 154,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/settings-navigation.ts",
+      "lines": 153,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/MarkdownBody.tsx",
+      "lines": 148,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 9
+    },
+    {
+      "path": "lib/api-types.ts",
+      "lines": 148,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/references.ts",
+      "lines": 148,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "components/SidebarToast.tsx",
+      "lines": 147,
+      "state": 2,
+      "effect": 2,
+      "ref": 2,
+      "imports": 2
+    },
+    {
+      "path": "components/TabBar.tsx",
+      "lines": 146,
+      "state": 1,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "components/ProjectRemovalMenu.tsx",
+      "lines": 139,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "components/ConnectionRecovery.tsx",
+      "lines": 138,
+      "state": 1,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/SelectorRow.tsx",
+      "lines": 136,
+      "state": 2,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/patch.ts",
+      "lines": 134,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/tab-session.ts",
+      "lines": 129,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/ReadFailurePanel.tsx",
+      "lines": 128,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/project-routing.ts",
+      "lines": 128,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/turn-written-files.ts",
+      "lines": 127,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 5
+    },
+    {
+      "path": "components/FileIcons.tsx",
+      "lines": 126,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/sidebar-prefs.ts",
+      "lines": 124,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/FileSaveControl.tsx",
+      "lines": 122,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "lib/mcp-server-display.ts",
+      "lines": 120,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/child-recovery.ts",
+      "lines": 120,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "components/CodemodeToolView.tsx",
+      "lines": 113,
+      "state": 1,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "hooks/useFontPreferences.ts",
+      "lines": 113,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/codemode-view.ts",
+      "lines": 113,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/ExtensionStatusBar.tsx",
+      "lines": 112,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "lib/resource-read.ts",
+      "lines": 110,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/ImagePreview.tsx",
+      "lines": 109,
+      "state": 1,
+      "effect": 1,
+      "ref": 3,
+      "imports": 2
+    },
+    {
+      "path": "lib/i18n/format.ts",
+      "lines": 109,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/terminal-client.ts",
+      "lines": 108,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/enabled-models-helpers.ts",
+      "lines": 104,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/delegate-client.ts",
+      "lines": 103,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 5
+    },
+    {
+      "path": "lib/delegate-attempt.ts",
+      "lines": 101,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/read-recovery.ts",
+      "lines": 101,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/navigation.ts",
+      "lines": 99,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/session-stats.ts",
+      "lines": 98,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/workspace-memory.ts",
+      "lines": 98,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/markdown-list-continuation.ts",
+      "lines": 95,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/catalog-answer.ts",
+      "lines": 94,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/file/file-fuzzy.ts",
+      "lines": 94,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/session-family.ts",
+      "lines": 93,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/OAuthPastePanel.tsx",
+      "lines": 92,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/ProviderIcon.tsx",
+      "lines": 90,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/SessionSearch.tsx",
+      "lines": 90,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 6
+    },
+    {
+      "path": "components/TokenUsageIcons.tsx",
+      "lines": 90,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useChatAppearance.ts",
+      "lines": 90,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/web-session-gate.ts",
+      "lines": 89,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/NewSessionContextBar.tsx",
+      "lines": 88,
+      "state": 0,
+      "effect": 1,
+      "ref": 3,
+      "imports": 6
+    },
+    {
+      "path": "components/FileReadFailurePanel.tsx",
+      "lines": 88,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "hooks/useKeyboardShortcuts.ts",
+      "lines": 88,
+      "state": 0,
+      "effect": 1,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/frontmatter.ts",
+      "lines": 87,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/capability-availability.ts",
+      "lines": 86,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "hooks/useI18n.tsx",
+      "lines": 84,
+      "state": 2,
+      "effect": 1,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "lib/file/file-read-failure.ts",
+      "lines": 84,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useAudio.ts",
+      "lines": 82,
+      "state": 1,
+      "effect": 1,
+      "ref": 2,
+      "imports": 1
+    },
+    {
+      "path": "lib/project-removal.ts",
+      "lines": 81,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/message-display.ts",
+      "lines": 81,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/transcript-window-surface.tsx",
+      "lines": 80,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "components/file-tab-state.ts",
+      "lines": 79,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/image-attachments.ts",
+      "lines": 77,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/browser-notifications.ts",
+      "lines": 77,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/sidebar-actions.ts",
+      "lines": 76,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/run-marks.ts",
+      "lines": 76,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/mcp-command.ts",
+      "lines": 76,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/FontSettings.tsx",
+      "lines": 73,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "components/NavigationOutcomeBanner.tsx",
+      "lines": 72,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/web-logout.ts",
+      "lines": 72,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/provider/provider-flow-view.ts",
+      "lines": 72,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/connection-readout.ts",
+      "lines": 71,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/FrontmatterCard.tsx",
+      "lines": 70,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/mcp-config-values.ts",
+      "lines": 70,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/chat/chat-turn-identity.ts",
+      "lines": 68,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/connection-scope.ts",
+      "lines": 67,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/third-party-notices.ts",
+      "lines": 67,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/font-preferences.ts",
+      "lines": 65,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useDragDrop.ts",
+      "lines": 64,
+      "state": 1,
+      "effect": 0,
+      "ref": 1,
+      "imports": 2
+    },
+    {
+      "path": "lib/file/file-paths.ts",
+      "lines": 64,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/WorktreeCreateForm.tsx",
+      "lines": 63,
+      "state": 1,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/terminal-input.ts",
+      "lines": 63,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/normalize.ts",
+      "lines": 63,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/models-cache.ts",
+      "lines": 62,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/WebSignIn.tsx",
+      "lines": 61,
+      "state": 3,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "hooks/useScrollbarVisibility.ts",
+      "lines": 60,
+      "state": 0,
+      "effect": 1,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/tps.ts",
+      "lines": 59,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/session-fork-name.ts",
+      "lines": 59,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/SystemPromptPanel.tsx",
+      "lines": 58,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/deferred-text.ts",
+      "lines": 57,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/lifecycle-store.ts",
+      "lines": 57,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/project-groups.ts",
+      "lines": 56,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/model-catalog.ts",
+      "lines": 53,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/TurnWrittenFiles.tsx",
+      "lines": 52,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "lib/panel-layout.ts",
+      "lines": 52,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/chat/chat-lazy-load.ts",
+      "lines": 52,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/streaming-message.ts",
+      "lines": 51,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/agent-definitions.ts",
+      "lines": 49,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/enabled-models.ts",
+      "lines": 49,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/file/file-upload-client.ts",
+      "lines": 46,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/initial-navigation.ts",
+      "lines": 45,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "hooks/useIsMobile.ts",
+      "lines": 43,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/chat/chat-scroll-position.ts",
+      "lines": 43,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/mcp-tool-display.ts",
+      "lines": 42,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/i18n/registry.ts",
+      "lines": 41,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 4
+    },
+    {
+      "path": "hooks/useEnterSendMode.ts",
+      "lines": 40,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/search-tree.ts",
+      "lines": 39,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useDocxPreview.ts",
+      "lines": 38,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/terminal-tab-state.ts",
+      "lines": 37,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/FilePreviewLimitNotice.tsx",
+      "lines": 37,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/fork-attempt.ts",
+      "lines": 37,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/connection-lifetime.ts",
+      "lines": 37,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "hooks/useTerminalFanIn.ts",
+      "lines": 35,
+      "state": 1,
+      "effect": 1,
+      "ref": 0,
+      "imports": 3
+    },
+    {
+      "path": "lib/pi-types.ts",
+      "lines": 34,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/compaction-summary.ts",
+      "lines": 34,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/tool-names.ts",
+      "lines": 34,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/display-path.ts",
+      "lines": 33,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/ThemeIcon.tsx",
+      "lines": 32,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/session-search.ts",
+      "lines": 31,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/response-usage-visibility.ts",
+      "lines": 30,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/session-row-context-menu.ts",
+      "lines": 29,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/chat/chat-phase-label.ts",
+      "lines": 29,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/settings-ui-helpers.ts",
+      "lines": 28,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/tool-call-expansion.ts",
+      "lines": 25,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "host-router.tsx",
+      "lines": 23,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/subagent-tool-details.ts",
+      "lines": 23,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "components/session-catalog-helpers.ts",
+      "lines": 22,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 1
+    },
+    {
+      "path": "lib/slash-display.ts",
+      "lines": 22,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/DismissButton.tsx",
+      "lines": 21,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/api-request.ts",
+      "lines": 21,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "components/AnsiText.tsx",
+      "lines": 20,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 2
+    },
+    {
+      "path": "lib/theme.ts",
+      "lines": 19,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/tool-presets.ts",
+      "lines": 19,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/clipboard.ts",
+      "lines": 18,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/provider/provider-usage-ids.ts",
+      "lines": 17,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/thinking-expansion-preference.ts",
+      "lines": 15,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/i18n/types.ts",
+      "lines": 15,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/file/file-viewer-state.ts",
+      "lines": 15,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "components/ThinkingIcon.tsx",
+      "lines": 14,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/agent-event-wire.ts",
+      "lines": 14,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "index.ts",
+      "lines": 12,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/composer-limits.ts",
+      "lines": 12,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/byte-size.ts",
+      "lines": 12,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/ansi.ts",
+      "lines": 6,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/model-discovery.ts",
+      "lines": 5,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    },
+    {
+      "path": "lib/quoted-selection.ts",
+      "lines": 4,
+      "state": 0,
+      "effect": 0,
+      "ref": 0,
+      "imports": 0
+    }
+  ]
+}
