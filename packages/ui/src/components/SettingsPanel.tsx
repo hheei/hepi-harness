@@ -87,9 +87,8 @@ export function SettingsSectionIcon({ section, size = 16, strokeWidth = 1.8 }: {
 
 function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, onQuoteSelectionChange }: Pick<Props, "sessionId" | "onSessionReloaded" | "quoteSelectionEnabled" | "onQuoteSelectionChange">) {
   const { locale, setLocale, supportedLocales, t } = useI18n();
-  // The conversation API of this connection: a reload is the Backend's own route, asked through the connection it is
-  // inside rather than around it — its Gateway origin, under its credential.
-  const { api, client } = useWorkbenchConnection();
+  // The credential this surface is connected as: it decides whether ending the session is an action this host can offer.
+  const { client } = useWorkbenchConnection();
   const { preference, setThemePreference } = useTheme();
   const { width: chatContentWidth, setWidth: setChatContentWidth, fontSize, setFontSize } = useChatAppearance();
   const enterSendMode = useEnterSendMode();
@@ -165,7 +164,8 @@ function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, 
       if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
       setShellSettings(data);
       if (sessionId) {
-        await api.reload(sessionId);
+        // The reload is the chat's own operation: it asks the Backend's route, re-reads the conversation and states what
+        // happened. Asking here as well would send the same reload twice, so this surface only announces the change.
         onSessionReloaded();
       }
     } catch (cause) {

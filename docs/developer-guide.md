@@ -173,7 +173,14 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 
 快照 `submissions` 只含等待项。客户端对等待项读取 `GET …/submissions?requestId=`,查 durable 结果而不重发,
 见 [ADR 0006](adr/0006-durable-submission-lifecycle.md)。UI 的唯一折叠在 `lib/lifecycle-projection.ts`;
-采集在 `lifecycle-acquisition.ts`,存储在 `lifecycle-store.ts`,I/O 在 `hooks/useAgentSession.ts`。
+采集在 `lifecycle-acquisition.ts`,存储在 `lifecycle-store.ts`。对话的 UI I/O 集中在
+`lib/conversation-session.ts`:surface 持有的 stream reader(经 shell 每对话一个 source join)、single-flight 读取
+(forced 读不共用)、唯一准入路径(立即 send、steer、follow-up)、by-id lookup、Backend 自身 reload 与释放。它不做
+排序、不持 timer/retry queue/socket;折叠决定答案含义,`hooks/useAgentSession.ts` 呈现并执行 fold 请求。同对话 reload
+是读取与重新取得资源,不是新 attachment:聊天保留其树、其 stream 与读者位置,Shell 不再为此提供 mount key。
+该操作只有一个 owner:Settings › General 只声明配置已变并调用对话注册的 reload,由后者执行 Backend 路由、读取与通知;
+通知只声称读取已确立的事实,读取失败即报失败。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
+可有同一 id):切换后到达的 window、`not_found` 或 failure 一律拒绝,不写到新 connection 的 surface。
 已被接受的 readout(accepted window、其前方的 older prefix、该 window 的 pagination claim)由
 `lib/conversation-readout.ts` 在同一个接受步骤发布:prefix 依共享 `decidePrefix` 与 readout 已持有的上一个 window
 同步决定,不再由 React effect 追赶。metadata(stats、history token/head、leaf、display model)留在被接受的 payload 上,
@@ -186,7 +193,8 @@ timeout/aborted/明确拒绝保留各自名字。文件写无 call ID/journal,�
 
 新帧按 protocol → Backend 投影 → session 折叠 → UI 改;恢复语义归 durable seam。
 **检查:** server 的 `durable-submissions/delta-frames/frame-size/conversation-heartbeat`、`acceptance-recovery`;Web 的
-`useAgentSession.lifecycle` 与 `lifecycle-projection`。曾覆盖同一路径的 `test:submission-recovery` 浏览器驱动依赖已退役的 Next 构建,已删除。
+`useAgentSession.lifecycle`、`conversation-session`、`completion-delivery` 与 `lifecycle-projection`;浏览器
+`test:conversation-lifetime`(reload 不重建、未知提交只 lookup、背景 answer 只通知一次)。曾覆盖同一路径的 `test:submission-recovery` 浏览器驱动依赖已退役的 Next 构建,已删除。
 
 ## History: bounded window, outline, fork, compaction
 

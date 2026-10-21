@@ -1252,8 +1252,16 @@ read) carries no facts to publish.
 
 Older or wrong-attachment reads cannot overwrite these facts, and a same-revision statement remains current so a
 remount can hydrate its metadata. The projection owns no socket, timer, store or scheduler: the hook
-(`useAgentSession`) keeps transport, cache, remount and rendering and is the caller that performs what the fold
-requests. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
+(`useAgentSession`) keeps cache and rendering, and `packages/ui/src/lib/conversation-session.ts` owns the conversation's
+UI I/O — the stream reader it joined through the shell's one source per conversation, its single-flight reads, the one
+admission path, the by-id lookup and the explicit reload — and is the caller that performs what the fold requests. That
+value is bound to one connection and one conversation identity, so its reader and its reads are released together; the
+chat's mount identity is the conversation it shows, which is why a reload of the same conversation re-reads instead of
+rebuilding the surface. The reload is one owner's operation: the surface that asks for it (Settings › General) states
+the change and the conversation performs the Backend's route, the read and the notice, and what the notice claims is
+what the read established. A read is fenced by the **connection** it was asked through — not only by the conversation id,
+because two connections can hold the same id — so an answer that arrives after a switch is refused whether it is a
+window, a `not_found` or a failure. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
 from a mirror beside it, so a refused frame cannot move them; the separate `/state` agent-state query is an
 independent read with its own ordering and refines that transcript without being gated on a window's acceptance. That
 read is stamped, when it begins, with the accepted statement it describes — the attachment's identity **and** its

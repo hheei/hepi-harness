@@ -328,7 +328,20 @@ window that became the whole active range) puts the window's own claim back. Met
 and head marker, the active leaf, the display model) stays on the accepted payload the readout carries, and the
 stream-local `SessionState` stays a transport-continuity value beside it.
 `packages/ui/src/lib/lifecycle-store.ts` holds one value per composer or conversation in
-memory for the life of the page, and `packages/ui/src/hooks/useAgentSession.ts` performs the requested I/O and renders. The hook does not infer a
+memory for the life of the page. A conversation's **UI I/O** is one explicit value,
+`packages/ui/src/lib/conversation-session.ts`: the stream reader the surface holds (joined through the shell's one source
+per conversation), its reads (single-flight per conversation, with a forced read sharing nothing), the one admission path
+for an immediate send, a steer and a follow-up, the by-id lookup that repairs an unknown outcome, the Backend's own
+reload, and the release that gives the reader back. It performs no ordering of its own and owns no timer, retry queue or
+socket: the pure fold decides what an answer means, and `packages/ui/src/hooks/useAgentSession.ts` renders that decision
+and performs what the fold requests. A reload of the conversation on screen is therefore a read and a re-acquire, not a
+new attachment — the chat keeps its tree, its stream and the reader's place, and the shell no longer states a mount key
+for it. That operation has one owner: Settings › General states that the tools configuration changed and asks this
+conversation's registered reload, which performs the Backend's route, the read and the notice — a caller that also asked
+the route itself would reload twice — and the notice claims only what the read established, so a failed re-read is
+reported as a failure. Every read is also fenced by the **connection** it was asked through, not only by the conversation
+id: a switch replaces the client and its API, so an answer — a window, a `not_found` or a failure — that arrives after
+the switch is refused rather than published onto the new connection's surface. The hook does not infer a
 submission's fate: the overlay ends at the turn's own committed entry, the answer interest survives that commitment,
 and a run's outcome is the runtime's live terminal fact carrying its answer identity. A notice is keyed by that answer,
 so a steer group sounds once; an abort, failure or withdrawal shows its reason and never sounds; and an acquired

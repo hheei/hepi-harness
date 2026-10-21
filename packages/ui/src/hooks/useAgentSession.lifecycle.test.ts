@@ -50,6 +50,8 @@ type Mount = {
   dirty: boolean;
   render(): void;
   replayEffects(): void;
+  /** Re-render this same mount inside another connection, as the provider's replacement does. */
+  switchConnection(connection: ReturnType<typeof workbenchConnection>): void;
   unmount(): void;
   readonly out: AgentSession;
 };
@@ -134,7 +136,14 @@ const frame = (overrides: Partial<NativeSnapshot> & { text?: string }): NativeSn
 const streamFrame = (snapshot: NativeSnapshot, event = "snapshot") => ({ type: "frame", sessionId: "conv", event, data: snapshot });
 function deferredRead() {
   const pending = Promise.withResolvers<StubResponse>();
-  return { promise: pending.promise, release: (body: unknown) => pending.resolve(respond(body)) };
+  return {
+    promise: pending.promise,
+    release: (body: unknown) => pending.resolve(respond(body)),
+    /** The same read answering a refusal: the status is the Backend's own answer, as a real response states it. */
+    releaseAt: (body: unknown, status: number) => pending.resolve(respond(body, status)),
+    /** The same read answering the way a transport failure does, so a caller sees the rejection it would see. */
+    reject: (cause: unknown) => pending.reject(cause),
+  };
 }
 
 // Run the actual bundled hook with independent React and transport state per fixture.
@@ -219,6 +228,18 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   // `fetch`, so a request recorded without it is a surface that reached around the connection. The value is built once
   // per mount and handed back unchanged: a store or an effect that keys by the connection must see one connection, not
   // a fresh object per render.
+  // A second connection: the switch case. It is a different Backend, a different account and a different client, so it is
+  // a different conversation API and a different scope — the identity a late answer must be refused against.
+  const anotherConnection = (t: TestContext) => {
+    const client = createClient({
+      origin: "https://gateway-b.example",
+      credential: { kind: "bearer", token: "token-b" },
+      createSource: inertSource,
+      fetch: async (url: string | URL | Request, init?: RequestInit) => (sandbox.fetch as typeof globalThis.fetch)(String(url), init),
+    } as never);
+    t.after(() => client.dispose());
+    return workbenchConnection(client as never, { profile: "profile-b", backendId: "backend-B", accountScope: "account-B" });
+  };
   const defaultConnection = () => workbenchConnection({
     origin: "",
     request: (requestPath: string, init?: RequestInit) => {
@@ -242,7 +263,7 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   } as unknown as Parameters<typeof workbenchConnection>[0], { profile: "test", backendId: "backend", accountScope: "account" });
   const useAgentSession = (sandbox.module as { exports: Record<string, unknown> }).exports.useAgentSession as (given: Mount["options"]) => AgentSession;
   return {
-    requests, sources, clientRequests,
+    requests, sources, clientRequests, anotherConnection,
     mount(extra: MountOptions = {}, connection = defaultConnection()): Mount {
       let unmounted = false;
       const m = {
@@ -258,6 +279,14 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
         replayEffects() {
           for (const slot of m.slots) slot?.cleanup?.();
           for (const slot of m.slots) if (slot?.effect) slot.cleanup = slot.effect();
+        },
+        // A connection switch: the provider above this mount states a new connection and the tree re-renders inside it.
+        // The shell is **not** remounted — only the provider is keyed by the connection's scope — so this is the same
+        // hook instance rendering again with a different `connection` in context, which is what makes a read that is
+        // still in flight belong to the connection that was replaced.
+        switchConnection(connection: ReturnType<typeof workbenchConnection>) {
+          (m as unknown as { connection: ReturnType<typeof workbenchConnection> }).connection = connection;
+          m.render();
         },
         unmount() { if (!unmounted) { unmounted = true; for (const slot of m.slots) slot?.cleanup?.(); } },
       } as Omit<Mount, "out"> & { stored: AgentSession | null };
@@ -295,8 +324,8 @@ test("real send dispatch recovers by request identity once without resend or com
   const sent = h.requests.find(r => r.method === "POST" && r.body?.type === "conversation.submit");
   assert.ok(sent, "actual hook dispatches a prompt");
   assert.equal(m.out.pendingSubmissions.length, 1);
-  assert.ok(m.out.handleAgentEventRef.current, "the hook states its event handle");
-  m.out.handleAgentEventRef.current({ type: "resync", sessionId: "conv" });
+  // The stream the surface joined is the public seam: a resync arrives through it exactly as the backend states one.
+  at(h.sources).emit({ type: "resync", sessionId: "conv" });
   await h.pump(m);
   const lookups = h.requests.filter(r => r.url.includes("/submissions?"));
   assert.equal(lookups.length, 1);
@@ -1220,6 +1249,119 @@ test("a page read that fails reports its failure instead of exhausting the navig
 });
 
 
+test("an explicit reload is one operation on the conversation, not a new attachment", async (t) => {
+  // Settings › General changes the runtime's tool configuration and asks the conversation to pick it up. That request
+  // reaches this surface as its own registered operation: the Backend's reload route, then this conversation's read.
+  // What it must not be is a remount — a new attachment would leave a new stream, a new projection and a reader who lost
+  // their place — so the stream this mount joined is asserted to be the only one it ever opened.
+  const h = harness(t, normal);
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload for the surfaces outside the chat");
+  const sourcesBefore = h.sources.length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  await reload();
+  await h.pump(m);
+  const sent = h.requests.slice(-3);
+  assert.ok(sent.some(r => r.method === "POST" && r.url === "/api/conversations/conv/reload"), "the reload is the Backend's own route: " + JSON.stringify(sent.map(r => r.method + " " + r.url)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore + 1, "and exactly one read states it");
+  assert.equal(h.sources.length, sourcesBefore, "no new stream was opened: the same conversation is still the one on screen");
+  assert.ok(plain(m.out.notices).some(notice => notice.message.includes("Reloaded")), "the reload reports what it reloaded");
+
+  // Leaving is the cleanup of the registration, so a surface that asks after this conversation is gone does nothing.
+  m.unmount();
+  assert.equal(reloads.at(-1), null, "the registration is withdrawn with the surface");
+});
+
+/**
+ * What a reload says it did is what the read after it established, not what the reload route answered.
+ *
+ * The Backend's route is a fact about the runtime's resources; the surface's claim is a fact about the conversation.
+ * A read that answered and was accepted is a reload this conversation picked up, and the numbers it named are the ones
+ * named. A read that could not answer is a failure — and one that no longer has the conversation at all is the missing
+ * one — so neither is reported as a success, and a notice is never the only thing standing between the reader and the
+ * truth of what happened.
+ */
+test("a reload reports what the read after it established, and a read that failed is not a success", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  for (const answer of ["accepted", "missing", "failure"] as const) {
+    // The reload route always answers, so what differs between the cases is the read that follows it: a window, the
+    // Backend's own not_found, and a transport failure.
+    const h = harness(t, (url, init) => {
+      if (url === "/api/conversations/conv/reload") return respond({ resources: { skills: 3, prompts: 2 } });
+      if (!url.endsWith("/state")) return normal(url, init);
+      if (answer === "accepted") return respond(nativeFrame({ revision: 9, text: "the reloaded conversation" }));
+      if (answer === "missing") return respond({ error: "not_found" }, 404);
+      throw new TypeError("Failed to fetch");
+    });
+    const reloads: ((() => Promise<void>) | null)[] = [];
+    const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+    await h.pump(m);
+    const reload = reloads.at(-1);
+    assert.ok(reload, "the surface registers its own reload");
+    const reloadsBefore = h.requests.filter(r => r.url === "/api/conversations/conv/reload").length;
+    await reload();
+    await h.pump(m);
+    // One reload route, asked by this operation alone: the surface that triggered it does not ask for a second one.
+    assert.equal(h.requests.filter(r => r.url === "/api/conversations/conv/reload").length, reloadsBefore + 1,
+      answer + ": the Backend's reload route was asked exactly once");
+    const notice = plain(m.out.notices).at(-1);
+    assert.ok(notice, answer + ": the reload reports what happened");
+    if (answer === "accepted") {
+      assert.match(notice.message, /3 skills and 2 prompts/, answer + ": the resources the read's own answer named");
+      assert.equal(notice.type, "success");
+      assert.deepEqual(texts(m.out.messages), ["the reloaded conversation"], answer + ": and the read's window is on screen");
+    } else {
+      assert.equal(notice.type, "error", answer + ": a read that could not answer is not a success");
+      assert.match(notice.message, /could not be re-read|no longer exists/, answer + ": " + notice.message);
+      assert.ok(!/3 skills/.test(notice.message), answer + ": the numbers of a read that never happened are not claimed");
+    }
+    m.unmount();
+  }
+});
+
+/**
+ * A read outlives the connection it was asked through, and the connection is what makes its answer stale.
+ *
+ * Two connections can hold a conversation with the **same** id — the durable ids are only unique inside one Backend — so
+ * "is this still the same conversation?" is not the question that decides whether an answer may publish. A switch
+ * replaces the client and its conversation API, and the read that was in flight then answers from the connection the
+ * surface no longer shows. Every way that read can answer is covered, because all of them publish: a snapshot, the
+ * `null` a `not_found` answers with, and a transport failure.
+ */
+test("a read that answers after a connection switch publishes nothing, whatever its conversation id says", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  // One held read per outcome, each answered the way a real one would be: a window, the Backend's own not_found, and a
+  // transport failure. Every one of them is the same conversation id, so a conversation-id fence passes them all.
+  for (const answer of ["snapshot", "missing", "failure"] as const) {
+    const stale = deferredRead();
+    let reads = 0;
+    const h = harness(t, url => !url.endsWith("/state") ? normal(url) : ++reads === 1 ? stale.promise : respond(nativeFrame({ text: "the new connection" })));
+    const m = h.mount();
+    await h.pump(m);
+    // The connection is replaced underneath the mount: a switch is a new provider value, and the harness states one by
+    // re-rendering this same hook instance inside it. The held read is the replaced connection's answer from here on,
+    // so it is released after the switch rather than before it.
+    m.switchConnection(h.anotherConnection(t));
+    await h.pump(m);
+    // The new connection reads the conversation for itself: that is what a switch asks of a surface, and it is the
+    // window the surface shows from here on. What the replaced connection answers afterwards must not displace it.
+    assert.deepEqual(texts(m.out.messages), ["the new connection"], answer + ": the new connection's own read is what is on screen");
+    // The held read answers a window of the **same** conversation id: the case where a conversation-id fence is not
+    // enough. The fence is the connection, and the identity of the object the read went through is that connection.
+    if (answer === "snapshot") stale.release(nativeFrame({ text: "the replaced connection's answer" }));
+    else if (answer === "missing") stale.releaseAt({ error: "not_found" }, 404);
+    else stale.reject(new TypeError("Failed to fetch"));
+    await h.pump(m);
+    assert.deepEqual(texts(m.out.messages), ["the new connection"], answer + ": no window of the replaced connection is published");
+    assert.equal(m.out.readFailure ?? null, null, answer + ": and no failure was stated for a connection that was already replaced");
+    assert.equal(m.out.error ?? null, null, answer + ": and no error was stated for it");
+    m.unmount();
+  }
+});
 test("leaving a fresh composer unmounts it without deleting the text the reader typed", async (t) => {
   // The review finding: a connection replacement or an unmount ran a cleanup that cleared the composer's own draft, so
   // the unsent text and images of a fresh composer were gone from the store before anything could park or restore them.

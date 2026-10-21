@@ -145,11 +145,18 @@ export function AppShell() {
   const initialCwdStatus = selectionState.initialCwd.status;
   const initialCwdError = selectionState.initialCwd.error;
   const initialSessionRestored = !selectionState.restoring;
-  // The attachment the chat is mounted for: a new conversation, a fork or a fresh composer. Identity hydration and a
-  // same-project worktree move leave it alone, which is what keeps a chat from remounting for either.
-  const sessionKey = selectionState.attachment;
   const newSessionCwd = composer?.cwd ?? null;
   const newSessionDraftKey = composer?.draftKey ?? null;
+  /**
+   * The chat's mount identity: the conversation it is showing, or the fresh composer it is showing.
+   *
+   * That is the whole rule, and it is the chat's own. A fork or a new conversation is a different identity and so a
+   * different surface; identity hydration, a same-project worktree move and — the case this replaced a shell counter for
+   * — a settings-driven reload of the **same** conversation are the same identity, so they re-render the chat rather
+   * than rebuilding it. A reload is a read and a re-acquire of the resources, which the chat performs itself; the shell
+   * no longer knows that a remount ever stood in for one.
+   */
+  const chatIdentity = selectedSession?.id ?? newSessionDraftKey ?? null;
   // Keep the system-theme subscription mounted for the lifetime of the app.
   useTheme();
   // Restore fonts even when Settings and the chat composer have not been opened.
@@ -182,7 +189,55 @@ export function AppShell() {
   // One completion tone, however the completion was observed: the open conversation's own surface and a background
   // watch of another conversation both claim here, and the first to name an answer is the one that sounds it. The
   // absence-based path that predates this delivery asks before it sounds, so the changeover cannot double a tone.
-  const completionDeliveryRef = useRef<CompletionDelivery | null>(null);
+  //
+  // The registry belongs to the connection it is showing, so a switch builds the next one instead of reusing this: the
+  // outgoing one holds the replaced client's source, its watches and the answers it already noticed, and none of those
+  // describes the connection now on screen.
+  //
+  // Why this is the shell's own work rather than something a remount gives it: a **scope** change does remount this tree,
+  // because the I18nProvider above it is keyed by the connection's scope — and a remount is exactly the case that made a
+  // ref look correct. A switch that keeps the scope does **not** remount: the provider value is replaced and this shell
+  // renders again inside it, so the registry initialized once in a ref would survive with the replaced client's watches
+  // still attached. Comparing against the connection object is what covers both, and it is the identity that is the rule
+  // rather than a counter nobody can state the meaning of.
+  // The relations the sidebar states are read by the registry's suppression rule, so the ref is stated before it.
+  const subagentSessionIdsRef = useRef<ReadonlySet<string>>(new Set());
+  const buildCompletionDelivery = (forConnection: typeof connection): CompletionDelivery => new CompletionDelivery({
+    // The conversation's stream is the connection's own source: the host stated how to reach it (a same-origin BFF
+    // under the page's cookie, or the App's Gateway origin under its device bearer), and this registry joins that
+    // transport rather than assembling a second way in.
+    subscribe: (conversationId, listener) => forConnection.client.subscribe(conversationId, listener),
+    // The by-id lookup, exactly as the open surface performs it: a repair, never a resend (ADR 0006).
+    lookup: async (conversationId, requestId) => {
+      const answer = await forConnection.api
+        .submission(conversationId, requestId)
+        .catch(() => null);
+      return answer ?? null;
+    },
+    // The stream, the handshake and the passive reconnect are the connection's own — the client's numbers are the
+    // ones the open conversation's surface already uses — so a background watch behaves the same way it does on screen.
+    // A subagent conversation's completion is not the user's to be told about, and the catalogue's own relation is
+    // what says so — the same source the sidebar's suppression reads.
+    isSuppressed: (conversationId) => subagentSessionIdsRef.current.has(conversationId),
+    // The open conversation's own surface reports its completions through the same registry, so a notice arriving
+    // here is one for a conversation the user is not looking at: it is the sound for exactly that.
+    onAnswered: () => {
+      if (soundEnabledRef.current) playDoneSound();
+    },
+  });
+  const [completionDelivery, setCompletionDelivery] = useState(() => buildCompletionDelivery(connection));
+  // Which connection the registry this shell is showing was built for. The identity is the whole rule: a switch
+  // replaces the connection object, so comparing against it is what makes the swap happen once per connection rather
+  // than once per render.
+  const completionDeliveryConnection = useRef(connection);
+  if (completionDeliveryConnection.current !== connection) {
+    completionDeliveryConnection.current = connection;
+    setCompletionDelivery((previous) => {
+      // The outgoing registry's watches are released with it: nothing of the replaced connection stays attached.
+      previous.close();
+      return buildCompletionDelivery(connection);
+    });
+  }
   // The page's one terminal stream, shared by every mounted tab. It is a peer of the completion registry: the panels
   // own their widgets and their writers, and this owns the connection they attach through.
   //
@@ -205,32 +260,6 @@ export function AppShell() {
   // connection itself rather than per surface. The terminal stream above reads the same `connection` value, so the shell
   // states one identity for both.
   const api = connection.api;
-  if (!completionDeliveryRef.current) {
-    completionDeliveryRef.current = new CompletionDelivery({
-      // The conversation's stream is the connection's own source: the host stated how to reach it (a same-origin BFF
-      // under the page's cookie, or the App's Gateway origin under its device bearer), and this registry joins that
-      // transport rather than assembling a second way in.
-      subscribe: (conversationId, listener) => connection.client.subscribe(conversationId, listener),
-      // The by-id lookup, exactly as the open surface performs it: a repair, never a resend (ADR 0006).
-      lookup: async (conversationId, requestId) => {
-        const answer = await api
-          .submission(conversationId, requestId)
-          .catch(() => null);
-        return answer ?? null;
-      },
-      // The stream, the handshake and the passive reconnect are the connection's own — the client's numbers are the
-      // ones the open conversation's surface already uses — so a background watch behaves the same way it does on screen.
-      // A subagent conversation's completion is not the user's to be told about, and the catalogue's own relation is
-      // what says so — the same source the sidebar's suppression reads.
-      isSuppressed: (conversationId) => subagentSessionIdsRef.current.has(conversationId),
-      // The open conversation's own surface reports its completions through the same registry, so a notice arriving
-      // here is one for a conversation the user is not looking at: it is the sound for exactly that.
-      onAnswered: () => {
-        if (soundEnabledRef.current) playDoneSound();
-      },
-    });
-  }
-  const completionDelivery = completionDeliveryRef.current;
   // Leaving this shell ends its watches — a profile switch unmounts this tree, so the previous connection's watches are
   // released rather than left attached to a connection nothing shows. The connection's own stream is not this registry's
   // to close (the workbench disposes the client, and another caller may still be reading), so what is released is this
@@ -239,7 +268,6 @@ export function AppShell() {
     completionDelivery.open();
     return () => completionDelivery.close();
   }, [completionDelivery]);
-  const subagentSessionIdsRef = useRef<ReadonlySet<string>>(new Set());
   /**
    * The page's one registry of live completions, whichever surface observed the fact. The answer says whether this
    * caller is the owner that reports it: the open conversation asks first and sounds its own tone when it is, and a
@@ -478,6 +506,21 @@ export function AppShell() {
     systemInfoLoadIdRef.current += 1;
     systemInfoLoaderRef.current = loader;
     setSystemInfoLoading(false);
+  }, []);
+  /**
+   * The conversation's own reload, registered by the chat that owns it.
+   *
+   * Settings › General changes the runtime's tool configuration and then needs the conversation to pick it up. That is
+   * one operation on the conversation — the Backend's reload, the read that states it and the notice that reports it —
+   * so this holds the chat's own function instead of remounting the tree: a reload of the same conversation is not a new
+   * conversation, and a surface that rebuilt the chat for it lost the reader's place, its stream and its paging.
+   */
+  const conversationReloadRef = useRef<(() => Promise<void>) | null>(null);
+  const handleConversationReloadChange = useCallback((reload: (() => Promise<void>) | null) => {
+    conversationReloadRef.current = reload;
+  }, []);
+  const reloadConversation = useCallback(async () => {
+    await conversationReloadRef.current?.();
   }, []);
 
   // Session stats (tokens + cost) — populated by ChatWindow, displayed in top bar
@@ -2345,14 +2388,13 @@ export function AppShell() {
             />
           ) : showChat ? (
             <ChatWindow
-              key={sessionKey}
+              key={chatIdentity}
               session={selectedSession}
               searchTarget={searchTarget?.sessionId === selectedSession?.id ? searchTarget : null}
               onSearchTargetHandled={handleSearchTargetHandled}
               onReadFailureBack={leaveUnreadableSession}
               initialScrollPosition={selectedSession ? sessionScrollPositionsRef.current.get(selectedSession.id) ?? null : null}
               onScrollPositionChange={handleSessionScrollPositionChange}
-              sessionRunning={Boolean(selectedSession && runningSessionIds.has(selectedSession.id))}
               subscribeAgentEvents={subscribeAgentEvents}
               onProjectionChange={handleProjectionChange}
               onLiveSettlement={handleLiveSettlement}
@@ -2369,6 +2411,7 @@ export function AppShell() {
               onSystemPromptChange={handleSystemPromptChange}
               onSystemToolsChange={handleSystemToolsChange}
               onSystemInfoLoaderChange={handleSystemInfoLoaderChange}
+              onConversationReloadChange={handleConversationReloadChange}
               onSessionStatsChange={handleSessionStatsChange}
               onOpenSettings={openSettingsSection}
               onContextUsageChange={handleContextUsageChange}
@@ -2573,7 +2616,7 @@ export function AppShell() {
           setSettingsSection(null);
           setModelsRefreshKey((key) => key + 1);
         }}
-        onSessionReloaded={() => selection.reloadAttachment()}
+        onSessionReloaded={reloadConversation}
         projectTrust={projectTrust}
         onProjectTrustChanged={handleProjectTrustChanged}
       />
