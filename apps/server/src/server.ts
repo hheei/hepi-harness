@@ -15,7 +15,7 @@ import { tombstoneConversation, TombstoneDoc } from "./session-tombstone.ts";
 import { ConversationOperationRefusal, createConversationOperations, readConversationRelations, RelationsDoc, resolveConversationReferences, WorkspaceDoc } from "./conversation-operations.ts";
 import { SubtreeControlRefusal, type SubtreeChildOutcome, type SubtreeControlResult } from "./subtree-control.ts";
 import { conversationPage } from "./conversation-page.ts";
-import { catalogueListVersion, catalogueWorkspace, type CatalogueBinding, type CatalogueWorkspace } from "./catalogue-binding.ts";
+import { catalogueListVersion, type CatalogueWorkspace } from "./catalogue-binding.ts";
 import { handleConversationRead } from "./conversation-read-route.ts";
 import { handleConversationNavigation, handleConversationNavigationTarget } from "./conversation-navigation.ts";
 import { base64ByteLength, parseReadBlockQuery, readBlockImageAnswer, readBlockTextPage } from "./read-block.ts";
@@ -49,7 +49,8 @@ type SubtreeProjectedOutcome = SubtreeChildOutcome & { readonly session?: Catalo
 /** One subtree request's answer as the HTTP surface states it: the recorded outcomes plus each child's current row. */
 type SubtreeProjectedResult = Omit<SubtreeControlResult, "outcomes"> & { readonly outcomes: readonly SubtreeProjectedOutcome[] };
 import { advanceCatalogueStats, advanceHistoryFacts, appendedEntries, catalogueStats, continuationIndex, deferHistoryMessage, FRAME_LIMIT_BYTES, historyFacts, oversizeFrame, scopeFromFacts, tokenFromFacts, VISIBLE_WINDOW, WindowProjector, type CatalogueStats, type HeldWindow, type HistoryFacts, type ProjectedWindow, type WindowItem } from "./history-window.ts";
-import type { ProjectFolder, ProjectRecord, ProjectStore, RetainedBinding } from "./project-store.ts";
+import { createProjectRegistry, type GatewayConnection } from "./project-registry.ts";
+import type { ProjectFolder, ProjectRecord, ProjectStore } from "./project-store.ts";
 import type { DeviceCredentials } from "./device-credentials.ts";
 
 /**
@@ -164,9 +165,6 @@ const FORK_REFUSALS: Record<ForkRefusal, { status: number; error: string }> = {
  * keeps its host, its root and its execution environment; the marker is what keeps it out of every target picker and
  * out of the home and default-directory answers (spec decision 23).
  */
-type RetainedEnvironmentBinding = EnvironmentBinding & { retained: true };
-/** A configured gateway the backend can reach. Its URL is the one this process resolves, not the Web host's. */
-type GatewayConnection = { gatewayId: string; gatewayOrigin: string; gatewayToken: string };
 /** The gateway id a Web origin named for the host it serves, as it arrives on a host-scoped request. */
 const namedHostId = (value: string | null | undefined): string | undefined => value === null || value === undefined || value.trim() === "" ? undefined : value.trim();
 /**
@@ -901,123 +899,26 @@ export async function createBackendServer(options: Options): Promise<BackendServ
   // The execution-side resource loader is the only resource extension: skills, prompts and context all come from the
   // conversation's execution host (ADR 0002). There is no harness-local resource fallback.
   options = { ...options, resourceExtension: options.workspaceResources?.extension };
-  // Every workspace this backend can bind a conversation to: the ones the deployment configured, and the single-root
-  // workspace of each recorded project. A project names its host by the configured gateway id, so project metadata
-  // never stores a gateway token and a project can never be routed to a host the operator did not configure.
-  const projects: ProjectRecord[] = [...(options.projects?.list() ?? [])];
-  // The bindings removals retained, read once at boot and appended by each removal in this process. They are a
-  // resolution source for conversations that already hold a workspace id, never a target for a new one.
-  const retained: RetainedBinding[] = [...(options.projects?.retained() ?? [])];
-  // This process's own publication order for the project registry, so a browser can tell "nothing changed" from "a
-  // Project was created, changed or removed in another window": it rides on the catalogue read the sidebar already
-  // polls for its own revisions. It advances once per accepted mutation and is never read as anything but a comparison.
-  let projectsRevision = 0;
-  const configured = new Map((options.workspaces ?? []).map(binding => [binding.id, binding]));
+  // The project/workspace registry: the one owner of the configured workspaces, the optional ProjectStore, the
+  // configured gateway connections and the live metadata a conversation resolves through. Resolution, registration
+  // replay and the publication revision live there, so no route splices a project list, assembles a binding twice or
+  // increments a revision itself.
+  const registry = createProjectRegistry({ ...(options.workspaces === undefined ? {} : { workspaces: options.workspaces }), ...(options.gateways === undefined ? {} : { gateways: options.gateways }), ...(options.projects === undefined ? {} : { projects: options.projects }) });
   // Every gateway this deployment configured, by id. A project names one of them, so a project can never be routed to
   // a host the operator did not configure, and project metadata never stores a gateway URL or token.
-  const gateways = new Map((options.gateways ?? []).map(connection => [connection.gatewayId, connection]));
-  /** The binding of one recorded folder: its own workspace id on the host its project names. */
-  const folderBinding = (project: ProjectRecord, folder: ProjectFolder): EnvironmentBinding | undefined => {
-    const connection = gateways.get(project.hostId);
-    return connection === undefined
-      ? undefined
-      : { id: folder.workspaceId, gatewayId: project.hostId, gatewayOrigin: connection.gatewayOrigin, gatewayToken: connection.gatewayToken };
-  };
+  const gateways = new Map(registry.connections().map(connection => [connection.gatewayId, connection]));
   /**
-   * The project and folder a workspace id belongs to. A project has several folders and a conversation binds one of
-   * them, so the lookup is over every folder of every project rather than over a project's default: changing a
-   * project's default picks a folder for *new* conversations and must leave the folders existing conversations
-   * already use resolvable.
+   * The binding a request is built with. A project's root is registered again here — idempotently, and before the
+   * environment is created — because the gateway keeps its workspaces in memory: a gateway that restarted while this
+   * backend stayed up no longer serves a project's folder, and a conversation that was already bound has no other
+   * chance to say so. Registration is the only thing replayed. An execution, write, installation or other call whose
+   * outcome was unknown when a gateway went away is never repeated; it fails, and the next request is served normally.
+   * A host that cannot be reached stays unreachable: this reports nothing and never redirects to another host.
    */
-  const folderOf = (workspaceId: string): { project: ProjectRecord; folder: ProjectFolder } | undefined => {
-    for (const project of projects) {
-      const folder = project.folders.find(candidate => candidate.workspaceId === workspaceId);
-      if (folder !== undefined) return { project, folder };
-    }
-    return undefined;
-  };
-  /** The binding of one retained record: its own workspace id and root on the host its removal recorded. */
-  const retainedBinding = (record: RetainedBinding): RetainedEnvironmentBinding | undefined => {
-    const connection = gateways.get(record.hostId);
-    return connection === undefined
-      ? undefined
-      : { id: record.workspaceId, gatewayId: record.hostId, gatewayOrigin: connection.gatewayOrigin, gatewayToken: connection.gatewayToken, retained: true };
-  };
-  const retainedOf = (workspaceId: string): RetainedBinding | undefined => retained.find(record => record.workspaceId === workspaceId);
-  /**
-   * How one workspace id resolves: the deployment's configured workspaces first, then the bindings removals retained,
-   * then the folders of the recorded projects. A retained id resolves exactly like the folder it came from did, which is
-   * what lets a conversation bound before the removal keep running.
-   *
-   * This is the one precedence order, stated once. It names *which* case resolved rather than a transport binding,
-   * because a caller has to be able to tell them apart — a retained binding is never a target again, and a Project
-   * folder is a group in the sidebar — and every other answer about a workspace is derived from it below. Nothing here
-   * reaches a host, so one catalogue row costs no round trip.
-   */
-  const resolvedWorkspace = (workspaceId: string | undefined): CatalogueBinding | undefined => {
-    if (workspaceId === undefined) return undefined;
-    const direct = configured.get(workspaceId);
-    if (direct !== undefined) return { kind: "configured", workspaceId, gatewayId: direct.gatewayId };
-    const kept = retainedOf(workspaceId);
-    if (kept !== undefined) return { kind: "retained", record: kept, gatewayId: kept.hostId };
-    const owner = folderOf(workspaceId);
-    return owner === undefined ? undefined : { kind: "project", project: owner.project, folder: owner.folder, gatewayId: owner.project.hostId };
-  };
-  /**
-   * The transport binding one resolved workspace is reached with. Derived from the resolution above rather than
-   * resolving again: a workspace whose host is not a configured connection has no binding to reach, and that is the
-   * only case where a resolved workspace is unreachable.
-   */
-  const transportOf = (resolved: CatalogueBinding): EnvironmentBinding | undefined => {
-    if (resolved.kind === "configured") return configured.get(resolved.workspaceId);
-    if (resolved.kind === "retained") return retainedBinding(resolved.record);
-    return folderBinding(resolved.project, resolved.folder);
-  };
-  const bindingOf = (workspaceId: string | undefined): EnvironmentBinding | undefined => {
-    const resolved = resolvedWorkspace(workspaceId);
-    return resolved === undefined ? undefined : transportOf(resolved);
-  };
-  /**
-   * Every binding a *new* operation may name: the deployment's configured workspaces and the recorded project folders.
-   * A binding a removal retained is deliberately not among them — it resolves for the conversations that already hold
-   * it and is never a target — which is what keeps it out of the installation targets and out of a new conversation.
-   */
-  const allBindings = (): readonly EnvironmentBinding[] => [
-    ...(options.workspaces ?? []),
-    ...projects.flatMap(project => project.folders.flatMap(folder => { const binding = folderBinding(project, folder); return binding === undefined ? [] : [binding]; })),
-  ];
-  /** Everything the workspace listing answers: every target, and each retained binding with the marker that names it. */
-  const workspaceList = (): readonly (EnvironmentBinding & { retained?: true })[] => [
-    ...allBindings(),
-    ...retained.flatMap(record => { const binding = retainedBinding(record); return binding === undefined ? [] : [binding]; }),
-  ];
-  /**
-   * The gateway a Web origin named for the host it serves, resolved against the configured connections. The Web UI
-   * server owns that mapping (`HEPI_WEB_LOCAL_GATEWAY_ID`), because the host a browser is served from is a property of
-   * the Web origin and not of this process: two origins can share one backend with a different local host each.
-   */
-  const webHostOf = (hostId: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string } => {
-    if (hostId === undefined) return { ok: false, error: WEB_HOST_REQUIRED };
-    const connection = gateways.get(hostId);
-    return connection === undefined
-      ? { ok: false, error: "the Web UI server named gateway " + hostId + ", which this deployment does not configure" }
-      : { ok: true, connection };
-  };
-  /**
-   * The host a **recorded Project's** metadata operations act on: the one the Project itself names, which the request
-   * may only confirm. A Project's folders live on one host, recorded when it was created, and that is the identity the
-   * operation belongs to — the calling Web origin's own host mapping says which computer it serves, not which host
-   * every Project it can see is on. A named host that differs from the recorded one is still the caller asking for
-   * another origin's Project, and is refused exactly as before; a caller that names none acts on the recorded host,
-   * which is what lets a Web origin remove the remote Project it created without claiming it on its own gateway.
-   */
-  const projectHostOf = (project: ProjectRecord, named: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string; mismatch: "wrong_host" | "configuration_required" } => {
-    if (named !== undefined && named !== project.hostId) return { ok: false, error: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve", mismatch: "wrong_host" };
-    const connection = gateways.get(project.hostId);
-    return connection === undefined
-      ? { ok: false, error: "the gateway " + project.hostId + " this project's folders are on is not configured", mismatch: "configuration_required" }
-      : { ok: true, connection };
-  };
+  const ensureBinding = registry.ensureBinding;
+  // Every recorded folder's root lives in the gateway's memory, so all of them are replayed on every start: a project's
+  // extra folders hold no conversation yet, but a conversation created against one of them has to find it registered.
+  await registry.registerAll();
   /**
    * The one client for a resolved binding. Every host call in this file goes through it, so the origin join, the bearer
    * header, each route's own bound and the meaning of a lost answer are one policy instead of one per route. Building
@@ -1064,15 +965,14 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // A checkout this project already records is that folder: the record is keyed by root, so a worktree seen twice —
     // or one registered by an earlier list — is one folder with one workspace id, never two.
     const existing = project.folders.find(folder => folder.root === root);
-    if (existing !== undefined) { await registerFolder(project, existing); return existing; }
+    if (existing !== undefined) { await registry.ensureFolder(project, existing); return existing; }
     const workspaceId = randomUUID();
-    const binding = folderBinding(project, { id: randomUUID(), workspaceId, root, createdAt: new Date().toISOString() });
+    const binding = registry.bindingOfFolder(project, { id: randomUUID(), workspaceId, root, createdAt: new Date().toISOString() });
     if (binding === undefined) return undefined;
     const registered = await hostRequest(binding, { operation: "register", workspaceId, root, ...(project.profileId === undefined ? {} : { profileId: project.profileId }) });
     if (!registered.ok) return undefined;
-    const added = options.projects?.addFolder(project.id, { id: randomUUID(), workspaceId, root: (registered.value as { root: string }).root }, new Date().toISOString());
+    const added = registry.addFolder(project.id, { id: randomUUID(), workspaceId, root: (registered.value as { root: string }).root }, new Date().toISOString());
     if (added === undefined || !added.ok) return undefined;
-    projects[projects.indexOf(project)] = added.project;
     return added.project.folders.find(folder => folder.workspaceId === workspaceId);
   };
   /**
@@ -1080,48 +980,43 @@ export async function createBackendServer(options: Options): Promise<BackendServ
    * because that is what makes the browser ask for an explicit force instead of discarding uncommitted work.
    */
   const worktreeFailureStatus = (code: string): number => code === "dirty" ? 409 : code === "not_supported" ? 501 : code === "unreachable" || code === "outcome_unknown" || code === "gateway_offline" ? 503 : code === "unknown_workspace" ? 404 : 400;
-  /** One folder's root is re-asserted on its host, with the profile the project is on. An unreachable host reports its own error. */
-  const registerFolder = async (project: ProjectRecord, folder: ProjectFolder): Promise<void> => {
-    const binding = folderBinding(project, folder);
-    if (binding !== undefined) await hostRequest(binding, { operation: "register", workspaceId: folder.workspaceId, root: folder.root, ...(project.profileId === undefined ? {} : { profileId: project.profileId }) });
-  };
-  /**
-   * One retained root is re-asserted on its host, from the record the removal wrote. Nothing is ever unregistered on
-   * the host, so the retained record is what puts the root back after that host's gateway restarted.
-   */
-  const registerRetained = async (record: RetainedBinding): Promise<void> => {
-    const binding = retainedBinding(record);
-    if (binding !== undefined) await hostRequest(binding, { operation: "register", workspaceId: record.workspaceId, root: record.root, ...(record.profileId === undefined ? {} : { profileId: record.profileId }) });
-  };
   /** The execution targets one configured gateway offers. A gateway with no remote profiles answers with an empty list. */
   const hostProfiles = async (connection: GatewayConnection): Promise<{ ok: true; value: unknown } | { ok: false; code: string }> => {
     const listed = await hostRequest(connection, { operation: "profiles" });
     return listed.ok ? { ok: true, value: listed.value } : { ok: false, code: listed.code };
   };
-  // Every recorded folder's root lives in the gateway's memory, so all of them are replayed on every start: a project's
-  // extra folders hold no conversation yet, but a conversation created against one of them has to find it registered.
-  const registerProject = async (project: ProjectRecord): Promise<void> => { await Promise.all(project.folders.map(folder => registerFolder(project, folder))); };
-  await Promise.all([...projects.map(registerProject), ...retained.map(registerRetained)]);
   /**
-   * The binding a request is built with. A project's root is registered again here — idempotently, and before the
-   * environment is created — because the gateway keeps its workspaces in memory: a gateway that restarted while this
-   * backend stayed up no longer serves a project's folder, and a conversation that was already bound has no other
-   * chance to say so. Registration is the only thing replayed. An execution, write, installation or other call whose
-   * outcome was unknown when a gateway went away is never repeated; it fails, and the next request is served normally.
-   * A host that cannot be reached stays unreachable: this reports nothing and never redirects to another host.
+   * The gateway a Web origin named for the host it serves, resolved against the configured connections. The Web UI
+   * server owns that mapping (`HEPI_WEB_LOCAL_GATEWAY_ID`), because the host a browser is served from is a property of
+   * the Web origin and not of this process: two origins can share one backend with a different local host each.
    */
-  const ensureBinding = async (workspaceId: string | undefined): Promise<EnvironmentBinding | undefined> => {
-    // One resolution, and the record it names is what re-asserts the root: a Project folder through its own folder, and
-    // a retained binding — which has no project and no folder row left — through the record the removal wrote.
-    const resolved = resolvedWorkspace(workspaceId);
-    if (resolved === undefined) return undefined;
-    if (resolved.kind === "project") await registerFolder(resolved.project, resolved.folder);
-    else if (resolved.kind === "retained") await registerRetained(resolved.record);
-    return transportOf(resolved);
+  const webHostOf = (hostId: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string } => {
+    if (hostId === undefined) return { ok: false, error: WEB_HOST_REQUIRED };
+    const connection = gateways.get(hostId);
+    return connection === undefined
+      ? { ok: false, error: "the Web UI server named gateway " + hostId + ", which this deployment does not configure" }
+      : { ok: true, connection };
   };
-  // The harness stores exactly what this backend decided. The states are passed through untouched: a caller that
-  // omitted the default keeps the built-in scripted one, and an explicit "none" reaches the harness as none rather
-  // than being folded back into a manufactured reference.
+  /**
+   * The host a **recorded Project's** metadata operations act on: the one the Project itself names, which the request
+   * may only confirm. A Project's folders live on one host, recorded when it was created, and that is the identity the
+   * operation belongs to — the calling Web origin's own host mapping says which computer it serves, not which host
+   * every Project it can see is on. A named host that differs from the recorded one is still the caller asking for
+   * another origin's Project, and is refused exactly as before; a caller that names none acts on the recorded host,
+   * which is what lets a Web origin remove the remote Project it created without claiming it on its own gateway.
+   */
+  const projectHostOf = (project: ProjectRecord, named: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string; mismatch: "wrong_host" | "configuration_required" } => {
+    if (named !== undefined && named !== project.hostId) return { ok: false, error: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve", mismatch: "wrong_host" };
+    const connection = gateways.get(project.hostId);
+    return connection === undefined
+      ? { ok: false, error: "the gateway " + project.hostId + " this project's folders are on is not configured", mismatch: "configuration_required" }
+      : { ok: true, connection };
+  };
+  /**
+   * The harness stores exactly what this backend decided. The states are passed through untouched: a caller that
+   * omitted the default keeps the built-in scripted one, and an explicit "none" reaches the harness as none rather
+   * than being folded back into a manufactured reference.
+   */
   // The environment factory is always installed: a deployment that starts with no configured workspace has not decided
   // that it never has one. A project registered later through the public API is an ordinary target, and its
   // conversation has to reach the tools, so the emptiness of the workspace list at boot cannot stand in for the live
@@ -1209,7 +1104,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       return active;
     },
     definitionHost: (workspaceId) => {
-      const binding = bindingOf(workspaceId);
+      const binding = registry.bindingOf(workspaceId);
       return binding === undefined ? undefined : { gatewayId: binding.gatewayId, workspaceId: binding.id, env: gatewayEnvironment(binding, "/") as ExecutionHostEnv };
     },
     childExtensions: (workspaceId) => selectionFor(workspaceId, [SUBAGENT_EXTENSION]),
@@ -1364,7 +1259,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
    */
   const mcpGrantAnswer = async (item: ConversationRuntime, conversationId: string, offered: readonly string[]): Promise<Record<string, unknown>> => {
     const snapshot = item.snapshot();
-    const gatewayId = resolvedWorkspace(snapshot.workspaceId)?.gatewayId;
+    const gatewayId = registry.resolve(snapshot.workspaceId)?.gatewayId;
     const { grants } = await readMcpGrants(runtime.harness, conversationId, BACKGROUND_CONTEXT);
     const configured = await mcpHostServers(conversationId);
     return {
@@ -1616,8 +1511,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
    */
   const catalogueEntry = (item: ConversationRuntime, facts: CatalogueFacts = NO_FACTS): CatalogueEntry => {
     const current = item.snapshot();
-    const resolved = resolvedWorkspace(current.workspaceId);
-    const workspace = resolved === undefined ? undefined : catalogueWorkspace(resolved);
+    const workspace = registry.catalogueOf(current.workspaceId);
     const stats = item.catalogueStats();
     // A fork is told apart from its source by this relation, so it is reported only while the source is still listed:
     // a removed source leaves a row that reports no parent, which is what keeps a removed conversation from being
@@ -1744,7 +1638,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
   // it, and the initiating conversation is the only one asked to adopt the result.
   const installer = options.installer ?? (options.skillMarket === undefined ? undefined : createInstaller({
     market: options.skillMarket,
-    workspaces: allBindings,
+    workspaces: registry.targets,
     resources: options.workspaceResources,
     ensure: async (workspaceId) => { await ensureBinding(workspaceId); },
     boundWorkspace: async (conversationId) => getConversation(conversationId)?.snapshot().workspaceId,
@@ -2006,7 +1900,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // account goes through the gateway's own executionHost answer, so a UI label can never substitute this process's
     // identity for the host's. An unreachable host is reported as such instead of being shown as the backend's account.
     if (request.method === "GET" && url.pathname === "/api/workspaces") {
-      const workspaces = await Promise.all(workspaceList().map(async (binding) => {
+      const workspaces = await Promise.all(registry.bindings().map(async (binding) => {
         const { id, gatewayId } = binding;
         // A binding a removal retained stays in this list — a conversation bound to it resolves its display root from
         // here — but says so, so no picker and no home/default-directory answer can offer it as a target.
@@ -2049,11 +1943,11 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // an account it does not serve.
     if (request.method === "GET" && url.pathname === "/api/projects") {
       const hostId = hostOfRequest(request, namedHostId(url.searchParams.get("hostId")));
-      const listed = await Promise.all(projects.map(async (project) => {
+      const listed = await Promise.all(registry.projects().map(async (project) => {
         if (project.hostId !== hostId) return { ...projectView(project), hostError: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve" };
         // The account is the host's, and any folder of the project answers for it: they are all on that one host.
         const firstFolder = project.folders[0];
-        const binding = firstFolder === undefined ? undefined : folderBinding(project, firstFolder);
+        const binding = firstFolder === undefined ? undefined : registry.bindingOfFolder(project, firstFolder);
         if (binding === undefined) return { ...projectView(project), hostError: "the configured gateway " + project.hostId + " is not available" };
         const result = await (gatewayEnvironment(binding, "/") as ExecutionHostEnv).executionHost(BACKGROUND_CONTEXT);
         return result.ok ? { ...projectView(project), host: { user: result.value.user, home: result.value.home } } : { ...projectView(project), hostError: boundedMessage(result.error.message) };
@@ -2069,7 +1963,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       const body = await readBody(request) as { name?: unknown; folders?: unknown; hostId?: unknown; profileId?: unknown } | undefined;
       const host = webHostOf(hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
       if (!host.ok) { json(response, 409, { code: "configuration_required", error: host.error }); return; }
-      if (options.projects === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
+      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
       // A remote project names the one profile its folders are on. It is validated against what that gateway actually
       // serves, so a project can never be recorded against a profile the host does not have.
       const profileId = typeof body?.profileId === "string" && body.profileId.trim() !== "" ? body.profileId.trim() : undefined;
@@ -2104,10 +1998,12 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       const defaultCandidate = candidates.find(candidate => candidate.isDefault)!;
       let project: ProjectRecord;
       try {
-        project = options.projects.create({ id: randomUUID(), name, hostId: host.connection.gatewayId, ...(profileId === undefined ? {} : { profileId }), defaultFolderId: defaultCandidate.id, folders, createdAt: new Date().toISOString() });
+        // The registry owns the recorded Project, the live snapshot it publishes and the revision: a route that wrote
+        // any of the three itself could publish a Project no lookup resolves, or resolve one no store holds.
+        const created = registry.create({ id: randomUUID(), name, hostId: host.connection.gatewayId, ...(profileId === undefined ? {} : { profileId }), defaultFolderId: defaultCandidate.id, folders, createdAt: new Date().toISOString() });
+        if (created === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
+        project = created;
       } catch (error) { json(response, 500, { error: safeFailure(error) }); return; }
-      projects.push(project);
-      projectsRevision += 1;
       json(response, 201, { protocol: PROTOCOL_VERSION, project: projectView(project) }); return;
     }
     // Naming another of a project's own folders the default: new conversations bind it from then on, while every
@@ -2115,9 +2011,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // for it is part of this phase.
     if (request.method === "PATCH" && url.pathname.startsWith("/api/projects/")) {
       const projectId = decodeURIComponent(url.pathname.slice("/api/projects/".length));
-      const project = projects.find(item => item.id === projectId);
+      const project = registry.projects().find(item => item.id === projectId);
       if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (options.projects === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
+      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
       const body = await readBody(request) as { hostId?: unknown; defaultFolderId?: unknown } | undefined;
       // The recorded Project names its host; a named one may only confirm it (see `projectHostOf`). Naming a remote
       // Project's own host is what a Web origin does when it edits a folder there, and it stays accepted.
@@ -2125,10 +2021,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
       const defaultFolderId = typeof body?.defaultFolderId === "string" ? body.defaultFolderId : "";
       if (defaultFolderId === "") { json(response, 400, { code: "invalid_request", error: "a folder of this project is required" }); return; }
-      const changed = options.projects.setDefault(project.id, defaultFolderId);
+      const changed = registry.setDefault(project.id, defaultFolderId);
+      if (changed === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
       if (!changed.ok) { json(response, changed.code === "unknown_project" ? 404 : 400, { code: changed.code, error: changed.code === "unknown_project" ? "no project with that id is recorded" : "that folder does not belong to this project" }); return; }
-      projects[projects.indexOf(project)] = changed.project;
-      projectsRevision += 1;
       json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(changed.project) }); return;
     }
     // Unlinking one folder of a project: the folder's own operation, separate from the default selector. A non-default
@@ -2141,13 +2036,14 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // to it executing while the folder is never a target for a new conversation again.
     if (request.method === "DELETE" && folderUnlinkPath.test(url.pathname)) {
       const [, projectId, folderId] = folderUnlinkPath.exec(url.pathname)!;
-      const project = projects.find(item => item.id === decodeURIComponent(projectId!));
+      const project = registry.projects().find(item => item.id === decodeURIComponent(projectId!));
       if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (options.projects === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
+      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
       const host = projectHostOf(project, hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
       if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
       const replacement = namedHostId(url.searchParams.get("defaultFolderId"));
-      const unlinked = options.projects.unlink(project.id, decodeURIComponent(folderId!), replacement);
+      const unlinked = registry.unlink(project.id, decodeURIComponent(folderId!), replacement);
+      if (unlinked === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
       if (!unlinked.ok) {
         const refusal = unlinked.code === "unknown_project" ? { status: 404, error: "no project with that id is recorded" }
           : unlinked.code === "unknown_folder" ? { status: 400, error: "that folder is not another folder of this project" }
@@ -2155,13 +2051,10 @@ export async function createBackendServer(options: Options): Promise<BackendServ
           : { status: 400, error: "removing this project's default folder requires another folder of this project as the replacement default" };
         json(response, refusal.status, { code: unlinked.code, error: refusal.error }); return;
       }
-      // The project's own list follows the answer: the folder that left is gone, the replacement it named is the
-      // default, and the project itself is gone when its last folder was. Its binding is retained from here on, so a
-      // conversation that already holds it re-registers and resolves it like any other retained record.
-      if (unlinked.project === null) projects.splice(projects.indexOf(project), 1);
-      else projects[projects.indexOf(project)] = unlinked.project;
-      retained.push(unlinked.retained);
-      projectsRevision += 1;
+      // The registry already followed the answer: the folder that left is gone from its live snapshot, the
+      // replacement it named is the default, the project itself is gone when its last folder was, the folder's binding
+      // is retained from here on, and the revision moved once — so a conversation that already holds the folder
+      // re-registers and resolves it like any other retained record.
       json(response, 200, { protocol: PROTOCOL_VERSION, project: unlinked.project === null ? null : projectView(unlinked.project), removedFolderId: unlinked.removedFolderId }); return;
     }
     // Removing a project removes metadata only: the project record and its folder links go, in one transaction with
@@ -2172,18 +2065,16 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // new one.
     if (request.method === "DELETE" && url.pathname.startsWith("/api/projects/")) {
       const projectId = decodeURIComponent(url.pathname.slice("/api/projects/".length));
-      const project = projects.find(item => item.id === projectId);
+      const project = registry.projects().find(item => item.id === projectId);
       if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (options.projects === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
+      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
       const host = projectHostOf(project, hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
       if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
-      const removed = options.projects.remove(project.id);
+      const removed = registry.remove(project.id);
+      if (removed === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
       if (!removed.ok) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      projects.splice(projects.indexOf(project), 1);
       // This process keeps serving the removed folders from here on: the retained records are what the next
       // conversation request re-registers and what the workspace list answers their display root from.
-      retained.push(...removed.retained);
-      projectsRevision += 1;
       json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(removed.project) }); return;
     }
     // A project's checkouts, and the two mutations of them, on the execution host that holds the project's folders.
@@ -2206,10 +2097,10 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       const operation = typeof body?.operation === "string" ? body.operation : "";
       const binding = await ensureBinding(workspaceId === "" ? undefined : workspaceId);
       if (binding === undefined) { json(response, 404, { ok: false, code: "unknown_workspace", message: "this deployment serves no such workspace" }); return; }
-      const owner = folderOf(workspaceId);
+      const resolved = registry.resolve(workspaceId === "" ? undefined : workspaceId);
       // The folder a checkout is recorded as: the project's own list is the only place a target for a new conversation
       // can come from, so a workspace that belongs to no project has no checkout to offer and says so.
-      const projectOf = (): ProjectRecord | undefined => owner?.project;
+      const projectOf = (): ProjectRecord | undefined => resolved?.kind === "project" ? resolved.project : undefined;
       const forward = (result: { ok: true; value: unknown } | { ok: false; code: string; message?: string }, status = 200): void => {
         if (result.ok) { json(response, 200, { ok: true, value: result.value }); return; }
         json(response, worktreeFailureStatus(result.code), { ok: false, code: result.code, error: result.message ?? result.code, ...(result.code === "dirty" ? { dirty: true } : {}) });
@@ -2262,13 +2153,10 @@ export async function createBackendServer(options: Options): Promise<BackendServ
         if (project !== undefined && folder !== undefined) {
           // The record that made the checkout a target is dropped by the one unlink operation the folder route also uses,
           // so a checkout removal and a folder unlink keep the same retained binding in the same transaction.
-          const dropped = options.projects?.unlink(project.id, folder.id);
+          const dropped = registry.unlink(project.id, folder.id);
           if (dropped === undefined || !dropped.ok) { json(response, 502, { ok: false, code: "not_recorded", error: "the checkout was removed on the host but this deployment could not drop its folder record" }); return; }
-          // The default folder is refused above, so the project survives; unlink still states both outcomes and the same
-          // list surgery the folder route applies keeps them true here too.
-          if (dropped.project === null) projects.splice(projects.indexOf(project), 1);
-          else projects[projects.indexOf(project)] = dropped.project;
-          retained.push(dropped.retained);
+          // The default folder is refused above, so the project survives; the registry already applied both outcomes to
+          // its snapshot and retained the folder's binding, exactly as the folder route's unlink does.
         }
         json(response, 200, { ok: true, value: removed.value });
         return;
@@ -2426,7 +2314,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
         json(response, 200, {
           protocol: PROTOCOL_VERSION,
           sidebarStateRevision: sidebar.revision,
-          projectsRevision,
+          projectsRevision: registry.revision(),
           sessionListVersion,
           runningConversationIds: filtered.filter(row => row.busy).map(row => row.id),
         }); return;
@@ -2434,7 +2322,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       json(response, 200, {
         protocol: PROTOCOL_VERSION,
         sidebarStateRevision: sidebar.revision,
-        projectsRevision,
+        projectsRevision: registry.revision(),
         sessionListVersion,
         conversations: window,
         ...(nextCursor === undefined ? {} : { nextCursor }),
@@ -2462,10 +2350,10 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       // Only a configured workspace or a folder of a recorded project is a target for a new conversation. A binding a
       // removal retained resolves for the conversations that already hold it, and a new conversation cannot be bound to
       // a folder that is no longer a Project folder.
-      if (body?.workspaceId && !configured.has(body.workspaceId) && folderOf(body.workspaceId) === undefined) { json(response, 400, { error: "unknown workspace" }); return; }
+      if (body?.workspaceId && !registry.isTarget(body.workspaceId)) { json(response, 400, { error: "unknown workspace" }); return; }
       // A project's root is re-registered here: the gateway keeps its workspaces in memory, so a gateway restarted
       // while this backend stayed up still serves the conversation that is about to bind that folder.
-      if (body?.workspaceId) { const owner = folderOf(body.workspaceId); if (owner !== undefined) await registerFolder(owner.project, owner.folder); }
+      if (body?.workspaceId) await registry.ensureBinding(body.workspaceId);
       // The relations a caller states are identities only. A value that is not a conversation id string is refused
       // here; an identity that names no conversation is refused inside the same creation commit that would use it.
       if (body?.createdBy !== undefined && (typeof body.createdBy !== "string" || body.createdBy.trim() === "")) { json(response, 400, { code: "invalid_request", error: "createdBy must be a conversation id" }); return; }
