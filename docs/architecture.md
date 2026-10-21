@@ -322,7 +322,9 @@ the same fact under two rules. The same step publishes the **accepted readout**
 (`packages/ui/src/lib/conversation-readout.ts`): the accepted window, the older pages the reader loaded in front of it
 and that window's pagination claim, with the prefix decided synchronously by the shared `decidePrefix` rule against the
 window the readout already holds — so a moving window and the prefix it keeps are one decision rather than a render
-that catches up with the previous one. Metadata that is not derivable from the window (session stats, the history token
+that catches up with the previous one. The claim follows the same rule: a page that reached the start of history keeps
+`hasMore` false while the prefix it produced survives, and only a dropped prefix (new conversation, moved head, or a
+window that became the whole active range) puts the window's own claim back. Metadata that is not derivable from the window (session stats, the history token
 and head marker, the active leaf, the display model) stays on the accepted payload the readout carries, and the
 stream-local `SessionState` stays a transport-continuity value beside it.
 `packages/ui/src/lib/lifecycle-store.ts` holds one value per composer or conversation in

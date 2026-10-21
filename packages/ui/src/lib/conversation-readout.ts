@@ -103,7 +103,13 @@ export function acceptSession(previous: AcceptedReadout, session: SessionData): 
     const at = before.entryIds.indexOf(id);
     return at < 0 ? undefined : before.messages[at];
   });
-  return { session, prefix: decided, hasMore: window.hasMore };
+  // A page read is what establishes that the reader reached the start of history, and a later window cannot unstate it:
+  // the window's claim is about what exists behind **its own** oldest entry, not behind the older pages in front of it.
+  // So while the decided prefix survives, an exhausted claim stays exhausted — otherwise every live frame would re-open
+  // the sentinel over history the reader already paged to its end, and scrolling back would re-read the same oldest page
+  // forever. Dropping the prefix (a new conversation, a moved head marker, or a window that became the whole active
+  // range) is the one thing that puts the window's own claim back, because that is when its claim is all that is left.
+  return { session, prefix: decided, hasMore: decided !== null && !previous.hasMore ? false : window.hasMore };
 }
 
 /**

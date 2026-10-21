@@ -125,7 +125,25 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
   `test:navigation-retry`、`test:history-scope`。
 - N8 accepted identity：accepted statement identity 仍由 fold 決定，readout 不另存；`dataOf(m).projectionId` 案例不變。
 
+### Review finding（已修，`<pending-sha>`）
+
+**Finding（reviewer227，owner 級）**：`acceptSession` 在保留 prefix 時仍回傳 `hasMore: window.hasMore`。
+讀者已用一頁讀到歷史開頭（`prependOlderPage(... hasMore: false)`）後，任何 live frame 都把 sentinel 重新打開 →
+使用者停在歷史開頭時，每個 frame 都重新觸發最舊一頁的讀取。舊的 live prefix effect 不會重置分頁 claim，故為回歸。
+
+**修正**：`acceptSession` 在 prefix 仍被決定（同 conversation、同 head）時沿用既有的 exhausted claim；
+只有 prefix 被丟棄（新 conversation、head 移動、window 成為整個 active range）才回到 window 自己的 claim。
+單一位置修正，未動 draft 呼叫或其他路徑。
+
+**新證據**：
+- `packages/ui/src/lib/conversation-readout.test.ts`「a live window does not re-open the sentinel over history a page
+  already exhausted」：exhausted page → 同 head live advance（連續兩次）→ head 重設後 claim 還原。
+- `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts`「a page that reached the start of history keeps the
+  sentinel closed while frames keep arriving」：hook 對外 `hasEarlierMessages` 在同 head 推進後仍為 false。
+- `docs/chat.md`（Bounded history）與 `docs/architecture.md` 補上該規則。
+
 ### Remaining limits
 
 - 未在真實 backend compaction 上跑 browser journey；head 變更以合法 frame 覆蓋。
 - `packages/session` 的 `decidePrefix` 未改動（本票只遷移其消費者）。
+- 修正後未重跑 browser journeys（本 finding 為純 readout 分頁 claim 邏輯，套件層與 hook 層皆有覆蓋）。

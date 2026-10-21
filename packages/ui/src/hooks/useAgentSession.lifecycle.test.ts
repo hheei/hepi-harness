@@ -517,6 +517,29 @@ test("a window that moves publishes its prefix in the same update, with no effec
   m.unmount();
 });
 
+test("a page that reached the start of history keeps the sentinel closed while frames keep arriving", async (t) => {
+  // The sentinel the surface reads is `hasEarlierMessages`. Once a page has answered "no older history", an advancing
+  // window must not re-open it: the window's own `hasMore` describes what lies behind its oldest entry, not behind the
+  // pages in front of it, so restating it would send the reader back to the same oldest page on every live frame.
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const window = (revision: number, ids: string[]) => nativeFrame({ revision, historyHead: "h1", hasMore: true,
+    oldestEntryId: ids[0], entries: ids.map((id: string) => ({ id, role: "user", text: id, message: { role: "user", content: id } })) });
+  const h = harness(t, url => url.includes("/entries?") ? respond({ protocol: "hepi.v1", conversationId: "conv", oldestEntryId: "e1", hasMore: false,
+      entries: ["e1", "e2"].map(id => ({ id, role: "user", text: id, message: { role: "user", content: id } })) })
+    : url.endsWith("/state") ? respond(window(1, ["e3", "e4"])) : normal(url));
+  const m = h.mount();
+  await h.pump(m);
+  assert.equal(m.out.hasEarlierMessages, true, "the accepted window states older history exists");
+  await m.out.loadContext("conv", null, "e3");
+  await h.pump(m);
+  assert.equal(m.out.hasEarlierMessages, false, "the page reached the start of history");
+  at(h.sources).emit(streamFrame(window(2, ["e4", "e5"])));
+  await h.pump(m);
+  assert.deepEqual(plain(m.out.entryIds), ["e1", "e2", "e3", "e4", "e5"], "the page it kept is still on screen");
+  assert.equal(m.out.hasEarlierMessages, false, "and the sentinel stays closed over the history the reader already exhausted");
+  m.unmount();
+});
+
 test("a landed target window joins the loaded prefix and never overlaps the accepted window", async (t) => {
   // The history owner's half of ticket 03, asserted where the transcript is decided rather than in the coordinator: a
   // jump's window enters through the same prefix state the sentinel's pages use, so one rule (`decidePrefix`) still says

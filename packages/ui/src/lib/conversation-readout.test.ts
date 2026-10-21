@@ -99,6 +99,25 @@ test("a page states its own pagination claim, and the window states its own", ()
   assert.equal(clearPrefix(readout).prefix, null, "a read that replaces the window is not extended by older pages");
 });
 
+test("a live window does not re-open the sentinel over history a page already exhausted", () => {
+  // The reader paged back to the start of history (the page states `hasMore: false`) and stays there while turns keep
+  // arriving. The window the live frame states says `hasMore: true` — that claim is about what lies behind *its* oldest
+  // entry, not behind the pages in front of it — so restating it would make the transcript ask for the oldest page again
+  // on every frame, and the reader would re-read the same exhausted page for as long as they stayed at the start.
+  let readout = accepted(["e5", "e6"]);
+  readout = prependOlderPage(readout, { sessionId: "conv", entryIds: ["e1", "e2"], messages: [message("e1"), message("e2")], historyHead: "h1", hasMore: false });
+  assert.equal(readout.hasMore, false);
+  readout = acceptSession(readout, session(["e7", "e8"]));
+  assert.equal(readout.hasMore, false, "an advancing window under the same head keeps the exhausted claim");
+  assert.deepEqual(visible(readout), ["e1", "e2", "e5", "e6", "e7", "e8"], "and the pages it kept are still the pages in front");
+  readout = acceptSession(readout, session(["e9"]));
+  assert.equal(readout.hasMore, false, "and it stays exhausted across further frames");
+  // A re-baselined head ends the history those pages belonged to, so the new window's own claim is the only one left.
+  const rebaselined = acceptSession(readout, session(["c9"], { head: "h2" }));
+  assert.equal(rebaselined.prefix, null);
+  assert.equal(rebaselined.hasMore, true, "a moved head marker puts the window's own claim back");
+});
+
 test("the transcript draws a prefix only while it still precedes the window", () => {
   const prefix = prefixOf(["e2", "e3"], [message("e2"), message("e3")], "h1");
   assert.deepEqual(transcriptOf(prefix, { entryIds: ["e4"], messages: [message("e4")] }).entryIds, ["e2", "e3", "e4"]);

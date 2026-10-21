@@ -585,6 +585,14 @@ dropped: a prefix cannot grow past the server's window, and a fresh client's tra
 `historyHead` move — a compaction or a reset — is the one event that ends a prefix, and `hasMore` false means the
 window is the whole range and nothing is behind it to keep.
 
+**An exhausted page stays exhausted across live frames.** A page read that reaches the start of history states
+`hasMore` false, and that claim is about the history in front of the reader, not about what lies behind the window's own
+oldest entry: while the prefix it produced is still decided (same conversation, same head marker), an advancing window
+does not put its own `hasMore: true` back, or every live frame would re-open the scroll sentinel over history the reader
+already paged to its end and the oldest page would be re-read for as long as they stayed at the start. Dropping the
+prefix — a new conversation, a moved head marker, or a window that became the whole active range — is what restores the
+window's own claim, because that is when the claim is all that is left.
+
 **Known limitation: entries neither side ever observed are not recovered.** A fold decides from what it holds plus what
 the frame declares. If two reads land with a whole window in between — a disconnect long enough for the backend to
 publish entries that then roll out of the window — the intermediate entries are in neither input, and neither the
