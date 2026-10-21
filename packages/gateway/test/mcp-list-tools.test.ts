@@ -25,8 +25,10 @@ import { gatewayHttp, type GatewayHttp } from "./gateway-http.ts";
  * is a sleep: every wait is for an answer, or for a file the fixture wrote, or for the process it recorded to exit.
  */
 
-const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.mjs", import.meta.url));
-const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.mjs", import.meta.url));
+const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.ts", import.meta.url));
+const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.ts", import.meta.url));
+// The fixture's own export, as a type: the sign-in case states what it gets back instead of `any`.
+type StartFakeOAuthServer = typeof import("./fixtures/mcp/oauth-server.ts").startFakeOAuthServer;
 const TOKEN = "gateway-token";
 /** The literal secret the fixture is started with, echoed back by its own tools' names and descriptions. */
 const SECRET = "listing-literal-secret-value";
@@ -449,6 +451,6 @@ test("stopping the service ends a listing still running and waits for the connec
 
 /** The fake OAuth-protected MCP server, as its own module exports it. Nothing leaves the machine. */
 async function startOAuthFixture(): Promise<{ url: string; close: () => Promise<void> }> {
-	const module = await import(OAUTH_FIXTURE) as { startFakeOAuthServer: () => Promise<any> };
+	const module = await import(OAUTH_FIXTURE) as { startFakeOAuthServer: StartFakeOAuthServer };
 	return module.startFakeOAuthServer();
 }

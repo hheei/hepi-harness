@@ -1,5 +1,6 @@
 import type { ConversationRunStatus, SessionInfo } from "./types.ts";
-import { UNBOUND_CWD, folderRoutingPath, projectGroupKey, workspaceIdOfRoutingPath } from "./project-routing.ts";
+import { UNBOUND_CWD, workspaceIdOfRoutingPath } from "@hepi/protocol/files";
+import { folderRoutingPath, projectGroupKey } from "./project-routing.ts";
 
 /**
  * The Backend's conversation catalogue, projected into the row the sidebar renders.

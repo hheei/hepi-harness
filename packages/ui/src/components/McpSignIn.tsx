@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { McpServerInfo, McpSignInFlowInfo } from "../lib/api-types";
+import type { McpServerInfo, McpSignInFlowInfo } from "@hepi/protocol/mcp-ui";
 import { useI18n } from "../hooks/useI18n";
 import { revealHiddenCharacters } from "../lib/mcp-server-display";
 import { focusIfLost } from "../lib/stacked-dialog";

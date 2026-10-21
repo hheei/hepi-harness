@@ -4,7 +4,7 @@
  * documentation index covers, and which script targets actually exist.
  *
  * The walk is explicit rather than a glob, because a glob silently misses nested
- * files (`lib/i18n/*.test.mjs`) and the omission is invisible in the result.
+ * files (`lib/i18n/*.test.ts`) and the omission is invisible in the result.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -51,9 +51,9 @@ export function markdownFiles(root) {
   return walkFiles(root, (name) => name.endsWith(".md"));
 }
 
-/** Every `*.test.mjs` below `root`, explicitly enumerated (a glob misses nesting). */
+/** Every `*.test.ts` below `root`, explicitly enumerated (a glob misses nesting). */
 export function unitTestFiles(root) {
-  return walkFiles(root, (name) => name.endsWith(".test.mjs")).map((path) => "./" + path);
+  return walkFiles(root, (name) => name.endsWith(".test.ts")).map((path) => "./" + path);
 }
 
 /**
@@ -184,7 +184,7 @@ export function uncoveredGuides(root, indexFile = "docs/README.md", dir = "docs"
  * The entry files a package's scripts name.
  *
  * Returns one entry per file argument of every `node`/`tsx` invocation in every script,
- * resolved against the package directory. All of them: `node --test a.test.mjs b.test.mjs`
+ * resolved against the package directory. All of them: `node --test a.test.ts b.test.ts`
  * names two files, and reporting only the first would let the second go missing unnoticed.
  * Nothing here expands a glob or a shell word - `test/*.ts` is not a file, so it is skipped
  * rather than guessed at. A missing file is reported, never dropped: a script that cannot

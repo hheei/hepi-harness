@@ -154,7 +154,7 @@ profile(`opt-level = "s"`、LTO、`codegen-units = 1`、strip、`panic = "abort"
 - 服务端/网关:`pnpm dev` 已带 `node --watch`,改 import graph 内任何模块都会重启;SQLite 写入不触发重启
   (`--watch` 跟模块图,不跟目录)。
 - 单个进程:`pnpm --filter @hepi/gateway start`、`pnpm --filter @hepi/server start`(后者会先 `build:ui` 打
-  `public/chat.js` 诊断页脚本)。
+  `public/diagnostics.js` 诊断页脚本,页面在 `/diagnostics`)。
 - 检查留存:`verify`/`test:web:unit` 每次运行把命令、SHA、dirty 状态、退出码和原始日志写到
   `.dev/verify/<timestamp>-<label>/`。
 - 只读部署检查:`pnpm deploy:inspect`(加 `--probe` 多一次固定 SSH 读);计划:`pnpm deploy:plan`。两者都不打印

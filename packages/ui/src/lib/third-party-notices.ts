@@ -11,7 +11,7 @@
  * and each host's build copies it into the directory it distributes: `apps/web/dist`, which the client ingress serves,
  * and `apps/app/dist`, which the Tauri shell embeds through `build.frontendDist`. One owner and one copy per artifact
  * beats a file in each host's public directory that a host can forget to keep in step. The content is asserted against
- * the installed package in `src/lib/third-party-notices.test.mjs`; the copy is asserted below and by each host's build.
+ * the installed package in `src/lib/third-party-notices.test.ts`; the copy is asserted below and by each host's build.
  */
 import { copyFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";

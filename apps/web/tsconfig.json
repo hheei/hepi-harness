@@ -31,6 +31,7 @@
   // deleted it, so the shared package's own declaration is named here: the stylesheet a workbench component imports is
   // the package's file, and its declaration belongs to the program whether or not a framework's types are in it.
   "include": [
+    "src/**/*.test.ts",
     "../../packages/ui/src/styles.d.ts",
     "e2e/**/*.ts",
     "e2e/**/*.tsx"

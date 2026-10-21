@@ -1,57 +1,22 @@
-# 目录导航评审记录(F2/F3)
+# 目录与依赖重整记录（F1/F2/F3）
 
-- 来源:仓库文件架构审计 `518bc7c6` 的 F2(UI 目录平铺)与 F3(Web e2e 与宿主倒挂),见 `file-architecture` 审计结论。
-  本文件只记录**未做**的部分与重开条件,不用作承诺。
-- 本轮已交付:只改文档。[Developer guide](../../docs/developer-guide.md#directory-map) 增加了 `packages/ui/src` 与
-  `apps/web/e2e` 两个子目录的布局说明与计数。没有移动文件、没有改 import、没有改脚本。
+来源：文件架构审计 `518bc7c6`；文档导航基线 `67e36829`。用户随后明确要求将剩余命名与目录优化落到代码，并允许直接破坏旧接口。本轮代码已整合到主工作区，验证结果见 [Verification](../../docs/verification.md)。
 
-## 为什么本轮不搬文件
+## 本轮范围
 
-两项都属于 [review policy](../../docs/agents/review-policy.md) 的 `record`:导航摩擦已在文档层面消除,而搬迁的收益是阅读体验,
-代价是跨工作区导入改写、脚本与 CI 选择面、以及 `docs/verification.md` 里 117 处绑定 revision 的历史证据。没有正常使用中的
-材料性失败作为依据,不构成阻塞交付的改动。
+- **F1：依赖方向。** Gateway 的 MCP 行为归 Gateway；跨进程 DTO、纯导入解析和共享路径规则归 `@hepi/protocol`。现有调用端直接使用所有者导出，移除 Gateway 对 `@hepi/ui` 的依赖。
+- **F2：UI 特性簇。** `packages/ui/src/lib/file/`、`chat/`、`provider/` 收拢对应前缀的实现及同目录测试；同步迁移当前 import。保留文件名，测试仍递归枚举。
+- **F3：E2E 主题目录。** 当前驱动和独占 fixture 按 acceptance、auth-shell、chat、history、mcp-skills、terminal、workbench-files 分组；同步迁移 package scripts、CI 与当前指南。
+- **诊断入口。** Backend Diagnostic Page 的源码、HTML、生成脚本与 URL 使用 diagnostics 命名；`workbench.js` 仍是与 `workbench.html` 配对的手写静态脚本。
 
-## F2:`packages/ui/src/lib` 特性簇(延后)
+当前布局、入口及检查接缝见 [Developer guide](../../docs/developer-guide.md#directory-map)。历史验证记录保留其原 revision 的路径。
 
-可行,但一次只做一个簇。候选簇与代价(计数为当前源码,非测试文件):
+## 退役测试的边界
 
-| 簇 | 文件数 | 包外消费者 | 备注 |
-| --- | --- | --- | --- |
-| `mcp-` | 10 | `@hepi/ui/lib/mcp-panel`、`lib/mcp-import` 是显式 `exports` 子路径,包外按子路径导入 | 改 `exports` 会动 gateway 的运行时依赖(fs F1),先做 F1 |
-| `file-` | 8 | 仅包内相对导入 | 最干净的一簇 |
-| `session-` | 7 | 仅包内相对导入 | 与词汇映射(F4)重叠,改名容易与 `@hepi/session` 混淆 |
-| `chat-` | 5 | 仅包内相对导入 | 5 个,收益最小 |
-| `provider-` | 4 | 仅包内相对导入 | 小,但 `docs/architecture.md`、`docs/migration-status.md` 有路径引用 |
-| `terminal-`、`lifecycle-`、`connection-` | 3 / 3 / 3 | 仅包内相对导入 | 各 3 个,不必分组 |
+删除的 33 个 `.mjs` 驱动都直接依赖已移除的 Next 二进制或 `.next/BUILD_ID`，同时删除独占 fixture 与失效脚本。删除不代表对应浏览器旅程重新通过；当前替代接缝及剩余覆盖限制见 [Migration status](../../docs/migration-status.md) 与 [CI](../../docs/ci.md)。
 
-机械可行性已确认:`exports` 的 `"./lib/*": "./src/lib/*"` 通配对多一层仍解析,`tsconfig` 的 `@hepi/ui/*` 路径映射不用改,
-`pnpm --filter @hepi/ui test` 用 `find src -name '*.test.mjs'` 递归枚举(不用修改),同目录测试随文件一起移动即可。
-**重开条件**:真要动时,先做 `file-` 一簇并单独一个提交,验证 `pnpm --filter @hepi/ui test`、
-`pnpm --filter @hepi/web typecheck`、`pnpm test:web:unit` 与 `pnpm check:entrypoints` 全部通过再考虑下一簇。
+## 剩余候选与重开条件
 
-不要做:`lib` 的 65 个测试搬到 `test/`;全量前缀重命名;`session-` → `conversation-` 改名(F4 明确不建议)。
+`session-*` 的名字涉及 Session Transport、Session Row 与 Conversation 的区别，本轮保留；不做统一词汇替换。`terminal-*`、`lifecycle-*`、`connection-*` 各簇较小，当前没有独立搬迁收益。剩余 MCP UI 文件在 F1 所有权迁移后按实际职责判断，避免仅为目录对称再搬一次。
 
-## F3:`apps/web/e2e` 主题分组(延后,风险更高)
-
-已确认的事实(当前源码):
-
-- `apps/web/e2e` 113 个文件 = 73 `*.mjs` + 25 `*.fixture.tsx` + 15 `*.fixture.css`;`ux-` 前缀 104 个。
-- `apps/web/package.json` 68 条脚本,62 条 `test:*`,指向 57 个不同 e2e 文件,全部存在。
-- CI 只选中 4 个 driver:`ux-chat-scroll.mjs`、`ux-references-acceptance.mjs`、`ux-mcp-acceptance.mjs`、
-  `ux-provider-connection-acceptance.mjs`(`.github/workflows/ci.yml`);其余见 [CI 边界](../../docs/ci.md#what-this-workflow-does-not-verify)。
-- 32 个 `*.mjs` 仍 spawn 工作区已不存在的 `next` 二进制:这批先失效,**不是**搬迁对象。
-- `docs/` 有 163 处 `apps/web/e2e` 路径引用,其中 `docs/verification.md` 117 处绑定历史 revision。
-
-为什么不动:改目录要同时改 68 条脚本里的路径、4 个 CI driver 步骤、163 处文档路径,而 `pnpm check:entrypoints` 只验证
-脚本里点名的文件仍在。选择面太大,一次做不完,分批做会让中间态既有旧路径又有新路径。
-
-**建议的分阶段方案**(每阶段独立可交付):
-
-1. 先量化:把 CI 之外的 e2e 分成"仍能跑"与"依赖 `next` 已失效"两组,失效组按 [review policy](../../docs/agents/review-policy.md)
-   给出功能处置(退役或修复),而不是搬家。这一步产出清单,不改目录。
-2. 只对 CI 4 个 driver 收拢入口:在 `apps/web/package.json` 增加 `test:browser` 聚合脚本,内部仍指向现有路径。
-   同时评估给 `apps/web` 补 `test` 脚本是否会与 `scripts/test-web-unit.mjs` 重复调度——先确认再补。
-3. 若第 1、2 步稳定,再按 chat/history/files/terminal/settings 分组,一次一个主题,每组同步改脚本、CI 与文档路径,
-   并重跑 `pnpm check:entrypoints`、`pnpm check:docs` 与受影响的 `test:*`。
-
-不要做:批量重命名 104 个 `ux-` 文件;把整批系统 e2e 搬进 `packages/ui`;为改名而改 68 条脚本。
+下一批以具体导航摩擦或责任边界问题为依据；每批同步迁移当前调用端、验证入口与所属指南，使用 [review policy](../../docs/agents/review-policy.md) 判断材料性问题。

@@ -1,5 +1,5 @@
 /**
- * `test:web:unit` — the Web `*.test.mjs` suite, run directly and reported as TAP.
+ * `test:web:unit` — the Web `*.test.ts` suite, run directly and reported as TAP.
  *
  * `apps/web` declares no `test` script, so `pnpm -r test` never reaches the Web
  * suite and its coverage gap is invisible. This runs it, enumerating the files

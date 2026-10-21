@@ -92,10 +92,10 @@ ingress read the same string, because the obsolete pairing — a page sending `D
 read, while the listener cleared the cookie on `DELETE /api/web-logout` — was a logout that either 404'd or was
 forwarded to the Backend with the cookie still in the browser.
 
-Verification: `node apps/web/e2e/ux-web-logout.mjs` drives the ordinary journey in Chromium against this run's own
+Verification: `node apps/web/e2e/auth-shell/ux-web-logout.mjs` drives the ordinary journey in Chromium against this run's own
 ingress, Backend and production Web build — sign in, fail a logout (refused `503`: no reload, session still admitted),
 log out for real (`DELETE /api/web-logout`, cookie gone from the jar, a business read `401`), then sign in again. The
-bearer half is held by `node apps/web/e2e/ux-panel-ingress.mjs` (the production panel under a device bearer offers no
+bearer half is held by `node apps/web/e2e/auth-shell/ux-panel-ingress.mjs` (the production panel under a device bearer offers no
 logout and asks no login-state question) and `packages/gateway/test/ingress.test.ts` (the route clears the browser
 cookie for a device caller and leaves that device's credential and record untouched). Command, revision, exit code and
 log are recorded in [verification](verification.md#web-logout-contract-ticket-18).
@@ -320,8 +320,10 @@ MCP configuration, its credentials and every server process belong to the comput
 routes are **not** forwarded to the Backend: the ingress answers them from that host's own authenticated `POST /v1/mcp`
 (`HEPI_INGRESS_MCP_GATEWAY_URL`/`HEPI_INGRESS_MCP_GATEWAY_TOKEN`, with `HEPI_INGRESS_MCP_GATEWAY_ID` naming that host).
 No MCP credential is handed to the Backend, no client is given the host service's token, and no client reaches `/v1` to
-do it directly. The answer shapes are the panel's own, declared once in `packages/ui/src/lib/mcp-panel.ts` and shared
-with the Web entry's Next route, so one panel reads both.
+do it directly. The answer shapes are declared once in `@hepi/protocol/mcp-ui`
+(`packages/protocol/src/mcp-ui.ts`) and the aggregate that composes them is
+`packages/gateway/src/ingress/mcp-panel.ts`, the ingress's own: the protocol owns the declaration because a browser
+renders it, and the gateway owns the behavior because it is the entry that answers it.
 
 - **The host resolves the folder, and the binding says which host.** A request names a folder as the browser addresses
   it (`/workspace/<id>`); the ingress sends the workspace id and never a path, and the configuration host resolves it

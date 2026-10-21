@@ -51,7 +51,8 @@ import {
   type ProjectMovePosition,
   type SessionUiAnyRequest,
 } from "@hepi/protocol";
-import { isWorkspaceRoutingPath, projectGroup, projectGroupKey, projectGroupOfPath, projectGroups, workspaceIdOfRoutingPath, type ProjectRouting } from "../lib/project-routing";
+import { projectGroup, projectGroupKey, projectGroupOfPath, projectGroups, type ProjectRouting } from "../lib/project-routing";
+import { isWorkspaceRoutingPath, workspaceIdOfRoutingPath } from "@hepi/protocol/files";
 import {
   applyFolderUnlink,
   removalRefusal,

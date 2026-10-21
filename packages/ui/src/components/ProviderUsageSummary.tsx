@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "../hooks/useI18n";
 import { formatUpdatedTime } from "../lib/i18n/format";
-import { isProviderUsageId } from "../lib/provider-usage-ids";
+import { isProviderUsageId } from "../lib/provider/provider-usage-ids";
 
 type UsageBucket = {
   id: string;

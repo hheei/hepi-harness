@@ -99,9 +99,10 @@ pnpm -r typecheck && pnpm -r test          # build-host gate
 ```
 
 Oracle (backend, one writer, one process) runs the artifact the build host produced; nothing below compiles here and
-there is no install step. The bundle that `@hepi/server start` would produce (`pnpm build:ui` → `public/chat.js`)
-is part of the artifact — run that on the build host and transfer `apps/server/public/chat.js` with the rest of the
-tree, or use an image, which already contains it. Start the server directly instead:
+there is no install step. The bundle that `@hepi/server start` would produce (`pnpm build:ui` →
+`public/diagnostics.js`, the Diagnostic Page script) is part of the artifact — run that on the build host and transfer
+`apps/server/public/diagnostics.js` with the rest of the tree, or use an image, which already contains it. Start the
+server directly instead:
 
 ```bash
 cd <release>/apps/server                   # main.ts resolves its paths from here, as the package script does
@@ -196,7 +197,7 @@ Restart=on-failure
 
 `ExecStart` runs the server directly rather than through `pnpm --filter @hepi/server start`, because that script's
 first step is `pnpm build:ui` — a build, and a deployment host must not run one. The bundle it would produce
-(`apps/server/public/chat.js`) arrives with the artifact.
+(`apps/server/public/diagnostics.js`) arrives with the artifact.
 
 Mirror it for the gateway and, if you prefer, a `hepi-tunnel.service` running the two `ssh -N` forwards with `Restart=always`. Keep `EnvironmentFile` permissions at 0600; systemd does not expose the file contents in `ps`.
 
@@ -257,7 +258,7 @@ tar --exclude='./node_modules' --exclude='*/node_modules' --exclude='./.git' --e
   ssh remote-host 'tar -xzf - -C /home/<runtime-user>/hepi-harness-deploy/src'
 ```
 
-1059 files under `apps/` and `packages/`; local and remote `sha256sum` manifests matched exactly after the final copy. Dependency install: `pnpm install --frozen-lockfile --filter "@hepi/server..."` in `src/` (161 MB `node_modules`), plus `pnpm --filter @hepi/server build:ui` for the diagnostic `chat.js`.
+1059 files under `apps/` and `packages/`; local and remote `sha256sum` manifests matched exactly after the final copy. Dependency install: `pnpm install --frozen-lockfile --filter "@hepi/server..."` in `src/` (161 MB `node_modules`), plus `pnpm --filter @hepi/server build:ui` for the diagnostic `diagnostics.js`.
 
 Environment, written to `/home/<runtime-user>/hepi-harness-deploy/env/backend.env` (mode 0600, directory 0700). Values were generated locally and piped in; no secret was ever echoed to a terminal, log, or the systemd unit:
 

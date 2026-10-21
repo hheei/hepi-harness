@@ -17,7 +17,8 @@ import {
 import { useEnterSendMode, setEnterSendMode } from "../hooks/useEnterSendMode";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
 import { cookieLogoutOffered, endWebSession } from "../lib/web-logout";
-import type { ProjectTrustStatus, ToolSettingsResponse } from "../lib/api-types";
+import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
+import type { ToolSettingsResponse } from "../lib/api-types";
 import {
   setLastSettingsSection,
   settingsSectionRequiresProject,

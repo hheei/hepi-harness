@@ -2,10 +2,10 @@
 
 import { useId, useMemo } from "react";
 import type { McpServerConfig } from "@earendil-works/pi-coding-agent";
-import type { McpResponse, McpScope } from "../lib/api-types";
+import type { McpResponse, McpScope } from "@hepi/protocol/mcp-ui";
 import { useI18n } from "../hooks/useI18n";
 import { shortenPath } from "../lib/display-path";
-import type { McpImportField, McpImportNote } from "../lib/mcp-import";
+import type { McpImportField, McpImportNote } from "@hepi/protocol/mcp-import";
 import { isReferenceOnly } from "@hepi/protocol/mcp-secrets";
 import { mcpFieldLabel, mcpVariableChips, revealHiddenCharacters } from "../lib/mcp-server-display";
 import {
@@ -134,7 +134,7 @@ function failureText(failure: McpActionFailure, t: Translate): string {
  * Settings › MCP's add pane: one paste box for a URL, a command line,
  * `pi | claude | codex | gemini mcp add …`, another client's JSON or an
  * install link, read in the browser by the importer the route parses it with
- * again (`lib/mcp-import.ts`). Under the title, where it is saved: the scope,
+ * again (`@hepi/protocol/mcp-import`). Under the title, where it is saved: the scope,
  * whose Project option says why it is unavailable, and the file. Before Add it
  * shows what would be written: the masked command line or URL, env and header
  * names, the values that run a shell command and the host variables it reads,

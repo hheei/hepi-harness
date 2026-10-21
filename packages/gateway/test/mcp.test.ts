@@ -13,8 +13,10 @@ import { LocalFilesystem } from "../src/filesystem.ts";
 // starts are controlled local fixtures, so nothing here reaches a network, a real provider or a
 // paid call, and nothing waits on a sleep: every wait is for an answer or a file the fixture wrote.
 
-const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.mjs", import.meta.url));
-const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.mjs", import.meta.url));
+const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.ts", import.meta.url));
+const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.ts", import.meta.url));
+// The fixture's own export, as a type: the sign-in test states what it gets back instead of `any`.
+type StartFakeOAuthServer = typeof import("./fixtures/mcp/oauth-server.ts").startFakeOAuthServer;
 
 type Fixture = {
 	readonly home: string;
@@ -419,7 +421,7 @@ test("the MCP surface is authenticated and refuses an unknown operation", async 
 
 /** The fake OAuth-protected MCP server the sign-in runs against, as its own module exports it. */
 async function startOAuthFixture(): Promise<{ url: string; origin: string; issued: { access: Set<string> }; close: () => Promise<void> }> {
-	const module = await import(OAUTH_FIXTURE) as { startFakeOAuthServer: () => Promise<any> };
+	const module = await import(OAUTH_FIXTURE) as { startFakeOAuthServer: StartFakeOAuthServer };
 	return module.startFakeOAuthServer();
 }
 

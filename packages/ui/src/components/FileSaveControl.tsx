@@ -1,7 +1,7 @@
 "use client";
 
-import { getFileName } from "../lib/file-paths";
-import { savePathOf } from "../lib/file-save";
+import { getFileName } from "../lib/file/file-paths";
+import { savePathOf } from "../lib/file/file-save";
 import { useFileDownload, useFileSave } from "../hooks/useFileBytes";
 import { useI18n } from "../hooks/useI18n";
 

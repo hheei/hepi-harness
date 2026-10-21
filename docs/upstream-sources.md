@@ -189,13 +189,14 @@ failure reason alike. `packages/gateway/src/mcp/secrets.ts` is this repository's
 own walk over one entry (which values are secrets, and how a resolved value is replaced), and
 `packages/gateway/vendor/pi-web/LICENSE` carries the upstream MIT text beside it.
 
-`packages/gateway/test/fixtures/mcp/stdio-server.mjs` and `oauth-server.mjs` are the controlled fixtures, copied
-byte-identically (`sha256sum` verified) from the retired `apps/web/lib/__fixtures__/mcp-env-server.mjs` and
-`apps/web/lib/__fixtures__/mcp-oauth-server.mjs`; the pi-web `LICENSE` sits beside them. They are test fixtures, not
-application code, and nothing published depends on them. Ticket 04 retired the Web-side originals and ticket 17 retired
-the `apps/web/vendor/pi-web/` snapshot, so the gateway fixtures are what remain.
+`packages/gateway/test/fixtures/mcp/stdio-server.ts` and `oauth-server.ts` are the current controlled fixtures.
+They originated as byte-identical copies (`sha256sum` verified at that move) of the retired
+`apps/web/lib/__fixtures__/mcp-env-server.mjs` and `apps/web/lib/__fixtures__/mcp-oauth-server.mjs`. The 2026-10-21
+test migration adds TypeScript declarations to both; current files are adaptations, with no byte-identity claim.
+The pi-web `LICENSE` remains beside them. They are test fixtures, and nothing distributed depends on them.
+Ticket 04 retired the Web-side originals and ticket 17 retired the `apps/web/vendor/pi-web/` snapshot.
 
-The gateway's `stdio-server.mjs` is **no longer byte-identical** to its upstream original: ticket 01 added the opt-in
+The gateway's `stdio-server.ts` also extends upstream behavior: ticket 01 added the opt-in
 `PI_WEB_FIXTURE_INVOKE_TOOLS` set and ticket 03a added the opt-in `PI_WEB_FIXTURE_LIST_TOOLS`,
 `PI_WEB_FIXTURE_LIST_BULK` and `PI_WEB_FIXTURE_PAGE_CURSOR` behaviour a listing test needs (hostile server-authored
 tool fields, an over-bound schema, a tool the server did not name, a server that paginates without end, and a listing
@@ -416,8 +417,8 @@ different metric.
 pinned exactly in `apps/web/package.json` with its own `@tanstack/virtual-core@3.19.4` (MIT). Both
 versions are listed in `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude`, which the install added because the pinned
 release is younger than the workspace's supply-chain age gate. License and version were read from the installed
-package's own `package.json`. The experiment itself is `apps/web/e2e/window-experiment.mjs` plus
-`apps/web/e2e/window-experiment.fixture.tsx`; it is not imported by the application, and production adoption (ticket 10)
+package's own `package.json`. The experiment itself is `apps/web/e2e/history/window-experiment.mjs` plus
+`apps/web/e2e/history/window-experiment.fixture.tsx`; it is not imported by the application, and production adoption (ticket 10)
 is a separate decision recorded below.
 
 Selected implementation: the platform's own measured-height windowing (`ResizeObserver` + spacer elements + remembered
@@ -497,7 +498,7 @@ than retyped from prose:
   bytes in `apps/web/dist/assets`. It is therefore dynamic-imported and stays out of the entry chunk.
 
 Behavioural evidence: `packages/ui/src/lib/docx-preview.test.mjs` (the bound, enforced from the header and while
-the body arrives), `apps/web/e2e/ux-docx-preview.mjs` (15 checks in chromium: the real library's text on screen
+the body arrives), `apps/web/e2e/workbench-files/ux-docx-preview.mjs` (15 checks in chromium: the real library's text on screen
 through a cookie and a bearer connection, each reading the document exactly once, a document's own `<script>`
 reaching the page as words and never executing, an over-bound document refused without a request). The refusal and
 bound decisions are in [Workbench - the Word document preview](workbench.md#the-word-document-preview); the

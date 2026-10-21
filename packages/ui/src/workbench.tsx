@@ -12,7 +12,7 @@ import { readoutOf, type ConnectionReadout, type DescriptorClient } from "./lib/
 import { setDraftScope } from "./lib/draft-store";
 import { admissionOf, type Admission } from "./lib/web-session-gate";
 import { WorkbenchCapabilitiesProvider, WorkbenchNavigationProvider, type WorkbenchHost, type WorkbenchNavigation } from "./lib/navigation";
-import type { FileSaveHost } from "./lib/file-save";
+import type { FileSaveHost } from "./lib/file/file-save";
 import { workbenchConnection, WorkbenchConnectionProvider, type WorkbenchConnection } from "./lib/workbench-scope";
 
 /**

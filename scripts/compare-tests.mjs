@@ -33,13 +33,16 @@
  *        [--suite=web-unit] [--log-dir=<dir>] [--json=<path>]
  */
 import { REPO_ROOT } from "./dev.mjs";
+import { join } from "node:path";
 import { isMain, parseCli, runDir, writeJson } from "./lib/cli.mjs";
 import { compareBaseline } from "./lib/compare.mjs";
-import { webUnitFiles, webUnitStep } from "./lib/presets.mjs";
 
 /** The suites this command can compare. Each is a step factory taking a checkout dir. */
 export const SUITES = {
-  "web-unit": (dir) => webUnitStep(dir, webUnitFiles(dir)),
+  "web-unit": (dir) => ({
+    name: "web-unit", command: process.execPath,
+    args: [join(dir, "scripts", "test-web-unit.mjs")], cwd: dir,
+  }),
 };
 
 const USAGE = `

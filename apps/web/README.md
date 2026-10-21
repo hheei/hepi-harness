@@ -64,7 +64,7 @@ describe that retired tree, and both are gone from this one.
 `apps/web/public`, which only this host builds: `manifest.webmanifest` (name, start URL `/`, standalone display and the
 192/512 icons), `offline.html` and `sw.js`. The entry links the manifest from `index.html` and registers the worker with
 `registerServiceWorker` (`src/pwa.ts`) after the first render, under `/sw.js?v=<package version>`, `scope: "/"`. The App
-never registers a worker: it mounts the same shared tree from its own entry, and `apps/app/test/bundle-boundary.test.mjs`
+never registers a worker: it mounts the same shared tree from its own entry, and `apps/app/test/bundle-boundary.test.ts`
 asserts that no registration reaches its bundle.
 
 **The worker keeps static assets and nothing private.** It precaches the offline page, the manifest and the icons at
@@ -87,7 +87,7 @@ no notice for them. Universal background push stays an explicit non-goal.
 
 The browser seam is `pnpm --filter @hepi/web test:pwa-offline` (a fresh Chromium profile against the production build:
 parsed manifest, activated worker, offline navigation, cached hashed asset, uncached API), the worker's own rules are
-`apps/web/src/service-worker.test.mjs`, and the manifest/registration agreement is `apps/web/src/pwa.test.mjs`.
+`apps/web/src/service-worker.test.ts`, and the manifest/registration agreement is `apps/web/src/pwa.test.ts`.
 
 ## Checks
 

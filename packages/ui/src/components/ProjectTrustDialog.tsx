@@ -11,7 +11,7 @@ import type {
   ProjectMcpListing,
   ProjectTrustResponse,
   ProjectTrustStatus,
-} from "../lib/api-types";
+} from "@hepi/protocol/mcp-ui";
 import {
   mcpFieldLabel,
   mcpFileProblemDetail,

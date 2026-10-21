@@ -1884,9 +1884,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
 
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? "/", "http://localhost");
-    if (request.method === "GET" && ["/", "/chat.js"].includes(url.pathname)) {
-      const script = url.pathname === "/chat.js";
-      const page = await readFile(new URL(script ? "../public/chat.js" : "../public/chat.html", import.meta.url));
+    if (request.method === "GET" && (url.pathname === "/diagnostics" || url.pathname === "/diagnostics.js")) {
+      const script = url.pathname.endsWith(".js");
+      const page = await readFile(new URL(script ? "../public/diagnostics.js" : "../public/diagnostics.html", import.meta.url));
       response.writeHead(200, { "content-type": script ? "text/javascript; charset=utf-8" : "text/html; charset=utf-8" }); response.end(page); return;
     }
     if (request.method === "GET" && (url.pathname === "/workbench" || url.pathname === "/workbench.js")) {

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { TurnDescription } from "./chat-turn-model";
+import type { TurnDescription } from "./chat/chat-turn-model";
 import type { WindowRange } from "./transcript-window";
 
 /**

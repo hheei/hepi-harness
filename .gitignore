@@ -8,7 +8,7 @@ apps/app/.bundle-test/
 apps/app/src-tauri/target/
 .serena/
 *.tsbuildinfo
-apps/server/public/chat.js
+apps/server/public/diagnostics.js
 apps/web/next-env.d.ts
 **/data/
 # `pnpm dev` keeps its development SQLite files here.

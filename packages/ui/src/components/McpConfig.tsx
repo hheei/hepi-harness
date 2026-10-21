@@ -16,7 +16,7 @@ import type {
   McpServerStatus,
   McpSessionStatus,
   ProjectTrustStatus,
-} from "../lib/api-types";
+} from "@hepi/protocol/mcp-ui";
 import { useI18n } from "../hooks/useI18n";
 import { displayPathWithin, shortenPath } from "../lib/display-path";
 import {

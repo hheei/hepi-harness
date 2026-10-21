@@ -5,7 +5,7 @@ import type {
   McpResponse,
   McpScope,
   McpVariableReference,
-} from "../lib/api-types";
+} from "@hepi/protocol/mcp-ui";
 import {
   configValueEnvVarNames,
   fillMcpImportFields,
@@ -26,7 +26,7 @@ import {
   type McpImportNoteSeverity,
   type McpImportResult,
   type McpImportServer,
-} from "../lib/mcp-import";
+} from "@hepi/protocol/mcp-import";
 import { findWebPasswordField, resolvedConfigValues, WEB_PASSWORD_VARIABLE, type McpResolvedConfigValue } from "../lib/mcp-config-values";
 import { SECRET_MASK } from "@hepi/protocol/mcp-secrets";
 import { formatMcpCommandLine, revealHiddenCharacters } from "../lib/mcp-server-display";
@@ -34,7 +34,7 @@ import { isBlockingFileProblem, mcpWritesOff } from "./mcp-config-helpers";
 
 // The add pane of Settings › MCP (`components/McpAddServer.tsx`): what a paste
 // becomes, previewed in the browser with the same pure importer the route
-// parses it with again (`lib/mcp-import.ts`), where it can be saved, and why
+// parses it with again (`@hepi/protocol/mcp-import`), where it can be saved, and why
 // Add cannot be used. Nothing here sends anything; `postMcpAction()` does,
 // with `mcpAddRequest()`'s body.
 
@@ -208,7 +208,7 @@ const FETCH_NAMED = JSON.stringify({ name: "fetch", command: "uvx", args: ["mcp-
  * One example per format the importer reads, shown under the empty paste box
  * with its format's name (`MCP_IMPORT_SOURCE_KEYS`): addresses and commands,
  * other clients' command lines, configs, install links. Each is read as its
- * format with nothing left to fill in, which `mcp-add-helpers.test.mjs` checks,
+ * format with nothing left to fill in, which `mcp-add-helpers.test.ts` checks,
  * along with a format added to the importer without one here.
  */
 export const MCP_ADD_EXAMPLES: readonly { source: McpImportFormat; text: string }[] = [

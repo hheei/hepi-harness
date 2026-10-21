@@ -23,8 +23,8 @@ import type {
   McpTestResponse,
   McpTestResult,
   ProjectTrustStatus,
-} from "../lib/api-types";
-import type { McpImportFieldValue, McpImportNote } from "../lib/mcp-import";
+} from "@hepi/protocol/mcp-ui";
+import type { McpImportFieldValue, McpImportNote } from "@hepi/protocol/mcp-import";
 import { itemsToSwitch } from "./settings-ui-helpers";
 
 // Pure helpers for Settings › MCP (components/McpConfig.tsx): what each row

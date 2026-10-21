@@ -68,7 +68,7 @@ import {
   readProviderAuthListing,
   type ProviderAuthNotice,
   type ProviderPanelRow,
-} from "../lib/provider-auth";
+} from "../lib/provider/provider-auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

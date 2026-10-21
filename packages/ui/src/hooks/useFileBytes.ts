@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOptionalWorkbenchConnection, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useWorkbenchHostCapabilities } from "../lib/navigation";
-import { saveFile, type FileSaveHost, type SaveOutcome } from "../lib/file-save";
+import { saveFile, type FileSaveHost, type SaveOutcome } from "../lib/file/file-save";
 
 /**
  * One file's bytes, as a browser element may show them on this connection.

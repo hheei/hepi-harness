@@ -1,6 +1,6 @@
 import type { McpHostResult } from "@hepi/protocol/gateway";
-import { isUnboundCwd, workspaceIdOfRoutingPath } from "@hepi/ui/lib/project-routing";
-import { createMcpPanel, hostRefusalStatus, type McpPanelFolderResolver, type McpReply } from "@hepi/ui/lib/mcp-panel";
+import { isUnboundCwd, workspaceIdOfRoutingPath } from "@hepi/protocol/files";
+import { createMcpPanel, hostRefusalStatus, type McpPanelFolderResolver, type McpReply } from "./mcp-panel.ts";
 
 /**
  * MCP configuration and project trust on the client ingress.
@@ -15,8 +15,9 @@ import { createMcpPanel, hostRefusalStatus, type McpPanelFolderResolver, type Mc
  * re-verified while the request is in flight, so a revoked credential ends an MCP operation the same way it ends any
  * other — a test that starts a server is exactly the kind of request that outlives its admission.
  *
- * The shape of every answer is `@hepi/ui/lib/mcp-panel`'s, which the Web entry answers with too, so one panel reads
- * both entries. The aggregate is a fresh one per request because a request's abort signal is what the host call carries.
+ * The shape of every answer is `@hepi/protocol/mcp-ui`'s, and the aggregate that composes it is `./mcp-panel.ts`'s:
+ * the panel and its contract are the gateway's, because this is the entry that answers them. The aggregate is fresh per
+ * request because a request's abort signal is what the host call carries.
  *
  * A folder is the one thing this surface does not take on the caller's word. The workspace id a client names is only
  * an address: the Backend owns which gateway a workspace belongs to, so the caller hands in that binding check and a

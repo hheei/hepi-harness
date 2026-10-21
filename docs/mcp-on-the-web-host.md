@@ -20,8 +20,10 @@ the placement and the secret boundary are fixed; this guide records what was bui
 | `@hepi/protocol/mcp-secrets` (`packages/protocol/src/mcp-secrets.ts`) | the protocol package | pi-web's masking rules, preserved verbatim (MIT, Copyright (c) 2026 agegr); the Web panel and this gateway share the one copy |
 | `POST /v1/mcp` | the gateway's authenticated surface | The one route the Web process calls |
 | `packages/protocol/src/gateway.ts` | shared | The route's request and answer shapes, under the `@hepi/protocol/gateway` subpath: declared once, re-exported by the gateway, read by the Web adapter |
-| `packages/ui/src/lib/mcp-panel.ts` | shared | `/api/mcp` and `GET /api/project-trust`: the aggregate the panel reads, composed from the host's answers, declared once for both entries |
-| `packages/gateway/src/ingress/mcp.ts` | the client ingress | Those same routes for a Web page or an App, answered from the host this origin runs on |
+| `@hepi/protocol/mcp-ui` (`packages/protocol/src/mcp-ui.ts`) | the protocol package | The panel contract: `/api/mcp` and `GET /api/project-trust` answer shapes, declared once because the browser renders them. A declaration only: no route logic, nothing started or read |
+| `@hepi/protocol/mcp-import` (`packages/protocol/src/mcp-import.ts`) | the protocol package | The paste importer, used twice around one boundary: the browser previews with it and the ingress re-parses with it, so the entry a person sees is the entry the host writes |
+| `packages/gateway/src/ingress/mcp-panel.ts` | the client ingress | Composes the host's own answers into the panel's shapes: the one place that behavior lives |
+| `packages/gateway/src/ingress/mcp.ts` | the client ingress | Those routes for a Web page or an App, answered from the host this origin runs on |
 
 The Web origin is a presentation and proxy layer: it starts no MCP server and reads no configuration file itself.
 The ingress reaches the host service **directly**, not through the durable backend, because a credential must never be
@@ -436,7 +438,7 @@ at the Backend's own status and reason, so a refused write names the limit inste
 Verified by `packages/ui/src/lib/conversation-mcp.test.mjs` (the four states as four facts, per-server listing routes, a
 listing's bounds and refusals, the whole-set grant and revoke bodies, the conversation's own limits, a changed descriptor
 and an unknown exposure, a selection the panel above just stored, and a hostile body whose credentials and host paths
-must not reach the projection), `apps/web/e2e/ux-mcp-tool-states.mjs` in a real browser against the production panel (no
+must not reach the projection), `apps/web/e2e/mcp-skills/ux-mcp-tool-states.mjs` in a real browser against the production panel (no
 listing on mount, one server per press, the four states read per tool, a named refusal, one grant and one revocation each
 as one write, the credential/host-path absence above, an extension flip that takes availability away and a re-read that
 brings it back, and two conversations switched while a listing and a write are still in flight). The unit half is
@@ -456,7 +458,7 @@ request is made.
 
 ```
 pnpm --filter @hepi/web build
-node apps/web/e2e/ux-mcp-acceptance.mjs      # or: pnpm --filter @hepi/web test:mcp-acceptance
+node apps/web/e2e/mcp-skills/ux-mcp-acceptance.mjs      # or: pnpm --filter @hepi/web test:mcp-acceptance
 ```
 
 The scenes, and what each is evidence for: add/test and the host's own file (`mcp.json` holds what was pasted, no

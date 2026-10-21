@@ -19,7 +19,7 @@ import {
   type SessionData,
 } from "../lib/durable-projection";
 import { createRequestId, isRefusal, operationFailure } from "../lib/conversation-api";
-import { workspaceIdOfRoutingPath } from "../lib/project-routing";
+import { workspaceIdOfRoutingPath } from "@hepi/protocol/files";
 import {
   deleteSessionViewSnapshot,
   getSessionViewSnapshot,
@@ -79,7 +79,7 @@ import {
   CHAT_SCROLL_TAIL_TOLERANCE,
   getLiveFollowAttached,
   shouldShowScrollToLatest,
-} from "../lib/chat-lazy-load";
+} from "../lib/chat/chat-lazy-load";
 import {
   INITIAL_STREAMING_STATE,
   streamReducer,

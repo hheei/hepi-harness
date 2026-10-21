@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useI18n } from "../hooks/useI18n";
 import { useIsMobile } from "../hooks/useIsMobile";
-import type { ProjectTrustStatus } from "../lib/api-types";
+import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
 import { shortenPath } from "../lib/display-path";
 import {
   AGENT_DEFINITION_SCOPES,

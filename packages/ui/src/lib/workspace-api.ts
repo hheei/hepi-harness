@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CapabilityRequest } from "./capability-availability";
-import { folderRoutingPath, UNBOUND_CWD, projectGroupOfPath, workspaceIdOfRoutingPath, type ProjectRouting } from "./project-routing";
+import { UNBOUND_CWD, workspaceIdOfRoutingPath } from "@hepi/protocol/files";
+import { folderRoutingPath, projectGroupOfPath, type ProjectRouting } from "./project-routing";
 import { useWorkbenchConnection } from "./workbench-scope";
 
 /**

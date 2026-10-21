@@ -5,7 +5,7 @@ import { useGlobalKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { SessionSidebar, type SelectSessionOptions, type SessionSidebarControl } from "./SessionSidebar";
 import { ChatWindow } from "./ChatWindow";
 import { NewSessionContextBar, type NewSessionContextControl } from "./NewSessionContextBar";
-import type { ChatScrollPosition } from "../lib/chat-scroll-position";
+import type { ChatScrollPosition } from "../lib/chat/chat-scroll-position";
 import { FileViewer } from "./FileViewer";
 import { TabBar, type Tab } from "./TabBar";
 import { displayPathUnder } from "../lib/display-path";
@@ -33,15 +33,15 @@ import { copyText } from "../lib/clipboard";
 import { catalogueRow, type CatalogueEntry } from "../lib/conversation-catalogue";
 import { createRequestId, operationFailure } from "../lib/conversation-api";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
-import { getFileName } from "../lib/file-paths";
-import { buildAtMentionText, buildFileAtMentionsText, buildFileLineMentionText } from "../lib/file-fuzzy";
+import { getFileName } from "../lib/file/file-paths";
+import { buildAtMentionText, buildFileAtMentionsText, buildFileLineMentionText } from "../lib/file/file-fuzzy";
 import {
   shouldShowBrowserNotification,
   showBrowserNotification,
 } from "../lib/browser-notifications";
 import { getInitialNavigation, withTabOpen } from "../lib/initial-navigation";
 import { useWorkbenchNavigation, useWorkbenchQuery } from "../lib/navigation";
-import { isWorkspaceRoutingPath } from "../lib/project-routing";
+import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
 import { clearTabOpenSession, getTabOpen, setTabOpenNewSession, setTabOpenSession } from "../lib/tab-session";
 import { mergeCatalogRow } from "./session-catalog-helpers";
 import { getDraft, hydrateDrafts, rekeyDraft } from "../lib/draft-store";
@@ -73,11 +73,11 @@ import {
   SIDEBAR_MIN_WIDTH,
 } from "../lib/panel-layout";
 import type { SessionInfo } from "../lib/types";
-import type { ProjectTrustStatus } from "../lib/api-types";
+import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
 import type { ChatInputHandle } from "./ChatInput";
 import type { NewSessionChoices } from "../hooks/useAgentSession";
 import type { SessionStatsInfo } from "../lib/pi-types";
-import type { FileViewerState } from "../lib/file-viewer-state";
+import type { FileViewerState } from "../lib/file/file-viewer-state";
 import type { ToolEntry } from "../lib/tool-presets";
 import { getSessionFamily } from "../lib/session-family";
 import { CompletionDelivery, type CompletionNotice } from "../lib/completion-delivery";

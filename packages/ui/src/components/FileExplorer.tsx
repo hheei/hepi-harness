@@ -9,12 +9,12 @@ import {
   getRelativeFilePath,
   joinFilePath,
   normalizeFilePathSlashes,
-} from "../lib/file-paths";
+} from "../lib/file/file-paths";
 import type { GitFileStatus, GitFileStatusKind, UploadBatchResponse, UploadConflictStrategy } from "@hepi/protocol/files";
-import { uploadFiles, type UploadError } from "../lib/file-seam";
+import { uploadFiles, type UploadError } from "../lib/file/file-seam";
 import { buildSearchTree, type SearchTreeNode } from "../lib/search-tree";
 import { displayPathUnder } from "../lib/display-path";
-import { isWorkspaceRoutingPath } from "../lib/project-routing";
+import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
 import { useFileSave } from "../hooks/useFileBytes";
 import { FileSaveControl } from "./FileSaveControl";
 import { useWorkbenchConnection } from "../lib/workbench-scope";

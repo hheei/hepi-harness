@@ -36,7 +36,7 @@ function repositoryCheck(root, name) {
   return { name, command: process.execPath, args: [join(root, "scripts", name + ".mjs"), "--root=" + root], cwd: root };
 }
 
-const TEST_FILE = /\.test\.(?:mjs|ts|tsx)$/;
+const TEST_FILE = /\.test\.ts$/;
 
 /** A path written the way the package's own suite writes it: relative, `./`-prefixed, forward slashes. */
 function packageRelative(dir, file) {
@@ -214,6 +214,9 @@ export function changedChecks(root, base, { testFiles = [] } = {}) {
   // An explicit scripts test file replaces the whole tooling suite, the way a named workspace
   // test replaces its package suite; the entrypoint and docs checks it implies still run.
   if (scripts || requestedScripts) {
+    if (!steps.some((step) => step.name === "workspace-typecheck")) {
+      steps.push({ name: "script-typecheck", command: "pnpm", args: ["typecheck:scripts"], cwd: root });
+    }
     if (!requestedScripts) steps.push(scriptTests(root));
     steps.push(repositoryCheck(root, "check-entrypoints"));
     docs = true;

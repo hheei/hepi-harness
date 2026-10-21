@@ -39,6 +39,25 @@ export function workspaceRoutingPath(workspaceId: string, relativePath = ""): st
 	return WORKSPACE_ROUTING_PREFIX + workspaceId + (relativePath === "" ? "" : "/" + relativePath);
 }
 
+/** The workspace a routing path names, or null when the path is not one. */
+export function workspaceIdOfRoutingPath(path: string): string | null {
+	return workspaceRoutingLocation(path)?.workspaceId ?? null;
+}
+
+/** True for a path that names a workspace location: the only paths the file, Git and terminal surfaces can serve. */
+export function isWorkspaceRoutingPath(path: string | null | undefined): boolean {
+	return typeof path === "string" && workspaceRoutingLocation(path) !== null;
+}
+
+/**
+ * The cwd of a conversation with **no execution workspace**. It is a sentinel, not a directory on any host: the file,
+ * Git and worktree surfaces have nothing to serve there, and no workspace is ever substituted for it. A legacy
+ * conversation recorded before any workspace was bound keeps it.
+ */
+export const UNBOUND_CWD = "/durable";
+
+export const isUnboundCwd = (path: string | null | undefined): boolean => path === UNBOUND_CWD;
+
 // ---------------------------------------------------------------------------
 // File kinds
 // ---------------------------------------------------------------------------

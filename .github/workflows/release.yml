@@ -28,10 +28,10 @@ jobs:
         with:
           version: '12.4.1'
       - run: pnpm install --frozen-lockfile
-      - run: node --test scripts/release-plan.test.mjs
+      - run: node --test scripts/release-plan.test.ts
       - id: plan
         run: node scripts/release-plan.mjs --prepare-package
-      - run: pnpm -r typecheck
+      - run: pnpm typecheck
       - run: pnpm -r test
       - run: pnpm --filter @hepi/client build
       - name: Prepare isolated SSH smoke prerequisites

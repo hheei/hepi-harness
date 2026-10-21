@@ -20,7 +20,7 @@
 import { listSessionFamilies, type SessionFamily } from "./session-family";
 import type { ProjectMovePosition, SessionUiFamilyState, SessionUiState } from "@hepi/protocol";
 import type { SessionInfo } from "./types";
-import { isUnboundCwd } from "./project-routing";
+import { isUnboundCwd } from "@hepi/protocol/files";
 import { workspaceKeyOf } from "./workspace-memory";
 
 export type SidebarLayout = "desktop" | "mobile";

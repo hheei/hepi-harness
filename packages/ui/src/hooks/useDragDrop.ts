@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { DroppedItem } from "../lib/file-upload-client";
+import type { DroppedItem } from "../lib/file/file-upload-client";
 
 function hasDraggedFiles(e: React.DragEvent): boolean {
   return Array.from(e.dataTransfer.items).some((item) => item.kind === "file");

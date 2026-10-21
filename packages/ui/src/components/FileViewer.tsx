@@ -19,12 +19,12 @@ import {
   isVideoPath,
 } from "@hepi/protocol/files";
 import { displayPathUnder } from "../lib/display-path";
-import { getFileDirectory, getFileName, getRelativeFilePath } from "../lib/file-paths";
+import { getFileDirectory, getFileName, getRelativeFilePath } from "../lib/file/file-paths";
 import { useFileBytes, useFileMeta } from "../hooks/useFileBytes";
 import { FileSaveControl } from "./FileSaveControl";
 import { useDocxPreview } from "../hooks/useDocxPreview";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
-import { parsePdfPageFragment, resolveLocalFileHref, shouldOpenLocalFileInApp } from "../lib/file-links";
+import { parsePdfPageFragment, resolveLocalFileHref, shouldOpenLocalFileInApp } from "../lib/file/file-links";
 import { parseFrontmatter } from "../lib/frontmatter";
 import { markdownPreviewRehypePlugins, markdownPreviewRemarkPlugins, markdownUrlTransform, normalizeDisplayMath } from "../lib/markdown";
 import { CodeBlock, MermaidBlock } from "./MermaidBlock";
@@ -33,16 +33,16 @@ import { parseUnifiedPatch } from "../lib/patch";
 import type { GitFileDiffResponse } from "@hepi/protocol/files";
 import { useI18n } from "../hooks/useI18n";
 import { formatByteSize as formatSize } from "../lib/byte-size";
-import { classifyFileReadFailure, type FileReadFailure } from "../lib/file-read-failure";
+import { classifyFileReadFailure, type FileReadFailure } from "../lib/file/file-read-failure";
 import { FileReadFailurePanel } from "./FileReadFailurePanel";
 import { FilePreviewLimitNotice } from "./FilePreviewLimitNotice";
 import {
   resolveInitialFileDisplayMode,
   type FileViewerDisplayMode as DisplayMode,
   type FileViewerState,
-} from "../lib/file-viewer-state";
+} from "../lib/file/file-viewer-state";
 
-export type { FileViewerState } from "../lib/file-viewer-state";
+export type { FileViewerState } from "../lib/file/file-viewer-state";
 
 interface Props {
   filePath: string;

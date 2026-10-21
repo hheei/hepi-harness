@@ -229,7 +229,7 @@ Recorded so the boundary is explicit; these are reached from the chat shell, not
 | GET | /api/sessions/{id}/entries/{entryId}/thinking | [MessageView.tsx:168](../../packages/ui/src/components/MessageView.tsx#L168) | unimplemented |
 | GET | /api/sessions/{id}/entries/{entryId}/tool-result-image | session-reader.ts:823 (`../../apps/web/vendor/pi-web/lib/session-reader.ts#L823`) | unimplemented |
 | GET/POST | /api/cwd/browse | [DirectoryPicker.tsx:69,76](../../packages/ui/src/components/DirectoryPicker.tsx#L69) | unimplemented |
-| POST | /api/files/...?type=upload | [file-upload-client.ts:42](../../packages/ui/src/lib/file-upload-client.ts#L42) | 501 by design (workbench read-only subset) |
+| POST | /api/files/...?type=upload | [file-upload-client.ts:42](../../packages/ui/src/lib/file/file-upload-client.ts#L42) | 501 by design (workbench read-only subset) |
 | GET/POST/DELETE | /api/terminal[...] | [TerminalPanel.tsx:118,158,210](../../packages/ui/src/components/TerminalPanel.tsx#L118) | unimplemented |
 | GET | /api/home, /api/worktrees, /api/open-in-explorer | chat shell | placeholder home, empty worktrees, explorer unavailable |
 | POST | /api/default-cwd, /api/cwd/validate | chat shell | placeholder cwd; validation accepts configured workspace IDs only |

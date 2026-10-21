@@ -8,13 +8,16 @@
     "./gateway": "./src/gateway.ts",
     "./files": "./src/files.ts",
     "./navigation": "./src/navigation.ts",
-    "./mcp-secrets": "./src/mcp-secrets.ts"
+    "./mcp-secrets": "./src/mcp-secrets.ts",
+    "./mcp-ui": "./src/mcp-ui.ts",
+    "./mcp-import": "./src/mcp-import.ts"
   },
   "scripts": {
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.0",
     "@types/node": "22.20.5",
     "typescript": "5.9.3"
   }

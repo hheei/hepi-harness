@@ -23,7 +23,10 @@ The shipped commands differ in how much of that they carry:
 
 ## Coverage
 
-Use an explicit, recursive file list. A glob like `*.test.mjs` silently misses nested suites, and a directory form
+Follow the [test layout and TypeScript convention](../developer-guide.md#test-layout-and-typescript).
+`pnpm typecheck` checks workspace code/tests and the root tooling tests; `pnpm -r typecheck` alone omits root tooling.
+
+Use an explicit, recursive file list. A glob like `*.test.ts` silently misses nested suites, and a directory form
 (`node --test src e2e`) may be rejected outright by the installed Node. `pnpm test:web:unit` enumerates the Web suite
 and records the list it used, so cite that list rather than a second glob.
 
@@ -34,6 +37,8 @@ A baseline is the pinned revision checked out on its own, not the current tip. C
 `.dev/baselines/<sha>`, and installs that worktree's dependencies before running — a missing `node_modules` there
 would fail the baseline for a reason unrelated to either revision, so its install exit code is reported and stops the
 comparison instead of being assumed.
+Each side runs its own `scripts/test-web-unit.mjs`; that revision owns discovery, so a language migration in the
+caller cannot change which files a historical revision measures.
 
 The **tip** is pinned the same way: checked out detached at `HEAD` in its own worktree, so the comparison is between two
 revisions and never between the tip and the tree you happen to be sitting in. A dirty caller tree is reported —

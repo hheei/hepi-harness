@@ -11,7 +11,7 @@
  *
  * This script owns only orchestration and development defaults. It changes no
  * production path: `pnpm --filter @hepi/server start` still builds the
- * diagnostic bundle and runs without a watcher.
+ * Diagnostic Page bundle and runs without a watcher.
  *
  * Usage: pnpm dev [--only=gateway,server,web] [--workspace=<dir>]
  */

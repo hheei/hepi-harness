@@ -1,5 +1,5 @@
 import type { AssistantContentBlock, ToolResultMessage } from "./types";
-import { resolveLocalFilePath } from "./file-links";
+import { resolveLocalFilePath } from "./file/file-links";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "./tool-names";
 import {
   applyPatchPreviewToFiles,

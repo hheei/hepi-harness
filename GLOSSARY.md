@@ -186,8 +186,8 @@ makes it that host — history, ingress origin and credential — so no surface 
 _Avoid_: UI layer, front end package, Web app
 
 **Diagnostic Page**:
-The small HTML page the Backend serves itself, so an operator can inspect one conversation or the read-only workbench
-with a token they type in. It is a fallback for operating a deployment and not a client entry, not the Workbench
+The small HTML page the Backend serves itself — the conversation page at `/diagnostics` and the read-only workbench
+page at `/workbench` — so an operator can inspect one conversation or the workbench with a token they type in. It is a fallback for operating a deployment and not a client entry, not the Workbench
 surface tree, and not a second runtime.
 _Avoid_: admin UI, debug app, second front end
 

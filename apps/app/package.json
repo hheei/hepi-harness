@@ -8,9 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test $(find src test -name '*.test.ts' | sort)",
     "typecheck": "tsc --noEmit",
-    "test:bundle-boundary": "node --test test/bundle-boundary.test.mjs",
+    "test:bundle-boundary": "node --test test/bundle-boundary.test.ts",
     "artifacts": "node scripts/build-artifacts.mjs",
     "verify:artifacts": "node scripts/verify-artifacts.mjs"
   },

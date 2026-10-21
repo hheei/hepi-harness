@@ -9,6 +9,62 @@ its relative layout under `.dev/worktree-archive/<name>`, and a log whose worktr
 under the repository root's own `.dev/verify/<topic>`. Where neither applies, the path is historical evidence for that
 row, not a runnable command.
 
+## TypeScript test migration (2026-10-21)
+
+Source: main at 67e3682967b067948f9b066ee72e20486323771b plus the uncommitted integrated working tree,
+measured on Node 26.5.1. This supersedes the preceding naming batch's test filenames; older records below retain
+the commands their own source used. Current placement and execution rules are in the
+[test convention](developer-guide.md#test-layout-and-typescript).
+
+107 former MJS unit-test files now use TypeScript (UI 86, App 8, Web 3, tooling 10). Browser drivers and their
+shared stack, test-only helpers, MCP process fixtures and the two performance probes also use TypeScript.
+The inventory in .dev/verify/test-typescript/inventory.json lists 267 current .test.ts files and 40 E2E .ts sources
+(including the stack helper and one unit suite); no active legacy MJS test source remains in those scopes.
+The inventory describes source, not which integration suites ran. Default Backend/Gateway profiles retain their
+explicit selections; full acceptance discovery includes colocated src tests as well as test/.
+
+Single-module tests moved beside Configure.tsx, skill-frontmatter.ts and subagents/recovery.ts. Package/platform
+contracts remain under test/. Root and Web module format is explicit ESM, and tooling tests use strict NodeNext
+checking. Historical comparison invokes each revision's own Web test runner, so discovery belongs to that revision.
+
+Logs below are relative to .dev/verify/test-typescript/.
+
+| Command | Exit | Evidence |
+| --- | --- | --- |
+| pnpm verify:changed --quiet --log-dir=.dev/verify/test-typescript/final | 0 | final/verify.json and per-step logs: all six checks pass. Workspace default suites: 1,058 pass; Web unit: 14 pass; tooling: 89 pass. Typecheck includes workspace tests, E2E sources and root tooling tests |
+| pnpm --filter @hepi/web build | 0 | web-build-final.log |
+| pnpm --filter @hepi/app build | 0 | app-build.log; App build inputs unchanged by later test-only edits |
+| node apps/web/e2e/acceptance/ux-provider-connection-acceptance.ts | 0 | provider-final.log: 64 checks, 0 failures, controlled provider and disposable account |
+| node apps/web/e2e/chat/ux-chat-scroll.ts | 0 | chat-scroll-final.log: all checks passed against the production build and real ingress/Backend stack |
+
+The first gate (changed/verify.json, exit 1) caught a release fixture incorrectly naming the generated ingress
+bundle ingress.ts. The fixture now names the actual ingress.mjs artifact; the final gate passes all 14 Web unit
+cases. Independent tooling/process-fixture review found no material issues. Native TS syntax checks cover the
+browser drivers; this record claims only the two browser journeys above, not the entire fleet or native desktop.
+
+## Naming and dependency reorganization (2026-10-21)
+
+Source: `main` at `67e3682967b067948f9b066ee72e20486323771b` plus the integrated, uncommitted working-tree changes.
+These results certify that working tree, not a new commit or a deployed service. The batch removes Gateway → UI
+imports, moves shared MCP contracts/parsers to protocol, groups UI file/chat/provider modules and current E2E
+drivers, and renames the Backend Diagnostic Page assets and routes. Current ownership and layout are in the
+[developer guide](developer-guide.md#directory-map); retired-driver coverage limits are in
+[migration status](migration-status.md#retired-next-browser-drivers-2026-10-21).
+
+Logs below are relative to `.dev/verify/session-resume-integration/`.
+
+| Command | Exit | Evidence |
+| --- | --- | --- |
+| `pnpm verify:changed --quiet --log-dir=.dev/verify/session-resume-integration/changed` | 0 | `changed/verify.json` and per-step raw logs: all six steps pass — workspace typechecks/tests, recursive Web unit tests, script tests, entrypoints and docs |
+| `pnpm --filter @hepi/server build:ui` | 0 | `diagnostics-build.log`; emits `public/diagnostics.js` |
+| `pnpm --filter @hepi/web build` | 0 | `web-build.log` |
+| `pnpm --filter @hepi/app build` | 0 | `app-build.log` |
+| `node apps/web/e2e/acceptance/ux-provider-connection-acceptance.mjs` | 0 | `provider-acceptance.log`; **64 checks, 0 failures**, real ingress/Backend/Gateway stack with a controlled provider and disposable account files |
+
+The protocol suite checks emitted modules for SDK runtime imports; the SDK remains a type-only development
+dependency. Independent static review found no material correctness or ownership issues. This batch does not
+claim the entire browser fleet, desktop shell, packaged artifacts or retired Next journeys passed.
+
 ## Deterministic test budget
 
 Gateway and Server development suites each target less than 5 seconds of complete command wall time, including

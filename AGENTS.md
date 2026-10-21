@@ -53,6 +53,12 @@ This applies to every task in this repository, including one that only touches d
 
 Preserve upstream TypeScript implementations and record their versions and licenses; adapt through explicit adapters and integration seams. See [copy-first integration](docs/agents/copy-first.md) and the [domain docs](docs/agents/domain.md).
 
+## Breaking Changes
+
+Prefer direct replacement or removal over preserving obsolete code for compatibility. Valuable changes may break source APIs, CLI/protocol contracts, configuration or persisted-state formats, and file layouts. Migrate current callers and remove obsolete implementations in the same change; do not add aliases, shims, fallback readers, dual paths or deprecated wrappers solely for old-code compatibility. Retain a compatibility contract only when the current task or an approved spec explicitly requires that named contract to remain supported.
+
+This permits destructive code and format changes; it does not authorize overwriting user changes or deleting user data without an explicit data-migration scope.
+
 Before comparing baselines or reporting verification, read [verification practice](docs/agents/verification.md). Before reviewing findings or starting a bug fix, read [review policy](docs/agents/review-policy.md): judge trigger likelihood in normal use and actual user impact, fix material failures, and record negligible ones without blocking delivery. Check whether the abstraction or responsibility boundary causes the failure, then correct that owner with the smallest coherent change instead of stacking caller guards. This governs review and implementation loops, including skills that say to fix all findings.
 
 ### No bypass testing

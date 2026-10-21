@@ -12,7 +12,7 @@
  * The model endpoint is the driver's own controlled server, named in `HEPI_HN05_ENDPOINT`: the one run this fixture
  * serves is the driver's, and a turn the driver sends is answered by it rather than by a paid provider.
  *
- * Usage: node scripts/history-navigation-acceptance-fixture.ts   (driven by apps/web/e2e/ux-history-navigation-acceptance.mjs)
+ * Usage: node scripts/history-navigation-acceptance-fixture.ts   (driven by apps/web/e2e/history/ux-history-navigation-acceptance.ts)
  */
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";

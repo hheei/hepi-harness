@@ -196,7 +196,7 @@ starting it production**.
 - A sentinel start that proves the image boots is **not** this stage: starting the production service here would
   replace what stage 5 backs up and stage 6 switches. If a boot must be proven, prove it on the build host under a
   throwaway name, or fold it into stage 6 with that stage's gates already satisfied.
-- A source-tree release confirms its `chat.js` diagnostic bundle is present, since `pnpm build:ui` produced it on the
+- A source-tree release confirms its `diagnostics.js` Diagnostic Page bundle is present, since `pnpm build:ui` produced it on the
   build host and it was transferred; that is a file check, not a start.
 
 For a native arm64 runtime check, run the release scripts' own check inside the *build-host* image or in CI:
@@ -335,7 +335,7 @@ Prefer the smallest transfer that carries the artifact:
 - **Image tarball over SSH** when no registry is in play: `docker save <image> | ssh <runtime-host> docker load`,
   verified afterwards by digest. This carries only the artifact, not the source tree.
 - **Source tarball** only for a source-tree deployment, and only from the build center; the runtime host receives
-  it already built (the `chat.js` diagnostic bundle included).
+  it already built (the `diagnostics.js` Diagnostic Page bundle included).
 
 What is genuinely incremental is on the **build center**: the Docker layer cache and the pnpm store make a rebuild
 after a small change cheap, and a source sync into the checkout there is a normal `git fetch`. The runtime host

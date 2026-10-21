@@ -47,7 +47,7 @@ unchanged.
 The session list is one `GET /api/conversations` answer, not a per-conversation fan-out: the backend catalogue states each conversation's workspace, run state, revision, entry count, first user message and, for a fork, the conversation it was forked from, and the sidebar's running poll is that same read asked compactly — `GET /api/conversations?running=compact` answers the busy ids and the revisions and none of the rows, and `catalogueRunning` in `packages/ui/src/lib/conversation-catalogue.ts` takes that answer as stated (`CompactRunningCatalogue`): the ids are the Backend's and nothing is re-derived from rows, so the compact read and the list read cannot disagree about what is running. The poll's answer is that same `busy` flag, read from the rows the one catalogue projection already built; `limit` and `cursor` are refused beside `running=compact` by name, because a compact read answers the whole filtered list and a caller that asked for a window must not be handed ids the window excludes. There is no separate `/api/agent/running` route any more. The runtime's own **root conversation** — the framework record that owns the work belonging to no conversation — is not part of that catalogue: it is never attached, so it is in no list, no search result and no conversation route, and no surface can present it as a project of its own. Its record stays in the store; nothing removes it. `POST /api/conversations/:id/fork` (body `{ at?, requestId? }`) creates a branch through the one creation seam, which takes pi-durable's own native fork, answering the new identity plus that catalogue row; the source is only read, so a live run in it is untouched, and a missing, unsaved or empty source is refused with a code and a readable reason. Branching a conversation a task owns — a subagent's child — is allowed and is what makes it a **branch of that child**: it keeps the child as its display parent and its native fork source, and its owner is a **new** background anchor task of the child's own scope, so it dispatches, queues and stops on its own without reusing the child's task or falling back to an ownerless conversation. `requestId` is the caller's stable identity for the branch: a retry after a lost answer — a dropped response, a reload — is answered with the branch the first attempt created instead of making a second one, and a caller that sends none still gets one generated for it. The session-list version counts the conversations as well as their revisions, so a fork — whose own revision starts at zero — still makes another window's poll re-read the list. It is the backend's own number on the catalogue answer (`sessionListVersion`), computed once by `catalogueListVersion()` in `apps/server/src/catalogue-binding.ts`; a client compares the number one route gave it with the number the other gave it, so a second derivation of the same fact is one too many. The same answer carries the project registry's own revision, so a Project created, changed or removed in another window is heard on the poll a window already runs rather than never (see [Projects](projects.md)). A queued input is withdrawn by `POST /api/conversations/:id/recall-queue`, which the composer's queue-recall action calls; an abort discards the same items instead of returning them. Images attached in the composer travel as native image content blocks in `conversation.submit`, and a submission whose selected model declares no image input is refused with a readable reason rather than downgraded. A session is named only when the user asks: the toolbar's Generate title posts to the Backend's
 `POST /api/conversations/:id/auto-name`. The backend reads that conversation's committed model context, builds the transcript with pi-web's reused budget and prompt shape, asks the model the conversation already selected through the harness's own `Models`, and writes the answer as the same conversation-scoped `hepi.title` document the rename writes, so the one catalogue read that lists the session carries the name. Creating and running a conversation names nothing, no implicit pass replaces a name the user typed, and a failed generation writes nothing and reports the reason (`no_model`, `no_transcript`, `session_deleted`, or the provider's own error).
 
-The **Diagnostic Page** under apps/server remains an authenticated fallback using @hepi/session/browser. It joins its conversation through the **same** connection lifecycle the Web page uses — `packages/session/src/agent-event-connection.ts`, all subscribers of one conversation sharing one source — assembled with its own bearer source factory (`bearerSource`). Its history is the Web page's transport moved from pi-web's agent-event-connection.ts, copied at revision 76bdc57027172eb381a216d647225a6d24f23360 (MIT); the pinned upstream bytes stay under `packages/session/vendor/pi-web/` as provenance. It is not a second runtime.
+The **Diagnostic Page** under apps/server remains an authenticated fallback using @hepi/session/browser; it is served at `/diagnostics`, and its script is `apps/server/src/browser-diagnostics.ts`, which `pnpm build:ui` bundles to `apps/server/public/diagnostics.js` and serves at `/diagnostics.js`. It joins its conversation through the **same** connection lifecycle the Web page uses — `packages/session/src/agent-event-connection.ts`, all subscribers of one conversation sharing one source — assembled with its own bearer source factory (`bearerSource`). Its history is the Web page's transport moved from pi-web's agent-event-connection.ts, copied at revision 76bdc57027172eb381a216d647225a6d24f23360 (MIT); the pinned upstream bytes stay under `packages/session/vendor/pi-web/` as provenance. It is not a second runtime.
 
 Verification: critical backend admission/restart/SSE tests, and two independent production Web pages against one backend with close/reload/continued control. Real DeepSeek text/SSE, isolated diagnose/edit/compile, and Oracle-backend-to-local-gateway coding tools have been verified; see docs/verification.md and docs/real-model-coding-verification.md. Branching and advanced upstream controls remain unimplemented: the runtime's wire states no history tree, so the branch navigator and its synthetic `tree`/`session-file`/`active-time` fields were retired rather than rendered as placeholders (ticket 09), the composer's built-in palette lists only the commands the durable runtime answers, editing a past message in place, a `!` shell draft and the tool-set picker are withheld before anything is sent (the picker is gone rather than ignored: the create request carries no tool selection and nothing serves one afterwards; the shell refusal is one shared preflight that an idle send, a steer and a follow-up all pass through, so a queued draft cannot reach the wire by another key, and the composer keeps the refused draft instead of clearing it), the extension dialog/custom-panel/attention surface is gone with the event stream that used to feed it (the native wire states no such event; extension selection in Settings is unaffected), and the surfaces named in [apps/web/README.md](../apps/web/README.md) answer 501. Copy-first layout reuse is not full upstream feature parity.
 
@@ -250,7 +250,7 @@ flight.
 - **Partial failure is shown, not summarised.** A refused child, a removed one and a child the request never reached each
   state themselves beside a set labelled partial; the panel never flattens them into one status.
 
-The seam is `apps/web/e2e/ux-subtree-control.mjs` (production `AgentSessionPanel` plus `SubtreeControlPanel` behind one
+The seam is `apps/web/e2e/chat/ux-subtree-control.ts` (production `AgentSessionPanel` plus `SubtreeControlPanel` behind one
 real `createClient`, in Chromium): 78 checks covering the confirmation that writes nothing, the one POST with its own
 identity and credential, the two columns, the exclusion, a partial result with a removed child stating no row, the
 refresh that settles a drain while leaving the record untouched, a lost answer read back and resumed under the same id
@@ -407,7 +407,7 @@ statements, never one verdict, and neither is derived from the transcript's abse
   invalidate the older answer: it is dropped rather than written over newer facts, and a disposed connection's late
   answer has nowhere to land.
 
-The three statements and the ordering are checked as a **page**: `apps/web/e2e/ux-child-recovery.mjs`
+The three statements and the ordering are checked as a **page**: `apps/web/e2e/chat/ux-child-recovery.ts`
 (`pnpm --filter @hepi/web test:child-recovery`) mounts the panel the way `ChatWindow` mounts it, in a browser, with
 only the recovery requests held back, so the arrival order is the test's to decide rather than the network's.
 
@@ -421,8 +421,10 @@ conversation, which is what a child or a branch is.
 
 What the whole feature looks like in one session — Settings saving a definition, a quick create from the composer, the
 child tree, a late report edited under a hold and then continued, the child's raw history with its inherited image and a
-fork from a chosen entry — is driven end to end by `apps/web/e2e/ux-system-acceptance.mjs` against the production
-Vite build served by the client ingress. What that journey and the drivers beside it do **not** claim is in
+fork from a chosen entry — was driven end to end by `apps/web/e2e/ux-system-acceptance.mjs` against the production
+Vite build served by the client ingress. That browser driver depended on the retired Next build and has since been
+deleted; the backend-side acceptance (`apps/server/test/acceptance-*`) and the live `chat/` drivers hold the same
+seams today. What the journey and the drivers beside it do **not** claim is in
 [verification](verification.md#durable-subagents-the-combined-acceptance-gate-2026-10-17).
 
 ## Control, queue, fork and relations through the shared client
@@ -585,7 +587,7 @@ contract (a bounded page read behind the new boundary with head and acquisition 
 flag); it is out of this consolidation's scope and is recorded as [R1](../.scratch/architecture-consolidation/review-notes.md).
 
 **The transcript is described before it is drawn.** The surface's own window is built in two steps, not one.
-`packages/ui/src/lib/chat-turn-model.ts` turns the committed messages the surface holds into complete **turn descriptions** —
+`packages/ui/src/lib/chat/chat-turn-model.ts` turns the committed messages the surface holds into complete **turn descriptions** —
 a stable identity per turn, the message range it owns, its anchor, its process group (message count, tool-call count,
 whether it starts expanded), its final answer with the files the turn wrote, and which messages carry a navigation ref.
 Only then does `ChatWindow` turn those descriptions into elements. A turn is the segment between two group anchors (a
@@ -623,7 +625,7 @@ Four properties are what make it work with dynamic content:
 - **A turn can be asked for by identity.** Search and the minimap name a turn that may not be mounted; the window
   mounts it as its own range rather than spanning the distance to it, because the turns in between are exactly the ones
   a window exists to keep unmounted. The identity is always the **entry a turn is anchored on**, resolved through
-  `packages/ui/src/lib/chat-turn-identity.ts` — never a turn's position in a list. The minimap enumerates turns from the anchor
+  `packages/ui/src/lib/chat/chat-turn-identity.ts` — never a turn's position in a list. The minimap enumerates turns from the anchor
   messages it can measure, while the transcript draws a turn for a leading mid-turn segment as well, which has no anchor
   message; a positional index between the two therefore names a different turn, and a key rebuilt as
   `turn-<entryId>` does not name a turn at all when the entry is a segment's first message rather than an anchor.
@@ -806,7 +808,7 @@ what lets a reference followed into a conversation the page already remembers la
 `malformed`.
 
 The journeys above are measured over the **deployed shape**, not at the client seam alone:
-`apps/web/e2e/ux-references-acceptance.mjs` drives the production page through the client ingress against a real
+`apps/web/e2e/chat/ux-references-acceptance.ts` drives the production page through the client ingress against a real
 Backend over SQLite, with nothing intercepted. It creates a conversation-only link and an entry link through the picker,
 reads both back after a full page reload, follows the conversation one with no target read, follows the entry one with
 exactly one bounded `/navigation/around` and no outline page, and follows a link into a **fork** pinned to an entry the
@@ -859,7 +861,7 @@ cap, so a caller gets either a usable paging boundary or an explicit refusal rat
 included: a page that cannot be brought inside the transport's limit answers the same named refusal with the entry it
 could not carry, rather than a multi-megabyte body that claims to be a page. No claim is made that a first load is
 bounded for arbitrary content; the claim is bounded for content whose heavy parts can be deferred, which is what
-`apps/server/scripts/perf-history-scaling.mjs` asserts. The same script folds the stream through the **shared reducer a
+`apps/server/scripts/perf-history-scaling.ts` asserts. The same script folds the stream through the **shared reducer a
 real client uses** (`packages/session`) and asserts the advancing frames' contract as behaviour: a frame carries
 `baseRevision` equal to the previous frame's `revision`, appends rather than re-serializing the window, carries the
 window bookkeeping, and the entries it appends are byte-identical to the same entries read one at a time. Measured
@@ -1061,10 +1063,10 @@ session.
 
 **Not yet delivered.** Ticket 05 owns the system acceptance matrix — a real-Backend conversation longer than its
 window, a compacted earlier anchor, fork inheritance, an append during a navigation, stale coordinates and the
-deep-search journeys observed together. This line's own scenes are `apps/web/e2e/ux-history-rail.mjs` (the rail against
-the production `ChatMinimap`), `apps/web/e2e/ux-rail-keyboard.mjs` (that same rail driven by the keyboard alone),
-`apps/web/e2e/ux-history-scope.mjs` (the production `useHistoryNavigation` across a compaction, a late page and a jump)
-and `apps/web/e2e/ux-navigation-retry.mjs` (the production `ChatWindow` under `StrictMode` with only its network
+deep-search journeys observed together. This line's own scenes are `apps/web/e2e/history/ux-history-rail.ts` (the rail against
+the production `ChatMinimap`), `apps/web/e2e/history/ux-rail-keyboard.ts` (that same rail driven by the keyboard alone),
+`apps/web/e2e/history/ux-history-scope.ts` (the production `useHistoryNavigation` across a compaction, a late page and a jump)
+and `apps/web/e2e/history/ux-navigation-retry.ts` (the production `ChatWindow` under `StrictMode` with only its network
 boundary replaced).
 
 ## The session-switch cache
@@ -1140,8 +1142,10 @@ usually reach a signed-in page at all.
 
 Two rules the store keeps: sending clears the draft, so a reload cannot put a committed turn's text back as unsent; and
 a reload neither resends nor re-notifies, because the submission's own `requestId` lookup is the recovery seam (below)
-and a committed answer is never a fresh notice. `apps/web/e2e/ux-submission-recovery.mjs` drives the real reload for
-both a fresh composer and an open conversation, with an attached image, and asserts each of those.
+and a committed answer is never a fresh notice. The `ux-submission-recovery` browser driver drove the real reload for
+both a fresh composer and an open conversation, with an attached image; it depended on the retired Next build and was
+deleted, so `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts` and `apps/server/test/durable-submissions.test.ts`
+are what hold those rules now.
 
 **Limit at the contract switch.** A page still running the **previous** Web build keeps its drafts in memory only, so
 nothing this build stores can be written retroactively for it: unsent text and any attached image have to be copied or
@@ -1206,10 +1210,11 @@ own phase is `preparation` while a turn this surface sent is in flight and no na
 session creation, the stream handshake and the resource discovery the first admission performs — and `running` from the
 moment the projection reports the run. The status line shows the preparation label there and becomes `waiting_model` only
 then, so it never claims a model the run has not asked; a turn whose outcome is unknown is neither, because its own
-state is what the surface states. `apps/web/e2e/submit-stall.mjs` holds session creation, the stream handshake and the
-provider on real in-flight requests and asserts the staged turn and the status from the click, that the status never
+state is what the surface states. The `submit-stall` browser driver held session creation, the stream handshake and
+the provider on real in-flight requests to assert the staged turn and the status from the click, that the status never
 goes silent and never claims a run while one is held, and that a failed creation states the truth and restores the
-draft exactly once.
+draft exactly once. That driver depended on the retired Next build and was deleted; `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts`
+and `apps/server/test/durable-submissions.test.ts` hold the stage and status rules today.
 
 When the connection carrying the submission or its events ends before either outcome is known, the state is
 **Submission Outcome Unknown**: neither rejection nor commitment. The turn stays on screen and nothing resends it
@@ -1226,9 +1231,9 @@ response's receipt owes that one lookup: the submission may have settled between
 frame was the one the reconnect lost, and without the question the turn would stay on screen as a permanent pending
 overlay. The receipt is only the trigger; the lookup is the same by-request-id question every other recovery asks. That
 is a recovery seam for a lost response, a refresh or a reconnect; the normal path is the event stream described above,
-whose `submission` frames are live and never replayed. `apps/web/e2e/ux-submission-recovery.mjs` drives that loss
-with a real held read, a held prompt response and a recovery lookup that comes back with nothing, and asserts the
-statement is on screen while nothing is restored, resent or rung.
+whose `submission` frames are live and never replayed. The deleted `ux-submission-recovery` driver drove that loss
+with a real held read, a held prompt response and a recovery lookup that comes back with nothing; the same statement
+rules are asserted today by `apps/server/test/durable-submissions.test.ts` and `packages/ui/src/lib/lifecycle-projection.test.ts`.
 
 The completion tone has exactly one owner: the `answered` notice the fold emits from a live terminal fact that carries
 its answer identity. The acquisition generation has one owner too — the projection, which remembers the number it

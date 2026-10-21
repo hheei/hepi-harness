@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { fillMcpImportFields, parseMcpImport } from "@hepi/ui/lib/mcp-import.ts";
+import { fillMcpImportFields, parseMcpImport } from "@hepi/protocol/mcp-import";
 import { redactorFor, resolveConnectionValues } from "../src/mcp/connection.ts";
 
 /**
@@ -12,7 +12,7 @@ import { redactorFor, resolveConnectionValues } from "../src/mcp/connection.ts";
  *
  * An imported configuration is foreign text, so a value that looks like a reference — a leading `!` or a `$NAME` — must
  * arrive as the literal a person pasted rather than as something this host runs or expands. The importer escapes it
- * (`$@hepi/ui/lib/mcp-import`), and the host's own resolution (`../src/mcp/connection.ts`) is what reads the escaped
+ * (`$@hepi/protocol/mcp-import`), and the host's own resolution (`../src/mcp/connection.ts`) is what reads the escaped
  * form. Each half has its own test; this one is the contract between them, because escaping that the resolver does not
  * undo is a value the user never typed, and a resolver that runs what the importer left unescaped is a command the user
  * never asked for.

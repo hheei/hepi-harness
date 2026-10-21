@@ -22,7 +22,7 @@ COPY patches patches
 RUN --mount=type=cache,id=hepi-pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @hepi/server...
 
-# The backend serves its own diagnostic chat page from apps/server/public, which is not committed; esbuild builds it.
+# The backend serves its own Diagnostic Pages from apps/server/public; the `diagnostics.js` bundle is not committed, esbuild builds it.
 FROM deps AS build
 COPY apps/server apps/server
 COPY packages packages

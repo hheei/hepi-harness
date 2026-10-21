@@ -10,7 +10,7 @@
  * much the file holds. That division is what keeps the credential in the page's transport and the file in the shell's.
  */
 import { invoke } from "@tauri-apps/api/core";
-import type { FileSaveHost, SaveDestination, SaveHandle } from "@hepi/ui/lib/file-save";
+import type { FileSaveHost, SaveDestination, SaveHandle } from "@hepi/ui/lib/file/file-save";
 import { inShell } from "./shell";
 
 /**

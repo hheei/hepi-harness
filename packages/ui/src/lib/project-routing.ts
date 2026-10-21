@@ -8,7 +8,7 @@
  * to be showing. Pure and client-safe: the sidebar, the adapter and the tests all use these rules.
  */
 
-import { workspaceRoutingLocation } from "@hepi/protocol/files";
+import { workspaceIdOfRoutingPath, workspaceRoutingPath } from "@hepi/protocol/files";
 
 /** A project as the backend records it, with the /workspace/<id> routing of every folder. */
 export interface ProjectRoutingFolder {
@@ -52,34 +52,7 @@ export interface ProjectGroup {
 }
 
 export const projectGroupKey = (projectId: string): string => "/project/" + projectId;
-export const folderRoutingPath = (workspaceId: string): string => "/workspace/" + workspaceId;
-
-/**
- * The browser's cwd for a conversation with **no execution workspace**. It is this adapter's own sentinel, not a
- * directory on any host: the file, Git and worktree surfaces have nothing to serve there, and no workspace is ever
- * substituted for it. A legacy conversation recorded before any workspace was bound keeps it.
- */
-export const UNBOUND_CWD = "/durable";
-
-export const isUnboundCwd = (path: string | null | undefined): boolean => path === UNBOUND_CWD;
-
-/** The path prefix the browser workspace vocabulary is built on. */
-const WORKSPACE_PREFIX = "/workspace/";
-
-/**
- * One path, read once: the workspace it names and the path inside that workspace.
- *
- * The parse is the protocol's own, because the client ingress, the Backend's relays and this adapter all read the same
- * vocabulary: a path that meant two things on its way through would be a routing bug no caller could see.
- */
-export const routingLocation = workspaceRoutingLocation;
-
-/** The workspace a routing path names, or null when the path is not one. */
-export const workspaceIdOfRoutingPath = (path: string): string | null => routingLocation(path)?.workspaceId ?? null;
-
-/** True for a path that names a workspace location: the only paths the file and Git surfaces can serve. */
-export const isWorkspaceRoutingPath = (path: string | null | undefined): boolean =>
-  typeof path === "string" && routingLocation(path) !== null;
+export const folderRoutingPath = (workspaceId: string): string => workspaceRoutingPath(workspaceId);
 
 /**
  * The routing path of a location the host itself reported — a workspace root or a project folder root — or null
@@ -146,7 +119,7 @@ export function projectDefaultWorkspaceId(projects: readonly ProjectRouting[], w
 
 /** Which project group a routing path belongs to: its folder's project, or none for a configured workspace. */
 export function projectGroupOfPath(projects: readonly ProjectRouting[], path: string): ProjectGroup | null {
-  const workspaceId = path.startsWith("/workspace/") ? path.slice("/workspace/".length) : null;
+  const workspaceId = workspaceIdOfRoutingPath(path);
   if (workspaceId === null) return null;
   for (const project of projects) {
     if (project.folders.some(folder => folder.workspaceId === workspaceId)) return projectGroup(project);

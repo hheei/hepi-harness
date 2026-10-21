@@ -1,4 +1,4 @@
-import type { FileViewerState } from "../lib/file-viewer-state";
+import type { FileViewerState } from "../lib/file/file-viewer-state";
 import type { Tab } from "./TabBar";
 
 interface OpenFileTabInput {

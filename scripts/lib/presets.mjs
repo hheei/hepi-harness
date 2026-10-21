@@ -13,9 +13,9 @@
 import { join } from "node:path";
 import { unitTestFiles } from "./discovery.mjs";
 
-/** `pnpm -r typecheck` in the repository root. */
+/** Typecheck every workspace and the root tooling tests. */
 export function typecheckStep(repoRoot) {
-  return { name: "workspace-typecheck", command: "pnpm", args: ["-r", "typecheck"], cwd: repoRoot };
+  return { name: "workspace-typecheck", command: "pnpm", args: ["typecheck"], cwd: repoRoot };
 }
 
 /** `pnpm -r test` in the repository root. */
@@ -23,7 +23,7 @@ export function workspaceTestStep(repoRoot) {
   return { name: "workspace-tests", command: "pnpm", args: ["-r", "test"], cwd: repoRoot };
 }
 
-/** `node --test` over every Web `*.test.mjs`, enumerated explicitly and TAP-reported. */
+/** `node --test` over every Web `*.test.ts`, enumerated explicitly and TAP-reported. */
 export function webUnitStep(repoRoot, files) {
   return {
     name: "web-unit",

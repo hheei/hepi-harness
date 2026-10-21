@@ -1,13 +1,16 @@
 {
   "name": "hepi-harness",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.4.1",
   "scripts": {
+    "typecheck": "pnpm -r typecheck && pnpm typecheck:scripts",
+    "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.test.json",
     "dev": "node scripts/dev.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:entrypoints": "node scripts/check-entrypoints.mjs",
     "test:web:unit": "node scripts/test-web-unit.mjs",
-    "test:scripts": "node --test $(find scripts -name '*.test.mjs' -not -path '*/node_modules/*' | sort)",
+    "test:scripts": "node --test $(find scripts -name '*.test.ts' -not -path '*/node_modules/*' | sort)",
     "verify": "node scripts/verify.mjs",
     "verify:changed": "node scripts/verify.mjs --profile=changed",
     "compare:tests": "node scripts/compare-tests.mjs",
@@ -23,5 +26,9 @@
     "deploy:plan": "node scripts/deploy-plan.mjs",
     "build:client-runtime": "node scripts/build-client-runtime.mjs",
     "ingress:unit": "node scripts/ingress-unit.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
   }
 }

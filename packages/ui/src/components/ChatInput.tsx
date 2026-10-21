@@ -24,9 +24,9 @@ import {
   type ImageFileRejection,
 } from "../lib/image-attachments";
 import { buildEntriesFromFiles, filterFileEntries, type FileIndexEntry } from "@hepi/protocol/files";
-import { buildAtInsertText, extractAtQuery, type AtQueryMatch } from "../lib/file-fuzzy";
+import { buildAtInsertText, extractAtQuery, type AtQueryMatch } from "../lib/file/file-fuzzy";
 import { getMarkdownListContinuation } from "../lib/markdown-list-continuation";
-import { isWorkspaceRoutingPath } from "../lib/project-routing";
+import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
 import { isBareMcpCommand, isBuiltinMcpCommand } from "../lib/mcp-command";
 import { isShellCommandDraft } from "../lib/composer-limits";
 import { FolderIcon, getFileIcon } from "./FileIcons";

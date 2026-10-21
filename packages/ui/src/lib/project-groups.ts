@@ -1,5 +1,5 @@
 import type { SessionInfo } from "./types";
-import { isUnboundCwd } from "./project-routing";
+import { isUnboundCwd } from "@hepi/protocol/files";
 import { workspaceKeyOf } from "./workspace-memory";
 
 export interface RecentProject {

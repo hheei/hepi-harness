@@ -32,9 +32,13 @@ host is named rather than inferred.
 
 ## What a browser cwd is
 
-The browser addresses a workspace as `/workspace/<workspaceId>` and never sees a physical root. One module owns that
-vocabulary (`packages/ui/src/lib/project-routing.ts`), and every surface takes its answer from it rather than parsing a path
-itself:
+The browser addresses a workspace as `/workspace/<workspaceId>` and never sees a physical root. That vocabulary is
+declared in `@hepi/protocol/files` (`packages/protocol/src/files.ts`), because the client ingress reads it as well as the
+workbench: the parser, the cwd sentinel and the predicates over it (`workspaceRoutingLocation`,
+`workspaceIdOfRoutingPath`, `isWorkspaceRoutingPath`, `UNBOUND_CWD`, `isUnboundCwd`). The project rules built on it —
+groups, defaults, roots — stay in `packages/ui/src/lib/project-routing.ts`, and a surface imports the vocabulary from the
+protocol and the project rules from the adapter, so neither is reached through the other. Every surface takes its answer
+from those instead of parsing a path itself:
 
 - **`/workspace/<id>`** is a workspace location. The file tree, the file index, Git and the worktree list exist only
   for one, and the workbench adapter serves only these paths.
@@ -188,48 +192,20 @@ requests keep their existing confinement.
   running and no new conversation, a restart resolving every folder, migration of a real single-folder database
   (fixture written with the old DDL, asserted through this API), an offline host, the configuration error, and two Web
   origins on one backend each using only the host they named.
-- `apps/web/e2e/ux-project-removal.mjs` — the removal and the unlink in a browser, with four recorded projects
-  on a real local gateway and one conversation whose turns a controlled endpoint answers: the Project menu's folder
-  list naming each folder by its own path (never by the routing path it is addressed by), a non-default folder's unlink
-  confirmed with the metadata-only copy and leaving its directory byte-identical, the default folder's unlink asking
-  for the replacement default — the control unavailable until one of the project's other folders is chosen — with the
-  backend then reporting that folder the default, a refusal (the default moved behind the open confirmation) shown in
-  the backend's words with the step unchanged and nothing changed, and a Project's removal: the confirmation naming
-  what goes (hepi metadata) and what stays (the directory, the conversations), the project and its name leaving the
-  sidebar and the target picker with no page reload, the directory untouched, the conversation still listed and still
-  running `bash` in the same folder, and a second window of the same backend showing the removal from its own poll.
-  Run `pnpm --filter @hepi/web build` first.
 - `packages/ui/src/lib/workspace-api.test.mjs` / `workspace-api.http.test.mjs` — the request side of the removal and
   the unlink against a stand-in ingress: an id encoded as a path segment and as a query value, the project list the
   backend's own answer produces, and a refusal reading as the reason the backend gave rather than as a silent success.
 - `apps/server/test/` project and workspace suites — the rules the removal is built on: which folder's removal must
   name a replacement and which takes the project with it, and the replacement default riding the same unlink call.
-- `apps/web/e2e/ux-new-project.mjs` — the whole user path in a browser: New Project, a name, two folders chosen from
-  the host's directories (the same one twice refused), one default among them, the first conversation running `bash`
-  and `read` in that folder with the extra folder refused, the project appearing as one group, a reload, a backend and
-  gateway restart, a gateway-alone restart that still runs that conversation's tools in the same folder, and every
-  new-session affordance binding the default — including after `PATCH` names another folder the default, with the
-  earlier conversation still running where it was. Run `pnpm --filter @hepi/web build` first.
 - `packages/ui/src/lib/project-routing.test.mjs` — every folder of a project resolving to the project's group and default, the
   one parser of the browser's workspace vocabulary (a bare prefix, an empty id and the `/durable` sentinel are no workspace), a
   reported root resolving to its own workspace with a trailing separator and nothing else, and a conversation with no
   execution workspace never becoming a recent project.
-- `apps/web/e2e/ux-workspace-routing.mjs` — the same three processes and a real browser, with the two conversations a
-  deployed system really has (one recorded before any workspace was bound, one bound): the unbound one is still listed
-  and reported as having no workspace, no Project Display Root and no recent-project entry; no workspace surface is asked about
-  its cwd, and its chat still opens; the configured workspace's own root and a trailing-slash form of it validate to
-  `/workspace/<id>`; a legacy `?cwd=<physical root>` URL lands on that workspace's files with no refusal; the worktree
-  answer names the workspace asked about; `POST /api/default-cwd` names the configured workspace; a directory the
-  deployment does not serve — including a path that merely starts like one — is still refused in the same words; and a
-  project created on an ordinary home folder (the reported case) is listed, validated and titled by that folder, with
-  no surface showing the `/workspace/<id>` it is addressed by, its file tooltips included, while the file surface is
-  still asked about the routing path. Run `pnpm --filter @hepi/web build` first.
-- `apps/web/e2e/ux-default-workspace.mjs` — a deployment's own shape in a browser (configured workspace, a recorded
-  Project, one conversation in each): a bare `/` in a fresh context names no project, opens no conversation, never asks
-  for the default directory and shows no project's folder, while both groups and both conversations stay listed;
-  picking the Project in the picker opens it, picking a conversation opens that conversation, and a reload — of the
-  URL and of the tab's own memory — keeps the conversation the user had open. Run `pnpm --filter @hepi/web build`
-  first.
+- Browser journeys that used to cover the project menu, the New Project dialog, workspace routing and the default
+  workspace (`ux-project-removal`, `ux-new-project`, `ux-workspace-routing`, `ux-default-workspace`) started the retired
+  Next build and were deleted with it. The rules they read from the DOM are held above by the backend suites, the
+  client-request suites and `project-routing.test.mjs`; a browser half for these journeys is a recorded coverage gap,
+  not a passing claim.
 - `packages/gateway/test/ssh-workspaces.test.ts` — the SSH workspace surface against a **real localhost `sshd`**
   (its own host key and key pair, pinned known-hosts, ephemeral port): the target list naming the account the host
   reports, a real remote directory listing, a registration that execution, files and installation all serve at once,
@@ -242,7 +218,7 @@ requests keep their existing confinement.
   host (the same relative name resolving to the remote copy while the local one is untouched), a local project beside
   it reading its own file, a bare SSH gateway restart with no new conversation, two profiles on one host each reading
   their own root, a removed remote project whose retained profile id is what puts its root back on that host after the SSH gateway alone restarts, an unlinked remote folder whose retained profile id is what keeps its bound conversation executing there after that same restart, and an unreachable host reported truthfully with no local fallback.
-- `apps/web/e2e/ux-ssh-project.mjs` — the whole remote user path in a browser over the same real `sshd`, with two
+- `apps/web/e2e/workbench-files/ux-ssh-project.mjs` — the whole remote user path in a browser over the same real `sshd`, with two
   configured gateway connections: the dialog offering both remote targets, the account the chosen host reports, the
   remote picker, the recorded profile, `bash`/read running remotely, the group's own new session binding the remote
   default, a bare gateway restart still executing that conversation, the second profile reading its own file, and a

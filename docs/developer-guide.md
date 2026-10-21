@@ -36,26 +36,50 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | `deploy` | 服务端镜像与 Compose | [Container deployment](container-deployment.md) |
 | `docs` | 当前指南、限定 revision/日期的证据、ADR | [索引](README.md) |
 
-### `packages/ui/src`:按功能命名,不按功能分目录
+### `packages/ui/src`:宿主入口、面板与特性模块
 
-`lib` 有 194 个直接子文件、`components` 95 个、`hooks` 23 个,87 个 `*.test.mjs` 与被测文件同目录(`lib` 65、`components` 16、`hooks` 4、`src` 1、`lib/i18n/messages` 1)。同目录测试是刻意的:一个文件可以直接 `node --test` 跑通。
+纯规则、投影与客户端 API 放 `lib`,文件、聊天与 provider 模块各自成簇。测试与被测文件同目录,由包脚本递归枚举;单文件也可直接用 `node --test` 运行。
 
 | 位置 | 放什么 |
 | --- | --- |
 | `src/workbench.tsx`、`src/client.ts`、`src/index.ts`、`src/host-router.tsx` | 挂载、连接与包入口,不进子目录 |
-| `src/components` | React 面板(69 个 `.tsx`);新面板放这里 |
+| `src/components` | React 面板;新面板放这里 |
 | `src/hooks` | 需要 React 生命周期的采集与面板状态 |
-| `src/lib` | 纯规则、投影、客户端 API、面板契约;无 React 的放这里,`lib/i18n` 是唯一子目录 |
+| `src/lib` | 纯规则、投影、客户端 API、面板契约;无 React 的放这里,子目录只有 `lib/file`(文件面)、`lib/chat`(轮次模型与滚动)、`lib/provider`(凭据与登录面板契约)与 `lib/i18n` |
 | `src/styles` | 全局样式 |
 
-在 `lib` 根部按名字找文件时,候选面是 129 个非测试文件,其中前缀已自然成簇:`mcp-` 10、`file-` 8、`session-` 7、`chat-` 5、`provider-` 4、`terminal-` 3、`lifecycle-` 3、`connection-` 3。这些簇**尚未**收进一级特性目录;何时值得收、代价是什么,记在
-[目录导航评审记录](../.scratch/repo-navigation-map/notes.md)。改目录前先按 [review policy](agents/review-policy.md) 判断收益,不要为一致性做全量搬迁。
+`file-`、`chat-`、`provider-` 文件保留名字,收进对应特性目录;`lib/*` 通配 `exports` 与 `@hepi/ui/*` 路径映射继续解析嵌套路径。共享 MCP DTO 与纯导入解析器由 `@hepi/protocol` 导出,面板聚合行为归 Gateway ingress;调用端直接导入所有者,Gateway 不依赖 UI。其余小簇保留现有位置,下一批迁移依据见 [目录导航评审记录](../.scratch/repo-navigation-map/notes.md)。
 
 ### `apps/web/e2e`:共享工作台的验收,不是 Web 包的私有测试
 
-`apps/web/src` 只有 6 个文件(挂载、路由适配、PWA),而 `apps/web/e2e` 有 113 个文件(73 个 `.mjs`、25 个 `*.fixture.tsx`、15 个 `*.fixture.css`);测的行为多数属于 `packages/ui`。`ux-` 前缀是历史标签,今天不区分"ux 与否"。
+`apps/web/src` 是挂载、路由适配与 PWA 的薄宿主;`apps/web/e2e` 的场景多数属于共享 `packages/ui`。`ux-` 前缀是历史标签,今天不区分"ux 与否"。
 
-`apps/web/package.json` 有 68 条脚本,其中 62 条 `test:*`、57 个不同的 e2e 目标,且**没有** `test` 脚本,所以 `pnpm -r test` 到不了这里;Web `*.test.mjs` 由 `pnpm test:web:unit` 覆盖。单个浏览器场景跑对应的 `test:*` 脚本,不要在 `apps/web` 里手写 `next start`。其中一组仍 spawn 工作区已没有的 `next`,属 [CI 记录](ci.md#what-this-workflow-does-not-verify) 里的已知清理项,不计入覆盖;改名或分组前先核对 CI 选中的 driver 与验证 selector。
+目录按主题分组,driver 与它独占的 `.fixture.tsx`/`.fixture.css` 放同一目录:
+
+| 目录 | 覆盖 |
+| --- | --- |
+| `acceptance/` | `acceptance-stack.ts` 共享栈、`acceptance-release.test.ts`、Web+App 客户端验收、provider 连接验收、原生 App 验收 |
+| `chat/` | 转写滚动、子对话恢复、跨会话引用、subtree 控制、token footer |
+| `history/` | 历史 rail、键盘、scope、导航重试、可见 turn、`window-experiment` |
+| `mcp-skills/` | MCP 验收与面板状态、扩展面板、skills 目标与 inventory race、delegate 定义 |
+| `workbench-files/` | 文件面、文件失败、transfer、docx 预览、SSH Project、workbench scope |
+| `terminal/` | terminal 关闭、fan-in、session |
+| `auth-shell/` | capability/trust、可访问性收尾、panel/sidebar ingress、PWA offline、Web logout |
+
+`apps/web/package.json` 的 `test:*` 脚本分别运行命名场景,但**没有** `test` 脚本,所以 `pnpm -r test` 到不了这里;Web `*.test.ts` 由 `pnpm test:web:unit` 覆盖。上一版的 33 个 Next driver 及死脚本已删除,覆盖缺口见 [migration status](migration-status.md#retired-next-browser-drivers-2026-10-21)。
+
+## Test layout and TypeScript
+
+测试统一使用 TypeScript:`*.test.ts` 由 Node test runner 执行,浏览器 driver、测试专用 helper 与进程 fixture 也使用 `.ts`。测试文件纳入 strict 类型检查;`pnpm typecheck` 检查全部 workspace 与根目录工具测试,`pnpm typecheck:scripts` 单独检查后者。
+
+| 范围 | 位置 |
+| --- | --- |
+| 单模块的规则、投影、状态转换 | 与实现同目录,例如 `lib/file/file-save.test.ts` |
+| package 公开契约、跨模块与真实进程集成 | 所属 package 的 `test/` |
+| 浏览器用户旅程 | `apps/web/e2e/<主题>/`,driver 与独占 fixture 同目录 |
+| 工具脚本 | `scripts/*.test.ts`,共享测试 helper 在 `scripts/testing/` |
+
+位置依据验证边界,不依据是否有 I/O。公开契约测试保留在 `test/`;单模块测试随实现一起移动或删除。UI、App、Web、工具测试与完整验收递归枚举 `.test.ts`。Gateway/Backend 的日常脚本保留明确的确定性文件清单,新增或移动测试时同步更新清单;`test:acceptance` 递归覆盖 `src/` 与 `test/`。
 
 ## Client hosts and the shared workbench
 
@@ -72,7 +96,7 @@ App 壳从 OS 凭据库提供 `{profile, origin, token}` 到 `globalThis.__HEPI_
 `useWorkbenchConnection()` 抛错。新面板放 `components`,纯规则放 `lib`,宿主事实才进 `WorkbenchHostConfig`。
 
 **检查:** `pnpm --filter @hepi/ui test`、`pnpm test:web:unit`、`pnpm --filter @hepi/web typecheck`;
-浏览器场景见 `apps/web/e2e/ux-workbench-scope.mjs`。
+浏览器场景见 `apps/web/e2e/workbench-files/ux-workbench-scope.ts`。
 
 ## The connection client
 
@@ -82,8 +106,8 @@ App 壳从 OS 凭据库提供 `{profile, origin, token}` 到 `globalThis.__HEPI_
 `dispose()` 中止请求、关闭 stream、释放资源与图片 lease;后续请求和晚到响应都按 connection closed 处理。
 
 命名请求加在 `lib/conversation-api.ts` 或对应 `lib/*-api.ts`;组件不自行 `fetch`,共享层不拼相对 URL。
-SSE reader 归 `packages/session`。**检查:** `src/client.test.mjs`、`lib/conversation-api.http.test.mjs`、
-`lib/workspace-api.http.test.mjs`。
+SSE reader 归 `packages/session`。**检查:** `src/client.test.ts`、`lib/conversation-api.http.test.ts`、
+`lib/workspace-api.http.test.ts`。
 
 ## Client ingress: identity and routing
 
@@ -155,8 +179,8 @@ timeout/aborted/明确拒绝保留各自名字。文件写无 call ID/journal,�
 这不承诺 exactly-once 分布式执行,见 [Execution](architecture.md#execution)。
 
 新帧按 protocol → Backend 投影 → session 折叠 → UI 改;恢复语义归 durable seam。
-**检查:** server 的 `durable-submissions/delta-frames/frame-size/conversation-heartbeat`;Web 的
-`test:submission-recovery`、`test:stream-heartbeat-idle`。
+**检查:** server 的 `durable-submissions/delta-frames/frame-size/conversation-heartbeat`、`acceptance-recovery`;Web 的
+`useAgentSession.lifecycle` 与 `lifecycle-projection`。曾覆盖同一路径的 `test:submission-recovery` 浏览器驱动依赖已退役的 Next 构建,已删除。
 
 ## History: bounded window, outline, fork, compaction
 
@@ -182,7 +206,7 @@ malformed / cancelled / deferred-busy / error。Fork 走同一 spawn 接缝,继�
 身份关系。Compaction/reset 移动 head 时,客户端按 `historyHead` 结束旧窗口。
 
 **检查:** server 的 `history-window/conversation-navigation/conversation-read/conversation-fork-source.test.ts`;
-Web 的 `test:history-rail`、`test:navigation-retry`、`test:windowed-transcript`。
+Web 的 `test:history-rail`、`test:navigation-retry`、`test:visible-turns`、`test:history-scope`（`test:windowed-transcript` 已随 Next 驱动删除）。
 
 ## Files: streaming, limits, save
 
@@ -194,7 +218,7 @@ Web 的 `test:history-rail`、`test:navigation-retry`、`test:windowed-transcrip
 | 上传批次 | 100 MiB 合计;`multipart.ts:MAX_UPLOAD_BATCH_BYTES`,ingress `uploadBatchBytes` 可覆盖 |
 | 文本预览 | 本地/SSH 均 200 KiB;`workbench/app-store-files.ts`、`workbench/ssh-files.ts` |
 | 图片 / DOCX 预览 | 各 10 MiB;`packages/protocol/src/files.ts` |
-| App 保存 IPC slice | 1 MiB;`packages/ui/src/lib/file-save.ts:SAVE_CHUNK_BYTES` |
+| App 保存 IPC slice | 1 MiB;`packages/ui/src/lib/file/file-save.ts:SAVE_CHUNK_BYTES` |
 
 协议的 `TEXT_PREVIEW_MAX_BYTES=256 KiB` 仅格式常量,不参与执行。`readUploadParts` 用 busboy 流式转发,
 `totalBytes` 同样限制 chunked body;冲突策略 error/overwrite/skip 在写前检查。超界先拒绝再 `drainRequest`,
@@ -261,10 +285,10 @@ maskedHint;写操作不回明文。
 **ADR 0008 分歧仍存在:**接受的决策把 provider auth 放在 Backend,交付树由 host Gateway 执行;Backend 只读
 自己配置的账号。Web 主机登录不自动配置另一台 Backend。正文是目标,同文件 2026-10-20 实现注记是现状,
 见 [ADR 0008](adr/0008-gateway-as-capability-broker.md)。模型改 Backend,凭据改 gateway,面板改
-`lib/provider-auth.ts/components/EnabledModelsSection.tsx`。
+`lib/provider/provider-auth.ts/components/EnabledModelsSection.tsx`。
 
 **检查:** server 的 `provider-{config,availability}.test.ts`、`models-config.test.ts`;gateway 的
-`provider-credential-store.test.ts`;UI 的 `provider-auth.test.mjs`;Web 的 `test:provider-acceptance`、
+`provider-credential-store.test.ts`;UI 的 `provider-auth.test.ts`;Web 的 `test:provider-acceptance`、
 `test:models-config`。配置见 [Providers](providers.md),付费 smoke 见 [Verification](verification.md)。
 
 ## Gateway host client and execution
@@ -291,7 +315,7 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 
 | 改动 | 落点 | 验证 |
 | --- | --- | --- |
-| 客户端 API | Backend `server.ts` + UI `lib/*-api.ts` | `*.http.test.mjs` |
+| 客户端 API | Backend `server.ts` + UI `lib/*-api.ts` | `*.http.test.ts` |
 | 本机能力 | gateway capability + ingress surface 或 Backend relay | `host-*.test.ts`、boundary test |
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |

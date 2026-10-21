@@ -4,8 +4,11 @@ Ticket 07 selected file browsing, text preview, Git changed-file status and diff
 `packages/ui` is the one surface for both entries: the Web page and the desktop App reach the ingress, which forwards to
 the backend's authenticated `/api/workbench`, and the backend forwards to the configured gateway's authenticated
 `/v1/workbench`. Gateway credentials and workspace root paths never reach the browser, there is no browser filesystem
-access and there is no second agent runtime. (`apps/server` still serves its own authenticated **Diagnostic Page** at
-`/workbench`; it is read-only and not a client entry.)
+access and there is no second agent runtime. (`apps/server` still serves its own **Diagnostic Pages** — `/diagnostics`
+for durable chat and `/workbench` for files; neither is a client entry. Both are static asset pairs under
+`apps/server/public/`: `diagnostics.html` with the `diagnostics.js` that `pnpm build:ui` bundles from
+`apps/server/src/browser-diagnostics.ts`, and `workbench.html` with `workbench.js`, which no build generates, so editing
+it is editing the served script.)
 
 The read-only workbench serves both kinds of gateway. `startGateway` mounts one `GatewayWorkbench` either way — over this machine's registry for a local gateway, and over the SSH registry for a remote profile — so the same `POST /v1/workbench` protocol, the same path rules and the same DTOs answer for an SSH-backed `/workspace/<id>`. Only the host differs: on an SSH gateway a preview is a bounded read through the `SshFilesystem` session the file routes already use, a listing walks the host's own directories through the same session, and the changed files and the diff run the same git argv through the `SshRunner` the worktree surface already uses. SSH auth and host-key material stay in the profile the gateway started with, so neither the backend nor the browser receives a credential or constructs a command. See [the SSH workbench](#the-ssh-workbench). No terminal state is added to durable conversation transcripts.
 
@@ -88,7 +91,7 @@ The browser reaches the same capability through the Web adapter's `GET`/`POST`/`
 
 The picker itself is the copied `ProjectWorktreePicker`, wired: the list marks the main checkout from the host's own answer, a create adds the checkout without a page reload and moves the composer into it, a dirty removal becomes the menu's own question with `Force` as a separate action, and a host that cannot serve worktrees shows a named limit where the list would be while the project box keeps working. A checkout whose directory is gone falls back to the project root instead of breaking the list.
 
-Verification: `apps/server/test/worktree-picker.test.ts` (the backend's own route over a real repository and a real store: list, create, the recorded folder and the conversation that runs inside the created checkout, a bad create that leaves the list unchanged, the dirty refusal with its 409 and its `dirty` marker, the forced removal with its retained binding, a vanished checkout, an unregistered workspace, the default-folder refusal, and a gateway composed without the worktree surface answering `not_supported`), `packages/ui/src/lib/workspace-api.test.mjs` (the picker's request and answer shapes, the workspace a cwd names, and the home/default derivation behind the picker), and `apps/web/e2e/ux-worktree-picker.mjs` (`pnpm --filter @hepi/web test:worktree-picker`; the production build, the real backend, a real gateway and a real git repository in a headless browser, with every wait an observable UI, request, filesystem or stored-state change).
+Verification: `apps/server/test/worktree-picker.test.ts` (the backend's own route over a real repository and a real store: list, create, the recorded folder and the conversation that runs inside the created checkout, a bad create that leaves the list unchanged, the dirty refusal with its 409 and its `dirty` marker, the forced removal with its retained binding, a vanished checkout, an unregistered workspace, the default-folder refusal, and a gateway composed without the worktree surface answering `not_supported`), `packages/ui/src/lib/workspace-api.test.ts` (the picker's request and answer shapes, the workspace a cwd names, and the home/default derivation behind the picker). The browser journey that drove the picker end to end (`ux-worktree-picker`) depended on the retired Next build and has since been deleted, so the picker's rendering is covered by the host's own build rather than a browser driver.
 
 The React UI speaks one file vocabulary, and one implementation answers it: `packages/gateway/src/files-surface.ts`
 (exported as `createFileSurface`), whose rules are declared in `packages/protocol/src/files.ts`. The **client ingress**
@@ -106,7 +109,7 @@ on the browser path.
 | download link, binary preview | `GET /api/files/<routing path>?type=download` or `?type=read` | the host's own byte payload route |
 
 On the browser's side every one of those requests is made by one named seam on the connection,
-`packages/ui/src/lib/file-seam.ts`: the explorer, the viewer, the composer's `@` menu, a dropped upload and a markdown
+`packages/ui/src/lib/file/file-seam.ts`: the explorer, the viewer, the composer's `@` menu, a dropped upload and a markdown
 image all ask it, and none of them assembles an address. That is what makes the same tree work in two hosts — a Web page
 is served from the origin it calls, so its relative path and its httpOnly cookie are enough, while an App's document is
 a bundle on `tauri://localhost`, where a relative `/api/files/…` asks the shell for a file it does not serve and no
@@ -168,7 +171,7 @@ The destination is fixed when the save starts: the connection, the routing path 
 the call, so a view that switches file, workspace or connection cannot redirect bytes that are already moving. Closing
 the connection ends the read, which the save reports as a cancellation and cleans up as one.
 
-The seams are `packages/ui/src/lib/file-save.ts` (the read-slice-write loop and `savePathOf`, the one decision about
+The seams are `packages/ui/src/lib/file/file-save.ts` (the read-slice-write loop and `savePathOf`, the one decision about
 which path a host has), `packages/ui/src/components/FileSaveControl.tsx` (the control the viewer and the explorer
 both render), `apps/app/src/save-host.ts` (the App's half of the IPC contract) and `apps/app/src-tauri/src/save.rs`
 (the shell's file handling and its tests).
@@ -278,7 +281,7 @@ bounded reader on its own), `packages/gateway/test/file-transfer.test.ts` and
 SSH host, down to the frames it was handed), `apps/server/test/file-relay.test.ts` (the backend relay: the binding a
 routing cwd resolves to, the streamed body, the host's own refusal, and the caller's connection cancelling the host
 request), `apps/server/test/files-transfer.test.ts` (the same routes end to end through a real gateway and the real
-workspace filesystem), and `packages/ui/src/lib/file-upload-client.test.mjs` (the upload and conflict shapes the
+workspace filesystem), and `packages/ui/src/lib/file/file-upload-client.test.ts` (the upload and conflict shapes the
 explorer and viewer read, through the shared client).
 
 The whole path is driven in a real browser against the **client ingress** by
@@ -289,7 +292,7 @@ saves the whole file under its own name, and the named `501` — all through a r
 workspace. (The browser components' own rendering is `ux-workbench-scope.mjs`'s.)
 
 What a person reads when a file surface fails is `pnpm --filter @hepi/web test:file-failures`
-(`apps/web/e2e/ux-file-failures.mjs`): four workspaces mounted side by side in the real `FileExplorer` and `FileViewer`
+(`apps/web/e2e/workbench-files/ux-file-failures.ts`): four workspaces mounted side by side in the real `FileExplorer` and `FileViewer`
 — one that answers, a read that failed, a host that could not be reached, and a gateway composed without the workbench —
 each answered with the body the real surface writes for that cause, plus two `FileViewer` cases of the file's own
 lifetime and bound: a read answered `404 not_found` (a file deleted after the listing was read) and a preview that is
@@ -359,7 +362,7 @@ under the 10 MiB preview bound is answerable on a local and an SSH workspace ali
 The **packaged App reads documents too**, and there is no App-side gap to wait for: `apps/app` builds the same
 `@hepi/ui` workbench, whose graph reaches the viewer through `workbench` -> `components/AppShell` ->
 `components/FileViewer`, and `mammoth` is therefore declared by `packages/ui` — the package that imports it — in
-`dependencies`, not by a host that merely builds it. `apps/app/test/docx-preview-bundle.test.mjs` asserts *which*
+`dependencies`, not by a host that merely builds it. `apps/app/test/docx-preview-bundle.test.ts` asserts *which*
 reader the App's bundle gets, using the App's own tsconfig and `platform: browser`: `mammoth/browser/*` is a
 metafile input and neither `lib/unzip.js` nor `lib/docx/files.js` is, because the Node pair reaches for `Buffer` and
 a webview has none. Which browser field the bundler resolves is the whole question, so no Rust shell and no `.deb`
@@ -371,31 +374,31 @@ comments and mammoth's browser build has neither, and `thirdPartyNoticesPlugin()
 (`packages/ui/src/lib/third-party-notices.ts`) copies it from `closeBundle` into each host's `build.outDir` —
 `apps/web/dist`, which the client ingress serves, and `apps/app/dist`, which the Tauri shell embeds through
 `build.frontendDist`. `closeBundle` is the hook that runs after Vite has emptied the directory, so the copy survives
-`emptyOutDir` instead of being one of the files it deletes. `packages/ui/src/lib/third-party-notices.test.mjs` reads
+`emptyOutDir` instead of being one of the files it deletes. `packages/ui/src/lib/third-party-notices.test.ts` reads
 the installed package's own `LICENSE` and asserts the notice, the copy, and that no host keeps a second copy that can
 drift from it.
 
-Verification — `packages/ui/src/lib/docx-preview.test.mjs` (16 tests: the bound read from a `content-length`
+Verification — `packages/ui/src/lib/docx-preview.test.ts` (16 tests: the bound read from a `content-length`
 without touching the body, a body that overruns its own claim abandoned **at** the bound with the stream closed,
 an abandoned preview cancelling its reader, a caller that was already gone asking for nothing, the composed abort
 reaching the request and both owners' signals being honoured, an abort during headers read as the caller's stop and
 not as a transport failure, a read parked on a host that stopped sending being closed by the abort rather than
 waiting for the next chunk, no abort listener outliving the read it was for, a transport that
 stops mid-document as a refusal rather than a truncated preview, the surface's own refusal kept as words, bytes
-inside the bound handed over whole, and the paragraph split); `packages/ui/src/hooks/useDocxPreview.test.mjs` (3
+inside the bound handed over whole, and the paragraph split); `packages/ui/src/hooks/useDocxPreview.test.ts` (3
 tests against the real call site: unmounting the viewer aborts the request it issued and closes the stalled read,
 switching documents stops the one that left the screen without aborting the new one, a StrictMode replay leaves one
-live read, and `mammoth` is never imported for an abandoned preview); `packages/ui/src/lib/i18n/messages/locale-keys.test.mjs`
+live read, and `mammoth` is never imported for an abandoned preview); `packages/ui/src/lib/i18n/messages/locale-keys.test.ts`
 (3 tests: every key a component translates exists in all three locales, the locales match English's key and
 required-placeholder sets, and the four docx keys name their `{max}` bound in each locale);
 `packages/gateway/test/files-surface.test.ts` (a `.docx` read goes to the byte route and never to `/api/workbench`,
 and its `meta` answer keeps `previewKind: "docx"`, which is what the viewer reads before deciding to fetch); and
 `packages/gateway/test/ingress-ssh-workbench.test.ts` (one real archive, the same bytes and MIME on a local and an
 SSH workspace, and a `Range` answered `206`). That the **App**'s bundle reaches the *browser* reader rather than the
-Node one is `apps/app/test/docx-preview-bundle.test.mjs` (2 checks: the App's own tsconfig at
+Node one is `apps/app/test/docx-preview-bundle.test.ts` (2 checks: the App's own tsconfig at
 `platform: browser`, `mammoth/browser/*` among the metafile inputs, no `lib/unzip.js`, no `lib/docx/files.js`, no Node
 builtin in the output). What only a browser can show is
-`apps/web/e2e/ux-docx-preview.mjs` — 15 checks in Chromium (`pnpm --filter @hepi/web test:docx-preview`): the
+`apps/web/e2e/workbench-files/ux-docx-preview.ts` — 15 checks in Chromium (`pnpm --filter @hepi/web test:docx-preview`): the
 document's three paragraphs as three blocks on a cookie connection and on the App's bearer connection, every
 request presenting its own credential, a paragraph containing `<script>window.__pwned = 1</script>` arriving as
 words with zero frames, zero script elements and the assignment never run, an over-bound document stating its limit

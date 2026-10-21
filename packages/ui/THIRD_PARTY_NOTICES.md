@@ -37,5 +37,5 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF S
 
 The upstream `LICENSE` text is reproduced above from the installed package (`node_modules/.pnpm/mammoth@1.13.0`);
 `docs/upstream-sources.md` records the pin and the license reading, and
-`packages/ui/src/lib/third-party-notices.test.mjs` asserts this file against the installed package's own `LICENSE` and
+`packages/ui/src/lib/third-party-notices.test.ts` asserts this file against the installed package's own `LICENSE` and
 version, that each host's build copies it into its output directory, and that no host keeps a second copy of it.

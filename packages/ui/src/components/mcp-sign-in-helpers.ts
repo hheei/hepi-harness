@@ -6,7 +6,7 @@ import type {
   McpSignInFailure,
   McpSignInFlowInfo,
   McpSignInPhase,
-} from "../lib/api-types";
+} from "@hepi/protocol/mcp-ui";
 import {
   mcpTestBlock,
   mcpWriteBlock,

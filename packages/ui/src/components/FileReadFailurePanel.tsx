@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "../hooks/useI18n";
-import { fileReadFailureKey, fileReadFailureRetryable, type FileReadFailure } from "../lib/file-read-failure";
+import { fileReadFailureKey, fileReadFailureRetryable, type FileReadFailure } from "../lib/file/file-read-failure";
 
 /**
  * What the file viewer shows when its read did not answer.

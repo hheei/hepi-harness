@@ -11,14 +11,11 @@
     "./components/*": "./src/components/*",
     "./hooks/*": "./src/hooks/*",
     "./lib/*": "./src/lib/*",
-    "./lib/mcp-panel": "./src/lib/mcp-panel.ts",
-    "./lib/mcp-import": "./src/lib/mcp-import.ts",
-    "./lib/project-routing": "./src/lib/project-routing.ts",
     "./lib/third-party-notices": "./src/lib/third-party-notices.ts",
     "./styles/*": "./src/styles/*"
   },
   "scripts": {
-    "test": "node --test $(find src -name '*.test.mjs' | sort)",
+    "test": "node --test $(find src -name '*.test.ts' | sort)",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

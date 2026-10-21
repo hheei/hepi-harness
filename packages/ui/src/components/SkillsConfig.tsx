@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useI18n } from "../hooks/useI18n";
-import type { ProjectTrustStatus } from "../lib/api-types";
+import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
 import { displayPathWithin, shortenPath } from "../lib/display-path";
 import {
   getLastSettingsSelection,

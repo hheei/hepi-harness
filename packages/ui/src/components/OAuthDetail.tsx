@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProviderLoginInfo } from "@hepi/protocol/gateway";
 import { capabilityNoticeKey, useCapabilityServed } from "../lib/capability-availability";
 import { useApiRequest } from "../lib/api-request";
-import { providerAuthNotice, type ProviderAuthNotice, type ProviderPanelRow } from "../lib/provider-auth";
+import { providerAuthNotice, type ProviderAuthNotice, type ProviderPanelRow } from "../lib/provider/provider-auth";
 import {
   PROVIDER_LOGIN_POLL_INTERVAL_MS,
   providerAnswerBody,
@@ -15,8 +15,8 @@ import {
   providerSignOutRoute,
   readProviderFlow,
   type ProviderFlowOutcome,
-} from "../lib/provider-login";
-import { providerFlowView } from "../lib/provider-flow-view";
+} from "../lib/provider/provider-login";
+import { providerFlowView } from "../lib/provider/provider-flow-view";
 import { useI18n } from "../hooks/useI18n";
 import { EnabledModelsSection, type EnabledModelsController } from "./EnabledModelsSection";
 import {

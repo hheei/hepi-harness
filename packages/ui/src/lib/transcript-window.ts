@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { TurnDescription } from "./chat-turn-model";
+import type { TurnDescription } from "./chat/chat-turn-model";
 
 /**
  * The transcript's window: which turns are mounted, and how their heights are kept true.

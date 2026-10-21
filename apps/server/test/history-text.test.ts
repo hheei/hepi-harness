@@ -212,7 +212,7 @@ test("an accepted 0.5 MiB paste stays readable: the frame is carried, the previe
   assert.ok(block.text.length <= TEXT_PREVIEW_CHARS, "the preview is bounded: " + block.text.length);
   assert.equal(pasted.startsWith(block.text), true, "the preview is the leading text, verbatim");
   assert.equal(JSON.stringify(state).includes(sentinel), false, "the full text does not ride the frame");
-  // The compatible field the CLI and the diagnostic chat read states the same thing as the message beside it.
+  // The compatible field the CLI and the Diagnostic Page read states the same thing as the message beside it.
   assert.equal((large as unknown as { text: string }).text, block.text, "the entry's own text is the same projection as its message");
 
   // The read block restores exactly what the preview replaced.

@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useMemo, type ComponentProps, type MouseEvent } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
-import { parsePdfPageFragment, resolveLocalFileHref, shouldOpenLocalFileInApp } from "../lib/file-links";
-import { fileApiPath } from "../lib/file-paths";
+import { parsePdfPageFragment, resolveLocalFileHref, shouldOpenLocalFileInApp } from "../lib/file/file-links";
+import { fileApiPath } from "../lib/file/file-paths";
 import { useFileBytes } from "../hooks/useFileBytes";
 import { useOptionalWorkbenchConnection } from "../lib/workbench-scope";
 import { markdownRehypePlugins, markdownRemarkPlugins, markdownUrlTransform, markdownUserRemarkPlugins, normalizeDisplayMath } from "../lib/markdown";

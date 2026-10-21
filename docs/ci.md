@@ -28,7 +28,7 @@ reads a secret.
 
 ### `test` — the ordinary gate
 
-`pnpm -r typecheck`, `pnpm -r test`, then the `@hepi/web`, `@hepi/app` and `@hepi/client` builds.
+`pnpm typecheck`, `pnpm -r test`, then the `@hepi/web`, `@hepi/app` and `@hepi/client` builds.
 
 **Prerequisite:** OpenSSH server and `bubblewrap`. The gateway's shared SSH fixture runs a real `sshd` inside a `bwrap`
 pid namespace (`packages/gateway/test/sshd-fixture.ts`). `HEPI_REQUIRE_SSH_SMOKE=1` makes a missing binary a failure
@@ -51,10 +51,10 @@ read from the step's own log.
 
 | Driver | The contract it protects |
 | --- | --- |
-| `ux-chat-scroll.mjs` | the transcript scrolls inside the page: the Tailwind utilities `packages/ui` emits are really in the built stylesheet, and the measured page bounds them |
-| `ux-references-acceptance.mjs` | cross-session references over the real routes: create, follow, fork, refuse, remove, and a named limit during a real Backend outage and restart |
-| `ux-mcp-acceptance.mjs` | MCP on the Web host through the ingress's own gateway: import, listing, invocation, and the SSH host's own named limit |
-| `ux-provider-connection-acceptance.mjs` | provider connection states without a real provider: absent, refused, stored, revoked, each surfaced honestly, no credential in a console or log |
+| `chat/ux-chat-scroll.ts` | the transcript scrolls inside the page: the Tailwind utilities `packages/ui` emits are really in the built stylesheet, and the measured page bounds them |
+| `chat/ux-references-acceptance.ts` | cross-session references over the real routes: create, follow, fork, refuse, remove, and a named limit during a real Backend outage and restart |
+| `mcp-skills/ux-mcp-acceptance.ts` | MCP on the Web host through the ingress's own gateway: import, listing, invocation, and the SSH host's own named limit |
+| `acceptance/ux-provider-connection-acceptance.ts` | provider connection states without a real provider: absent, refused, stored, revoked, each surfaced honestly, no credential in a console or log |
 
 Each runs over the real shape — `apps/web/dist` served by the real client ingress on the same origin as `/api`, the real
 Backend over SQLite files the run created, a real execution gateway, and one controlled completions endpoint in place of
@@ -120,8 +120,8 @@ from commands a real shell session runs, so nothing in this job can read or writ
 
 | Not in CI | Why | Where it is verified |
 | --- | --- | --- |
-| The desktop journey (`ux-native-acceptance.mjs`) and the offline-package journeys (`verify-artifacts.mjs`, `offline-install.mjs`) | no desktop session is provisioned: no window manager, no GTK/WebKit display, no Secret Service bus, no `dpkg` install root. Both journeys already run under their own private session bus and isolated keyring (`scripts/lib/credential-sandbox.mjs`) — the missing thing is the host shape, not the isolation | developer host: those two commands. `verify-artifacts.mjs` accepts any packaged artifact, including a debug build. Native functional measurements are recorded in [apps/app README](../apps/app/README.md) |
-| The rest of `apps/web/e2e` | only the four drivers above are selected. The other files are still in the tree and are **pending cleanup, not retired**: 34 of the 69 `.mjs` files start a `next` binary the workspace no longer has, so they fail on invocation | CI, four drivers; the unselected set is a known cleanup item recorded here rather than counted as coverage |
+| The desktop journey (`ux-native-acceptance.ts`) and the offline-package journeys (`verify-artifacts.mjs`, `offline-install.mjs`) | no desktop session is provisioned: no window manager, no GTK/WebKit display, no Secret Service bus, no `dpkg` install root. Both journeys already run under their own private session bus and isolated keyring (`scripts/lib/credential-sandbox.mjs`) — the missing thing is the host shape, not the isolation | developer host: those two commands. `verify-artifacts.mjs` accepts any packaged artifact, including a debug build. Native functional measurements are recorded in [apps/app README](../apps/app/README.md) |
+| The rest of `apps/web/e2e` | only the four drivers above are selected; the other live drivers need a browser plus a build of their own and are run from a developer host. The suite is grouped by theme (`acceptance/`, `chat/`, `history/`, `mcp-skills/`, `workbench-files/`, `terminal/`, `auth-shell/`), and the obsolete Next-dependent drivers were deleted with their dead scripts — their history stays in [verification](verification.md) | the four drivers here; the rest per [developer guide](developer-guide.md#appswebe2e-web) |
 | A real provider, a paid model, a remote host, or a login flow | CI sends no turn to a provider and holds no provider account. Each driver's own fixture stands in; `containers` mints its own throwaway token | n/a — deliberately not a CI concern |
 | That this workflow runs on GitHub's runners | GitHub-hosted execution was not available from this repository's development environment | [Running this locally](#running-this-locally) |
 
@@ -133,7 +133,10 @@ HEPI_REQUIRE_SSH_SMOKE=1 pnpm -r typecheck && HEPI_REQUIRE_SSH_SMOKE=1 pnpm -r t
 pnpm --filter @hepi/web build && pnpm --filter @hepi/app build && pnpm --filter @hepi/client build
 pnpm test:scripts && pnpm check:entrypoints && pnpm check:docs && pnpm test:web:unit
 pnpm --filter @hepi/web exec playwright install --with-deps chromium
-mkdir -p .dev/e2e && node apps/web/e2e/ux-chat-scroll.mjs 2>&1 | tee .dev/e2e/chat-scroll.log
+mkdir -p .dev/e2e && node apps/web/e2e/chat/ux-chat-scroll.ts 2>&1 | tee .dev/e2e/chat-scroll.log
+node apps/web/e2e/chat/ux-references-acceptance.ts 2>&1 | tee .dev/e2e/references-acceptance.log
+node apps/web/e2e/mcp-skills/ux-mcp-acceptance.ts 2>&1 | tee .dev/e2e/mcp-acceptance.log
+node apps/web/e2e/acceptance/ux-provider-connection-acceptance.ts 2>&1 | tee .dev/e2e/provider-connection.log
 HEPI_REQUIRE_SSH_SMOKE=1 pnpm --filter @hepi/client smoke:pack
 bash deploy/docker/smoke.sh
 pnpm --filter @hepi/app build && eval "$(node apps/app/scripts/cargo-build.mjs --profile=debug)" \

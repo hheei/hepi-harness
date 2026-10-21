@@ -1,4 +1,4 @@
-import type { McpConfigFieldRef, McpConfigFileProblem, McpServerInfo, McpVariableReference } from "./api-types";
+import type { McpConfigFieldRef, McpConfigFileProblem, McpServerInfo, McpVariableReference } from "@hepi/protocol/mcp-ui";
 
 // Display helpers for MCP server descriptions (`McpServerInfo`), shared by the
 // trust dialog and Settings › MCP. Client-safe: types only, no Node imports.

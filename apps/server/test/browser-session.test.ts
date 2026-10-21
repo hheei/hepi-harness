@@ -42,7 +42,7 @@ test("pi-web connection adapter consumes real authenticated durable state and re
     clients.push(reconnected);
     await reconnected.connect();
     assert.deepEqual(reconnected.session.state.entries, final.entries);
-    assert.equal((await fetch(origin + "/")).status, 200);
+    assert.equal((await fetch(origin + "/diagnostics")).status, 200);
     assert.equal((await fetch(origin + "/api/conversations")).status, 401);
   } finally {
     for (const client of clients) client.close();

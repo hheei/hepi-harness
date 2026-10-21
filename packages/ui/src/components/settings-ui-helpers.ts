@@ -1,4 +1,4 @@
-import type { ProjectTrustStatus } from "../lib/api-types";
+import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
 
 /**
  * The rows a group switch would change: those not already in the requested

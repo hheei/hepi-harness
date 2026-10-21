@@ -23,6 +23,40 @@ subagent tasks. The default graph is an AST index; the separate deep graph adds 
 Dynamic dispatch, inferred relationships and cross-service contracts still require source/guide confirmation. The linked graphify skill remains
 unavailable to the harness loader outside its resource root; use repository instructions/CLI or parent-supplied results.
 
+## Retired Next browser drivers (2026-10-21)
+
+The E2E directory regrouping deletes 33 `.mjs` drivers that directly require the removed Next binary or
+`.next/BUILD_ID`, their dead package scripts, and the deferred-text driver's exclusive fixture. The surviving
+drivers live in the theme directories listed in the [developer guide](developer-guide.md#directory-map). Historical
+results keep their original revision and paths in [verification](verification.md).
+
+Retirement repairs the executable test surface; it does not establish browser parity. Existing owner tests and
+current drivers protect narrower seams:
+
+| Retired journeys | Current verification seam | Remaining browser gap |
+| --- | --- | --- |
+| Submission stalls, pending controls, missing-model recovery, image submission | Backend submission, pending-item, missing-model and image suites; client acceptance covers its own submit/reload journey | The complete retired recovery and image-submission browser scenes have not been ported |
+| Session rename/delete/search/auto-name/fork, navigation and shared sidebar state | Backend session/catalogue/sidebar suites; current sidebar-ingress fixture | No replacement claim for each retired end-to-end catalogue action |
+| Default workspace, project creation/removal, routing and worktree picker | Existing workspace/project API and UI rule tests; SSH-project and workbench-scope drivers | Current drivers do not replace every local project/picker journey |
+| Agent definitions, extension selection, model-config save and the old MCP surface | Backend settings suites; current MCP and extensions-panel drivers | Agent-definition and model-save end-to-end journeys remain unported |
+| Foreground/background lifecycle, heartbeat, truthfulness and terminal budget | Lifecycle/completion projections, Backend heartbeat and Gateway stream-budget tests; current terminal drivers | The retired audio/watch-budget and exact terminal-budget browser scenarios remain uncovered at that seam |
+| History prefix, child raw-history fork, windowed transcript and deferred text | Backend history/read suites; current history-navigation, visible-turns and raw-history fixtures | No claim that the full retired scaling, deferred-content or child-fork scenarios were re-run |
+| Subagent delegation and the old system acceptance | Backend delegation suites; current child-recovery, subtree-control and client/provider/native acceptance drivers | Each current driver verifies only its named scope; there is no blanket replacement for the retired system journey |
+
+Reopen an individual gap when its browser contract changes or a user prioritizes it; port that journey to the
+current ingress/Backend stack rather than restoring a Next launcher.
+
+## TypeScript test migration (2026-10-21)
+
+Active unit suites use `.test.ts`; Web browser drivers, test-only helpers, MCP process fixtures and Backend
+performance probes also use `.ts`. Test discovery, package scripts and CI point at these files. Tests participate in
+strict typechecking; the root `pnpm typecheck` covers workspace tests and tooling tests. Module tests stay beside
+their implementation, package-contract/integration suites stay under their owner's `test/`, and browser journeys
+stay under the themed E2E directories. See the [test convention](developer-guide.md#test-layout-and-typescript).
+
+Earlier revision-bound records below and in [verification](verification.md) retain the filenames their commands
+actually used. Changing the test language adds no replacement browser journey for the retired-driver gaps above.
+
 ## Verified replacements
 
 Image submission and history display now have **21/21 passing browser checks**, including fresh-browser and backend
@@ -488,9 +522,9 @@ SSH profile) and then resolved by the host's own registry, so a workspace bound 
 host is asked and one that host does not serve is refused there (`unknown-workspace` → 403 `cwd-denied`); absent
 configuration answers 503 `mcp_unavailable` naming the three variables. The cookie's same-origin write guard applies to
 a Web session only, so an App's declared origin writes with its own bearer, and a revocation or a client disconnect
-aborts the host's own operation rather than letting it finish. The panel aggregate is declared once
-(`packages/ui/src/lib/mcp-panel.ts`) and both entries answer it; the panel and the trust dialog ask through the
-connection's client, so the App reaches the client API on its own origin. See
+aborts the host's own operation rather than letting it finish. The panel's answer shapes are declared once in
+`@hepi/protocol/mcp-ui` and composed once, by `packages/gateway/src/ingress/mcp-panel.ts`; the panel and the trust
+dialog ask through the connection's client, so the App reaches the client API on its own origin. See
 [client ingress](client-ingress.md#host-local-mcp-and-project-trust).
 
 MCP trust is read-only on the Web origin, host and browser alike. `GET /api/project-trust` reads the host's own
@@ -579,7 +613,7 @@ names to that exact list (and only to an exact list — an unset or `{ remove }`
 `reportedSelection` applies `tools` before `modelTools` in the runtime's own order, so a restricted conversation's
 reported offer and the offer a call meets cannot disagree.
 
-**The whole journey, observed (05).** One browser journey — `apps/web/e2e/ux-mcp-acceptance.mjs` (58 checks) against
+**The whole journey, observed (05).** One browser journey — `apps/web/e2e/mcp-skills/ux-mcp-acceptance.mjs` (58 checks) against
 the deployed shape — runs add/test → list → explicit selection → a real model invocation whose answer is in the
 transcript, then disabled, changed-schema, offline, restart, cancellation, fork and untrusted-project states, and an SSH
 gateway stating its own `mcp_unavailable` limit to the MCP route. It found two material browser defects, both fixed here:
@@ -672,11 +706,11 @@ Still open: the remaining Settings/provider surfaces that answer 501 (the MCP ca
 browser alike; see the capability-integration section). Provider listing and API-key set/remove are a gateway host
 operation — `POST /v1/providers/auth` on the local gateway — and the browser relay is now ticket 02 delivered:
 the client ingress answers `/api/auth/providers` and `/api/auth/api-key/:id` over that same configured host service, and
-Settings › Models reads and writes it through `packages/ui/src/lib/provider-auth.ts`. Ticket 03 is delivered too: the
+Settings › Models reads and writes it through `packages/ui/src/lib/provider/provider-auth.ts`. Ticket 03 is delivered too: the
 pi-ai device, manual and copy-code flows now run on that host (`POST /v1/providers/login`) and reach the browser as
 `/api/auth/login/:id` and `/api/auth/logout/:id`, polled rather than streamed so a reloaded tab neither loses nor cancels
 a sign-in, with each flow keyed to the caller this ingress admitted and masked in both directions
-(`packages/gateway/src/provider-login.ts`, `packages/ui/src/lib/provider-login.ts`,
+(`packages/gateway/src/provider-login.ts`, `packages/ui/src/lib/provider/provider-login.ts`,
 `packages/ui/src/components/OAuthDetail.tsx`). Ticket 04 — what a credential change owes model availability — is delivered
 too, and its answer is that no signal is owed. Each Backend catalog read re-resolves which models a credential
 authenticates from the account that process was configured with: in Pi mode that account is the very file the Gateway
@@ -689,7 +723,7 @@ network read of which models exist at a provider — and stays the named limit d
 enabled-models view used to POST to it and report the refusal as an unreachable provider endpoint, and now asks the
 route before offering its button. Seam: `apps/server/test/provider-availability.test.ts` (Gateway service writes,
 Backend route reads, both modes, no credential value in any answer). Ticket 05 closes the acceptance gap those seams left:
-`apps/web/e2e/ux-provider-connection-acceptance.mjs` drives one composed real system in Pi file-backed mode — production
+`apps/web/e2e/acceptance/ux-provider-connection-acceptance.mjs` drives one composed real system in Pi file-backed mode — production
 Web build, real ingress, real Gateway, real Backend, a real device-code sign-in against a run-owned RFC 8628 stand-in —
 and shows a credential stored in Settings becoming a model the composer offers with no reload. That run found a shipped
 client defect: the composer read the retired Next BFF's catalog shape, so the Backend's own `models` list (the only
@@ -1233,8 +1267,8 @@ Capability limits this record carries, with the condition that closes each:
   retry/raw-history/dismissal offers), at the transcript owner (`landWindow` merging through the prefix rule), over a
   real Backend and ingress for both reads plus a refusal's code across the connection seam, and in a browser for the one
   scene this ticket owns — a failed deep hit, its Retry and the landing that follows, with the production `ChatWindow`
-  under `StrictMode` and no older page read during the settlement (`apps/web/e2e/ux-navigation-retry.mjs`). Ticket
-  04 adds the rail's own scene (`apps/web/e2e/ux-history-rail.mjs`): nodes beyond the loaded window listed in server
+  under `StrictMode` and no older page read during the settlement (`apps/web/e2e/history/ux-navigation-retry.mjs`). Ticket
+  04 adds the rail's own scene (`apps/web/e2e/history/ux-history-rail.mjs`): nodes beyond the loaded window listed in server
   order with bounded previews, hollow unloaded dots that never claim visibility, one coordinate and zero outline-page
   reads on an unloaded click, the unchanged local measured jump, one read per "more" activation and a named failed page
   that keeps the anchors it held.
@@ -1242,7 +1276,7 @@ Capability limits this record carries, with the condition that closes each:
   shape — `apps/web/dist` through the real ingress, the ingress cookie, the real Backend over SQLite, and this run's own
   controlled model endpoint — over a conversation of 130 committed anchors that is longer than its window, carries a
   compaction over turn 20 and a fork at turn 40
-  (`apps/web/e2e/ux-history-navigation-acceptance.mjs`, 82 checks, exit 0 on `ed0e4a1`). It observes: the rail's first
+  (`apps/web/e2e/history/ux-history-navigation-acceptance.mjs`, 82 checks, exit 0 on `ed0e4a1`). It observes: the rail's first
   page plus only the measured tail past it against a transcript mounting 42 of 262 entries; one bounded target read and
   zero outline-page reads per unloaded anchor; a free local jump; one continuation read from the Backend's own cursor;
   an append that grows the rail 130 → 131 without moving an anchor; a deep search hit resolved through the same
@@ -1289,7 +1323,7 @@ the two fixes it produced are recorded in
 ## Scope and external gates
 
 Selected cleanup ticket 08 is complete after the real SSH interruption matrix passed; deployment readiness remains a separate verification. Selected MVP subset is not full pi-web/pi-gui/ExecutionEnv parity. The pi-gui desktop `ExecutionEnv` interface, session export, file watch/line/dir readers, branch tree and advanced session UI mutations remain deliberately unsupported, not silent stubs, while the browser terminal itself already runs a real PTY on the gateway; worktree list, create and remove are a gateway host capability since ticket 10 and the browser picker is wired to it since ticket 11 (see above). Workspace file upload and binary UI preview/download are implemented through the file payload routes (`POST /v1/files/upload`, `POST /v1/files/upload-check`, `GET /v1/files/bytes`, relayed by the backend and reached by the copied explorer and viewer), which is why the workbench proxy's 1 MiB JSON request no longer bounds them; a file over the 16 MiB per-payload policy is refused with a named limit rather than streamed unbounded, an upload request may carry up to the copied route's own 100 MiB batch bound while its multipart body is streamed rather than buffered, and a replacement keeps the target's permissions, and live watch remains unsupported; a `.docx` is previewed in the browser as text since ticket 05 (see
-[the Word document preview](workbench.md#the-word-document-preview)). Image *submission* (native image content blocks on a prompt) is implemented and covered by `apps/server/test/submission-images.test.ts` and `apps/web/e2e/ux-image-submit.mjs`; it is a different capability from writing a file into the workspace, which is now supported. SSH open reader verifies inode identity per request rather than retaining a remote fd. Hostile concurrent path changes are outside trusted personal-workspace assumptions.
+[the Word document preview](workbench.md#the-word-document-preview)). Image *submission* (native image content blocks on a prompt) is implemented and covered by `apps/server/test/submission-images.test.ts`; the browser driver that also observed it (`ux-image-submit`) depended on the retired Next build and was deleted with it, so submission's own browser half is a recorded coverage gap. It is a different capability from writing a file into the workspace, which is now supported. SSH open reader verifies inode identity per request rather than retaining a remote fd. Hostile concurrent path changes are outside trusted personal-workspace assumptions.
 
 Real-provider text/SSE smoke now passes with user-authorized locally configured magpie/deepseek-v4.1-flash and isolated supplied Models; see docs/verification.md. This is remote inference using local configuration, with subsequent real-model read/edit/bash diagnosis, protected-file integrity, compile and SQLite reopen checks passed (docs/real-model-coding-verification.md); not real-model abort coverage, and remains outside fast tests. pi-gui Electron/Node26 guard blockers remain documented, not suppressed. Final execution review fixed spent-ID eviction replay using tombstones, bounded NDJSON writes, awaited each client output callback, rejected malformed RPC bodies/frames, and projected output loss warnings. Gateway and workspace regressions pass. Git status errors now fail rather than report a fake clean repository; truncated previews disable unavailable load-more. Broken tests importing retired runtime files were removed from app lib (original copies remain in vendor). Ticket 08 covers only proven-obsolete runtime removal; these external/full-parity checks are not falsely marked passed.
 
@@ -1388,7 +1422,7 @@ Remaining limits this record carries:
   (`references.retry`); nothing retries on its own.
 
 The source is integrated on this line (cherry-picked from `impl/xref-02-03` at `6191f82`, record at `42dcbc3`) and was
-re-measured here rather than inherited. The **system acceptance is met** at `0a3d065` and re-run on this line at `0acf499`: `apps/web/e2e/ux-references-acceptance.mjs`
+re-measured here rather than inherited. The **system acceptance is met** at `0a3d065` and re-run on this line at `0acf499`: `apps/web/e2e/chat/ux-references-acceptance.mjs`
 runs the creation, reload and follow journeys over the deployed shape — the production Web build served by the client
 ingress, the real Backend over SQLite, a controlled model endpoint and no intercepted route — including the
 **inherited-fork-entry follow** in the fork's own coordinate and a **real Backend outage** whose retry lands once the

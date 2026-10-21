@@ -28,14 +28,17 @@ import { createClientIngress, WEB_SESSION_COOKIE, type ClientIngress } from "../
  * a paid call.
  */
 
-const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.mjs", import.meta.url));
+const STDIO_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/stdio-server.ts", import.meta.url));
+const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.ts", import.meta.url));
+// The fixture's own exports, as types: what the sign-in test gets back is stated, not `any`.
+type StartFakeOAuthServer = typeof import("./fixtures/mcp/oauth-server.ts").startFakeOAuthServer;
+type ApproveSignIn = typeof import("./fixtures/mcp/oauth-server.ts").approveSignIn;
 /** The fake OAuth-protected server the sign-in runs against, as its own module exports it. */
-const OAUTH_FIXTURE = fileURLToPath(new URL("./fixtures/mcp/oauth-server.mjs", import.meta.url));
 async function oauthFixture(): Promise<{ url: string; hooks: { beforeCode?: () => Promise<void> }; close: () => Promise<void> }> {
-	return (await import(OAUTH_FIXTURE) as { startFakeOAuthServer: () => Promise<any> }).startFakeOAuthServer();
+	return (await import(OAUTH_FIXTURE) as { startFakeOAuthServer: StartFakeOAuthServer }).startFakeOAuthServer();
 }
 async function approveSignIn(page: string): Promise<string> {
-	return (await import(OAUTH_FIXTURE) as { approveSignIn: (page: string) => Promise<string> }).approveSignIn(page);
+	return (await import(OAUTH_FIXTURE) as { approveSignIn: ApproveSignIn }).approveSignIn(page);
 }
 const BACKEND_TOKEN = "backend-service-token";
 const WEB_LOGIN = "web-login-material";

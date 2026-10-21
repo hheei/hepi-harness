@@ -4,7 +4,7 @@ import type { ResourceReader } from "@hepi/session/resources";
 import type { WorkbenchClient } from "../client";
 import { connectionScopeKey, type ConnectionIdentity } from "./connection-scope";
 import { createConversationApi, type ConversationApi } from "./conversation-api";
-import { createFileSeam, type FileSeam } from "./file-seam";
+import { createFileSeam, type FileSeam } from "./file/file-seam";
 
 /**
  * The connection the mounted workbench is showing: the client that talks to it, the scope its stored state belongs to,

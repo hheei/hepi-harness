@@ -43,7 +43,7 @@ jobs:
           if ! test -x /usr/bin/bwrap; then sudo apt-get update && sudo apt-get install -y bubblewrap; fi
           sudo mkdir -p /run/sshd
       - name: Workspace typecheck
-        run: pnpm -r typecheck
+        run: pnpm typecheck
       - name: Workspace tests
         run: pnpm -r test
         env:
@@ -126,16 +126,16 @@ jobs:
       # `shell: bash` expands to `bash --noprofile --norc -eo pipefail {0}`.
       - name: Driver chat-scroll
         shell: bash
-        run: node apps/web/e2e/ux-chat-scroll.mjs 2>&1 | tee .dev/e2e/chat-scroll.log
+        run: node apps/web/e2e/chat/ux-chat-scroll.ts 2>&1 | tee .dev/e2e/chat-scroll.log
       - name: Driver references-acceptance
         shell: bash
-        run: node apps/web/e2e/ux-references-acceptance.mjs 2>&1 | tee .dev/e2e/references-acceptance.log
+        run: node apps/web/e2e/chat/ux-references-acceptance.ts 2>&1 | tee .dev/e2e/references-acceptance.log
       - name: Driver mcp-acceptance
         shell: bash
-        run: node apps/web/e2e/ux-mcp-acceptance.mjs 2>&1 | tee .dev/e2e/mcp-acceptance.log
+        run: node apps/web/e2e/mcp-skills/ux-mcp-acceptance.ts 2>&1 | tee .dev/e2e/mcp-acceptance.log
       - name: Driver provider-connection
         shell: bash
-        run: node apps/web/e2e/ux-provider-connection-acceptance.mjs 2>&1 | tee .dev/e2e/provider-connection.log
+        run: node apps/web/e2e/acceptance/ux-provider-connection-acceptance.ts 2>&1 | tee .dev/e2e/provider-connection.log
       - name: Keep the driver logs
         if: always()
         uses: actions/upload-artifact@v4
