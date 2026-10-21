@@ -1,8 +1,9 @@
 import { constants } from "node:fs";
 import { access, mkdir, realpath, stat } from "node:fs/promises";
 import { dirname } from "node:path";
-import { createSystemSshRunner } from "../../gateway/src/index.ts";
+import { createSystemSshRunner, WorkspaceRegistry, sshWorkspaceSeed } from "../../gateway/src/index.ts";
 import { SshFilesystem } from "../../gateway/src/ssh-filesystem.ts";
+import { sshProfileOf } from "../../gateway/src/startup.ts";
 import type { GatewaySettings } from "./config.ts";
 
 export type ProbeResult = { readonly ok: true; readonly detail: string } | { readonly ok: false; readonly detail: string };
@@ -73,10 +74,14 @@ export const systemProbe: DoctorProbe = {
     }
   },
   ssh: async (settings) => {
-    const ssh = settings.ssh!;
-    const profile = { id: ssh.profile, host: ssh.host, remoteRoot: settings.workspaceRoot, ...(ssh.port === undefined ? {} : { port: ssh.port }), ...(ssh.identityFile === undefined ? {} : { identityFile: ssh.identityFile }), ...(ssh.knownHostsFile === undefined ? {} : { knownHostsFile: ssh.knownHostsFile }) };
-    const files = new SshFilesystem({ id: settings.gatewayId, profiles: [profile], runner: createSystemSshRunner() });
+    // The profile and the workspace registry are the ones the gateway itself composes, so doctor reaches the host
+    // through the same mapping a started gateway would use instead of a second, hand-built copy of it.
+    let files: SshFilesystem | undefined;
     try {
+      const profile = sshProfileOf(settings);
+      if (profile === undefined) return { ok: false, detail: "not an SSH gateway" };
+      const workspaces = new WorkspaceRegistry(sshWorkspaceSeed([profile]));
+      files = new SshFilesystem({ id: settings.gatewayId, profiles: [profile], runner: createSystemSshRunner(), workspaces });
       // `executionHost` asks the host for its own account and home, so a host that cannot be reached or has no
       // Python 3 is a failure here rather than a value the gateway machine supplied.
       const result = await files.execute({ workspaceId: settings.workspaceId, method: "executionHost" }) as { ok: true; value: { user: string; home: string } } | { ok: false; error: { code: string; message: string } };
@@ -85,7 +90,7 @@ export const systemProbe: DoctorProbe = {
     } catch (error) {
       return { ok: false, detail: (error as Error).message };
     } finally {
-      await files.close();
+      await files?.close();
     }
   },
 };
