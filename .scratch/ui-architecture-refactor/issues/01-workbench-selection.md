@@ -102,6 +102,22 @@ Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
 
 Checks（修正後 revision `28ade187`，工作樹乾淨）：`pnpm verify:changed --base=HEAD~1` exit 0（`.dev/verify/2026-10-21T10-31-24-502-verify-changed`）；browser `ux-workbench-selection`、`ux-workbench-scope`、`ux-sidebar-ingress`、`ux-raw-history-sidebar-focus`、`ux-navigation-retry` 全 exit 0（`.dev/verify/2026-10-21T18-31-36-browser-regressions-final`）。
 
+### 追查修正（follow-up，`1179fdcb` 之上 → `20120fdc`）
+
+三項，皆在擁有者邊界修正，前五項已確認的修正未動：
+
+| 發現 | 擁有者 | 修正 |
+| --- | --- | --- |
+| P1 composer → 記著 B 的 workspace：先 `adoptComposer` 把 B 的 park 搬進 transient key，隨後 `adoptConversation` 丟棄它，New@B 拿不到文字 | `selectWorkspace` | 目的地先決定、之後才採用：有記著且 catalogue 仍列出的對話就用它，否則該資料夾 composer（帶其 park）。兩條 outgoing 分支（對話／composer）共用此決定 |
+| P2 對話 → 另一 project 的 workspace 提前 return，跳過已交付 catalogue 的還原 | `selectWorkspace` | 移除該提前 return；`parkComposerDraft()` 只把離開中的 composer 文字 park 在它自己的資料夾 |
+| P2 跨 project reference 開 raw：project-transition effect 把同一個選擇剛要求的面板關掉 | AppShell presentation | 兩個決定讀同一 committed selection，合併為一個 effect：清理前一個 project 的 file tabs 同時呈現該次選擇要求的 position；standing position 仍不會重開已被關閉的面板 |
+| （紮根）尚未交付的 catalogue 被當成「對話已消失」 | `rememberedRow` | `catalogueDelivered` 區分「列出但沒有這列」與「尚未列出」；後者保留記憶，不無限重試也不誤刪 |
+| （紮根）`conversation.list` 讓 store 自行再列一次，與 sidebar 竞赛 | `WorkbenchSelectionDeps` | 移除該 dep，restore 只讀 `setCatalogue` 交付的列 |
+
+新增證據：`workbench-selection.test.ts` +3 案（目的地保留自身 park 且 New@B 取回文字與圖片、跨 project 自對話回來仍還原記憶對話、choice 撤銷進行中的 first-frame validation）；`ux-workbench-selection.ts` scene 10（跨 project reference → `data-raw-history="two"` 保持可見並定位到 entry，URL 為 `?session=two`）。反向確認：把 panel 決定拆回獨立 effect（`setActiveTopPanel(null)`）時該 scene 以 `[data-raw-history]` 逾時失敗；把 selection 改回舊順序時兩條 unit 案失敗。
+
+Checks（revision `20120fdc`，工作樹乾淨）：`pnpm verify:changed --base=HEAD~1` exit 0（`.dev/verify/2026-10-21T11-03-52-404-verify-changed`；@hepi/ui 387 單測 pass）；browser `ux-workbench-selection`、`ux-workbench-scope`、`ux-sidebar-ingress`、`ux-raw-history-sidebar-focus`、`ux-navigation-retry` 全 exit 0（`.dev/verify/2026-10-21T19-03-01-browser-followup`）。
+
 ### 剩餘限制
 
 - 只換 readout 的 owner；`useAgentSession` 的 conversation I/O 生命週期仍屬票 03。

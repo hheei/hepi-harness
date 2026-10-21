@@ -539,8 +539,13 @@ The rules with user-visible consequences all live here:
 - **A read the reader already left changes nothing.** An open that answers after the reader picked somewhere else —
   including another checkout of the same project — selects nothing, rewrites no URL and states no failure. The fence is
   the target the reader is on, not the request, and retiring a read is not a new attachment.
-- **A returning reader gets the workspace they left.** An explicit choice of another project restores the conversation
-  that workspace's memory names, resolved from the catalogue the sidebar already holds; a bare route invents nothing.
+- **A returning reader gets the workspace they left.** An explicit choice of another project — from a conversation or
+  from a composer — is decided by what the *destination* holds, answered before anything is adopted: the conversation its
+  memory names if the catalogue the sidebar delivered still lists it, otherwise that folder's composer with the draft it
+  parked there. Adopting a composer first and discarding a moment later would consume the destination's parked text into a
+  key nothing shows, leaving it neither on screen nor reachable again; leaving a composer parks its own text in its own
+  folder. A catalogue that has not arrived is not an answer, so the memory stands and the reader keeps the working
+  composer rather than a pending restore. A bare route invents nothing.
 - **Four draft operations stay four different things.** A carried composer takes its live draft to the new folder and
   leaves that folder's parked draft parked rather than merging into what the user is writing; New in a folder parks what
   was on screen and starts a separate identity; a promotion adopts the conversation the composer became and touches no
@@ -554,8 +559,12 @@ The rules with user-visible consequences all live here:
 
 Three things stay outside it deliberately: a view's own imperatives (focus, an open menu, a measured panel) belong to the
 surface that shows them; the catalogue's listing and polling belong to the sidebar, which hands its rows to the store
-(`setCatalogue`) so a restore can use them; and a *transition* of presentation — a project switch clearing the previous
-project's file tabs — is the shell's policy, read from `projectKey`.
+(`setCatalogue`) as the only thing a restore reads — the store asks no listing of its own, so a restore cannot race the
+sidebar's; and a *transition* of presentation is the shell's policy, read from the accepted `projectTransition` counter
+that only a change across project boundaries moves. That policy is one decision over the committed selection: the same
+acceptance both clears the previous project's file tabs and puts on screen the raw-history position it asked for, because
+following a reference into another project's entry does both at once and must not show a panel closing as it opens. A
+position already standing reopens nothing the reader dismissed.
 
 The conversation's unsent draft is not part of a read failure: the draft store and the session-switch cache are keyed by
 the composer and the conversation, and nothing in this path clears either, so the way back opens the composer of the
@@ -566,9 +575,11 @@ the two memories' own stores: URL / tab / workspace precedence, a stale open, id
 worktree and a different project, carry / park / New / promotion, delete, the failure kinds and their retry, and a target
 applied once. The browser half is `apps/web/e2e/history/ux-workbench-selection.ts`: the shell mounted whole in Chromium
 over a real `createClient`, asserting what only a browser holds — a `?session=` deep link, a real reload returning to the
-composer with its text, a new tab inventing no restore, New parking what was on screen, and a deletion landing in a
-composer while the removed conversation's own draft is still stored. Its conversation answers are a fixture; the loading
-and restore are the shipped ones.
+composer with its text, a new tab inventing no restore, New parking what was on screen, a deletion landing in a composer
+while the removed conversation's own draft is still stored, unsent text surviving a connection replacement, the raw-history
+panel opening for an entry the transcript does not hold and staying closed once dismissed, and a reference into another
+project's entry keeping its surface open. Its conversation answers are a fixture; the loading and restore are the shipped
+ones.
 
 ## Bounded history, older pages, and the read blocks
 
