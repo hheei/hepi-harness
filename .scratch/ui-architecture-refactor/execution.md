@@ -16,7 +16,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 剩餘 3 項修正已整合並驗證，agent-230 窄幅複審中 |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | resolved／integrated；全部 material findings 已修正並複審 |
 | 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
@@ -59,6 +59,8 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+agent-230 最終窄幅複審確認剩餘 A／B／C 全部 fixed，correction scope 無 material regression。parked text/images 由 selection test、conversation → remembered workspace 由 public selection test、cross-project raw panel 與 dismissal 由 browser scene 10 覆蓋；file-tab clearing 經 owner effect inspection。複用 clean `20120fdc` 的 verify report 與 browser logs，不重跑無變更 source。ticket 01 resolved；03 的完整整合依賴解除，03／09 持續實作。
 
 01 最後 3 項 correction 的 code `20120fdc`／docs `684906cb` 已整合為 `bdd7c7ac`／`0bd46ac2`。selection 先決定已交付 catalogue 中的目的地，再 adopt conversation/composer；park 僅處理 departing composer，目的地 parked text/images 不經 transient composer 消耗。Shell 將 project cleanup 與新 raw request presentation 合併在相同 accepted transition，保持 dismissal。worker 原始 checks/browser logs 已複製 `.dev/verify/2026-10-21T11-03-52-404-verify-changed/`、`.dev/verify/2026-10-21T19-03-01-browser-followup/`；agent-230 僅複查原剩餘 3 項。
 

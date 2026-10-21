@@ -35,6 +35,8 @@ Reviewer 的 focused state/browser reproductions exit 0；原始 logs 複製至 
 
 ## 實作中新發現的記錄格式
 
+Ticket 01 closeout：agent-230 第一次複審確認原 findings 1／2／3／5／6 fixed；最後 correction `20120fdc`（整合 `bdd7c7ac`）修正剩餘 workspace restore／raw panel 及引入的 parked-draft regression。最後窄幅複審確認三項皆 fixed、correction scope 無 material regression。驗證與 tested revisions 見 [execution](execution.md) 及 [ticket 01](issues/01-workbench-selection.md)。所有 material findings 已完成 fix，不再阻擋後續整合。
+
 僅在有具體 finding 時追加：trigger、source／repro evidence、正常使用可能性、user impact、fix/record/investigate、負責票及重訪條件。`record` 是完整處置，不形成阻擋依賴或自動擴大實作範圍。
 
 ## 規劃文件審閱與檢查 — 2026-10-21

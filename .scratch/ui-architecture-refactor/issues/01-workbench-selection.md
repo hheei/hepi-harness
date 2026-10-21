@@ -1,7 +1,7 @@
 # 工作台選擇與草稿
 
 Type: implementation
-Status: in-progress — correcting material review findings
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R1、替換策略
