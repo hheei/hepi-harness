@@ -1,7 +1,7 @@
 # Accepted conversation readout
 
 Type: implementation
-Status: in-progress — 已整合，修正分頁耗盡後 live frame 重設 pagination claim 的 review finding
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R2、R3 的既有 lifecycle 約束
@@ -43,7 +43,7 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
 
 ## Review notes
 
-目前無實作 findings。新項目依 [review policy](../../../docs/agents/review-policy.md) 分類，跨票記錄見[評估記錄](../review-notes.md)；record 不形成 blocking edge。
+agent-227 發現並分類一項 material regression：歷史分頁到起點後，同 head live frame 會重設 exhausted claim，導致 sentinel 重複讀取；已由 `5af5a0f6` 在 `acceptSession` owner 修正。agent-229 follow-up review 確認 Standards／Spec 無 material findings。新 conversation／whole-range claim reset 由 `acceptSession` 規則覆蓋並經 source inspection 確認，未各自新增測試；若後續 head／attachment 行為改動，補充獨立 cases。
 
 ## 交付記錄
 

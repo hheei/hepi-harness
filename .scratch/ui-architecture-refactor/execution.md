@@ -17,7 +17,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | in-progress |
-| Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | integrated；review 發現分頁 claim 回歸，worker 修正中 |
+| Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
 
@@ -38,6 +38,7 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 
 - 02：`b20ae3d8`、`cd09f3a8` 與 evidence-only `97ba0f92` 已整合為 `5d4bc355`、`9cee62b0`、`1eb7145d`。worker clean `b20ae3d8` 的 changed checks exit 0，log `.dev/verify/ui-readout-final/`；browser evidence revision `cd09f3a8`（clean），log `.dev/verify/ui-readout-browser/`。原始 worker 證據已複製至主工作區，不改其 revision。
 - agent-227 review：Standards 無 material findings；Spec 發現同 head 的 live frame 會以 window.hasMore 覆蓋已耗盡的 page claim，讓 oldest-history sentinel 再次請求。正常 scroll-back 同時 streaming 可觸發，判為 fix；交 agent-222 在 readout owner 修正並補案例。ticket 02 暫不關閉，ticket 03 仍等待 01、02。
+- agent-229 follow-up review 確認 `acceptSession` 修正位於正確 owner，沒有平行 pagination state；readout 與 hook regression cases 覆蓋 exhausted page → live advances → head reset。新 conversation／whole-range reset 只以 source inspection 確認，列為低風險測試缺口，無 material finding。ticket 02 resolved；ticket 03 仍等待 01。
 - 07：`4526a4af`、`71f2597e` 已整合為 `31a363d4`、`e8c9f2b8`。worker clean `4526a4af` 的 changed checks exit 0，log `.dev/verify/2026-10-21T05-58-28-923-verify-changed/`；focused workflow evidence `.dev/verify/mcp07/`。agent-228 review 的 Standards／Spec 均無 material findings，未重跑 suites。真實 upstream OAuth 與 native MCP journey 未執行。
 - 整合 02、07、10 後執行 `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-wave1-partial`：revision `e8c9f2b8`，dirty 僅既有 `.scratch/durable-ledger-simplification/`；exit 0，changed-typecheck／changed-test（UI 383、App 26）／web-unit（14）／check-docs 全 pass。此為該 revision 結果，不取代上述 pagination finding 的修正驗證。
 
