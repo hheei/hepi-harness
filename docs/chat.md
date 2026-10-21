@@ -1162,7 +1162,11 @@ deep-search journeys observed together. This line's own scenes are `apps/web/e2e
 the production `ChatMinimap`), `apps/web/e2e/history/ux-rail-keyboard.ts` (that same rail driven by the keyboard alone),
 `apps/web/e2e/history/ux-history-scope.ts` (the production `useHistoryNavigation` across a compaction, a late page and a jump)
 and `apps/web/e2e/history/ux-navigation-retry.ts` (the production `ChatWindow` under `StrictMode` with only its network
-boundary replaced).
+boundary replaced). The presentation owners have their own scene:
+`apps/web/e2e/chat/ux-transcript-presentation.ts` drives the production `NoticeShelf` and `useTranscriptPresentation` with
+real timers and a real scrolling element — a notice drawn and retired by the shelf's clock, held while the reader is on
+it and resumed for the time it had left, a reader scrolled back not being pulled to the tail, and a reader back at the
+tail being followed again.
 
 ## The session-switch cache
 
