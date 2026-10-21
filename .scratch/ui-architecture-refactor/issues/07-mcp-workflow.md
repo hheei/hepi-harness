@@ -51,7 +51,7 @@ MCP helpers/interface 行為測試、既有 test:mcp-acceptance／test:mcp-tool-
 
 ## 交付記錄
 
-Revision: `7cc775e4` 之上（本票未提交前的 dirty tree；source 已含本票全部變更）。
+Commit: `4526a4af`（parent `7cc775e4`）。先前 checks 在 `7cc775e4` + 本票 dirty tree 上跑，source 相同；提交後 `pnpm verify:changed --base=7cc775e4` 於 clean `4526a4af` 重跑亦 pass（log `.dev/verify/2026-10-21T05-58-28-923-verify-changed/`）。
 
 ### 變更
 
