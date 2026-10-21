@@ -42,6 +42,7 @@
     "test:capability-trust": "node e2e/auth-shell/ux-capability-trust.ts",
     "test:extensions-panel": "node e2e/mcp-skills/ux-extensions-panel.ts",
     "test:mcp-tool-states": "node e2e/mcp-skills/ux-mcp-tool-states.ts",
+    "test:mcp-workflow": "node e2e/mcp-skills/ux-mcp-workflow.ts",
     "test:mcp-acceptance": "node e2e/mcp-skills/ux-mcp-acceptance.ts",
     "test:skills": "node --test ../../packages/ui/src/lib/skill-inventory.test.ts && node e2e/mcp-skills/ux-skills-inventory-race.ts && node e2e/mcp-skills/ux-skills-project-target.ts && node ../server/scripts/skills-ui-smoke.ts --mode builtin",
     "test:skills-sshd": "node ../server/scripts/skills-ui-smoke.ts --mode builtin --transport sshd",

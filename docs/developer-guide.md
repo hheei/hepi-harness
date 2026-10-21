@@ -267,7 +267,7 @@ MCP 的配置、凭据、OAuth 与子进程归 Web origin 主机账号,不归 Ba
 MCP。主机能力改 `mcp/`,路由改 `ingress/mcp.ts`,授予改 `mcp-grants.ts/mcp-conversation-tools.ts`,面板改 UI。
 
 **检查:** gateway 的 `mcp.test.ts`、`mcp-{invocation,list-tools,import-resolution}.test.ts`;server 的
-`mcp-{declarations,grants,conversation-tools}.test.ts`;Web 的 `test:mcp-tool-states`、`test:mcp-acceptance`。
+`mcp-{declarations,grants,conversation-tools}.test.ts`;Web 的 `test:mcp-tool-states`、`test:mcp-workflow`、`test:mcp-acceptance`。
 操作与限制见 [MCP on the Web host](mcp-on-the-web-host.md)。
 
 ## Providers: catalog versus credentials

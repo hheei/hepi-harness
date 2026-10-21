@@ -4,15 +4,14 @@ import { useCallback, useEffect, useId, useRef, useState, type Ref } from "react
 import type { McpExposure } from "@earendil-works/pi-coding-agent";
 import type {
   CodemodeMode,
-  McpActionResponse,
   McpCodemodeInfo,
   McpCodemodeInlineBudget,
   McpCodemodeMode,
   McpCodemodePreference,
   McpConfigFieldRef,
-  McpResponse,
   McpScope,
   McpServerInfo,
+  McpResponse,
   McpServerStatus,
   McpSessionStatus,
   ProjectTrustStatus,
@@ -28,10 +27,6 @@ import {
   mcpVariableReferencesKey,
   revealHiddenCharacters,
 } from "../lib/mcp-server-display";
-import {
-  getLastSettingsSelection,
-  setLastSettingsSelection,
-} from "../lib/settings-navigation";
 import { focusAfterChange, focusIfLost } from "../lib/stacked-dialog";
 import {
   ConfigButton,
@@ -76,7 +71,6 @@ import {
   MCP_TEST_REFUSAL_KEYS,
   MCP_TEST_SERIAL_KEY,
   isBlockingFileProblem,
-  loadMcpOverview,
   mcpCodemodeAlwaysUnavailableNotice,
   mcpCodemodeAutomaticNotice,
   mcpCodemodeBuiltinNotice,
@@ -93,7 +87,8 @@ import {
   mcpGroupCounts,
   mcpGroupEmptyKey,
   mcpGroupSwitchChecked,
-  mcpGroupSwitchTargets,
+  mcpInlineBudgetDraftChanges,
+  mcpInlineBudgetDraftOf,
   mcpRowContext,
   mcpRowStateDetailKey,
   mcpRowStateLabelKey,
@@ -106,10 +101,7 @@ import {
   mcpSessionSummaryKey,
   mcpStatusDot,
   mcpStatusTimeText,
-  mcpTestAnswerOutdates,
   mcpTestBlock,
-  mcpTestRunAfter,
-  mcpTestRunAfterSignOut,
   mcpTestRunFor,
   mcpTestStateView,
   mcpTestSummaryKey,
@@ -118,26 +110,13 @@ import {
   mcpWithTestResults,
   mcpWriteBlock,
   mcpWritesOff,
-  pickMcpSelection,
-  postMcpAction,
-  postMcpTest,
-  mcpInlineBudgetDraftChanges,
-  mcpInlineBudgetDraftOf,
   parseMcpInlineBudgetDraft,
-  saveMcpCodemodeInlineBudget,
-  saveMcpCodemodeMode,
-  saveMcpCodemodePreference,
-  withMcpCodemodeInlineBudget,
-  withMcpCodemodeMode,
-  withMcpCodemodePreference,
   type McpActionFailure,
-  type McpActionRequest,
   type McpActionResult,
   type McpAutoEnableCodemode,
   type McpLoadFailure,
   type McpNoticeText,
   type McpRowContext,
-  type FetchLike,
   type McpServerGroup,
   type McpTestBlock,
   type McpTestRun,
@@ -146,32 +125,17 @@ import {
 import { McpAddServer, type McpAddActionRequest } from "./McpAddServer";
 import { EMPTY_MCP_ADD_DRAFT, type McpAddDraft } from "./mcp-add-helpers";
 import { McpSignInRow } from "./McpSignIn";
-import {
-  MCP_SIGN_IN_POLL_MS,
-  cancelMcpSignInFlow,
-  getMcpSignIn,
-  mcpSignInActive,
-  mcpSignInBlock,
-  mcpSignInJustEnded,
-  mcpSignInRunAfterCancel,
-  mcpSignInRunAfterPaste,
-  mcpSignInRunAfterPoll,
-  mcpSignInRunAfterStart,
-  mcpSignOutBlock,
-  pasteMcpSignIn,
-  postMcpSignIn,
-  type McpSignInRun,
-} from "./mcp-sign-in-helpers";
-import { projectTrustReloadKey } from "./settings-ui-helpers";
+import { mcpSignInActive, mcpSignInBlock, mcpSignOutBlock, type McpSignInRun } from "./mcp-sign-in-helpers";
+import type {
+  McpAddedNotice,
+  McpCodemodeSaveState,
+  McpGroupStatus,
+  McpWorkflowSnapshot,
+} from "./mcp-workflow";
+import { useMcpWorkflow } from "./useMcpWorkflow";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
 
 type Translate = ReturnType<typeof useI18n>["t"];
-
-/** What the panel has loaded; a project the route refused leaves the global listing and `projectError`. */
-export type McpConfigLoad =
-  | { state: "loading" }
-  | { state: "failed"; error: McpLoadFailure }
-  | { state: "loaded"; data: McpResponse; projectError?: McpLoadFailure };
 
 function scopeLabel(scope: McpScope, t: Translate): string {
   return scope === "project" ? t("skills.scope.project") : t("skills.scope.global");
@@ -202,49 +166,6 @@ function failureText(failure: McpLoadFailure, t: Translate): string {
 function actionFailureText(failure: McpActionFailure, t: Translate): string {
   if (failure.timedOut) return t("mcp.actionTimedOut");
   return failureText(failure, t);
-}
-
-/** What saving the Code mode choice, mode or budget is doing: nothing, waiting for the route, or why it failed. */
-export interface McpCodemodeSaveState {
-  saving: boolean;
-  error: McpLoadFailure | null;
-  /** What the save is about, so its state shows in that row; the choice when absent. */
-  target?: "preference" | "mode" | "inlineBudget";
-}
-
-/** What the last group switch left undone, under that group's heading. */
-export interface McpGroupStatus {
-  scope: McpScope;
-  /** Servers that reference PI_WEB_PASSWORD, which the switch left off. */
-  keptOff: number;
-  /** The servers the route refused, of `total` asked for. */
-  failures: { name: string; failure: McpActionFailure }[];
-  total: number;
-  /** The request as a whole failed. */
-  error?: McpActionFailure;
-}
-
-/**
- * A removal that can still be undone, while its notice shows: the token the
- * route answered with, never the entry, which stays on the server.
- */
-export interface McpUndoNotice {
-  token: string;
-  scope: McpScope;
-  name: string;
-  path: string;
-  /** How long the route holds it, from when the notice appeared. */
-  expiresInMs: number;
-  undoing: boolean;
-  error?: McpActionFailure;
-}
-
-/** What the last Add wrote, while its notice shows: the server and the file it went to. */
-export interface McpAddedNotice {
-  scope: McpScope;
-  name: string;
-  path: string;
-  key: string;
 }
 
 /**
@@ -279,15 +200,21 @@ function pressedButton(): HTMLButtonElement | HTMLSelectElement | null {
  * sessions apply it at their next message. Test connects one server once
  * through `POST /api/mcp/test`, beside any change, and its result becomes the
  * row's state. An OAuth server signs in through `/api/mcp/sign-in`, whose
- * flow lives on the server and is polled here, and signs out through
+ * flow lives on the server and is polled by the panel, and signs out through
  * `POST /api/mcp`. The Code mode choice, mode and budget are written through
- * `PUT /api/tools/settings`. An untrusted project's notice says where the
- * decision is recorded — the `pi` CLI on the host that owns the folder — and
- * offers no control: this Web origin only reads the decision. The panel
- * reloads once the page's status for the folder changes, which a decision
- * recorded on the host does when the page reads it again. Add MCP server opens
- * the paste pane (`McpAddServer`); an Add that worked selects the new server,
- * tests it once and offers Sign in when it asks for one.
+ * `PUT /api/tools/settings`.
+ *
+ * The overview, every write and both flows belong to the MCP workflow
+ * (`components/mcp-workflow.ts`, mounted by `components/useMcpWorkflow.ts`):
+ * this component keeps what a person is typing (the Add pane's draft), whether
+ * that pane is open, and where focus must go back to, and hands the workflow
+ * the intent. An untrusted project's notice says where the decision is
+ * recorded — the `pi` CLI on the host that owns the folder — and offers no
+ * control: this Web origin only reads the decision. The panel reloads once the
+ * page's status for the folder changes, which a decision recorded on the host
+ * does when the page reads it again. Add MCP server opens the paste pane
+ * (`McpAddServer`); an Add that worked selects the new server, tests it once
+ * and offers Sign in when it asks for one.
  */
 export function McpConfig({
   cwd,
@@ -307,392 +234,40 @@ export function McpConfig({
   /** Hands the page `cwd`'s trust after an Add wrote to its `.pi/mcp.json`. */
   onProjectTrustChanged?: (cwd: string, status: ProjectTrustStatus) => void;
 }) {
-  const [load, setLoad] = useState<McpConfigLoad>({ state: "loading" });
-  const [refreshing, setRefreshing] = useState(false);
-  const [selected, setSelected] = useState<string | null>(() => getLastSettingsSelection("mcp", cwd));
-  const [codemodeSave, setCodemodeSave] = useState<McpCodemodeSaveState>({ saving: false, error: null });
-  // Which change is on its way (`switch:<key>`, `remove:<key>`, `sign-out:<key>`, `group:<scope>`, `undo`); one at a time.
-  const [busy, setBusy] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<McpActionErrorState | null>(null);
-  const [groupStatus, setGroupStatus] = useState<McpGroupStatus | null>(null);
-  const [undo, setUndo] = useState<McpUndoNotice | null>(null);
-  const [focusBack, setFocusBack] = useState<McpFocusBack | null>(null);
-  // Tests by server key. A test writes no file, so it runs beside changes and other tests.
-  const [tests, setTests] = useState<Record<string, McpTestRun>>({});
-  // A later load (Refresh, or the panel's project changing) wins over an earlier one still on its way.
-  const requestRef = useRef(0);
-  const controllerRef = useRef<AbortController | null>(null);
-  const saveControllerRef = useRef<AbortController | null>(null);
-  const actionControllerRef = useRef<AbortController | null>(null);
-  // The test request on its way for each server, by key; an entry is only an identity.
-  const testRequestsRef = useRef(new Map<string, object>());
-  // Sign-ins by server key. A sign-in writes mcp-auth.json, never mcp.json, so it runs beside
-  // changes, as a Test does; its flow lives on the server, and the panel only polls it.
-  const [signIns, setSignIns] = useState<Record<string, McpSignInRun>>({});
-  const signInsRef = useRef(signIns);
-  signInsRef.current = signIns;
-  const [pollRound, setPollRound] = useState(0);
-  // The add pane: open or not, what was typed (kept while another row is shown), why the last Add was refused, and what it added.
+  /**
+   * Every request this panel makes goes through the connection's own client rather than the page's global `fetch`:
+   * it resolves against the origin the workbench is showing and carries that connection's credential, so the panel
+   * reaches the client API from a desktop App (a different origin, with a device bearer) exactly as it does from a
+   * browser page (same origin, cookie). The routes it asks for are the same either way. The connection and the folder
+   * are what the workflow is keyed by; its own lifetime is the mount's.
+   */
+  const { client } = useWorkbenchConnection();
+  const send = useCallback((input: string, init?: RequestInit) => client.request(input, init), [client]);
+  const { snapshot, actions } = useMcpWorkflow({
+    cwd,
+    send,
+    ...(trust === undefined ? {} : { trust }),
+    ...(onProjectTrustChanged === undefined ? {} : { onProjectTrustChanged }),
+  });
+
+  // The add pane's own fields: whether it is open, what was typed (kept while another row is shown), why the last Add
+  // was refused, and where focus goes once a change is answered.
   const [adding, setAdding] = useState(false);
   const [addDraft, setAddDraft] = useState<McpAddDraft>(EMPTY_MCP_ADD_DRAFT);
   // The draft as it stands now, for an Add's answer to tell whether it is still about it: the pane
   // stays editable while the request is out, and every change makes a new draft object.
   const addDraftRef = useRef(addDraft);
   addDraftRef.current = addDraft;
-  /**
-   * Every request this panel makes goes through the connection's own client rather than the page's global `fetch`:
-   * it resolves against the origin the workbench is showing and carries that connection's credential, so the panel
-   * reaches the client API from a desktop App (a different origin, with a device bearer) exactly as it does from a
-   * browser page (same origin, cookie). The routes it asks for are the same either way.
-   */
-  const { client } = useWorkbenchConnection();
-  const send = useCallback<FetchLike>((input, init) => client.request(input, init), [client]);
   const [addFailure, setAddFailure] = useState<McpActionFailure | null>(null);
-  const [added, setAdded] = useState<McpAddedNotice | null>(null);
-  const mountedRef = useRef(true);
-  const loadRef = useRef(load);
-  loadRef.current = load;
-
-  const refresh = useCallback(async () => {
-    const request = ++requestRef.current;
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setRefreshing(true);
-    const result = await loadMcpOverview(cwd, send, controller.signal);
-    if (request !== requestRef.current) return;
-    setRefreshing(false);
-    if (!result.ok) {
-      setLoad({ state: "failed", error: result.error });
-      return;
-    }
-    setLoad({ state: "loaded", data: result.data, ...(result.projectError ? { projectError: result.projectError } : {}) });
-    setSelected((current) => pickMcpSelection(mcpServerGroups(result.data, Boolean(cwd)), current));
-  }, [cwd, send]);
-
-  // A new trust decision for the folder (the page read one the host recorded,
-  // or a project write changed it) loads the panel again, in place, so the
-  // project's servers and notices follow while the selection stays.
-  const trustKey = projectTrustReloadKey(trust);
-  useEffect(() => {
-    void refresh();
-    return () => {
-      requestRef.current += 1;
-      controllerRef.current?.abort();
-    };
-  }, [refresh, trustKey]);
-
-  // The switch is disabled while a save or a server change runs, so only one write is ever on its way.
-  const saveCodemode = useCallback(async (preference: McpCodemodePreference) => {
-    const controller = new AbortController();
-    saveControllerRef.current = controller;
-    setCodemodeSave({ saving: true, error: null, target: "preference" });
-    const result = await saveMcpCodemodePreference(preference, send, controller.signal);
-    // Closed meanwhile: nothing is left to update.
-    if (saveControllerRef.current !== controller) return;
-    saveControllerRef.current = null;
-    setCodemodeSave({ saving: false, error: result.ok ? null : result.error, target: "preference" });
-    if (result.ok) {
-      setLoad((current) => current.state === "loaded"
-        ? { ...current, data: withMcpCodemodePreference(current.data, result.preference) }
-        : current);
-    }
-    // Read back what is stored: a save that timed out may still land, and one
-    // refused because the file no longer parses should show that file's error.
-    void refresh();
-  }, [refresh, send]);
-
-  // The mode and the budget share the choice's save state, so each waits for and is waited for by the same writes.
-  const saveCodemodeMode = useCallback(async (mode: CodemodeMode) => {
-    const controller = new AbortController();
-    saveControllerRef.current = controller;
-    setCodemodeSave({ saving: true, error: null, target: "mode" });
-    const result = await saveMcpCodemodeMode(mode, send, controller.signal);
-    if (saveControllerRef.current !== controller) return;
-    saveControllerRef.current = null;
-    setCodemodeSave({ saving: false, error: result.ok ? null : result.error, target: "mode" });
-    if (result.ok) {
-      setLoad((current) => current.state === "loaded"
-        ? { ...current, data: withMcpCodemodeMode(current.data, result.mode) }
-        : current);
-    }
-    void refresh();
-  }, [refresh, send]);
-
-  const saveCodemodeInlineBudget = useCallback(async (budget: number | null) => {
-    const controller = new AbortController();
-    saveControllerRef.current = controller;
-    setCodemodeSave({ saving: true, error: null, target: "inlineBudget" });
-    const result = await saveMcpCodemodeInlineBudget(budget, send, controller.signal);
-    if (saveControllerRef.current !== controller) return;
-    saveControllerRef.current = null;
-    setCodemodeSave({ saving: false, error: result.ok ? null : result.error, target: "inlineBudget" });
-    if (result.ok) {
-      setLoad((current) => current.state === "loaded"
-        ? { ...current, data: withMcpCodemodeInlineBudget(current.data, result.inlineBudget) }
-        : current);
-    }
-    void refresh();
-  }, [refresh, send]);
-
-  useEffect(() => {
-    const testRequests = testRequestsRef.current;
-    mountedRef.current = true;
-    return () => {
-      // Sign-ins are let go too: they go on on the server, and Sign in joins one again.
-      mountedRef.current = false;
-      saveControllerRef.current?.abort();
-      saveControllerRef.current = null;
-      actionControllerRef.current?.abort();
-      actionControllerRef.current = null;
-      // Tests are let go, never aborted: the route stops a test nobody waits
-      // for and records nothing, while one left running records its result
-      // for the next time Settings opens.
-      testRequests.clear();
-    };
-  }, []);
-
-  // One test per server at a time; the route joins presses from other tabs too.
-  // Its answer is kept per server and shown over the listing's status while it
-  // is the newer one (`mcpWithTestResults()`), so a load already on its way
-  // cannot hide it. An answer that shows the listing is out of date (a
-  // refusal, or a test of content the listing does not show) loads it again.
-  const testServer = useCallback(async (server: McpServerInfo) => {
-    const key = mcpServerKey(server);
-    if (testRequestsRef.current.has(key)) return;
-    const request = {};
-    testRequestsRef.current.set(key, request);
-    setTests((runs) => ({ ...runs, [key]: { ...runs[key], running: true, startedAt: Date.now(), error: undefined, queueTimedOut: undefined, configKey: undefined } }));
-    const current = loadRef.current;
-    // As for a change: the project only when the listing covers it. A global stdio server runs there, else in the home folder.
-    const testCwd = current.state === "loaded" && current.data.project ? cwd : null;
-    const result = await postMcpTest({ scope: server.scope, name: server.name }, testCwd, send);
-    // Closed meanwhile: nothing is left to update.
-    if (testRequestsRef.current.get(key) !== request) return;
-    testRequestsRef.current.delete(key);
-    setTests((runs) => ({ ...runs, [key]: mcpTestRunAfter(runs[key], result, server.configKey) }));
-    const listing = loadRef.current;
-    const listed = listing.state === "loaded" ? listing.data.servers.find((item) => mcpServerKey(item) === key) : undefined;
-    if (mcpTestAnswerOutdates(result, listed)) void refresh();
-  }, [cwd, refresh, send]);
-
-  // A change answers with the overview read after it, which replaces the
-  // listing; a load still on its way may predate the change, so it is dropped.
-  const applyOverview = useCallback((data: McpResponse, select?: string) => {
-    requestRef.current += 1;
-    controllerRef.current?.abort();
-    setRefreshing(false);
-    setLoad((current) => ({
-      state: "loaded",
-      data,
-      ...(current.state === "loaded" && current.projectError ? { projectError: current.projectError } : {}),
-    }));
-    setSelected((current) => pickMcpSelection(mcpServerGroups(data, Boolean(cwd)), select ?? current));
-  }, [cwd]);
-
-  // Sign in: the route starts the flow (or joins the one under way for the
-  // server's URL) and answers at once. A refusal with a reason may mean the
-  // listing is out of date, as for a test.
-  const startSignIn = useCallback(async (server: McpServerInfo) => {
-    const key = mcpServerKey(server);
-    const current = signInsRef.current[key];
-    if (current?.starting || mcpSignInActive(current)) return;
-    setSignIns((runs) => ({ ...runs, [key]: { starting: true } }));
-    const listing = loadRef.current;
-    // As for Test: the project only when the listing covers it.
-    const signInCwd = listing.state === "loaded" && listing.data.project ? cwd : null;
-    const result = await postMcpSignIn({ scope: server.scope, name: server.name }, signInCwd, send);
-    if (!mountedRef.current) return;
-    setSignIns((runs) => ({ ...runs, [key]: mcpSignInRunAfterStart(result) }));
-    if (!result.ok && result.error.reason !== undefined && !result.error.timedOut) void refresh();
-  }, [cwd, refresh, send]);
-
-  const pasteSignIn = useCallback(async (server: McpServerInfo, flowId: string, value: string) => {
-    const key = mcpServerKey(server);
-    setSignIns((runs) => (runs[key]?.flow?.flowId === flowId
-      ? { ...runs, [key]: { ...runs[key], pasting: true, pasteError: undefined } }
-      : runs));
-    const result = await pasteMcpSignIn(flowId, value, send);
-    if (!mountedRef.current) return;
-    setSignIns((runs) => {
-      const next = mcpSignInRunAfterPaste(runs[key], flowId, result);
-      return next === undefined || next === runs[key] ? runs : { ...runs, [key]: next };
-    });
-  }, [send]);
-
-  const cancelSignIn = useCallback(async (server: McpServerInfo, flowId: string) => {
-    const key = mcpServerKey(server);
-    setSignIns((runs) => (runs[key]?.flow?.flowId === flowId ? { ...runs, [key]: { ...runs[key], cancelling: true } } : runs));
-    const result = await cancelMcpSignInFlow(flowId, send);
-    if (!mountedRef.current) return;
-    setSignIns((runs) => {
-      const next = mcpSignInRunAfterCancel(runs[key], flowId, result);
-      return next === undefined || next === runs[key] ? runs : { ...runs, [key]: next };
-    });
-  }, []);
-
-  // While a sign-in runs, the panel asks where it stands about once a second:
-  // the flow moves on by itself when the browser reaches the loopback
-  // listener. A round ends with a new round number, which schedules the next.
-  const activeFlowsKey = Object.entries(signIns)
-    .flatMap(([key, run]) => (mcpSignInActive(run) && run.flow ? [`${key}\u0001${run.flow.flowId}`] : []))
-    .join("\u0002");
-  useEffect(() => {
-    if (!activeFlowsKey) return;
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      for (const item of activeFlowsKey.split("\u0002")) {
-        const [key, flowId] = item.split("\u0001");
-        // A paste or cancel answered while this poll is out is newer than what it brings back.
-        const sentVersion = signInsRef.current[key]?.version ?? 0;
-        const result = await getMcpSignIn(flowId, send, controller.signal);
-        if (controller.signal.aborted) return;
-        setSignIns((runs) => {
-          const next = mcpSignInRunAfterPoll(runs[key], flowId, result, Date.now(), sentVersion);
-          return next === undefined || next === runs[key] ? runs : { ...runs, [key]: next };
-        });
-      }
-      setPollRound((round) => round + 1);
-    }, MCP_SIGN_IN_POLL_MS);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [activeFlowsKey, pollRound, send]);
-
-  // A sign-in that ended changed mcp-auth.json and recorded what connecting
-  // found: the overview is read again, for Signed in and the Connection row.
-  const previousSignInsRef = useRef(signIns);
-  useEffect(() => {
-    const previous = previousSignInsRef.current;
-    previousSignInsRef.current = signIns;
-    if (Object.keys(signIns).some((key) => mcpSignInJustEnded(previous[key], signIns[key]))) void refresh();
-  }, [signIns, refresh]);
-
-  // Every control waits while a change runs, so only one is ever on its way.
-  // A refused change reloads the listing: the file may no longer say what the
-  // panel showed (a server removed meanwhile, a file that no longer parses),
-  // and a change that timed out may still have landed.
-  const runAction = useCallback(async (
-    request: McpActionRequest,
-    busyKey: string,
-    select?: (data: McpActionResponse) => string | undefined,
-  ): Promise<McpActionResult | undefined> => {
-    actionControllerRef.current?.abort();
-    const controller = new AbortController();
-    actionControllerRef.current = controller;
-    setBusy(busyKey);
-    const current = loadRef.current;
-    // The project only when the listing covers it: a folder the route refused would refuse the change too.
-    const writeCwd = current.state === "loaded" && current.data.project ? cwd : null;
-    const result = await postMcpAction(request, writeCwd, send, controller.signal);
-    // Closed meanwhile: nothing is left to update.
-    if (actionControllerRef.current !== controller) return undefined;
-    actionControllerRef.current = null;
-    setBusy(null);
-    if (result.ok) applyOverview(result.data, select?.(result.data));
-    else void refresh();
-    return result;
-  }, [applyOverview, cwd, refresh]);
-
-  const switchServer = useCallback(async (server: McpServerInfo, enabled: boolean) => {
-    const key = mcpServerKey(server);
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(null);
-    const result = await runAction({ action: enabled ? "enable" : "disable", scope: server.scope, name: server.name }, `switch:${key}`);
-    if (!result) return;
-    if (!result.ok) setActionError({ key, failure: result.error });
-    setFocusBack({ control: pressed });
-  }, [runAction]);
-
-  // Like a switch: the dropdown is disabled while the change runs, and gets focus back after.
-  const setServerExposure = useCallback(async (server: McpServerInfo, exposure: McpExposure) => {
-    const key = mcpServerKey(server);
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(null);
-    const result = await runAction({ action: "set-exposure", scope: server.scope, name: server.name, exposure }, `exposure:${key}`);
-    if (!result) return;
-    if (!result.ok) setActionError({ key, failure: result.error });
-    setFocusBack({ control: pressed });
-  }, [runAction]);
-
-  // A removal that worked moves focus to Undo, and an undo that worked to the
-  // row it put back (both in the view); only a failed one gives focus back to
-  // the button pressed.
-  const removeServer = useCallback(async (server: McpServerInfo) => {
-    const key = mcpServerKey(server);
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(null);
-    const result = await runAction({ action: "remove", scope: server.scope, name: server.name }, `remove:${key}`);
-    if (!result) return;
-    if (!result.ok) {
-      setActionError({ key, failure: result.error });
-      setFocusBack({ control: pressed });
-      return;
-    }
-    const removed = result.data.undo;
-    if (removed) setUndo({ ...removed, undoing: false });
-  }, [runAction]);
-
-  const undoRemoval = useCallback(async () => {
-    const notice = undo;
-    if (!notice) return;
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(null);
-    setUndo({ ...notice, undoing: true, error: undefined });
-    const result = await runAction(
-      { action: "undo", token: notice.token },
-      "undo",
-      (data) => (data.restored ? mcpServerKey(data.restored) : undefined),
-    );
-    if (!result) return;
-    setUndo((current) => {
-      if (current?.token !== notice.token) return current;
-      return result.ok ? null : { ...current, undoing: false, error: result.error };
-    });
-    if (!result.ok) setFocusBack({ control: pressed });
-  }, [runAction, undo]);
-
-  // Sign out deletes the URL's tokens from mcp-auth.json through POST /api/mcp,
-  // which answers with the overview, like any change.
-  const signOut = useCallback(async (server: McpServerInfo) => {
-    const key = mcpServerKey(server);
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(null);
-    setSignIns((runs) => ({ ...runs, [key]: { ...runs[key], signOutError: undefined, signedOut: undefined } }));
-    const result = await runAction({ action: "sign-out", scope: server.scope, name: server.name }, `sign-out:${key}`);
-    if (!result) return;
-    setSignIns((runs) => ({
-      ...runs,
-      [key]: result.ok ? { signedOut: { removed: result.data.signedOut?.removed === true } } : { ...runs[key], signOutError: result.error },
-    }));
-    // The route forgot what connections found; this panel's own test answers go too, or one would
-    // read Connected over the untested entry until Settings closed.
-    if (result.ok) {
-      const now = Date.now();
-      setTests((runs) => {
-        const next = mcpTestRunAfterSignOut(runs[key], now);
-        return next ? { ...runs, [key]: next } : runs;
-      });
-    }
-    setFocusBack({ control: pressed });
-  }, [runAction]);
+  const [focusBack, setFocusBack] = useState<McpFocusBack | null>(null);
 
   // Add writes through POST /api/mcp like any change, after the explicit click
-  // that followed the preview; the server is then tested once, as the ADR has
-  // it, and only then: an install link hides its command until the preview.
+  // that followed the preview; the workflow selects what it wrote and tests it once.
   const submitAdd = useCallback(async (request: McpAddActionRequest) => {
     const pressed = pressedButton();
     const sent = addDraftRef.current;
-    setActionError(null);
-    setGroupStatus(null);
     setAddFailure(null);
-    const result = await runAction(request, "add", (data) => (data.added ? mcpServerKey(data.added) : undefined));
+    const result = await actions.add(request);
     if (!result) return;
     // Edited while the request was out: the answer is about the draft as it was sent.
     const edited = addDraftRef.current !== sent;
@@ -700,87 +275,48 @@ export function McpConfig({
       // A refusal of the old draft says nothing of the new one, and acting on it (the host-variable
       // confirmation, Use <name>) would send the new draft with the old answer's names.
       if (!edited) setAddFailure(result.error);
-      // A folder that changed under the step: the page shows its trust as it is now.
-      if (result.error.trust && cwd) onProjectTrustChanged?.(cwd, result.error.trust);
       setFocusBack({ control: pressed });
       return;
     }
-    const { added: written, trust: writtenTrust } = result.data;
     setAdding(false);
     // What was typed since is kept for the next Add rather than thrown away.
     if (!edited) setAddDraft(EMPTY_MCP_ADD_DRAFT);
     // The pane goes with its button and its box: focus moves to the new server's row, which the answer selected.
     setFocusBack({ control: null, toSelectedRow: true });
-    if (!written) return;
-    setAdded({ ...written, key: mcpServerKey(written) });
-    if (writtenTrust && cwd) onProjectTrustChanged?.(cwd, writtenTrust);
-    const listed = result.data.servers.find((item) => mcpServerKey(item) === mcpServerKey(written));
-    if (listed && !mcpTestBlock(listed, result.data)) void testServer(listed);
-  }, [cwd, onProjectTrustChanged, runAction, testServer]);
+  }, [actions]);
 
-  // The notice goes when the route lets the removal go.
-  const undoToken = undo?.token;
-  const undoExpiresInMs = undo?.expiresInMs;
-  useEffect(() => {
-    if (undoToken === undefined || undoExpiresInMs === undefined) return;
-    const timer = setTimeout(() => setUndo((current) => (current?.token === undoToken ? null : current)), undoExpiresInMs);
-    return () => clearTimeout(timer);
-  }, [undoToken, undoExpiresInMs]);
-
-  // One request for the whole group, answered per server: the ones the route
-  // refuses keep their state and are named under the heading, and so are the
-  // ones referencing PI_WEB_PASSWORD, which switching on leaves off.
-  const switchGroup = useCallback(async (scope: McpScope, servers: McpServerInfo[], enabled: boolean) => {
-    const { targets, keptOff } = mcpGroupSwitchTargets(servers, enabled);
-    const pressed = pressedButton();
-    setActionError(null);
-    setGroupStatus(keptOff > 0 ? { scope, keptOff, failures: [], total: 0 } : null);
-    if (targets.length === 0) return;
-    const result = await runAction(
-      { action: "set-enabled", enabled, servers: targets.map(({ scope: serverScope, name }) => ({ scope: serverScope, name })) },
-      `group:${scope}`,
-    );
-    if (!result) return;
+  /**
+   * One change started from a control in the view, with the control the focus
+   * came from: it is disabled while the change runs, which drops focus to the
+   * page, and gets it back once the answer is in. A change that took the pane
+   * its control sat in away says so: a removal that worked hands focus to the
+   * Undo notice, and an undo that worked to the row it put back, both of which
+   * the view moves focus to itself.
+   */
+  const change = useCallback(async (
+    pressed: HTMLButtonElement | HTMLSelectElement | null,
+    run: () => Promise<McpActionResult | undefined>,
+    { keepFocusWhereItGoes = false }: { keepFocusWhereItGoes?: boolean } = {},
+  ) => {
+    const result = await run();
+    if (result?.ok && keepFocusWhereItGoes) return;
     setFocusBack({ control: pressed });
-    if (!result.ok) {
-      setGroupStatus({ scope, keptOff, failures: [], total: targets.length, error: result.error });
-      return;
-    }
-    const results = result.data.results ?? [];
-    const failures = results
-      .filter((item) => item.reason !== undefined)
-      .map((item) => ({ name: item.name, failure: { error: item.error ?? "", reason: item.reason } }));
-    setGroupStatus(failures.length > 0 || keptOff > 0 ? { scope, keptOff, failures, total: results.length } : null);
-  }, [runAction]);
-
-  useEffect(() => {
-    if (selected) setLastSettingsSelection("mcp", selected, cwd);
-  }, [cwd, selected]);
+  }, []);
 
   return (
     <McpConfigView
       cwd={cwd}
       displayCwd={displayCwd}
-      load={load}
-      selected={selected}
-      refreshing={refreshing}
       embedded={embedded}
-      codemodeSave={codemodeSave}
-      busy={busy}
-      actionError={actionError}
-      groupStatus={groupStatus}
-      undo={undo}
-      focusBack={focusBack}
-      tests={tests}
-      signIns={signIns}
+      snapshot={snapshot}
       adding={adding}
       addDraft={addDraft}
       addFailure={addFailure}
-      added={added}
+      focusBack={focusBack}
       onAddOpen={() => {
         setAdding(true);
-        setAdded(null);
-        setActionError(null);
+        setAddFailure(null);
+        actions.prepareAdd();
       }}
       onAddDraftChange={(draft) => {
         addDraftRef.current = draft;
@@ -789,57 +325,48 @@ export function McpConfig({
         setAddFailure(null);
       }}
       onAddSubmit={(request) => void submitAdd(request)}
-      onTest={(server) => void testServer(server)}
-      onSignIn={(server) => void startSignIn(server)}
-      onSignOut={(server) => void signOut(server)}
-      onSignInPaste={(server, flowId, value) => void pasteSignIn(server, flowId, value)}
-      onSignInCancel={(server, flowId) => void cancelSignIn(server, flowId)}
       onSelect={(key) => {
-        setSelected(key);
-        setActionError(null);
         setAdding(false);
-        setAdded((current) => (current?.key === key ? current : null));
+        setAddFailure(null);
+        actions.select(key);
       }}
-      onRefresh={() => void refresh()}
-      onCodemodeChange={(preference) => void saveCodemode(preference)}
-      onCodemodeModeChange={(mode) => void saveCodemodeMode(mode)}
-      onCodemodeInlineBudgetSave={(budget) => void saveCodemodeInlineBudget(budget)}
-      onServerSwitch={(server, enabled) => void switchServer(server, enabled)}
-      onExposureChange={(server, exposure) => void setServerExposure(server, exposure)}
-      onGroupSwitch={(scope, servers, enabled) => void switchGroup(scope, servers, enabled)}
-      onRemove={(server) => void removeServer(server)}
-      onUndo={() => void undoRemoval()}
+      onServerSwitch={(server, enabled) => void change(pressedButton(), () => actions.setServerEnabled(server, enabled))}
+      onExposureChange={(server, exposure) => void change(pressedButton(), () => actions.setServerExposure(server, exposure))}
+      onGroupSwitch={(scope, servers, enabled) => void change(pressedButton(), () => actions.setGroupEnabled(scope, servers, enabled))}
+      onRemove={(server) => void change(pressedButton(), () => actions.removeServer(server), { keepFocusWhereItGoes: true })}
+      onUndo={() => void change(pressedButton(), () => actions.undoRemoval(), { keepFocusWhereItGoes: true })}
+      onTest={(server) => actions.test(server)}
+      onSignIn={(server) => actions.signIn(server)}
+      onSignOut={(server) => void change(pressedButton(), () => actions.signOut(server))}
+      onSignInPaste={(server, flowId, value) => actions.pasteSignIn(server, flowId, value)}
+      onSignInCancel={(server, flowId) => actions.cancelSignIn(server, flowId)}
+      onRefresh={() => actions.refresh()}
+      onCodemodeChange={(preference) => actions.saveCodemodePreference(preference)}
+      onCodemodeModeChange={(mode) => actions.saveCodemodeMode(mode)}
+      onCodemodeInlineBudgetSave={(budget) => actions.saveCodemodeInlineBudget(budget)}
       onClose={onClose}
     />
   );
 }
 
-/** A change to one server that failed, shown in that server's detail pane. */
-export interface McpActionErrorState {
-  key: string;
-  failure: McpActionFailure;
-}
-
-/** The panel for a load in any state, without the fetch; exported for tests. */
+/**
+ * The panel, in whatever state its workflow is in: it states what the workflow
+ * read and sends it intent. The workflow is the only holder of the overview,
+ * the writes and the two flows; what this renderer keeps is what a person is
+ * doing — the Add pane's draft, and the focus a finished change gives back —
+ * plus the Code mode budget row's own field, which is that row's draft.
+ *
+ * Exported so a test can mount it with a snapshot instead of a connection.
+ */
 export function McpConfigView({
   cwd,
   displayCwd,
-  load,
-  selected,
-  refreshing,
   embedded,
-  codemodeSave = { saving: false, error: null },
-  busy = null,
-  actionError = null,
-  groupStatus = null,
-  undo = null,
-  focusBack = null,
-  tests = {},
-  signIns = {},
+  snapshot,
   adding = false,
   addDraft = EMPTY_MCP_ADD_DRAFT,
   addFailure = null,
-  added = null,
+  focusBack = null,
   onAddOpen = () => {},
   onAddDraftChange = () => {},
   onAddSubmit = () => {},
@@ -861,40 +388,27 @@ export function McpConfigView({
   onClose,
 }: {
   cwd: string | null;
-  /** The same folder as its own host names it, for the header. `cwd` stays the routing address every request carries. */
+  /** The same folder as its own host names it, for the header. \`cwd\` stays the routing address every request carries. */
   displayCwd?: string | null;
-  load: McpConfigLoad;
-  selected: string | null;
-  refreshing: boolean;
   embedded: boolean;
-  codemodeSave?: McpCodemodeSaveState;
-  /** The change on its way, if any: `switch:<key>`, `remove:<key>`, `sign-out:<key>`, `group:<scope>` or `undo`. */
-  busy?: string | null;
-  actionError?: McpActionErrorState | null;
-  groupStatus?: McpGroupStatus | null;
-  undo?: McpUndoNotice | null;
-  /** The control the last answered change was started from, to give focus back to. */
-  focusBack?: McpFocusBack | null;
-  /** The panel's tests by server key: running, their last answer, or why one failed. */
-  tests?: Readonly<Record<string, McpTestRun>>;
-  /** The panel's sign-ins by server key: starting, the flow as last polled, or why a request failed. */
-  signIns?: Readonly<Record<string, McpSignInRun>>;
+  /** Everything the workflow read and every operation's state: the panel's whole readout. */
+  snapshot: McpWorkflowSnapshot;
   /** The add pane is shown instead of the selected row's detail. */
   adding?: boolean;
   addDraft?: McpAddDraft;
   /** Why the route refused the last Add. */
   addFailure?: McpActionFailure | null;
-  /** What the last Add wrote, for its notice. */
-  added?: McpAddedNotice | null;
+  /** The control the last answered change was started from, to give focus back to. */
+  focusBack?: McpFocusBack | null;
   onAddOpen?: () => void;
   onAddDraftChange?: (draft: McpAddDraft) => void;
   onAddSubmit?: (request: McpAddActionRequest) => void;
   onSelect: (key: string) => void;
   onRefresh: () => void;
   onCodemodeChange: (preference: McpCodemodePreference) => void;
-  /** Saves the global `codemode.mode`; "on" removes it, pi's default. */
+  /** Saves the global \`codemode.mode\`; "on" removes it, pi's default. */
   onCodemodeModeChange?: (mode: CodemodeMode) => void;
-  /** Saves the global `codemode.inlineBudget`; null removes it, for pi's default. */
+  /** Saves the global \`codemode.inlineBudget\`; null removes it, for pi's default. */
   onCodemodeInlineBudgetSave?: (budget: number | null) => void;
   onServerSwitch?: (server: McpServerInfo, enabled: boolean) => void;
   onExposureChange?: (server: McpServerInfo, exposure: McpExposure) => void;
@@ -908,6 +422,7 @@ export function McpConfigView({
   onSignInCancel?: (server: McpServerInfo, flowId: string) => void;
   onClose: () => void;
 }) {
+  const { overview: load, selected, refreshing, codemodeSave, busy, actionError, groupStatus, undo, tests, signIns, added } = snapshot;
   const { t } = useI18n();
   const unavailableNoticeId = useId();
   const trustNoticeId = useId();

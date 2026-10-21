@@ -1,7 +1,7 @@
 # MCP 工作流
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R6 MCP 部分
@@ -48,3 +48,44 @@ MCP helpers/interface 行為測試、既有 test:mcp-acceptance／test:mcp-tool-
 ## 交付記錄
 
 待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+
+## 交付記錄
+
+Revision: `7cc775e4` 之上（本票未提交前的 dirty tree；source 已含本票全部變更）。
+
+### 變更
+
+- 新 `packages/ui/src/components/mcp-workflow.ts`：`McpWorkflow` 領域物件，擁有 overview readout（request fence）、selection 由 listing 推導、每個 mutation 的 pending/answered/failed 與 readback、Test（每 server、可與 mutation 並行）、sign-in polling（自有 timer 至終止或 dispose）與 undo notice 到期。
+- 新 `packages/ui/src/components/useMcpWorkflow.ts`：唯一 React 綁定，每 connection+folder 一個 workflow，`useSyncExternalStore` 快照，unmount dispose（effect 建立、state 持有，StrictMode replay 安全）。
+- 改 `packages/ui/src/components/McpConfig.tsx`：view 只保留表單欄位（Add draft、Code mode budget row）、選取意圖、focus 回復；刪除 overview/mutation/polling 協調、request counter、controller refs、`applyOverview`/`runAction`/poll round。`McpConfigView` 改收單一 `snapshot`。
+- 新測試 `packages/ui/src/components/mcp-workflow.test.ts`（8 案例）。
+- 新瀏覽器 journey `apps/web/e2e/mcp-skills/ux-mcp-workflow.{ts,fixture.tsx,fixture.css}`，script `test:mcp-workflow`。
+- 文件：`docs/mcp-on-the-web-host.md` 新增「The panel's own workflow (ticket 07)」；`docs/developer-guide.md` 檢查清單加入 `test:mcp-workflow`。
+
+### 已刪路徑
+
+McpConfig 內的 `loadMcpOverview`/`postMcpAction`/`postMcpTest`/sign-in request 接線、`requestRef`/`controllerRef`/`saveControllerRef`/`actionControllerRef`/`testRequestsRef`/`signInsRef`/`pollRound`/`activeFlowsKey`/`mountedRef`、`refresh`/`saveCodemode*`/`runAction`/`applyOverview`/`testServer`/`startSignIn`/`pasteSignIn`/`cancelSignIn`/`signOut`/`undoRemoval`/`switchGroup` 的 view 端版本、view 端的 `onProjectTrustChanged` 呼叫與 selection reconcile。無 shim／alias／雙路徑。
+
+### Scenario evidence（acceptance R4、R5）
+
+| 列 | 承接 | 結果 |
+| --- | --- | --- |
+| R4 | `mcp-workflow.test.ts`（readout fence、refused change reload、test beside change、Add select+test）＋ `ux-mcp-workflow.ts`（pending change、answer 的 listing、refusal 顯示 host reason 並重讀、Test 結果成 row state）＋ `test:mcp-acceptance`、`test:mcp-tool-states` | pass |
+| R5 | `ux-mcp-workflow.ts`：sign-in 在 Settings 切到 General（section hidden）期間持續 polling 並在該處結束；換 connection 後舊 panel 停止 polling、新 connection 重讀。unit：ended flow 停止 polling、gone flow 停止、dispose 後不再請求 | pass |
+
+### Checks（全部在 revision `7cc775e425512087f91365ccc06b9323a9bc11a4`，dirty tree = 本票變更；raw log 於 `.dev/verify/mcp07/`）
+
+| command | exit | log |
+| --- | --- | --- |
+| `pnpm --filter @hepi/ui typecheck` | 0 | `ui-typecheck.log` |
+| `pnpm --filter @hepi/ui test` | 0（375 pass） | `ui-test.log` |
+| `pnpm --filter @hepi/web test:mcp-workflow` | 0（16 checks PASS） | `mcp-workflow-browser.log` |
+| `pnpm --filter @hepi/web test:mcp-tool-states` | 0（PASS） | `mcp-tool-states.log` |
+| `pnpm --filter @hepi/web test:mcp-acceptance` | 0（PASS） | `mcp-acceptance.log` |
+| `pnpm verify:changed --base=7cc775e4` | 0（changed-typecheck / changed-test / web-unit / check-docs） | `.dev/verify/2026-10-21T05-56-12-953-verify-changed/` |
+| `pnpm --filter @hepi/web build` | 0 | 終端輸出 |
+| `pnpm check:docs` | 0（464 files, 0 broken） | 終端輸出 |
+
+### Findings
+
+無 material finding。未測：真實 upstream OAuth provider 的完整授權流程（journey 用 fixture host 的合法 flow 形狀，非真實 upstream）；Tauri packaged App 的 MCP 面板未在原生 host 上驅動。兩者為本票既有能力限制，不宣稱可用。

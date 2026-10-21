@@ -567,7 +567,8 @@ Settings › MCP is the existing panel, wired to the host service through whiche
 the host's own configuration, adds a server from a pasted config, tests one, signs in and out, and removes one — each
 answered with the listing the host read after the change, so no page reload is needed. The panel asks through the
 connection's own client, not the page's global `fetch`, so it reaches the client API from a desktop App (another
-origin, with a device bearer) exactly as it does from a browser page.
+origin, with a device bearer) exactly as it does from a browser page. Its reads, writes and flows belong to one
+workflow module, [below](#the-panels-own-workflow-ticket-07), rather than to the renderer.
 
 - **The folder is resolved before the host is asked.** A browser cwd is a routing address (`/workspace/<id>`), which
   the host knows nothing about. The client ingress sends the **workspace id**, and the configuration host resolves it
@@ -601,6 +602,46 @@ origin, with a device bearer) exactly as it does from a browser page.
   `/trust` instruction, rather than offering a step the host would refuse.
 - **A deployment that cannot serve MCP says so in the dialog**: no MCP host service configured, or a host service that
   does not answer, is a named limit with no server list and no controls, not an empty list.
+
+### The panel's own workflow (ticket 07)
+
+The panel's reads, its writes and both flows that run beside them are one module, not a sequence of `useEffect`s and
+request counters inside the renderer:
+
+| Piece | Owns |
+| --- | --- |
+| `packages/ui/src/components/mcp-workflow.ts` | the overview readout (fenced by request), the selection the listing implies, every write's pending/answered/failed state with the readback after it, Test per server, and a sign-in's polling until it ends or is disposed |
+| `packages/ui/src/components/useMcpWorkflow.ts` | the one React binding: one workflow per connection and folder, a `useSyncExternalStore` snapshot, disposal at unmount |
+| `packages/ui/src/components/McpConfig.tsx` | the panel: rows, notices and fields, the Add pane's draft, and the focus a finished change gives back |
+
+The rules this makes explicit, each of which the panel would otherwise have to remember:
+
+- **One readout, one fence.** A write's answer is the listing the route read after the change, so it replaces the
+  overview and drops a read that was already on its way; a refused or timed-out write reloads the listing instead of
+  showing its intent as saved. A read that failed leaves the listing *unread*, never empty.
+- **A change is what the route answered, not what was asked.** Nothing is written optimistically: a switch, an
+  exposure, a removal, a group switch, a sign-out and an Add all take the listing their answer carries, and the
+  selection follows it (the new server after an Add, the restored one after an Undo).
+- **Test runs beside a write; a write never runs beside a write.** Test writes no file, so it is not queued behind a
+  change and a change is not queued behind it; its answer is kept per server and about the entry it tested (its
+  `configKey`), and it becomes that row's status while it is the newest.
+- **A sign-in outlives the viewport, and stops with the connection.** The flow lives on the host, and the workflow
+  polls it on its own timers until the flow ends or is gone — hiding the MCP section behind another Settings tab
+  neither stops the polling nor cancels the flow. A finished flow reads the overview again, for Signed in and the
+  Connection row. Replacing the connection, or closing Settings, disposes the panel: its polls and its undo notice's
+  timer end there. A test already on its way is deliberately not aborted, because the route records what it found for
+  the next visit.
+- **The view keeps the form.** The Add pane's paste, its picked server, the values typed into it, and the Code mode
+  budget field are the renderer's own drafts; the workflow never sees a keystroke. An Add's answer is returned to the
+  pane rather than applied for it, because only the pane knows whether the draft it sent is still the draft on screen.
+
+Verified by `packages/ui/src/components/mcp-workflow.test.ts` (the readout's fence, a refused change that reloads
+instead of claiming a save, a test beside a change, a sign-in polled to its end by the workflow's own timers, a
+disposed workflow that asks nothing more, an undo notice that expires on its own timer, and an Add that selects and
+tests what it wrote), and in a real browser by `apps/web/e2e/mcp-skills/ux-mcp-workflow.ts` (the production Settings
+panel over a host-shaped seam: one read for the first listing, a pending change and the listing its answer carries, a
+refusal shown with the host's own reason plus the re-read, a sign-in that keeps polling while its tab is hidden and
+ends there, a test whose answer becomes the row's state, and a replaced connection that stops the old panel's polls).
 
 ## Not built
 

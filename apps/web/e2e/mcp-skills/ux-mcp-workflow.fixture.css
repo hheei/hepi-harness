@@ -1,0 +1,3 @@
+/* The shared settings stylesheet, from the package the workbench moved into. */
+@import "@hepi/ui/styles/settings.css";
+body { margin: 0; background: #14161a; color: #e7e9ee; font: 14px/1.5 system-ui, sans-serif; }
