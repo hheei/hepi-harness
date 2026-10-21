@@ -5514,3 +5514,45 @@ acceptance boxes stay unticked:
 - **Interactive OAuth against real upstream endpoints stays unmeasured** (provider 05's named limit: the composed service
   declares `auth.oauth` only over a scripted provider), and the terminal/upload rows reuse unchanged-source evidence from
   earlier revisions rather than re-running at this one.
+## Native artifact verification: the callable operation (2026-10-21)
+
+`apps/app/scripts/verify-artifacts.mjs` was a 657-line file whose top level selected the artifact, created the log
+directory and sampled the login keyring before the journey began, and whose tail called `process.exit`. It is now the
+operational entry point only — resolve `--artifact-dir`/`--log-dir`, call
+`runArtifactVerification({ artifactDir, logDir })` from `apps/app/scripts/verify-artifacts.operation.mjs`, print
+`{ logDir, passed, failed }`, exit — and the operation owns the artifact inspection, the packaged journey, the private
+display and credential store it acquires, its fixture listeners and packaged process groups, their release, and report
+finalization. Importing the operation performs no artifact lookup, creates no directory, spawns nothing and never exits.
+Flags, the default artifact choice, the summary line, the report's fields and the exit semantics are unchanged; no generic
+verifier, scenario runner or class per subprocess was introduced.
+
+Branch `impl/nonui-native-01`, base `5ec7ffe6`. The packaged journey was run against a **prebuilt debug artifact**
+(`.dev/artifacts/nv01-debug`, `Hepi_0.1.0_amd64.deb`, provenance revision `5ec7ffe6`, `dirty: true`) built on this
+workstation; nothing ran on or was built on `remote-host`.
+
+| Check | Command | Revision | Exit | Result |
+| --- | --- | --- | --- | --- |
+| The callable operation's interface | `node --test apps/app/test/verify-artifacts-operation.test.ts` | `5ec7ffe6` + this change (dirty tree) | 0 | 3 pass / 0 fail — importing the operation starts nothing, and a report counts the assertions it recorded in order, bounds a detail at 800 characters and states an absent one as an empty string |
+| The shared packaged-environment guard, pointed at the operation | `node --test scripts/credential-sandbox.test.ts` | `5ec7ffe6` + this change (dirty tree) | 0 | 14 pass / 0 fail; the driver table now reads `verify-artifacts.operation.mjs`, the file that builds every packaged environment |
+| Selector over the changed package and its dependents | `pnpm verify:changed --base=5ec7ffe6` | `5ec7ffe6` + this change (`dirty: true`) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/app` **29 pass / 0 fail**, this change's three included), `script-typecheck` 0, `script-tests` 0 (**89 pass**), `check-entrypoints` 0 (141 entries, 0 newly missing), `check-docs` 0 (466 files, 0 broken links) — `.dev/verify/2026-10-21T13-14-43-025-verify-changed/verify.json` |
+| The packaged artifact journey, through the new entry point | `node apps/app/scripts/verify-artifacts.mjs --artifact-dir=.dev/artifacts/nv01-debug --log-dir=.dev/verify/nv01/final` | `5ec7ffe6` + this change (dirty tree); artifact from `5ec7ffe6` | 0 | **54 assertions, 0 failures** — `.dev/verify/nv01/final/report.json` and `.dev/verify/nv01/final.log`; `dpkgState` `Status: install ok installed`, `installExit` 0, `verifyExit` 0, `rootRemoved` true, `credentialStore.retained` `removed with the run`, developer keyring `0ced02df2ba9… -> 0ced02df2ba9…` unchanged |
+| The same artifact and host, through the pre-change script | `node <5ec7ffe6 verify-artifacts.mjs> --artifact-dir=.dev/artifacts/nv01-debug --log-dir=.dev/verify/nv01/legacy-run` | `5ec7ffe6` | 0 | **54 assertions, 0 failures** — `.dev/verify/nv01/legacy-run/report.json`. Compared field by field with the run above: identical report key set, identical assertion names in identical order, identical outcomes. The nine differing details are the run's own identities (bearer values, the private bus path, the retained dpkg log path) |
+
+**What the paired run establishes.** The comparison is the replacement's evidence: a refactor of this size could pass its
+own tests and still change what the artifact check observes, so the same artifact was verified by both the old script and
+the new entry point on the same host and the two reports were diffed. Teardown was checked as a process fact rather than
+read from the report: after the final run no `Xvfb :9x`, no `hepi-app` from this worktree and no private
+`dbus-daemon --print-address` from either run was alive, and no `hepi-artifact-cred-*` tree remained under `/tmp`. The
+`Xvfb :90`, `dbus-daemon` and `hepi-app` processes still running belong to other checkouts and predate this run by two
+days; they were left alone.
+
+**Not claimed.** No release-profile artifact was built or verified, no `remote-host` build or run happened, and no
+system `dpkg` install was made — the transaction ran in a private user namespace over a root this run removed. The debug
+artifact is functional evidence only, not a release measurement.
+
+**The run at the committed revision `0aab74e9` differs only where it must.** The verifier binds
+`provenance-names-the-built-revision` to `git rev-parse HEAD`, and the artifact was built from `5ec7ffe6`, so running the
+committed tree against it reports `5ec7ffe62a2a… (HEAD 0aab74e9c…)` and 53/54 with that one failure
+(`.dev/verify/nv01/postcommit.log`). The other 53 assertion outcomes and the report's key set are identical to the run
+above, which is the point of the assertion: a run against an artifact built from another revision is a different run, and
+it says so rather than passing. The passing runs are the two revision-matched ones.

@@ -181,6 +181,14 @@ descriptor request arrive with `Origin: tauri://localhost` and the stored device
 through the real window with `xdotool`; and a cold start after forgetting the connection. Report and logs land beside
 the artifact.
 
+`verify-artifacts.mjs` is only the entry point: it resolves `--artifact-dir`/`--log-dir` (the default is the newest
+`.dev/artifacts/<label>` this checkout built), calls `runArtifactVerification({ artifactDir, logDir })` from
+[`scripts/verify-artifacts.operation.mjs`](scripts/verify-artifacts.operation.mjs), prints `{ logDir, passed, failed }`
+and owns the process exit. Everything the run does — artifact inspection, the packaged journey, the private display,
+credential store, fixture listeners and packaged process groups it acquires and releases — lives in that operation, so
+importing it starts nothing and a caller gets the completed report back only after teardown. Adding an assertion means
+adding a step to that journey; the report's fields, assertion names and exit semantics are unchanged.
+
 **The package goes through a real `dpkg` transaction, and it is still not a system install.** `dpkg --install` needs
 euid 0, which this host does not grant. It does grant unprivileged user namespaces
 (`kernel.unprivileged_userns_clone=1`) and `bwrap`, so
