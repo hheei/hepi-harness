@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { test } from "node:test";
 import ignore from "ignore";
-import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem.ts";
+import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem-helper.ts";
 
 /**
  * The helper matches gitignore rules with a port of `node-ignore@7.0.5`, the engine the loader and the local producer

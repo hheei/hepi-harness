@@ -373,7 +373,8 @@ Selected pi-gui file/Git helpers are now preserved under packages/gateway/vendor
 
 ## node-ignore matching engine, ported to Python (submit-stall, ignore parity)
 
-`packages/gateway/src/ssh-filesystem.ts` embeds a Python 3 port of the `node-ignore` **7.0.5** matching engine —
+`packages/gateway/src/ssh-filesystem-helper.ts` holds the remote filesystem helper, one Python 3 program kept as readable
+source and embedded in the bundle at build time; it carries a port of the `node-ignore` **7.0.5** matching engine —
 `Ignore`, `IgnoreRule`, `RuleManager`, the `REPLACERS` chain that compiles a pattern into a regular expression, the
 trailing-wildcard handling, the rule ordering with negations and the `_t` parent-directory traversal. It is
 https://github.com/kaelzhang/node-ignore at the version this repository already depends on (MIT, Copyright (c) 2013

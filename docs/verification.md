@@ -9,6 +9,37 @@ its relative layout under `.dev/worktree-archive/<name>`, and a log whose worktr
 under the repository root's own `.dev/verify/<topic>`. Where neither applies, the path is historical evidence for that
 row, not a runnable command.
 
+## Readable statically bundled SSH helper (filesystem adapters 01)
+
+Source: `impl/nonui-filesystem-01` at `5ec7ffe62a2aaf172fb294bd68f1976098cfb012` plus the uncommitted working tree of that
+slice. The remote filesystem helper moved out of one escaped 45,582-character string literal in
+`packages/gateway/src/ssh-filesystem.ts` into `packages/gateway/src/ssh-filesystem-helper.ts`, where it is one
+Python line per source line. It is still a static TypeScript import: no asset, loader, generated file, sidecar or
+runtime source lookup was added, and `SshFilesystem` sends the same program over the same session bootstrap. Only
+the three sequences a template literal would consume (backslash, backtick, dollar-brace) are escaped.
+
+Logs below are relative to `.dev/verify/nonui-filesystem-01/` and
+`.dev/verify/2026-10-21T13-12-51-032-verify-changed/` (the runner's own run directory).
+
+| Command | Exit | Evidence |
+| --- | --- | --- |
+| decoded-program comparison: `git show HEAD:packages/gateway/src/ssh-filesystem.ts` literal vs the new module | 0 | `{"equal":true,"bytesBefore":43443,"bytesAfter":43443,"shaBefore":"60f28535…cb4c","shaAfter":"60f28535…cb4c"}` — byte-identical, so no inert formatting change either |
+| `node --test test/ssh-helper-source.test.ts` (packages/gateway) | 0 | 1/1 pass: no CR, no interpolation, >1,000 lines, `node-ignore@7.0.5` notice, the backslash-built `_TEST_INVALID_TRAILING_BACKSLASH`, `b"\xef\xbb\xbf"` and `chunk.find(b"\n"…)` verbatim, and `python3` compiles the decoded source |
+| `node --test test/{ssh-helper-source,ignore-parity,ssh-filesystem,ssh-session,ssh-resources,ssh-workspaces,resource-snapshot,filesystem,files-surface,ingress-resources-install,ingress-ssh-workbench,file-transfer,file-transfer-sshd,host-files,ssh}.test.ts` (packages/gateway) | 0 | `gateway-ssh-suites.log`: 104 tests, 104 pass, 0 fail — the ordinary admitted file/SSH workflows, including the loopback-sshd and parity suites |
+| `node --test $(find src test -name '*.test.ts' | sort)` (packages/gateway acceptance) | 0 | `gateway-acceptance.log`: 496 tests, 496 pass, 0 fail — the whole package, not only the selected suites |
+| `node --test test/{ssh-project,agent-definitions-http,agent-definitions-route}.test.ts` (apps/server) | 0 | `server-ssh-project.log`: 20 tests, 20 pass — resource snapshot, permitted agent-definition read/write and host account semantics over the SSH adapter |
+| `pnpm typecheck` | 0 | `typecheck.log`; workspace and root tooling projects |
+| `pnpm --filter @hepi/client build` | 0 | `client-build.log`; the helper program is in `dist/cli.js` (712,636 bytes, 43 chunks), and the entry file carries `Kael Zhang` and `node-ignore 7.0.5 port` |
+| `HEPI_REQUIRE_SSH_SMOKE=1 pnpm --filter @hepi/client smoke:pack` | 0 | `client-smoke-pack.log`: 6 checks — packed tarball installed outside the checkout, help/version/doctor, local gateway, and a real localhost sshd serving account, read, command and worktree create/remove through `remote-loopback` |
+| `pnpm verify:changed --quiet` | 0 | `verify.json` in the run directory: `changed-typecheck` and `changed-test` (362 tests, 362 pass) and `web-unit` (14 pass) and `check-docs` all exit 0, `sha 5ec7ffe6…`, `dirty: true` for this slice's files |
+
+The build and pack ran on the workstation. `python3` 3.13.13 is the interpreter the local fixture and the helper's own
+syntax check use; the helper's runtime requirement is unchanged (Python 3 on the execution host).
+
+**Not covered here.** No remote-host deployment was made from this slice, and the persisted-state, alias-retirement and
+cross-adapter scenario work belongs to the later filesystem tickets. The parity suite proves the two engines agree over
+its generated corpus, not over every pattern `node-ignore` accepts.
+
 ## TypeScript test migration (2026-10-21)
 
 Source: main at 67e3682967b067948f9b066ee72e20486323771b plus the uncommitted integrated working tree,
