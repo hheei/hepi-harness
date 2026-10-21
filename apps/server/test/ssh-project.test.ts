@@ -33,13 +33,12 @@ async function startSshGateway(options: { id: string; profiles: readonly SshProf
   const token = "gateway-token-" + options.id;
   const registry = new WorkspaceRegistry(sshWorkspaceSeed(options.profiles));
   const runner = options.runner;
-  const server = new GatewayRpcServer(
-    new SshGateway({ id: options.id, token, profiles: options.profiles, allowedCommands: ["bash", "sh"], runner, workspaces: registry }),
-    undefined,
-    new SshFilesystem({ id: options.id, profiles: options.profiles, runner, workspaces: registry }),
-    new SshInstallServer({ profiles: options.profiles, runner, workspaces: registry }),
-    new SshWorkspaceServer(registry, { profiles: options.profiles, runner }),
-  );
+  const server = new GatewayRpcServer({
+    gateway: new SshGateway({ id: options.id, token, profiles: options.profiles, allowedCommands: ["bash", "sh"], runner, workspaces: registry }),
+    files: new SshFilesystem({ id: options.id, profiles: options.profiles, runner, workspaces: registry }),
+    installs: new SshInstallServer({ profiles: options.profiles, runner, workspaces: registry }),
+    workspaces: new SshWorkspaceServer(registry, { profiles: options.profiles, runner }),
+  });
   await new Promise<void>(resolve => server.server.listen(options.port ?? 0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address && typeof address === "object");
@@ -57,7 +56,11 @@ async function startLocalGateway(options: { id: string; root: string; home: stri
   const token = "gateway-token-" + options.id;
   const registry = new WorkspaceRegistry([{ id: "legacy", root: options.root }]);
   const identity = { user: "operator", home: options.home };
-  const server = new GatewayRpcServer(new LocalGateway({ id: options.id, token, workspaces: registry, allowedCommands: ["bash", "sh"] }), undefined, new LocalFilesystem(registry, { identity }), undefined, new WorkspaceServer(registry, { identity }));
+  const server = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: options.id, token, workspaces: registry, allowedCommands: ["bash", "sh"] }),
+    files: new LocalFilesystem(registry, { identity }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+  });
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address && typeof address === "object");

@@ -21,7 +21,10 @@ const GATEWAY_TOKEN = "gateway-token";
 async function stack(): Promise<{ root: string; origin: string; close(): Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), "hepi-files-e2e-"));
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: GATEWAY_TOKEN, workspaces, allowedCommands: [] }), undefined, new LocalFilesystem(workspaces));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: GATEWAY_TOKEN, workspaces, allowedCommands: [] }),
+    files: new LocalFilesystem(workspaces),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

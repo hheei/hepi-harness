@@ -32,7 +32,12 @@ async function startGateway(options: { id: string; legacyRoot: string; home: str
   const identity = { user: options.user ?? "operator", home: options.home };
   // Both surfaces of one host answer for the same account: the filesystem resolves the execution host, and the
   // workspace surface browses that host's directories.
-  const server = new GatewayRpcServer(gateway, new GatewayWorkbench(registry), new LocalFilesystem(registry, { identity }), undefined, new WorkspaceServer(registry, { identity }));
+  const server = new GatewayRpcServer({
+    gateway,
+    workbench: new GatewayWorkbench(registry),
+    files: new LocalFilesystem(registry, { identity }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+  });
   await new Promise<void>(resolve => server.server.listen(options.port ?? 0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address && typeof address === "object");

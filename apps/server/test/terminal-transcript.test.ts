@@ -141,7 +141,10 @@ async function startLocalHost(): Promise<Host> {
 	const registry = new WorkspaceRegistry([{ id: "local", root }]);
 	const fake = fakeLauncher();
 	const terminals = new TerminalSessions({ id: gatewayId, workspaces: registry, launcher: fake.launcher });
-	const server = new GatewayRpcServer(new LocalGateway({ id: gatewayId, token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }), undefined, undefined, undefined, undefined, undefined, terminals);
+	const server = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: gatewayId, token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
+		terminals,
+	});
 	return await listen(server, { gatewayId, workspaceId: "local", root }, fake.next);
 }
 
@@ -163,7 +166,10 @@ async function startSshHost(): Promise<Host> {
 	};
 	const fake = fakeLauncher();
 	const terminals = new TerminalSessions({ id: gatewayId, workspaces: registry, launcher: fake.launcher });
-	const server = new GatewayRpcServer(new SshGateway({ id: gatewayId, token: GATEWAY_TOKEN, profiles, allowedCommands: ["bash"], runner, workspaces: registry }), undefined, undefined, undefined, undefined, undefined, terminals);
+	const server = new GatewayRpcServer({
+		gateway: new SshGateway({ id: gatewayId, token: GATEWAY_TOKEN, profiles, allowedCommands: ["bash"], runner, workspaces: registry }),
+		terminals,
+	});
 	return await listen(server, { gatewayId, workspaceId: "remote-prod", root }, fake.next);
 }
 

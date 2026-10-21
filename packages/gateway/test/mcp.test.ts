@@ -34,7 +34,7 @@ async function fixture(): Promise<Fixture> {
 	await mkdir(home, { recursive: true });
 	const registry = new WorkspaceRegistry([{ id: "local", root: home }]);
 	const gateway = new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, new McpHostService(agentDirOf(home)));
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), mcp: new McpHostService(agentDirOf(home)), });
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");
@@ -340,7 +340,11 @@ test("a gateway host that serves no MCP answers a named limit, and the rest of t
 	try {
 		const registry = new WorkspaceRegistry([{ id: "local", root: base }]);
 		const gateway = new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
-		const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, new WorkspaceServer(registry, { identity: { user: "operator", home: base } }));
+		const server = new GatewayRpcServer({
+			gateway,
+			files: new LocalFilesystem(registry),
+			workspaces: new WorkspaceServer(registry, { identity: { user: "operator", home: base } }),
+		});
 		await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 		const address = server.server.address();
 		assert.ok(address && typeof address === "object");

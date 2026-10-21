@@ -406,9 +406,9 @@ test("the fork is the runtime's own, so its conversation-scoped documents follow
   const root = await mkdtemp(join(tmpdir(), "hepi-fork-docs-"));
   directories.push(root);
   const { GatewayRpcServer, LocalGateway, WorkspaceRegistry } = await import("@hepi/gateway");
-  const gateway = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: new WorkspaceRegistry([{ id: "local", root }]), allowedCommands: ["bash"] }),
-  );
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: new WorkspaceRegistry([{ id: "local", root }]), allowedCommands: ["bash"] }),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const gatewayAddress = gateway.server.address();
   assert.ok(gatewayAddress !== null && typeof gatewayAddress === "object");

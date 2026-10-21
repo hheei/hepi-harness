@@ -48,7 +48,7 @@ async function sshHost(): Promise<Host> {
   const workspaces = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
   const files = new SshFilesystem({ id: "gateway-1", profiles, workspaces, runner: remote.runner });
   const gateway = new LocalGateway({ id: "gateway-1", token: TOKEN, workspaces, allowedCommands: [] });
-  const server = new GatewayRpcServer(gateway, undefined, files);
+  const server = new GatewayRpcServer({ gateway, files });
   const http = gatewayHttp(server.server);
   return {
     root,

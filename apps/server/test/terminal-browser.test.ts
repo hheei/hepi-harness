@@ -108,10 +108,10 @@ async function startFixture(): Promise<Fixture> {
 	const workspaceId = "local";
 	const registry = new WorkspaceRegistry([{ id: workspaceId, root }]);
 	const terminals = new TerminalSessions({ id: "workstation", workspaces: registry, launcher });
-	const gateway = new GatewayRpcServer(
-		new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
-		undefined, undefined, undefined, undefined, undefined, terminals,
-	);
+	const gateway = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
+		terminals,
+	});
 	await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
 	const address = gateway.server.address();
 	assert.ok(address !== null && typeof address === "object");

@@ -73,7 +73,10 @@ function start(options: { streamBudgetBytes?: number; reconnectMs?: number } = {
 			};
 		},
 	});
-	const server = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }, new MemoryLedger()), undefined, undefined, undefined, undefined, undefined, sessions);
+	const server = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }, new MemoryLedger()),
+		terminals: sessions,
+	});
 	const http = gatewayHttp(server.server);
 	const auth = (): Record<string, string> => ({ authorization: "Bearer " + TOKEN, "content-type": "application/json" });
 

@@ -71,7 +71,7 @@ async function sshHost(): Promise<Host> {
 /** The gateway a fixture serves: its own routes over an in-process connection, and the filesystem that answers them. */
 async function hostFor(root: string, workspace: string, workspaces: WorkspaceRegistry, files: FilesystemServer): Promise<Host> {
   const gateway = new LocalGateway({ id: "gateway-1", token: TOKEN, workspaces, allowedCommands: [] });
-  const server = new GatewayRpcServer(gateway, undefined, files);
+  const server = new GatewayRpcServer({ gateway, files });
   const http = gatewayHttp(server.server);
   return {
     root,

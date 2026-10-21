@@ -153,7 +153,10 @@ async function startGateway(root = "/work"): Promise<Gateway> {
 	const registry = new WorkspaceRegistry([{ id: "workspace-1", root }]);
 	const fake = fakeLauncher();
 	const terminals = new TerminalSessions({ id: gatewayId, workspaces: registry, launcher: fake.launcher });
-	const server = new GatewayRpcServer(new LocalGateway({ id: gatewayId, token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }), undefined, undefined, undefined, undefined, undefined, terminals);
+	const server = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: gatewayId, token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }),
+		terminals,
+	});
 	// The server is handed the connection a socket would have produced, so its own parsing and routing run unmodified
 	// while nothing on this machine can reach the fixture and no other test can collide with it.
 	const http = gatewayHttp(server.server);
@@ -526,7 +529,9 @@ test("each output frame carries its offset as the event stream's own id field", 
 test("a gateway with no terminal capability answers a named limit, and an unknown session is named as such", async () => {
 	// A gateway composed without the terminal capability: the limit is the host, and it says so.
 	const registry = new WorkspaceRegistry([{ id: "workspace-1", root: "/work" }]);
-	const bare = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }));
+	const bare = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
+	});
 	const bareHttp = gatewayHttp(bare.server);
 	try {
 		const refused = await call(bareHttp, "/v1/terminal", "POST", { gatewayId: "workstation", workspaceId: "workspace-1", cols: 80, rows: 24 });

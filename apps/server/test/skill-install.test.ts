@@ -48,7 +48,11 @@ async function fixture(t: TestContext) {
   const workspaces = new WorkspaceRegistry([{ id: "local", root }, { id: "second", root: second }]);
   const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const installs = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+    installs,
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");
@@ -60,12 +64,11 @@ async function fixture(t: TestContext) {
   // surface, installation capability and file surface are the production ones, bound to the remote account.
   const remoteWorkspaces = new WorkspaceRegistry([{ id: "remote-prod", root: remoteRoot }]);
   const remoteIdentity = { user: "remote-operator", home: remoteHome };
-  const remoteGateway = new GatewayRpcServer(
-    new LocalGateway({ id: "remote-host", token: "remote-token", workspaces: remoteWorkspaces, allowedCommands: ["bash"] }),
-    undefined,
-    new LocalFilesystem(remoteWorkspaces, { identity: remoteIdentity }),
-    new LocalInstallServer(remoteWorkspaces, { identity: remoteIdentity }),
-  );
+  const remoteGateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "remote-host", token: "remote-token", workspaces: remoteWorkspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(remoteWorkspaces, { identity: remoteIdentity }),
+    installs: new LocalInstallServer(remoteWorkspaces, { identity: remoteIdentity }),
+  });
   await new Promise<void>((resolve) => remoteGateway.server.listen(0, "127.0.0.1", resolve));
   const remoteAddress = remoteGateway.server.address();
   assert.ok(remoteAddress !== null && typeof remoteAddress === "object");

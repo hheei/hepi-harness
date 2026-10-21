@@ -35,14 +35,10 @@ function repository(root = "/srv/repo", branch = "main"): FakeSshHost {
  * reached through the public route.
  */
 async function startLocalGateway(registry: WorkspaceRegistry, worktrees?: WorktreeServer | null) {
-  const server = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: [] }),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    worktrees === null ? undefined : worktrees ?? new GatewayWorktrees(registry),
-  );
+  const server = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: [] }),
+    worktrees: worktrees === null ? undefined : worktrees ?? new GatewayWorktrees(registry),
+  });
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address !== null && typeof address === "object");
@@ -56,14 +52,10 @@ async function startLocalGateway(registry: WorkspaceRegistry, worktrees?: Worktr
 /** One SSH gateway, composed as its entrypoint composes it, over the controlled host's transport. */
 async function startSshGateway(workspaces: readonly WorkspaceConfig[], host: FakeSshHost) {
   const registry = new WorkspaceRegistry(workspaces);
-  const server = new GatewayRpcServer(
-    new SshGateway({ id: "workstation-ssh", token: TOKEN, profiles: [host.profile], allowedCommands: [], runner: host.runner, workspaces: registry }),
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    new SshWorktreeServer(registry, { profiles: [host.profile], runner: host.runner }),
-  );
+  const server = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "workstation-ssh", token: TOKEN, profiles: [host.profile], allowedCommands: [], runner: host.runner, workspaces: registry }),
+    worktrees: new SshWorktreeServer(registry, { profiles: [host.profile], runner: host.runner }),
+  });
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address !== null && typeof address === "object");

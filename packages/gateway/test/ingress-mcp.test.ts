@@ -67,7 +67,12 @@ async function host(gatewayId = "workstation"): Promise<Host> {
 	const gateway = new LocalGateway({ id: gatewayId, token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
 	// The workspace surface is what a deployment composes beside MCP, and it is how the Backend learns that this host
 	// executes on its own machine: without it the host answers no profile listing at all, which is an unreachable host.
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, new WorkspaceServer(registry, { identity: { user: "operator", home } }), undefined, undefined, new McpHostService(agentDirOf(home), registry));
+	const server = new GatewayRpcServer({
+		gateway,
+		files: new LocalFilesystem(registry),
+		workspaces: new WorkspaceServer(registry, { identity: { user: "operator", home } }),
+		mcp: new McpHostService(agentDirOf(home), registry),
+	});
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");
@@ -93,7 +98,11 @@ async function sshHost(gatewayId = "workstation-ssh"): Promise<Host> {
 	const profiles = [ssh.profile];
 	const registry = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
 	const gateway = new SshGateway({ id: gatewayId, token: GATEWAY_TOKEN, profiles, allowedCommands: ["bash"], workspaces: registry, runner: ssh.runner });
-	const server = new GatewayRpcServer(gateway, undefined, undefined, undefined, new SshWorkspaceServer(registry, { profiles, runner: ssh.runner }), undefined, undefined, new McpHostService(agentDirOf(home), registry));
+	const server = new GatewayRpcServer({
+		gateway,
+		workspaces: new SshWorkspaceServer(registry, { profiles, runner: ssh.runner }),
+		mcp: new McpHostService(agentDirOf(home), registry),
+	});
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");

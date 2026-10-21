@@ -65,7 +65,11 @@ async function operatorFixture(skillCount: number): Promise<OperatorFixture> {
 	const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
 	const real = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
 	const { server, state } = instrumented(real);
-	const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, server);
+	const gateway = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+		files,
+		installs: server,
+	});
 	await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
 	const address = gateway.server.address();
 	assert.ok(address !== null && typeof address === "object");

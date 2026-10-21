@@ -410,7 +410,11 @@ async function rig(t: TestContext, options: RigOptions = {}): Promise<Rig> {
 
   const registry = new WorkspaceRegistry([{ id: "local", root: folder }]);
   const gateway = new LocalGateway({ id: "workstation", token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
-  const host = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry, { identity: { user: "operator", home } }), undefined, undefined, undefined, undefined, options.servesMcp === false ? undefined : new McpHostService(agentDir, registry));
+  const host = new GatewayRpcServer({
+    gateway,
+    files: new LocalFilesystem(registry, { identity: { user: "operator", home } }),
+    mcp: options.servesMcp === false ? undefined : new McpHostService(agentDir, registry),
+  });
   await new Promise<void>(resolve => host.server.listen(0, "127.0.0.1", resolve));
   const gatewayAddress = host.server.address();
   assert.ok(gatewayAddress !== null && typeof gatewayAddress === "object");

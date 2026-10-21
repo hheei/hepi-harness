@@ -30,7 +30,7 @@ test("rejects traversal and commands outside the allowlist", async () => {
 test("authenticates the gateway RPC and returns an offline outcome", async () => {
   const root = await mkdtemp(join(tmpdir(), "hepi-gateway-"));
   const gateway = new LocalGateway({ id: "gateway-1", token: "secret", workspaces: new WorkspaceRegistry([{ id: "workspace-1", root }]), allowedCommands: ["node"] });
-  const server = new GatewayRpcServer(gateway);
+  const server = new GatewayRpcServer({ gateway });
   await new Promise<void>((resolve) => server.server.listen(0, resolve));
   const address = server.server.address(); assert.ok(address !== null && typeof address === "object");
   const request: ExecuteRequest = { gatewayId: "gateway-1", workspaceId: "workspace-1", callId: "call-5", command: [process.execPath, "-e", ""] };

@@ -154,10 +154,10 @@ test("the SSH gateway's terminal route answers an unreachable host by name, with
 	const workspaces = sshWorkspaces;
 	const runner = failingSshRunner({ stderr: "ssh: connect to host fake-host port 2222: Connection refused\n", exitCode: 255 });
 	const store = sshLauncher(runner, workspaces).store;
-	const server = new GatewayRpcServer(
-		new SshGateway({ id: GATEWAY_ID, token: TOKEN, profiles: [PROFILE], allowedCommands: [], runner: { execute: async () => { throw new Error("not asked"); } }, workspaces }),
-		undefined, undefined, undefined, undefined, undefined, store,
-	);
+	const server = new GatewayRpcServer({
+		gateway: new SshGateway({ id: GATEWAY_ID, token: TOKEN, profiles: [PROFILE], allowedCommands: [], runner: { execute: async () => { throw new Error("not asked"); } }, workspaces }),
+		terminals: store,
+	});
 	const answer = await refusedOpen({ close: async () => { await store.closeAll(); } }, server, JSON.stringify({ gatewayId: GATEWAY_ID, workspaceId: WORKSPACE_ID, cols: 80, rows: 24 }));
 	assert.equal(answer.code, "unreachable", JSON.stringify(answer));
 	// A refused open keeps one refusal status whatever the named reason, and `501` stays the answer of a gateway composed
@@ -168,10 +168,10 @@ test("the SSH gateway's terminal route answers an unreachable host by name, with
 test("the local gateway's terminal route answers a missing helper as the named limit it is", async () => {
 	const registry = new WorkspaceRegistry([{ id: "workspace-1", root: "/work" }]);
 	const store = missingPythonLauncher();
-	const server = new GatewayRpcServer(
-		new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
-		undefined, undefined, undefined, undefined, undefined, store,
-	);
+	const server = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }),
+		terminals: store,
+	});
 	const answer = await refusedOpen({ close: async () => { await store.closeAll(); } }, server, JSON.stringify({ gatewayId: "workstation", workspaceId: "workspace-1", cols: 80, rows: 24 }));
 	assert.equal(answer.code, "not_supported", JSON.stringify(answer));
 	assert.match(String(answer.message), /python3/);
@@ -183,10 +183,10 @@ test("the local gateway's terminal route answers a missing helper as the named l
 test("the SSH gateway's terminal route answers a host with no python3 as the same named limit the local host gives", async () => {
 	const workspaces = sshWorkspaces;
 	const store = sshLauncher(failingSshRunner({ stderr: "bash: line 1: python3: command not found\n", exitCode: 127 }), workspaces).store;
-	const server = new GatewayRpcServer(
-		new SshGateway({ id: GATEWAY_ID, token: TOKEN, profiles: [PROFILE], allowedCommands: [], runner: { execute: async () => { throw new Error("not asked"); } }, workspaces }),
-		undefined, undefined, undefined, undefined, undefined, store,
-	);
+	const server = new GatewayRpcServer({
+		gateway: new SshGateway({ id: GATEWAY_ID, token: TOKEN, profiles: [PROFILE], allowedCommands: [], runner: { execute: async () => { throw new Error("not asked"); } }, workspaces }),
+		terminals: store,
+	});
 	const answer = await refusedOpen({ close: async () => { await store.closeAll(); } }, server, JSON.stringify({ gatewayId: GATEWAY_ID, workspaceId: WORKSPACE_ID, cols: 80, rows: 24 }));
 	assert.equal(answer.code, "not_supported", JSON.stringify(answer));
 	assert.equal(answer.status, 409, JSON.stringify(answer));

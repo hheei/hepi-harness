@@ -193,7 +193,10 @@ async function startDelegating(t: TestContext): Promise<DelegateRig> {
   await writeFile(join(root, ".pi", "agents", "worker.md"), "---\nname: worker\ndescription: worker\ntools:\n  - read\ncontext: fresh\n---\n\nbody\n");
 
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new LocalFilesystem(workspaces, { identity: { user: "operator", home } }));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const gatewayAddress = gateway.server.address();
   assert.ok(gatewayAddress !== null && typeof gatewayAddress === "object");

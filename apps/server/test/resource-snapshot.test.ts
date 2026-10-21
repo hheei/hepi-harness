@@ -56,7 +56,10 @@ async function host(t: { after(fn: () => unknown): void }, options: { skills?: n
   await writeFile(join(root, ".pi", "prompts", "summarize.md"), "---\ndescription: Summarize\n---\nSummarize $1.\n");
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
   const files = new CountingFiles(workspaces, { identity: { user: "operator", home } });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

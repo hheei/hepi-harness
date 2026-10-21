@@ -29,13 +29,12 @@ test("a project registered after boot is an installation target at once", { time
 
   const registry = new WorkspaceRegistry([{ id: "legacy", root: legacyRoot }]);
   const identity = { user: "operator", home };
-  const gateway = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
-    undefined,
-    new LocalFilesystem(registry, { identity }),
-    new LocalInstallServer(registry, { identity }),
-    new WorkspaceServer(registry, { identity }),
-  );
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(registry, { identity }),
+    installs: new LocalInstallServer(registry, { identity }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

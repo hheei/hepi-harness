@@ -75,13 +75,11 @@ test("one parent, a separate main conversation, a child and a branch keep every 
   // workspace id into a retained binding: the shape a conversation bound before the removal keeps.
   const registry = new WorkspaceRegistry([]);
   const identity = { user: "operator", home };
-  const gateway = new GatewayRpcServer(
-    new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
-    undefined,
-    new LocalFilesystem(registry, { identity }),
-    undefined,
-    new WorkspaceServer(registry, { identity }),
-  );
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: registry, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(registry, { identity }),
+    workspaces: new WorkspaceServer(registry, { identity }),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

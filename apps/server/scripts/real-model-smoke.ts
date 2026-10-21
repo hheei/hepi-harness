@@ -294,7 +294,11 @@ try {
   const identity = { user: process.env.USER ?? "smoke", home: host.home };
   const files = new LocalFilesystem(workspaces, { identity });
   const installs = new LocalInstallServer(workspaces, { identity });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "smoke-gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "smoke-gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+    installs,
+  });
   await new Promise<void>((r) => gateway.server.listen(0, "127.0.0.1", r));
   const gatewayPort = (gateway.server.address() as { port: number }).port;
   closers.push(async () => { gateway.server.closeAllConnections(); await gateway.close(); });

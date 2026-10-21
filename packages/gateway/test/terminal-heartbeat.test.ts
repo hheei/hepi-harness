@@ -89,7 +89,10 @@ async function start(): Promise<{ origin: string; id: string; root: string; clos
 	const id = "workstation";
 	const registry = new WorkspaceRegistry([{ id: "workspace-1", root }]);
 	const terminals = new TerminalSessions({ id, workspaces: registry, launcher: localTerminalLauncher(), heartbeatIntervalMs: HEARTBEAT_MS });
-	const server = new GatewayRpcServer(new LocalGateway({ id, token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }), undefined, undefined, undefined, undefined, undefined, terminals);
+	const server = new GatewayRpcServer({
+		gateway: new LocalGateway({ id, token: TOKEN, workspaces: registry, allowedCommands: ["bash", "sh"] }),
+		terminals,
+	});
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address !== null && typeof address === "object");
