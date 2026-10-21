@@ -49,7 +49,6 @@ export interface ComposerMenusOptions {
   isStreaming: boolean;
   inputHistory: readonly string[];
   slashCommands: readonly import("../../hooks/useAgentSession").SlashCommandInfo[] | undefined;
-  slashCommandsLoading: boolean;
   onLoadSlashCommands?: () => Promise<import("../../hooks/useAgentSession").SlashCommandInfo[]> | import("../../hooks/useAgentSession").SlashCommandInfo[];
   skillDormancy: Record<string, boolean>;
   submit(): void;

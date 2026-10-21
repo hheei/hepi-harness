@@ -21,7 +21,6 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import type { QueuedItemProjection } from "@hepi/protocol";
-import type { ChatDraftImage } from "../lib/draft-store";
 import { getMarkdownListContinuation } from "../lib/markdown-list-continuation";
 import { isShellCommandDraft } from "../lib/composer-limits";
 import { useChatAppearance } from "../hooks/useChatAppearance";
@@ -32,8 +31,8 @@ import { useComposerDrafts } from "../lib/workbench-scope";
 import { useComposerDraft, type ComposerEditorHandle } from "./composer/useComposerDraft";
 import { useComposerMenus } from "./composer/useComposerMenus";
 import { useSkillDormancy } from "./composer/useSkillDormancy";
-import { createComposerDispatch, type ComposerCommands, type ComposerDraftValue } from "./composer/dispatch";
-import { type AttachedImage, imageToDraftImage } from "./composer/attachments";
+import { createComposerDispatch, type ComposerDraftValue } from "./composer/dispatch";
+import type { AttachedImage } from "./composer/attachments";
 import { ComposerPopups } from "./composer/ComposerPopups";
 import { ComposerModelControl, ComposerThinkingControl, type ThinkingLevel } from "./composer/ComposerControls";
 import { ComposerQueue, HeldBanner, type QueuedMessagesView } from "./composer/ComposerQueue";
@@ -48,8 +47,8 @@ import {
   modelSupportsImageInput,
 } from "./composer/ComposerNotices";
 import { ImagePreview } from "./ImagePreview";
-import { filterModelOptions } from "./ModelSelector";
 import type { ImageFileRejection } from "../lib/image-attachments";
+import type { ComposerCommands } from "./composer/commands";
 
 export { filterModelOptions } from "./ModelSelector";
 export { ModelErrorBanner, ModelScopeWarningBanner, RunFailureBanner, modelSupportsImageInput } from "./composer/ComposerNotices";
@@ -276,7 +275,6 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(p
     isStreaming,
     inputHistory: props.inputHistory ?? [],
     slashCommands: props.slashCommands,
-    slashCommandsLoading: props.slashCommandsLoading ?? false,
     onLoadSlashCommands: props.onLoadSlashCommands,
     skillDormancy,
     submit: () => { void dispatch.submit(); },
