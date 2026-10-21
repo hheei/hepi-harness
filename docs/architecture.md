@@ -318,7 +318,14 @@ answer interest and the native run — plus the notices to show and the effects 
 began under, and is the **one accepted-facts receiver**: `httpStatement`/`sseStatement` normalize a complete read into a
 fold input plus the facts that travel beside its window, and `receiveAccepted` folds it once and reports whether it was
 accepted. The hook's `receive` publishes those common facts from that one report, so the two transports cannot write
-the same fact under two rules. `packages/ui/src/lib/lifecycle-store.ts` holds one value per composer or conversation in
+the same fact under two rules. The same step publishes the **accepted readout**
+(`packages/ui/src/lib/conversation-readout.ts`): the accepted window, the older pages the reader loaded in front of it
+and that window's pagination claim, with the prefix decided synchronously by the shared `decidePrefix` rule against the
+window the readout already holds — so a moving window and the prefix it keeps are one decision rather than a render
+that catches up with the previous one. Metadata that is not derivable from the window (session stats, the history token
+and head marker, the active leaf, the display model) stays on the accepted payload the readout carries, and the
+stream-local `SessionState` stays a transport-continuity value beside it.
+`packages/ui/src/lib/lifecycle-store.ts` holds one value per composer or conversation in
 memory for the life of the page, and `packages/ui/src/hooks/useAgentSession.ts` performs the requested I/O and renders. The hook does not infer a
 submission's fate: the overlay ends at the turn's own committed entry, the answer interest survives that commitment,
 and a run's outcome is the runtime's live terminal fact carrying its answer identity. A notice is keyed by that answer,

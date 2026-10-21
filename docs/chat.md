@@ -28,7 +28,9 @@ navigator stays hidden and the session panel reports no file. The browser also p
 (`projectAgentState`) from the same snapshot, so the running flag, the model, the reasoning level, the queue and the
 conversation's extension selection have one reader. The HTTP read is folded through the same lifecycle projection as the
 stream's frame (`httpStatement`), so an older read cannot rewind the accepted window, the prefix, the active leaf or the
-session-view cache; the pages behind the window stay the reader's own and are decided by the shared `decidePrefix` rule.
+session-view cache. The accepted window and the pages in front of it are published as **one readout** — the window, its
+prefix and its pagination claim — by `packages/ui/src/lib/conversation-readout.ts`, in the same step that accepts the
+statement above; the pages behind the window stay the reader's own and are decided by the shared `decidePrefix` rule.
 
 The stream is the backend's own: `GET /api/conversations/:id/events` authenticates the request and forwards the
 response **as bytes** — the backend's frame names (`snapshot`, `state`, `submission`, `resync_required`,
@@ -570,9 +572,14 @@ turn arrives. The decision is one function over the two windows and the facts ab
 is keyed on `projectionId`, so a reconnect — a new lifecycle clock for the same history — decides the same way and keeps
 the prefix, and applying the rule again to the window it already produced states the same prefix, so a read and a stream
 advance cannot disagree. The rule is `decidePrefix` in `packages/session/src/index.ts` — the shared session pure root —
-and it is implemented there **only**: the browser's page state (`packages/ui/src/hooks/useAgentSession.ts`) and the SDK's own
-window fold (`reduceSseFrame`, which splits the state at its boundary and calls the same function) both call it, so two
-copies of the rule cannot drift apart. Comparison is by identity and at the boundary's position, never by comparing id values, for the
+and it is implemented there **only**: the accepted readout
+(`packages/ui/src/lib/conversation-readout.ts`, which the hook publishes through) and the SDK's own window fold
+(`reduceSseFrame`, which splits the state at its boundary and calls the same function) both call it, so two copies of the
+rule cannot drift apart. The readout is where a window and the prefix it keeps become one decision: a statement the
+fold accepted is handed to `acceptSession`, which decides the prefix against the window this readout already holds, so
+no render, effect or ref compares this window with the previous one afterwards. Paged older history
+(`prependOlderPage`), a landed jump window (`landHistory`) and the window's own pagination claim are published through the
+same value, and `transcriptOf` derives what is drawn — the prefix only while it still precedes the window. Comparison is by identity and at the boundary's position, never by comparing id values, for the
 reason above. A client that never paged holds no prefix, so evicted entries have nothing to be contiguous with and are
 dropped: a prefix cannot grow past the server's window, and a fresh client's transcript is exactly the window. A
 `historyHead` move — a compaction or a reset — is the one event that ends a prefix, and `hasMore` false means the

@@ -1,7 +1,7 @@
 # Accepted conversation readout
 
 Type: implementation
-Status: planned
+Status: in-progress
 Blocked by: none
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R2、R3 的既有 lifecycle 約束
@@ -24,10 +24,10 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
 
 ## 驗收條件
 
-- [ ] 同一 accepted fact 不再先發布 window、下一輪 effect 才修 prefix。
-- [ ] 完整 session stats、snapshot/history token、分頁 cursor 與 stream continuity 各保有明確位置。
-- [ ] 合法 HTTP/SSE 先後、stale acquisition、window 滾動／jump、head 變更的可見輸出符合矩陣。
-- [ ] 新介面有實際生產讀者；未另建 second lifecycle reducer 或 id→payload 副本。
+- [x] 同一 accepted fact 不再先發布 window、下一輪 effect 才修 prefix。
+- [x] 完整 session stats、snapshot/history token、分頁 cursor 與 stream continuity 各保有明確位置。
+- [x] 合法 HTTP/SSE 先後、stale acquisition、window 滾動／jump、head 變更的可見輸出符合矩陣。
+- [x] 新介面有實際生產讀者；未另建 second lifecycle reducer 或 id→payload 副本。
 
 ## 驗證與證據
 
@@ -47,4 +47,64 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C2，N8 的 accepted ident
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+變更修訂：本票實作 commit（見 git log `impl/ui-readout`，base `7cc775e4`）。
+
+### Seam
+
+新增 `packages/ui/src/lib/conversation-readout.ts`：accepted readout = accepted window payload + older prefix +
+該 window 的 pagination claim。
+
+- `acceptSession(previous, session)` — 由 `receive`（`receiveAccepted` 之後）在**同一次接受更新**呼叫；
+  prefix 依共享 `decidePrefix` 對 readout 已持有的上一個 window 決定，evicted entries 由該 payload 自身取 message。
+  無 second reducer、無 revision 比較、無 id→message 副本。
+- `prependOlderPage` / `landHistory` / `claimEarlierHistory` / `clearPrefix` — page read、jump landing、
+  pagination claim 都經同一 readout 發布。
+- `transcriptOf(prefix, window)` — 唯一可見 transcript 派生；prefix 只在仍先於 window 時繪出。
+- metadata（stats、`snapshotRevision`/`historyHead`、leaf、display model、run failure、queue/control）留在被接受的
+  `SessionData` payload（`readout.session`）；stream-local `SessionState`（`streamHeldRef`）仍為獨立的傳輸連續性狀態。
+
+### Changed paths
+
+- `packages/ui/src/lib/conversation-readout.ts`（新）、`conversation-readout.test.ts`（新）
+- `packages/ui/src/hooks/useAgentSession.ts`：`data`/`history`/`hasEarlierMessages` 三個 state 合成一個 readout；
+  `receive` 同步發布；移除追趕 prefix 的 `useEffect` 與 `lastWindowRef`/`windowSessionRef`/`historyRef`/
+  `dataRef`/`hasEarlierMessagesRef`；unmount cache 寫入改讀 readout。
+- `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts`：新增「同一 update 發布 prefix」案例。
+- `docs/architecture.md`、`docs/chat.md`、`docs/developer-guide.md`：readout 擁有者說明。
+
+### 已刪路徑
+
+- prefix 追趕 `useEffect`（比對上一輪 window）與其 refs：`lastWindowRef`、`windowSessionRef`、`historyRef`。
+- `history` state 與 `setHistory`／`setHasEarlierMessages`／`setData` 的重複 transcript 寫入路徑
+  （`loadSession`、`loadContext`、`landWindow`、missing-read、`applyAgentState` 各一處）。
+- 對外不再回傳 `setData`（無生產讀者）。
+
+### Checks / evidence
+
+Tested revision：`7cc775e425512087f91365ccc06b9323a9bc11a4` + 本票未提交變更（dirty tree），2026-10-21。
+
+- `node scripts/verify.mjs --profile=changed --base=7cc775e4 --log-dir=.dev/verify/ui-readout` → exit 0；
+  changed-typecheck / changed-test / web-unit / check-docs 全 PASS；raw logs `.dev/verify/ui-readout/*.log`，
+  report `verify.json`。
+- `pnpm --filter @hepi/ui test` → 375 tests, 0 fail（含新 `conversation-readout.test.ts` 7 案與 hook lifecycle 27 案）。
+- `pnpm --filter @hepi/ui typecheck` → exit 0。
+- Browser journeys（皆 PASS，raw 輸出見 ticket 附件路徑說明）：
+  `pnpm --filter @hepi/web test:history-scope`、`test:navigation-retry`、`test:history-rail`、
+  `test:chat-scroll`（需先 `pnpm --filter @hepi/web build`）。
+- 未執行：真實 backend compaction 下的 live browser journey（僅以合法 head 變更 frame 覆蓋，見 hook lifecycle 案例）。
+
+### Scenario evidence
+
+- C1：`useAgentSession.lifecycle`「stale HTTP reads cannot rewind transcript, history, failure or selected model」、
+  「old independent state answers cannot overwrite a newer window or replacement attachment」、
+  「a page loaded under an older head states nothing once the accepted context re-baselines」。
+- C2：新 hook 案例「a window that moves publishes its prefix in the same update…」（單一 render 即含 evicted entry）、
+  「loaded history survives stream head advances and remount」、「a landed target window joins the loaded prefix…」、
+  `conversation-readout.test.ts` 的 head-move／whole-range／landing 案例；browser `test:history-rail`、
+  `test:navigation-retry`、`test:history-scope`。
+- N8 accepted identity：accepted statement identity 仍由 fold 決定，readout 不另存；`dataOf(m).projectionId` 案例不變。
+
+### Remaining limits
+
+- 未在真實 backend compaction 上跑 browser journey；head 變更以合法 frame 覆蓋。
+- `packages/session` 的 `decidePrefix` 未改動（本票只遷移其消費者）。

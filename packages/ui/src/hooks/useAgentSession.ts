@@ -27,9 +27,21 @@ import {
   type SessionViewSnapshot,
 } from "../lib/session-view-cache";
 import { clearDraft, rekeyDraft, restoreDraftSubmission } from "../lib/draft-store";
-import { decidePrefix, emptyStreamState, reduceSseFrame, type SessionState } from "@hepi/session";
+import { emptyStreamState, reduceSseFrame, type SessionState } from "@hepi/session";
 import { classifyReadFailure, type ReadFailure } from "../lib/read-recovery";
-import { mergeLandedPrefix, type LandedWindow } from "../lib/history-navigation";
+import type { LandedWindow } from "../lib/history-navigation";
+import {
+  acceptSession,
+  claimEarlierHistory,
+  clearPrefix,
+  emptyReadout,
+  landHistory,
+  prefixOf,
+  prependOlderPage,
+  transcriptOf,
+  windowOf,
+  type AcceptedReadout,
+} from "../lib/conversation-readout";
 import type { ToolEntry } from "../lib/tool-presets";
 import type { SessionStatsInfo } from "../lib/pi-types";
 import { mergeSessionStats, type SessionFileStats } from "../lib/session-stats";
@@ -398,7 +410,24 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   // back on screen over what was accepted, and stamp the next page read with the older head. Adopted at mount, every
   // statement the fold accepts supersedes it, and the pages it brings back are the ones the reader had loaded.
   const remembered = useMemo(() => session?.id ? getSessionViewSnapshot(scope, session.id) : null, [scope, session?.id]);
-  const [data, setData] = useState<SessionData | null>(() => remembered === null ? null : sessionDataOf(remembered));
+  /**
+   * The conversation's accepted readout (lib/conversation-readout.ts): the accepted window payload, the older pages the
+   * reader loaded in front of it, and that window's own pagination claim. It is published by **one** place — the
+   * accepted-facts receiver below — which is what makes a moving window and the prefix it keeps a single synchronous
+   * decision instead of a render that catches up with the previous one.
+   */
+  const [readout, setReadout] = useState<AcceptedReadout>(() => remembered === null || session === null
+    ? emptyReadout()
+    : {
+        session: sessionDataOf(remembered),
+        prefix: prefixOf(remembered.prefixEntryIds, remembered.prefixMessages, remembered.prefixHistoryHead),
+        hasMore: remembered.hasMore,
+      });
+  const readoutRef = useRef<AcceptedReadout>(readout);
+  readoutRef.current = readout;
+  // The accepted payload: metadata the window states (stats, the history token, the leaf, the failure, the queue) plus
+  // the window itself. It is the readout's own session value, not a second copy of the transcript.
+  const data = readout.session;
   // The conversation's lifecycle is one pure projection (lib/lifecycle-projection.ts), created once per composer or
   // conversation and kept across the promotion remount by lib/lifecycle-store.ts. The transcript, the pending overlay,
   // the answer interest and the native run are all read from it, so the surface decides nothing about a turn locally.
@@ -426,29 +455,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    */
   const [readFailure, setReadFailure] = useState<ReadFailure | null>(null);
   const [activeLeafId, setActiveLeafId] = useState<string | null>(remembered?.leafId ?? null);
-  // Older history the user paged in, kept in front of the projection's own window. It is the hook's cache of one
-  // conversation's earlier entries, not a second transcript: the projection still states the window and every fact
-  // inside it, and `decidePrefix` — one pure rule over history facts and ids — says what survives a window that moved.
-  // `historyHead` is the head marker the pages were loaded under, which is how a compaction or a reset is told from an
-  // ordinary advance.
-  const [history, setHistory] = useState<{ sessionId: string; entryIds: readonly string[]; messages: readonly AgentMessage[]; historyHead: string | null } | null>(() => remembered === null || remembered.prefixEntryIds.length === 0 || session === null ? null : { sessionId: session.id, entryIds: remembered.prefixEntryIds, messages: remembered.prefixMessages, historyHead: remembered.prefixHistoryHead });
   // The head marker the conversation most recently reported, so a page read records the facts it was loaded under.
   const historyHeadRef = useRef<string | null>(remembered?.historyHead ?? null);
-  // The paged prefix as the last render held it, so the unmount that persists this view can state it without capturing
-  // the state value its own effect was created with.
-  const historyRef = useRef<{ sessionId: string; entryIds: readonly string[]; messages: readonly AgentMessage[]; historyHead: string | null } | null>(null);
-  historyRef.current = history;
-  // The window the page last rendered. It is what a later window is decided against, and it is why an entry the window
-  // evicts can move into the prefix instead of vanishing under the reader.
-  const lastWindowRef = useRef<readonly { readonly id: string; readonly message: AgentMessage }[] | null>(null);
-  const windowSessionRef = useRef<string | null>(null);
   // This stream's own continuity, and nothing else: the native state the frames of the attachment now open are folded
   // onto, so a delta can be assembled from what this reader has already received. It is deliberately **not** the
   // surface's accepted window — a frame this stream can continue may still be refused as the conversation's current
   // statement, and the two decisions are separate — and it is reset by every new attachment, because a new attachment
   // is a new lifecycle clock for the same history.
   const streamHeldRef = useRef<SessionState<AgentMessage>>(emptyStreamState(""));
-  const [hasEarlierMessages, setHasEarlierMessages] = useState(remembered?.hasMore ?? false);
+  // Whether older history exists, as the accepted window or the newest page stated it. It is the readout's own claim.
+  const hasEarlierMessages = readout.hasMore;
   const [activeToolResults, setActiveToolResults] = useState<Map<string, ToolResultMessage>>(new Map());
 
   const [streamState, dispatch] = useReducer(streamReducer, INITIAL_STREAMING_STATE);
@@ -558,14 +574,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const loadFlightsRef = useRef(new Map<string, Promise<unknown>>());
   // Latest settled view state, readable from the unmount cleanup without
   // re-subscribing it. Assigned every render like sessionPropIdRef below.
-  const dataRef = useRef<SessionData | null>(null);
   const activeLeafIdRef = useRef<string | null>(null);
-  const hasEarlierMessagesRef = useRef(false);
 
   sessionPropIdRef.current = session?.id ?? null;
-  dataRef.current = data;
   activeLeafIdRef.current = activeLeafId;
-  hasEarlierMessagesRef.current = hasEarlierMessages;
 
   const existingSessionId = session?.id;
 
@@ -680,12 +692,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     if (state.queuedMessages !== undefined) setQueuedMessages(normalizeQueuedMessages(state.queuedMessages));
     if (state.queuedItems !== undefined) setQueuedItems([...state.queuedItems]);
     if (state.control !== undefined) setControl({ ...state.control });
-    setData((previous) => previous === null || previous.sessionId !== sid ? previous : {
+    // The composer's selected model and reasoning level are stated **beside** the accepted window, on the payload the
+    // readout holds: they are refined here without touching the window or the prefix, which is what keeps the two
+    // paths — a window a statement accepted, a selection an answer refined — from rewriting each other.
+    setReadout((previous) => previous.session === null || previous.session.sessionId !== sid ? previous : {
       ...previous,
-      context: {
-        ...previous.context,
-        ...(state.model === undefined ? {} : { model: { provider: state.model.provider, modelId: state.model.id } }),
-        ...(state.thinkingLevel === undefined ? {} : { thinkingLevel: state.thinkingLevel }),
+      session: {
+        ...previous.session,
+        context: {
+          ...previous.session.context,
+          ...(state.model === undefined ? {} : { model: { provider: state.model.provider, modelId: state.model.id } }),
+          ...(state.thinkingLevel === undefined ? {} : { thinkingLevel: state.thinkingLevel }),
+        },
       },
     });
     return true;
@@ -722,21 +740,23 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * its answer is the only one that decides whether they are published, so neither transport keeps a revision
    * comparison or a second gate of its own.
    *
-   * What stays with the caller is only what is genuinely the transport's own: the HTTP read's prefix migration, cache
-   * checkpoint, pagination and tool loadout, and the stream's live rendering. Those run under `receipt.accepted`, which
-   * is the receiver's decision reported back rather than re-derived.
+   * The **readout** is published here too, in the same step: the accepted window and the prefix it keeps are one
+   * decision (`acceptSession`), so no render, effect or ref compares this window with the previous one afterwards.
+   * What stays with the caller is only what is genuinely the transport's own: the HTTP read's tool loadout and failure
+   * checkpoint, and the stream's live rendering. Those run under `receipt.accepted`, which is the receiver's decision
+   * reported back rather than re-derived.
    */
   const receive = useCallback((statement: AcceptedStatement<SessionData>): StatementReceipt => {
     const receipt = receiveAccepted(stepRef.current, statement);
     applyStep(receipt.step);
     if (receipt.accepted && statement.facts !== null) {
       const facts = statement.facts;
+      setReadout((previous) => acceptSession(previous, facts.session));
       // The head marker belongs to the **history**, not to the transport that last stated it: a native compaction
       // moves it on the stream, and a reader who then pages back before any read restates it is still loading pages
       // under the head that is current. Stamping them with the older one the last read left behind would make the next
       // same-head advance look like a compaction and throw the pages away.
       historyHeadRef.current = facts.historyHead;
-      setData(facts.session);
       setActiveLeafId(facts.leafId);
       // A page load, a session switch or a post-settle reload reads the same failure the live stream reports, so a
       // missing model is visible without waiting for another turn.
@@ -811,49 +831,19 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [newSessionDraftKey, opts.chatInputRef, resolveComposerDraftKey]);
 
-  // The projection's window is the transcript; the paged prefix stays in front of it only while it still precedes it.
-  const projectionEntryIds = useMemo(() => view.data?.entries.map((entry) => entry.id) ?? [], [view.data]);
-  const prefixApplies = history !== null && history.entryIds.length > 0
-    && !projectionEntryIds.some((id) => history.entryIds.includes(id));
-  const messages: AgentMessage[] = useMemo(
-    () => (prefixApplies && history !== null ? [...history.messages, ...view.messages] : [...view.messages]),
-    [prefixApplies, history, view.messages],
+  /**
+   * The transcript on screen: the accepted window (the projection's own committed transcript) with the reader's paged
+   * prefix in front of it. Both halves are already decided — the prefix when the window was accepted, the window by the
+   * fold — so this is a derivation with no rule left in it, and no effect that could apply a rule one render late.
+   */
+  const windowEntryIds = useMemo(() => view.data?.entries.map((entry) => entry.id) ?? [], [view.data]);
+  const transcript = useMemo(
+    () => transcriptOf(readout.prefix, { entryIds: windowEntryIds, messages: view.messages }),
+    [readout.prefix, windowEntryIds, view.messages],
   );
-  const entryIds = useMemo(
-    () => (prefixApplies && history !== null ? [...history.entryIds, ...projectionEntryIds] : projectionEntryIds),
-    [prefixApplies, history, projectionEntryIds],
-  );
-  const historyCursor = entryIds[0] ?? null;
-
-  // The prefix rule runs on every move of the window — from a read and from the stream's own advances alike — because
-  // whether an evicted entry stays on screen is a question about the two windows, not about which transport carried
-  // them. The window rendered before this one is what the eviction is read from, and it is held in a ref rather than in
-  // state so that deciding does not itself schedule another decision.
-  useEffect(() => {
-    const entries = view.data?.entries;
-    const frame = data;
-    const sid = frame?.sessionId ?? null;
-    if (entries === undefined || frame === null || sid === null) return;
-    if (windowSessionRef.current !== sid) {
-      // Another conversation's window: its history is its own, and there is nothing here to decide against yet.
-      windowSessionRef.current = sid;
-      lastWindowRef.current = entries;
-      return;
-    }
-    const previous = lastWindowRef.current;
-    lastWindowRef.current = entries;
-    if (previous === null || previous === entries) return;
-    setHistory((held) => {
-      if (held === null || held.sessionId !== sid) return held;
-      const decided = decidePrefix(held, {
-        entryIds: entries.map((entry) => entry.id),
-        previousEntryIds: previous.map((entry) => entry.id),
-        historyHead: frame.historyHead ?? null,
-        hasMore: frame.context.hasMore,
-      }, (id) => previous.find((entry) => entry.id === id)?.message);
-      return decided === null ? null : { sessionId: sid, ...decided };
-    });
-  }, [view.data, data]);
+  const messages = transcript.messages;
+  const entryIds = transcript.entryIds;
+  const historyCursor = transcript.cursor;
 
   const sessionStats = useMemo(() => {
     const fileStats = data?.stats;
@@ -911,10 +901,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (snapshot === null) {
         // The Backend's own `not_found`: the row is gone, so the view is — and a Retry cannot bring it back. The
         // surface says so instead of drawing an empty conversation that looks like a conversation with no messages.
-        setData(null);
+        setReadout(emptyReadout());
         setActiveLeafId(null);
-        setHistory(null);
-        setHasEarlierMessages(false);
         setError(null);
         setReadFailure({ kind: "missing" });
         deleteSessionViewSnapshot(scope, sid);
@@ -936,44 +924,20 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         // transport answered with rather than a rebuild of it field by field.
         accepted = receive(httpStatement({ ...d, sessionId: sid, projectionId: d.projectionId, revision: d.revision ?? 0, run: d.run ?? null, submissions: d.submissions ?? [], leafId: d.leafId, historyHead: d.historyHead ?? null }, acquisition)).accepted;
       } else {
-        // A read with no projection identity is not a lifecycle statement at all, so the window it carries is applied
-        // as the transcript it is and no ordering is claimed for it.
-        setData(d);
+        // A read with no projection identity is not a lifecycle statement at all, so no ordering is claimed for it —
+        // but the window it carries is still the reader's transcript, and it is published through the same readout
+        // (window, prefix and pagination claim in one decision) as a statement the fold accepted.
+        setReadout((previous) => acceptSession(previous, d));
         setActiveLeafId(d.leafId);
         setRunFailure(d.failure ?? null);
         accepted = true;
       }
-      // Everything else this read states belongs to the read's own path: the pagination state, the prefix migration,
-      // the tool loadout, the model and thinking overrides and the freshness checkpoint. A read the fold refused is an
-      // older window of the same conversation, and none of those facts is any less derived from it than the transcript
-      // is. The separate agent-state query below is a read of its own with its own ordering, so it is not covered by
-      // this decision and still runs.
+      // Everything else this read states belongs to the read's own path: the tool loadout, the model and thinking
+      // overrides and the freshness checkpoint. A read the fold refused is an older window of the same conversation,
+      // and none of those facts is any less derived from it than the transcript is. The prefix and the pagination claim
+      // are not here: they were decided with the window they belong to, by the receiver. The separate agent-state query
+      // below is a read of its own with its own ordering, so it is not covered by this decision and still runs.
       if (accepted) {
-        // The pages the reader loaded are decided by one rule over **history facts and ids** — never by an attachment
-        // identity, because a reconnect is a new lifecycle clock for the same history. The window this read published
-        // is authoritative for everything it covers; the entries it evicted while they were loaded migrate into the
-        // prefix, so a reader who scrolled back keeps the message they are reading; a head marker that moved drops the
-        // prefix whole, because a compaction re-baselines the transcript to what the model can see.
-        const cached = getSessionViewSnapshot(scope, sid);
-        setHasEarlierMessages(d.context.hasMore);
-        // The previous window's own entries are where a migrated entry's message comes from; the cache holds exactly
-        // the window the page was rendering before this read.
-        const previousWindow = cached?.loadedEntryIds ?? [];
-        const previousMessages = cached?.messages ?? [];
-        setHistory(previous => {
-          // A different conversation is a different history: this prefix belongs to the conversation it was paged in.
-          if (previous !== null && previous.sessionId !== sid) return null;
-          const decided = decidePrefix(previous, {
-            entryIds: d.context.entryIds ?? [],
-            previousEntryIds: previousWindow,
-            historyHead: d.historyHead ?? null,
-            hasMore: d.context.hasMore,
-          }, (id) => {
-            const at = previousWindow.indexOf(id);
-            return at < 0 ? undefined : previousMessages[at];
-          });
-          return decided === null ? null : { sessionId: sid, ...decided };
-        });
         // A read that landed settles the switch this surface was waiting for, so the override it set is dropped — but
         // only the current read may say so; an older one would drop an override a newer frame is still honouring.
         setCurrentModelOverride((current) => modelSwitchPendingRef.current ? current : null);
@@ -1091,24 +1055,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // left, so neither the prefix nor the pagination facts are published, and the caller is told no page was
       // established rather than being handed a cursor into history that is no longer on screen.
       if (historyHeadRef.current !== historyHead) return undefined;
-      setHasEarlierMessages(page.hasMore);
-      setData((prev) => prev !== null && prev.sessionId === sid && before
-        ? { ...prev, context: { ...prev.context, oldestEntryId: page.oldestEntryId, hasMore: page.hasMore } }
-        : prev);
       // A page read is older history the projection's own window does not carry: it is kept in front of that window, so
-      // the transcript stays the projection's and the paged prefix is only ever prepended to it.
-      if (before) {
-        setHistory((prev) => ({
-          sessionId: sid,
-          entryIds: [...page.entryIds, ...(prev?.entryIds ?? [])],
-          messages: [...page.messages, ...(prev?.messages ?? [])],
-          // The head marker the pages were loaded under, so a later read can tell an ordinary advance from a
-          // compaction that re-baselines the transcript.
-          historyHead,
-        }));
-      } else {
-        setHistory(null);
-      }
+      // the transcript stays the projection's and the paged prefix is only ever prepended to it. The page's own
+      // pagination claim is published with it, in the same update — a cursor and the entries it was read with are one
+      // fact about one context.
+      setReadout((prev) => (before
+        ? prependOlderPage(prev, { sessionId: sid, entryIds: page.entryIds, messages: page.messages, historyHead, hasMore: page.hasMore })
+        : claimEarlierHistory(clearPrefix(prev), page.hasMore)));
       return page;
     } catch (e) {
       if (options?.signal?.aborted) return undefined;
@@ -1122,7 +1075,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * Land one bounded navigation target window in front of the projection's window.
    *
    * This is the history owner's half of a jump. The coordinator reads one window around one anchor (ticket 02's route);
-   * the entries it carries join the reader's paged prefix through `mergeLandedPrefix` — ordered by the ids the Backend
+   * the entries it carries join the reader's paged prefix through `landHistory` — ordered by the ids the Backend
    * issued, never twice, and **without** any entry the projection's own window is authoritative for. That last cut is
    * what keeps a landing from being a loss: a prefix that overlapped the window fails the prefix rule, which would drop
    * every page the reader had loaded.
@@ -1133,21 +1086,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const landWindow = useCallback((sid: string, window: LandedWindow) => {
     if (window.entries.length === 0) return;
     const messages = projectMessages(window.entries as readonly { readonly message?: AgentMessage }[]);
-    const landed = { entryIds: window.entries.map((entry) => String(entry.id)), messages };
-    setHistory((held) => {
-      // A landing belongs to the conversation that asked for it, and to the head marker its read was pinned under — the
-      // same two facts the prefix rule already turns on, so a jump that crossed a compaction retires the prefix instead
-      // of mixing two histories into one transcript.
-      if (held !== null && (held.sessionId !== sid || held.historyHead !== historyHeadRef.current)) return held;
-      const merged = mergeLandedPrefix(
-        held === null ? null : { entryIds: held.entryIds, messages: held.messages },
-        landed,
-        projectionEntryIds,
-      );
-      if (merged.entryIds.length === 0) return held;
-      return { sessionId: sid, entryIds: merged.entryIds, messages: merged.messages, historyHead: historyHeadRef.current };
-    });
-  }, [projectionEntryIds]);
+    setReadout((held) => landHistory(held, {
+      sessionId: sid,
+      entryIds: window.entries.map((entry) => String(entry.id)),
+      messages,
+      windowEntryIds,
+    }) ?? held);
+  }, [windowEntryIds]);
 
   /**
    * Retry the conversation read this surface failed, and nothing else.
@@ -2283,9 +2228,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // restore it instantly. Only when the cached window still covers every
       // entry the UI has loaded (paged-in history included).
       const sid = sessionIdRef.current;
-      const currentData = dataRef.current;
+      // The readout is the one value the last render published, so what is cached is exactly the window and the pages
+      // it was showing — never a piece of state read through a ref that could be a render behind it.
+      const current = readoutRef.current;
+      const currentData = current.session;
       if (sid && currentData && currentData.sessionId === sid && currentData.snapshotRevision) {
-        // Persist the window this hook last had on screen, paged prefix included, so switching back restores exactly it.
         const settled = stepRef.current.view;
         const settledEntryIds = settled.data?.entries.map((entry) => entry.id) ?? [];
         setSessionViewSnapshot(scope, {
@@ -2296,16 +2243,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           entryIds: settledEntryIds,
           leafId: activeLeafIdRef.current,
           oldestEntryId: settledEntryIds[0] ?? null,
-          hasMore: hasEarlierMessagesRef.current,
+          hasMore: current.hasMore,
           thinkingLevel: currentData.context.thinkingLevel,
           model: currentData.context.model,
           stats: currentData.stats,
           loadedEntryIds: settledEntryIds,
           // The prefix is the half of the transcript the projection's own window does not carry, so it has to be stated
           // here or switching back loses the pages the reader had loaded.
-          prefixEntryIds: [...(historyRef.current?.entryIds ?? [])],
-          prefixMessages: [...(historyRef.current?.messages ?? [])],
-          prefixHistoryHead: historyRef.current?.historyHead ?? null,
+          prefixEntryIds: [...(current.prefix?.entryIds ?? [])],
+          prefixMessages: [...(current.prefix?.messages ?? [])],
+          prefixHistoryHead: current.prefix?.historyHead ?? null,
         });
       }
       if (liveFollowFrameRef.current !== null) {
@@ -2456,7 +2403,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     handleBuiltinSlashCommand,
     addNotice,
     setNoticePaused: setPausedNoticeId,
-    handleThinkingLevelChange, loadTools, loadSlashCommands, setActiveLeafId, setData, loadContext, landWindow,
+    handleThinkingLevelChange, loadTools, loadSlashCommands, loadContext, landWindow,
     retryRead, dismissReadFailure,
     scrollToBottom, scrollUserMsgToTop, scrollToMessage,
     dispatch, setForkingEntryId,

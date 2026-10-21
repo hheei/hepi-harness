@@ -490,6 +490,33 @@ test("loaded history survives stream head advances and remount; remount accepts 
   assert.deepEqual(plain(second.out.entryIds), ["e1", "e2", "e5", "e6", "e7", "e8"], "new mount advances its acquisition sequence");
 });
 
+test("a window that moves publishes its prefix in the same update, with no effect catching up a render later", async (t) => {
+  // The bug this covers: the window was published by the accepted-facts receiver and the prefix was decided by a React
+  // effect that compared the previous view with the new one, so for one render the transcript drew the advanced window
+  // without the entries it had evicted from the reader's loaded history — and a reader scrolled back lost the message
+  // they were reading until the next commit. The readout publishes both from the same accepted statement, so **one**
+  // render after the frame is enough: no pump, no effect replay.
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const window = (revision: number, ids: string[], head = "h1") => nativeFrame({ revision, historyHead: head, hasMore: true,
+    oldestEntryId: ids[0], entries: ids.map((id: string) => ({ id, role: "user", text: id, message: { role: "user", content: id } })) });
+  const h = harness(t, url => url.includes("/entries?") ? respond({ protocol: "hepi.v1", conversationId: "conv", oldestEntryId: "e1", hasMore: true,
+      entries: ["e1", "e2"].map(id => ({ id, role: "user", text: id, message: { role: "user", content: id } })) })
+    : url.endsWith("/state") ? respond(window(1, ["e3", "e4"])) : normal(url));
+  const m = h.mount();
+  await h.pump(m);
+  await m.out.loadContext("conv", null, "e3");
+  await h.pump(m);
+  assert.deepEqual(plain(m.out.entryIds), ["e1", "e2", "e3", "e4"], "the reader paged older history in");
+
+  // The window advances under the same head, evicting e3 while it was loaded. Exactly one render follows.
+  at(h.sources).emit(streamFrame(window(2, ["e4", "e5"])));
+  m.render();
+  assert.deepEqual(plain(m.out.entryIds), ["e1", "e2", "e3", "e4", "e5"], "the evicted entry is already in the prefix in that same update");
+  assert.deepEqual(texts(m.out.messages), ["e1", "e2", "e3", "e4", "e5"], "and each entry is drawn once, in transcript order");
+  assert.equal(new Set(plain(m.out.entryIds)).size, 5, "no entry is contributed twice");
+  m.unmount();
+});
+
 test("a landed target window joins the loaded prefix and never overlaps the accepted window", async (t) => {
   // The history owner's half of ticket 03, asserted where the transcript is decided rather than in the coordinator: a
   // jump's window enters through the same prefix state the sentinel's pages use, so one rule (`decidePrefix`) still says

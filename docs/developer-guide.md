@@ -172,6 +172,10 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 快照 `submissions` 只含等待项。客户端对等待项读取 `GET …/submissions?requestId=`,查 durable 结果而不重发,
 见 [ADR 0006](adr/0006-durable-submission-lifecycle.md)。UI 的唯一折叠在 `lib/lifecycle-projection.ts`;
 采集在 `lifecycle-acquisition.ts`,存储在 `lifecycle-store.ts`,I/O 在 `hooks/useAgentSession.ts`。
+已被接受的 readout(accepted window、其前方的 older prefix、该 window 的 pagination claim)由
+`lib/conversation-readout.ts` 在同一个接受步骤发布:prefix 依共享 `decidePrefix` 与 readout 已持有的上一个 window
+同步决定,不再由 React effect 追赶。metadata(stats、history token/head、leaf、display model)留在被接受的 payload 上,
+stream-local `SessionState` 仍是独立的传输连续性状态。
 
 当前安装工具未声明安全重放;崩溃后的 `write/edit/bash` 意图为 interrupted。MCP 注册 `replay:"unsafe"`。
 Gateway ledger 对同一 `(gateway, workspace, callId)` 不二次执行;丢答案报 `outcome_unknown` 并保留已花掉的 ID,
@@ -201,7 +205,7 @@ history scope、entry。`navigation/around` 共用窗口投影并由 snapshot �
 继承条目可读,兄弟分支是 missing。路由/查询归 `conversation-navigation.ts` 与 `conversation-read.ts`。
 
 `useHistoryNavigation.ts` 持大纲与目标状态;`lib/history-navigation.ts` 协调一次请求、最多一次读、恰好一次落地。
-`landWindow` 合入已有分页前缀并按 Backend id 去重;结果为 held / missing / stale-snapshot / wrong-scope /
+`landWindow` 经 `lib/conversation-readout.ts` 的 `landHistory` 合入 readout 的前缀并按 Backend id 去重;结果为 held / missing / stale-snapshot / wrong-scope /
 malformed / cancelled / deferred-busy / error。Fork 走同一 spawn 接缝,继承历史、asOf 配置与文档,同时写自己的
 身份关系。Compaction/reset 移动 head 时,客户端按 `historyHead` 结束旧窗口。
 
