@@ -315,10 +315,10 @@ try {
     // --- 4. Extensions: the installed set, the conversation's selection and its write are on the connection. ---
     await setView("extensions");
     await page.getByRole("button", { name: "coding-tools", exact: true }).waitFor({ timeout: 30000 });
-    await waitForPath("/api/sessions/session-1/state", "GET");
+    await waitForPath("/api/conversations/session-1/state", "GET");
     const extensions = await connection();
     check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/extensions" && entry.method === "GET"), "the installed extension set is read on the configured ingress origin");
-    check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/sessions/session-1/state" && entry.method === "GET"), "and so is the open conversation's own selection");
+    check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/conversations/session-1/state" && entry.method === "GET"), "and so is the open conversation's own selection");
     await page.locator(".config-detail").getByRole("switch").click();
     await waitForPath("/api/extensions", "POST");
     const extensionWrite = (await connection()).find((entry) => entry.method === "POST" && entry.url === INGRESS_ORIGIN + "/api/extensions");
@@ -342,7 +342,7 @@ try {
       "/api/models/enabled",
       "/api/models/refresh",
       "/api/extensions",
-      "/api/sessions/session-1/state",
+      "/api/conversations/session-1/state",
     ]);
     const paths = all.map((entry) => entry.url.slice(INGRESS_ORIGIN.length).split("?")[0]);
     check(paths.every((path) => expectedPaths.has(path)), "every request named a route the deployment serves: " + JSON.stringify([...new Set(paths)]));

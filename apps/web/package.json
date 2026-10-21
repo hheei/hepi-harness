@@ -41,6 +41,7 @@
     "test:skills-project-target": "node e2e/mcp-skills/ux-skills-project-target.ts",
     "test:capability-trust": "node e2e/auth-shell/ux-capability-trust.ts",
     "test:extensions-panel": "node e2e/mcp-skills/ux-extensions-panel.ts",
+    "test:definition-refresh": "node e2e/mcp-skills/ux-definition-refresh.ts",
     "test:mcp-tool-states": "node e2e/mcp-skills/ux-mcp-tool-states.ts",
     "test:mcp-workflow": "node e2e/mcp-skills/ux-mcp-workflow.ts",
     "test:mcp-acceptance": "node e2e/mcp-skills/ux-mcp-acceptance.ts",

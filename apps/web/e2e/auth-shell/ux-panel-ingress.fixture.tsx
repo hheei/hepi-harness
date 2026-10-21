@@ -347,7 +347,9 @@ function answer(url: string, init?: RequestInit): Response {
   }
   if (path === "/api/extensions" && method === "GET") return json(inventory);
   if (path === "/api/extensions" && method === "POST") return json(inventory);
-  if (path === "/api/sessions/session-1/state" && method === "GET") return json({ sessionId: "session-1", extensions: ["coding-tools"] });
+  // The Backend's own vocabulary, which is the only one this deployment serves: the panel reads a conversation's
+  // extension selection from `/api/conversations/:id/state`, not the retired Next BFF's `/api/sessions/...`.
+  if (path === "/api/conversations/session-1/state" && method === "GET") return json({ sessionId: "session-1", extensions: ["coding-tools"] });
   return json({ error: "the fixture does not answer " + method + " " + path }, 404);
 }
 
@@ -410,7 +412,6 @@ function Fixture() {
           sessionId={null}
           initialSection="general"
           onClose={noop}
-          onSessionReloaded={async () => {}}
           quoteSelectionEnabled={false}
           onQuoteSelectionChange={noop}
           projectTrust={null}

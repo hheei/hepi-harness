@@ -630,7 +630,6 @@ export function SkillsConfig({
   const [checking, setChecking] = useState(false);
   const [groupBusy, setGroupBusy] = useState<string | null>(null);
   const [groupStatus, setGroupStatus] = useState<{ group: string; error?: string | null; note?: string | null } | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
   // The projects recorded for this Web origin. A project's skills belong to the folder that project's own default names
   // (ticket 09), so a Project operation targets that folder even while the sidebar is showing another one of its
   // folders — and a Project whose default is on a host this origin does not serve is not offered as a target at all.
@@ -714,15 +713,16 @@ export function SkillsConfig({
   }, [belongsTo]);
 
   // Whether the project's skills load follows its trust, which can change while this section stays mounted (hidden)
-  // in Settings: trusting from Settings › MCP. A new decision loads the inventory again in place, keeping the
-  // selection and the workspace choice; the first load is the effect above.
+  // in Settings: trusting from Settings › MCP. A new decision reads the inventory again in place, keeping the
+  // selection and the workspace choice; the first load is the effect above. The comparison is the trust status
+  // itself, so a render that states the same decision asks for nothing.
   const trustKey = projectTrustReloadKey(trust);
   const loadedTrustKeyRef = useRef(trustKey);
   useEffect(() => {
     if (loadedTrustKeyRef.current === trustKey) return;
     loadedTrustKeyRef.current = trustKey;
-    setReloadKey((key) => key + 1);
-  }, [trustKey]);
+    if (selectedTarget !== null) void loadSkills(selectedTarget);
+  }, [loadSkills, selectedTarget, trustKey]);
 
   useEffect(() => {
     if (selected) setLastSettingsSelection("skills", selected, cwd);
@@ -768,7 +768,7 @@ export function SkillsConfig({
 
   useEffect(() => {
     if (selectedTarget !== null) void loadSkills(selectedTarget);
-  }, [selectedTarget, loadSkills, reloadKey]);
+  }, [selectedTarget, loadSkills]);
 
   // A selection change starts from nothing: the previous host's skills, its selected row and its failure are not facts
   // about the host being shown. The list is cleared here rather than left until the new answer arrives, so a slow host
@@ -778,6 +778,17 @@ export function SkillsConfig({
     setError(null);
     setLoading(true);
   }, [workspaceId]);
+
+  /**
+   * Read the selected host's inventory again, after an operation changed what it holds.
+   *
+   * It is the one re-read every action of this panel asks for, and it is the same call the target effect makes: the
+   * panel states the host's answer rather than the change it intended, and an operation's own outcome stays panel state
+   * so it survives the refresh.
+   */
+  const refreshInventory = useCallback(() => {
+    if (selectedTarget !== null) void loadSkills(selectedTarget);
+  }, [loadSkills, selectedTarget]);
 
   const workspace = workspaces?.find((item) => item.id === workspaceId);
   // The conversation this Settings was opened from, and the workspace it is actually bound to: the session's cwd is
@@ -814,7 +825,7 @@ export function SkillsConfig({
       if (!answer.ok && answer.error.code === "conflict") {
         setConfirming(false);
         setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: { notice: null, error: t("skills.updateStale") } }));
-        setReloadKey((key) => key + 1);
+        refreshInventory();
         return;
       }
       if (!answer.ok) throw new Error(refusalText(answer.error));
@@ -829,13 +840,13 @@ export function SkillsConfig({
       setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: reported }));
       setConfirming(false);
       // The host's state is read again; the outcome above is panel state, so it survives this refresh.
-      setReloadKey((key) => key + 1);
+      refreshInventory();
     } catch (failure) {
       setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: { notice: null, error: t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure)) } }));
     } finally {
       setBusy(false);
     }
-  }, [sessionId, sessionWorkspaceId, t, withTarget, workspaceId]);
+  }, [refreshInventory, sessionId, sessionWorkspaceId, t, withTarget, workspaceId]);
 
   /**
    * Switch one skill, through the canonical toggle the panel already offered: the body names the SKILL.md paths, and
@@ -885,7 +896,7 @@ export function SkillsConfig({
           note: outcome.failed.length === 0 && kept.length === 0 ? t("skills.toggleGroupDone") : null,
         });
       }
-      setReloadKey((key) => key + 1);
+      refreshInventory();
     } catch (failure) {
       const message = t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure));
       if (group === null) setOutcomes((current) => ({ ...current, [outcomeKey(targets[0]!)]: { notice: null, error: message } }));
@@ -894,7 +905,7 @@ export function SkillsConfig({
       if (group === null) setToggling(false);
       else setGroupBusy(null);
     }
-  }, [sessionId, sessionWorkspaceId, t, withTarget, workspaceId]);
+  }, [refreshInventory, sessionId, sessionWorkspaceId, t, withTarget, workspaceId]);
 
   /**
    * Ask the repository what the installed revision is. This is the only request that reaches GitHub, and it happens
@@ -1006,7 +1017,7 @@ export function SkillsConfig({
                 skills={skills}
                 trust={trust}
                 onScope={setScope}
-                onChanged={() => setReloadKey((key) => key + 1)}
+                onChanged={refreshInventory}
               />
             ) : loading ? null : selectedSkill !== null ? (
               <SkillDetail
@@ -1035,7 +1046,7 @@ export function SkillsConfig({
 
       <ConfigFooter status={workspace?.host === undefined ? null : <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{t("skills.installTarget", { host: hostLabel(workspace), scope: scopeLabel(scope, t) })}</span>}>
         {!embedded && <ConfigButton onClick={onClose}>{t("i18n.close")}</ConfigButton>}
-        <ConfigButton variant="secondary" onClick={() => setReloadKey((key) => key + 1)} disabled={loading || workspaceId === null}>{t("market.refresh")}</ConfigButton>
+        <ConfigButton variant="secondary" onClick={refreshInventory} disabled={loading || workspaceId === null}>{t("market.refresh")}</ConfigButton>
       </ConfigFooter>
     </ConfigPanelShell>
   );

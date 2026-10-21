@@ -182,8 +182,12 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 (forced 读不共用)、唯一准入路径(立即 send、steer、follow-up)、by-id lookup、Backend 自身 reload 与释放。它不做
 排序、不持 timer/retry queue/socket;折叠决定答案含义,`hooks/useAgentSession.ts` 呈现并执行 fold 请求。同对话 reload
 是读取与重新取得资源,不是新 attachment:聊天保留其树、其 stream 与读者位置,Shell 不再为此提供 mount key。
-该操作只有一个 owner(`reloadResources`):Settings › General 只声明配置已变、await 该注册的 reload,不自行发请求;
-`/reload` 命令调用同一函数。通知只声称**读取**已确立的事实,而读取结果是带类型的 `ConversationReadOutcome`
+该操作只有一个 owner(`reloadResources`):Settings › General 与 Settings › Agents 只声明配置已变、向**该对话**取得
+read 结果,不自行发请求;`/reload` 命令调用同一函数。接线不再是 Shell 传给 panel 的 callback:聊天的 reload 发布在
+connection 的 `refreshes`(`lib/conversation-refreshes.ts`,`hold`/`release`/`refresh`),panel 只送
+`sessionId`。没有 mounted 聊天持有该 id 时答案 `not_open`,不虚报 reload;切换对话后属于旧对话的答案不写到新对话,
+settings view 因此不需要 sessionKey、mount key 或 refresh counter。
+通知只声称**读取**已确立的事实,而读取结果是带类型的 `ConversationReadOutcome`
 (`accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded`),不是可空值。`refused` 即读取
 到此结束:不会为一个 fold 已拒绝的 window 再发 agent-state 读取,否则调用方会据其答案恢复 run 或声称 reload。路由本身
 被拒绝时由该操作报为 `failed`,既不会向 await 的调用方抛出未处理 rejection,也不会为一个没发生的变更再发读取;但仅在
