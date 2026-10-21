@@ -344,6 +344,7 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |
 | 面板/交互 | UI `components` + `lib` | `pnpm test:web:unit`、对应 e2e |
+| composer 編輯行為(草稿、補全、鍵盤、附件) | `packages/ui/src/components/composer/`;畫面本身留在 `ChatInput.tsx` | `pnpm --filter @hepi/ui test`、`pnpm --filter @hepi/web test:composer-interaction` |
 | 开发脚本 | `scripts/` | `pnpm test:scripts` |
 
 ## Verification record
