@@ -1,7 +1,7 @@
 # 訊息 block 呈現模組
 
 Type: implementation
-Status: in-progress — fixing deferred-prompt clipboard regression
+Status: resolved
 Blocked by: none — preserve current MessageView public props; transcript integration verified in ticket 04 and system acceptance
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R7 訊息部分
