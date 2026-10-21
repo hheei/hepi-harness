@@ -18,7 +18,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | resolved／integrated；全部 material findings 已修正並複審 |
 | 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
-| 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | integrated；agent-234 獨立 review 中 |
+| 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | in-progress；agent-234 發現 clipboard 回歸，worker 修正中 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -60,6 +60,8 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+09 review agent-234：Standards 無 material findings；Spec 一項 P2 fix：UserMessageView.useWholePrompt 的 no-unread fast path 忽略 resolvedTexts，展開 deferred prompt 後複製或第二次複製得到 preview。Chromium clean `f180f716` 重現 firstCopy full／secondCopy preview／expandedCopy preview，正常複製操作會靜默截斷輸出，判為 material。worker 在 owner 修正，補兩個精確操作 regression。Evidence `.dev/verify/ui-architecture-refactor/ticket09-copy-review.json`。Reviewer 另確認 streaming thinking/tool identity、展開與焦點保持，mount zero reads，無 runtime cycles；不新增理論 findings。01 保持 resolved，03 繼續實作。
 
 09 source `8919714a`／evidence `f180f716` 已整合為 `6abeac0a`／`b06e3d8f`，保留 MessageView public props 與 memo，內部異質角色／blocks 分配至實際 owners。agent-234 正審查 Standards／Spec，重點為 dynamic streaming identity、展開／focus 與 lazy resource reads。worker clean `8919714a` 的原始 report 已複製 `.dev/verify/2026-10-21T11-19-18-855-verify-changed/`；25 scenario static HTML 等價性為 worker 臨時 driver 結果，driver 未保留，不當作持久 regression suite。
 
