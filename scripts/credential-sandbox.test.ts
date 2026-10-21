@@ -123,7 +123,9 @@ test("neither native driver keeps an empty-environment fallback or starts its st
   // drivers, asserted against their source because the failure only happens on a host where a tool is missing — and a
   // broken run must then touch no credential store at all rather than the developer's.
   const drivers = [
-    "../apps/app/scripts/verify-artifacts.mjs",
+    // The artifact journey's implementation, not its operational entry point: `verify-artifacts.mjs` resolves flags and
+    // exits, and the packaged environments it hands out are built here.
+    "../apps/app/scripts/verify-artifacts.operation.mjs",
     "../apps/web/e2e/acceptance/ux-native-acceptance.ts",
   ];
   for (const file of drivers) {

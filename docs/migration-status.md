@@ -1031,10 +1031,12 @@ Artifacts are one command per half. `apps/app/scripts/build-artifacts.mjs` build
 state, host, target architecture, toolchain versions, per-artifact checksums, per-step exit codes and logs — plus a
 reproducibility measurement: two builds produce a **byte-identical executable**, while the `.deb` container records its
 bundling time (the Tauri bundler does not read `SOURCE_DATE_EPOCH`), so the package checksums differ and the payloads do
-not. `apps/app/scripts/verify-artifacts.mjs` asserts against the produced package: contents, architecture, dependencies,
-resolved libraries, no internal credential or Node/Next payload, a cold start with no connection, a cold start from a
-stored one where a fixture Gateway sees `GET /api/descriptor` arrive with `Origin: tauri://localhost` and the stored
-bearer, the first-run form driven through the real window, and a cold start after forgetting the connection.
+not. `apps/app/scripts/verify-artifacts.mjs` is the entry point that resolves the artifact and calls one concrete
+operation (`apps/app/scripts/verify-artifacts.operation.mjs`), which asserts against the produced package: contents,
+architecture, dependencies, resolved libraries, no internal credential or Node/Next payload, a cold start with no
+connection, a cold start from a stored one where a fixture Gateway sees `GET /api/descriptor` arrive with
+`Origin: tauri://localhost` and the stored bearer, the first-run form driven through the real window, and a cold start
+after forgetting the connection.
 
 Behaviour, commands and limits: [apps/app README](../apps/app/README.md); evidence:
 [verification](verification.md#app-shell-and-packaged-artifacts-ticket-15). Not delivered here: the deployed entry and
