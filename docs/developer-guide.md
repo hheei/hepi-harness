@@ -180,8 +180,11 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 是读取与重新取得资源,不是新 attachment:聊天保留其树、其 stream 与读者位置,Shell 不再为此提供 mount key。
 该操作只有一个 owner(`reloadResources`):Settings › General 只声明配置已变、await 该注册的 reload,不自行发请求;
 `/reload` 命令调用同一函数。通知只声称**读取**已确立的事实,而读取结果是带类型的 `ConversationReadOutcome`
-(`accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded`),不是可空值;路由本身被拒绝时
-由该操作报为 `failed`,既不会向 await 的调用方抛出未处理 rejection,也不会为一个没发生的变更再发读取。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
+(`accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded`),不是可空值。`refused` 即读取
+到此结束:不会为一个 fold 已拒绝的 window 再发 agent-state 读取,否则调用方会据其答案恢复 run 或声称 reload。路由本身
+被拒绝时由该操作报为 `failed`,既不会向 await 的调用方抛出未处理 rejection,也不会为一个没发生的变更再发读取;但仅在
+发起它的 connection 仍是当前 connection 时——切换后到达的拒绝为 `superseded`,不发声。一次 reload 只发一条通知:
+`/reload` 只是同一操作的调用方,不重复陈述其结果。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
 可有同一 id):切换后到达的 window、`not_found` 或 failure 一律拒绝,不写到新 connection 的 surface。
 已被接受的 readout(accepted window、其前方的 older prefix、该 window 的 pagination claim)由
 `lib/conversation-readout.ts` 在同一个接受步骤发布:prefix 依共享 `decidePrefix` 与 readout 已持有的上一个 window

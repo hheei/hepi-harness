@@ -1010,8 +1010,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // Everything else this read states belongs to the read's own path: the tool loadout, the model and thinking
       // overrides and the freshness checkpoint. A read the fold refused is an older window of the same conversation,
       // and none of those facts is any less derived from it than the transcript is. The prefix and the pagination claim
-      // are not here: they were decided with the window they belong to, by the receiver. The separate agent-state query
-      // below is a read of its own with its own ordering, so it is not covered by this decision and still runs.
+      // are not here: they were decided with the window they belong to, by the receiver.
       if (accepted) {
         // A read that landed settles the switch this surface was waiting for, so the override it set is dropped — but
         // only the current read may say so; an older one would drop an override a newer frame is still honouring.
@@ -1030,7 +1029,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // window the surface has already replaced, so its composer fields are not this conversation's current ones and a
       // fresh read is the honest answer. That is the same reason a resync takes one.
       if (!includeState) return accepted ? { status: "accepted", agentState: null } : { status: "refused" };
-      if (accepted && d.projectionId !== undefined) {
+      // A refused window is this read having established nothing about the conversation it describes, and that is the
+      // answer whether or not the caller also asked for composer state. The agent-state query below is a read of its
+      // own with its own ordering, but a caller that acted on its answer would resume a run, adopt a phase or claim a
+      // reload from the very statement the fold rejected — the older window arriving by another route. So a refusal
+      // ends the read here: no auxiliary request is made on behalf of a window nothing accepted.
+      if (!accepted) return { status: "refused" };
+      if (d.projectionId !== undefined) {
         const agentState = applyReadAgentState(snapshot, sid);
         return agentState === null ? { status: "refused" } : { status: "accepted", agentState };
       }
@@ -1934,6 +1939,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     try {
       reloaded = await conversation.reload(sid);
     } catch (e) {
+      // The route belongs to the connection that asked for it. A rejection that lands after this surface was replaced
+      // is one host's failure about a conversation nothing on screen shows — the same fence the read gets, applied
+      // before the notice rather than after it — so the replaced connection's answer is not stated as the current one's.
+      if (!fromCurrentConnection(conversation) || sessionIdRef.current !== sid) return { status: "superseded" };
       // A route that did not answer says nothing about the conversation, so the failure is the whole statement.
       const message = `Reload failed: ${e instanceof Error ? e.message : String(e)}`;
       addNotice({ type: "error", message });
@@ -1985,7 +1994,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         return { status: "reloaded", message };
       }
     }
-  }, [addNotice, conversation, loadSession]);
+  }, [addNotice, conversation, fromCurrentConnection, loadSession]);
 
   const handleBuiltinSlashCommand = useCallback(async (text: string): Promise<BuiltinSlashCommandResult> => {
     if (!text.startsWith("/")) return { handled: false };
@@ -2013,11 +2022,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           // The same operation Settings › General asks for, so the command and the panel cannot disagree about what a
           // reload established: one owner asks the route, performs the read and states the outcome. This surface only
           // adds the catalogue the command line also shows; a reload that failed says so and nothing here claims it.
+          // The operation states the outcome, once, in the notice that is the surface's report of it. This case
+          // therefore returns the result without asking `complete` to state it a second time: the command line's job
+          // is the catalogue the command also shows, and `error` here only tells the composer not to clear its text.
           const outcome = await reloadResources(sid);
-          if (outcome.status === "failed") return complete({ handled: true, error: outcome.message });
           if (outcome.status === "superseded") return { handled: true };
+          if (outcome.status === "failed") return { handled: true, error: outcome.message };
           await Promise.all([loadTools(sid), loadSlashCommands(), loadModels()]);
-          return complete({ handled: true, message: outcome.message });
+          return { handled: true, message: outcome.message };
         }
 
         case "mcp": {

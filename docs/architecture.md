@@ -342,9 +342,14 @@ facts. Settings states that the tools configuration changed, awaits the answer, 
 caller that also did would reload twice. What the notice claims is what the **read** established, and a read is a typed
 outcome rather than a nullable one (`ConversationReadOutcome`): `accepted`, `refused` (the fold called the window older),
 `missing` (`not_found`), `failed` (with the `ReadFailure` kind the surface offers recovery for), `cancelled` and
-`superseded` (another connection or conversation is on screen). A route that rejects is answered inside that operation
-as a `failed` outcome — it establishes nothing, so no read is asked for a change that never happened, and the rejection
-cannot escape into a caller that awaited it. Every read is also fenced by the **connection** it was asked through, not
+`superseded` (another connection or conversation is on screen). A `refused` read ends there: the auxiliary agent-state
+query is a read of its own, but a caller acting on its answer would resume a run or claim a reload from the very window
+the fold rejected, so no state is asked for on behalf of a window nothing accepted. A route that rejects is answered
+inside that operation as a `failed` outcome — it establishes nothing, so no read is asked for a change that never
+happened, and the rejection cannot escape into a caller that awaited it — but only when the route's connection is still
+the one on screen: a rejection that lands after a switch is one host's failure about a conversation nothing shows, so it
+is `superseded` and states nothing. One reload is one notice: the `/reload` command calls that same operation and returns
+its outcome without restating it, so the operation is the only surface that reports what happened. Every read is also fenced by the **connection** it was asked through, not
 only by the conversation id: a switch replaces the client and its API, so an answer — a window, a `not_found` or a failure — that arrives after
 the switch is refused rather than published onto the new connection's surface. The hook does not infer a
 submission's fate: the overlay ends at the turn's own committed entry, the answer interest survives that commitment,

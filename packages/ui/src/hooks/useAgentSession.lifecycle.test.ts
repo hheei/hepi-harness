@@ -1399,6 +1399,120 @@ test("a reload whose read answers after a connection switch states nothing", asy
 });
 
 /**
+ * A read the fold refused is not a read that established the conversation, whatever the auxiliary state read says.
+ *
+ * The transcript and the composer state are two reads, and only the first is ordered by the fold. A refused window is an
+ * older statement of a conversation the surface already shows a newer one of; letting the state read answer on its own
+ * and calling the pair "accepted" is how a reload comes to claim it reloaded a conversation whose window the surface
+ * had just rejected. A refusal therefore ends the read, and the state query is not made on its behalf.
+ */
+test("a reload whose window the fold refused claims nothing, and asks for no state of it", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  // The mount's own read answers revision 9; every read after it answers revision 1, an older window of the same
+  // conversation. That is a refusal the fold makes, not a failure the transport reports, and it is what the probe this
+  // case comes from reproduced: three reads, and a success notice naming resources of a reload nothing established.
+  let reads = 0;
+  const h = harness(t, (url, init) => url === "/api/conversations/conv/reload"
+    ? respond({ resources: { skills: 3, prompts: 2 } })
+    : !url.endsWith("/state") ? normal(url, init)
+      : respond(nativeFrame({ revision: ++reads === 1 ? 9 : 1, text: reads === 1 ? "current" : "old" })));
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  const noticesBefore = plain(m.out.notices).length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  await reload();
+  await h.pump(m);
+
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "a window the fold refused is not a reload this conversation picked up: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore + 1,
+    "and the refused read is the whole read: no state was asked for on behalf of the window nothing accepted");
+  assert.deepEqual(texts(m.out.messages), ["current"],
+    "the transcript still states the newer window the fold kept: " + JSON.stringify(texts(m.out.messages)));
+  m.unmount();
+});
+
+/**
+ * A reload route that answers after the connection was replaced is the replaced connection's answer.
+ *
+ * The route belongs to the client that sent it. A switch while it is in flight makes its rejection — a host that is
+ * restarting, a credential that expired — a fact about a Backend the surface no longer shows, so stating it as the
+ * current connection's failure would put one host's outage on another host's chat. The fence the read already gets is
+ * applied before the notice, and the replaced reload asks for no read at all.
+ */
+test("a reload route that rejects after a connection switch states nothing on the surface that replaced it", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const stale = deferredRead();
+  const h = harness(t, (url, init) => url === "/api/conversations/conv/reload" ? stale.promise : normal(url, init));
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  // The reload is asked, and its route is the one still in flight when the connection is replaced underneath it.
+  const pending = reload();
+  await h.pump(m);
+  m.switchConnection(h.anotherConnection(t));
+  await h.pump(m);
+  const noticesBefore = plain(m.out.notices).length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  stale.releaseAt({ error: "old host restarting" }, 503);
+  await pending;
+  await h.pump(m);
+
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "the replaced connection's route failure is not this surface's failure: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore,
+    "and the replaced connection's reload asks for no read of the conversation it no longer shows");
+  m.unmount();
+});
+
+/**
+ * One `/reload` is one notice.
+ *
+ * The operation states what it established, and the command line is a caller of that operation rather than a second
+ * reporter of it. Two surfaces stating the same outcome is how a single reload reads as two — and how the composer,
+ * told twice, reports a failure the operation had already reported once.
+ */
+test("a /reload command states its outcome once, for a success and for a failure", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  for (const answer of ["reloaded", "failed"] as const) {
+    const h = harness(t, (url, init) => {
+      if (url === "/api/conversations/conv/reload") {
+        return answer === "reloaded" ? respond({ resources: { skills: 3, prompts: 2 } }) : respond({ error: "the runtime is restarting" }, 503);
+      }
+      return normal(url, init);
+    });
+    const m = h.mount();
+    await h.pump(m);
+    const noticesBefore = plain(m.out.notices).length;
+
+    const result = await m.out.handleBuiltinSlashCommand("/reload");
+    await h.pump(m);
+
+    assert.equal(result.handled, true, answer + ": the command is the built-in's");
+    const stated = plain(m.out.notices).slice(noticesBefore);
+    assert.equal(stated.length, 1, answer + ": one reload is one notice: " + JSON.stringify(stated));
+    if (answer === "reloaded") {
+      assert.equal(stated[0].type, "success", "and it is the operation's success");
+      assert.match(stated[0].message, /3 skills and 2 prompts/, "naming the resources the read established");
+    } else {
+      assert.equal(stated[0].type, "error", "and it is the operation's failure");
+      assert.match(stated[0].message, /Reload failed/, "stated once, by the operation that owns it");
+      // The result still carries the failure, so the composer keeps the text that asked for it. The command's error is
+      // a signal to its caller, not a second report to the reader.
+      assert.ok(result.handled && result.error, "the command line still hears that it failed");
+    }
+    m.unmount();
+  }
+});
+
+/**
  * A read outlives the connection it was asked through, and the connection is what makes its answer stale.
  *
  * Two connections can hold a conversation with the **same** id — the durable ids are only unique inside one Backend — so

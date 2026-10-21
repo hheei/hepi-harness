@@ -143,6 +143,17 @@ fold 請求。
 | --- | --- | --- |
 | 8 | `ux-conversation-lifetime-shell.ts` claimed production registry replacement but asserted only DOM, read and reload counts; disabling the guard in `AppShell` still passed | The scene now asserts the registry itself: the first connection holds the conversation's stream, after the switch only the replacement's source is open, the outgoing source is recorded `closed`, and a frame delivered through **only** the replacement's source (`emitOn`) reaches the transcript. The guard was disabled to confirm the scene fails on the mutant (it times out at the `openStreams` assertion). |
 
+### Review disposition (agent-265, spec probe on 3f0d1632)
+
+| # | Finding | Resolution |
+| --- | --- | --- |
+| 9 (P2) | A reload whose transcript window the fold refused still read agent state afterwards, and `loadSession` returned `accepted` from that auxiliary answer — revision 9 on screen, reload read revision 1 twice, success notice. The existing 422 "refused" case did not cover it: it answered with an HTTP refusal, not a window the fold rejected. | `loadSession` now ends a refused window before the agent-state query (`if (!accepted) return { status: "refused" }`), so the auxiliary read is neither made nor able to promote a rejected window. Regression: `a reload whose window the fold refused claims nothing, and asks for no state of it` — asserts no notice, exactly one read, and the newer window still on screen. The probe's `reads:3` plus success notice reproduces before the fix and fails after removing the guard. |
+| 10 (P2) | A reload POST still pending across a connection switch, rejecting 503 afterwards, put the old host's failure notice on the replacement surface. | The route's rejection is fenced like a read: `!fromCurrentConnection(conversation) \|\| sessionIdRef.current !== sid` → `superseded`, no notice and no read. Regression: `a reload route that rejects after a connection switch states nothing on the surface that replaced it`. |
+| 11 (P2) | `/reload` emitted the outcome notice twice — once in `reloadResources`, once through `complete` — for both success and failure. | The command returns its result without `complete`'s notice; the operation is the only reporter. `error` stays on the result because it is the composer's "do not clear the text" signal, not a second report. Regression: `a /reload command states its outcome once, for a success and for a failure` (asserts exactly one notice per outcome). |
+
+All three regressions fail when their fix is reverted (6 lifecycle tests fail on the reverted tree), so they are not
+probes that pass on both sides.
+
 ### 修正狀態
 
 Clean revision `f7886fe8`, base `e3c278c0`: changed verification passed; report `.dev/verify/2026-10-21T13-49-44-265-verify-changed/verify.json`. Browser reruns passed: `pnpm --dir apps/web test:conversation-lifetime` (14 assertions), `pnpm --dir apps/web test:conversation-lifetime-shell` (8 assertions), both exit 0. Raw browser logs: `.dev/verify/ui-conversation-lifetime-03/`.
@@ -154,4 +165,7 @@ agent-263 的三项 reload findings 与 agent-264 的 validation gap 已在本�
 新增 public-seam 失败回归：路由 503、读取 missing／refused／failure、reload 期间换 connection。production shell
 scene 现断言 registry 本身（`openStreams` 从 `first:shell-conv` 变为 `replaced:shell-conv`、旧 source `closed`、
 经 `emitOn("replaced", …)` 的 frame 进入 transcript）；关闭 AppShell 的替换 guard 后该 scene 失败，确认断言有效。
-Ticket 保持 in-progress，等待 coordinator 集成与验收。未观察到的 run 仍不补完成音（ADR 0007 既有契约），本票未改。
+agent-265 的两项 spec probe 与 standards 的重复通知发现同样已修正，三者的 public-seam 回归都写在
+`useAgentSession.lifecycle.test.ts` 里（拒绝 window 不得声称成功、切换后旧 POST 拒绝不得发声、一次 `/reload` 只一条通知），
+并在 revert 对应修复后确认失败。Ticket 保持 in-progress，等待 coordinator 集成与验收。未观察到的 run 仍不补完成音
+（ADR 0007 既有契约），本票未改。
