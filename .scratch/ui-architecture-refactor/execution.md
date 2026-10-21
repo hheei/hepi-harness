@@ -16,7 +16,8 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 修正已整合並驗證；agent-230 複審中，worker 文件收尾 |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 複審確認 5 項修正；worker 修正剩餘 3 項 |
+| 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -58,6 +59,10 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+agent-230 對 clean `1179fdcb` 的複審確認原 findings 1／2／3／5／6 fixed；4（conversation → workspace 跳過 remembered row）、7（cross-project raw panel 被 project cleanup 清除）尚未完整修正，另新增 P1：先 adopt transient composer 消耗 destination parked draft，再 restore remembered conversation，造成草稿 key 無法到達。三項皆為正常選擇／跳轉流程，判定 fix，交 agent-221 在 selection／presentation owner 修正並補精確 regression。Repro logs `.dev/verify/ui-architecture-refactor/ticket01-followup-state.log`、`ticket01-followup-raw.log`。
+
+03 的啟動依賴改為已完成的 02 及已確認的 01 核心契約：draft retention／source-identity promotion／attachment；由 agent-233 在 base `3d3d1206` 實作。01 保有 selection owner 與 Shell project cleanup／raw-panel sections，03 保有 hook／ChatWindow／Shell attachment+reload sections；09 保有 MessageView，最終整合仍等待 01，沒有宣稱整體行為已通過驗收。
 
 使用者提出串行等待問題後，確認 09 的現有 MessageView props 可保持不變，無需先完成 03／04。09 的啟動依賴已移除；04 與 12 仍驗證 transcript／streaming／展開位置整合。worker agent-232 在 `.dev/worktrees/ui-message-views`（`impl/ui-message-views`，base `8182fafc`）獨立實作，僅擁有 MessageView／message leaves／直接 tests／09 ticket／developer guide；不修改 01、03 的 Shell、selection、draft、runtime。06／08 的 scout 建議仍須確認 target／cache 接線邊界，尚未派工或宣稱完成。
 
