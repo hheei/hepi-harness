@@ -49,7 +49,7 @@ MessageView/Markdown 既有測試，focused browser references、tool/deferred �
 
 ## 交付記錄
 
-變更修訂：本次 commit（worktree base `8182fafc`，dirty tree 驗證後提交）。
+變更修訂：commit `8919714a7f2d3c923b9d7554c000d01a2cf625b4`（worktree base `8182fafc`）。
 
 Changed paths（相對 `packages/ui/src`）：
 
@@ -86,9 +86,10 @@ deferred text/thinking/image 只在明確展開或複製時讀取，且一律經
 
 Evidence：
 
-- `pnpm verify:changed --base=8182fafc` 於 revision `8182fafc`（dirty tree）exit 0：changed-typecheck、changed-test、
-  web-unit、check-docs 全 PASS；log `.dev/verify/2026-10-21T11-18-18-796-verify-changed`（前兩次同 source 的 dirty 執行
-  `.dev/verify/2026-10-21T11-13-12-133-…`、`.dev/verify/2026-10-21T11-17-17-088-…`）。
+- `pnpm verify:changed --base=8182fafc` 於 revision `8919714a`（clean tree）exit 0：changed-typecheck、changed-test、
+  web-unit、check-docs 全 PASS；log `.dev/verify/2026-10-21T11-19-18-855-verify-changed`。（同一 source 在 commit 前以
+  dirty tree 跑過，log `.dev/verify/2026-10-21T11-18-18-796-verify-changed`；更早兩次 `.dev/verify/2026-10-21T11-13-12-133-…`、
+  `.dev/verify/2026-10-21T11-17-17-088-…` 對應前一輪修正。）
 - `pnpm --filter @hepi/ui typecheck` exit 0；`pnpm --filter @hepi/ui test` 400 pass、exit 0。
 - 等價性：臨時 driver 對 25 組訊息情境（user/assistant/thinking/tool/apply_patch/codemode/subagent/mcp/image/usage/
   error/truncated/written files/deferred/custom/compaction/bash/fork，各自 collapsed 與 expanded）以
