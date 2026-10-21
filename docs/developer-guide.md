@@ -5,6 +5,8 @@
 
 ## System shape
 
+Backend live attachment lifetime belongs to `apps/server/src/conversation-attachments.ts`: lookup, single-flight attachment, recovery and close borrow Harness from `server.ts`. Keep durable writes in `conversation-operations.ts`; close views before Harness. HTTP and transcript projections share credential-error redaction from `public-errors.ts`.
+
 ```text
 Web (cookie) / Tauri App (device bearer)
         │ packages/ui shared workbench · HTTP + SSE
