@@ -96,6 +96,8 @@ const hookBundle = buildSync({
   bundle: true, write: false,
   platform: "node", format: "cjs", external: ["react"], alias: { "@": webRoot },
 }).outputFiles[0].text;
+/** The catalog's bounded retry delays, as the hook states them: the waits a case lets expire to reach a later attempt. */
+const CATALOG_RETRY_DELAYS_MS = [2_000, 5_000, 10_000];
 /** A settled copy of one hook value: what the surface states, with no prototype from the sandbox it was built in. */
 const plain = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const respond = (body: unknown, status = 200): StubResponse => ({ ok: status >= 200 && status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
@@ -166,7 +168,7 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
    * then. The cases that state a notice read it to prove the toast's clock is not one of this hook's — a conversation
    * handed to the background must not be holding a countdown for a toast nobody is drawing (acceptance C7).
    */
-  const timers: { ms: number }[] = [];
+  const timers: { ms: number; run: () => void }[] = [];
   // Every conversation request this hook makes is the connection's own. The client below is the only way to reach the
   // sandbox's `fetch`, so a request recorded without it is a surface that reached around the connection.
   const clientRequests: string[] = [];
@@ -225,13 +227,14 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     emit(event: unknown) { this.onmessage?.({ data: JSON.stringify(event) }); }
   }
   // The catalog answers this case states, one per read, for the cases that observe a re-read's list arriving. Empty by
-  // default: every other case reads the same empty catalog it always did.
-  const catalogAnswers: StubResponse[] = [];
+  // default: every other case reads the same empty catalog it always did. An entry may be a read held open, which is how
+  // a case makes the answer a change superseded arrive after the one that replaced it.
+  const catalogAnswers: (StubResponse | Promise<StubResponse>)[] = [];
   const sandbox: Record<string, unknown> = {
     module: { exports: {} as Record<string, unknown> }, exports: {}, require: (name: string) => name === "react" ? react : require(name), console,
     URLSearchParams, URL, AbortController, DOMException, crypto: globalThis.crypto, queueMicrotask, EventSource: SandboxSource,
     document: { visibilityState: "visible", title: "", addEventListener() {}, removeEventListener() {} }, navigator: {},
-    setTimeout: (handler: () => void, ms?: number) => { timers.push({ ms: ms ?? 0 }); void handler; return timers.length; }, clearTimeout() {},
+    setTimeout: (handler: () => void, ms?: number) => { timers.push({ ms: ms ?? 0, run: handler }); return timers.length; }, clearTimeout() {},
     setInterval: () => 1, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
     fetch: async (url: string | URL | Request, init?: RequestInit) => {
       const target = String(url), body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : undefined;
@@ -288,6 +291,16 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     requests, sources, clientRequests, timers, anotherConnection, catalogAnswers,
     /** State, through the rule, that the deployment's model list changed under every mounted reader. */
     invalidateCatalog: () => ((sandbox.module as { exports: Record<string, unknown> }).exports.invalidateModelCatalog as () => void)(),
+    /**
+     * Let every retry delay the hook is waiting on expire, once.
+     *
+     * Only the catalog's bounded retry is held this way: those are the timers whose wait is the read's own, and a case
+     * about a retired read states whether the loop it belonged to is still scheduled at all. Nothing runs by default, so
+     * a case that does not release them sees the first attempt and no more.
+     */
+    releaseRetryTimers: () => {
+      for (const timer of timers.splice(0)) if (CATALOG_RETRY_DELAYS_MS.includes(timer.ms)) timer.run();
+    },
     mount(extra: MountOptions = {}, connection = defaultConnection()): Mount {
       let unmounted = false;
       const m = {
@@ -1196,6 +1209,71 @@ test("a model change re-reads a mounted composer in place, and moves no selectio
   h.invalidateCatalog();
   await h.pump(m);
   assert.equal(reads().length, 2, "an unmounted composer re-read for a change");
+});
+
+/**
+ * The other half of a change: the read it superseded is still open, and it answers last.
+ *
+ * The cache already refuses to serve a superseded answer to the next reader, which is why this is a fact about the
+ * *consumer*: the read in flight belongs to this composer, it is awaited here, and what it writes is what the composer
+ * shows. A change started a newer read, so the older one describes a catalogue the change replaced — a list that landed
+ * after the newer answer would put the old one back on screen, and its failure would state an error over a catalogue
+ * that had just arrived.
+ *
+ * Both halves are held open and released after the newer read has answered, which is the order the race produces.
+ */
+test("a catalogue read a change superseded states neither its answer nor its failure", async (t) => {
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  const list = (ids: string[], names = ids) => ({ models: ids.map((id, index) => ({ provider: "p", id, name: names[index] })), modelList: ids.map((id, index) => ({ provider: "p", id, name: names[index] })) });
+  h.catalogAnswers.push(respond(list(["old"])));
+  const m = h.mount();
+  await h.pump(m);
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models")).length;
+  const shown = () => plain(m.out.modelList.map(model => model.id));
+  assert.deepEqual(shown(), ["old"]);
+  assert.equal(reads(), 1, "the mount read its catalogue once");
+
+  // The first change's read is held open, and a second change supersedes it before it answers.
+  const held = deferredRead();
+  h.catalogAnswers.push(held.promise);
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads(), 2, "the change did not start a read of its own");
+  h.catalogAnswers.push(respond(list(["new"])));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads(), 3, "the second change did not start a read of its own");
+  assert.deepEqual(shown(), ["new"], "the read the second change started is not what the composer shows");
+
+  // The superseded read answers now, last, describing the catalogue both changes replaced.
+  held.release(list(["stale"]));
+  await h.pump(m);
+  assert.deepEqual(shown(), ["new"], "a read a change superseded put the list it was holding back on screen");
+
+  // The same claim on the failure side: a superseded read that fails states no error and retries no further.
+  const heldFailure = deferredRead();
+  h.catalogAnswers.push(heldFailure.promise);
+  h.invalidateCatalog();
+  await h.pump(m);
+  h.catalogAnswers.push(respond(list(["latest"])));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.deepEqual(shown(), ["latest"]);
+  assert.equal(m.out.modelError, null, "the catalogue that arrived is stated as unreadable");
+
+  heldFailure.releaseAt({ error: "the catalogue could not be read" }, 500);
+  await h.pump(m);
+  assert.equal(m.out.modelError, null, "a read a change superseded stated its failure over the catalogue that arrived");
+  assert.deepEqual(shown(), ["latest"], "a superseded read's failure discarded the catalogue on screen");
+  // The retired read's bounded retry is retired with it: the wait it would spend its next attempt after is not scheduled,
+  // so a change does not leave a superseded read asking the deployment twice more.
+  assert.deepEqual(h.timers.filter(timer => CATALOG_RETRY_DELAYS_MS.includes(timer.ms)).map(timer => timer.ms), [],
+    "a superseded read kept its retry scheduled");
+  const settled = reads();
+  h.releaseRetryTimers();
+  await h.pump(m);
+  assert.equal(reads(), settled, "the superseded read retried after a change superseded it");
 });
 
 test("a catalog read that failed is stated where the model is chosen, and its retry is one more read", async (t) => {

@@ -1788,7 +1788,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [addNotice, currentModelOverride, isNew, loadSession, setNewSessionModel]);
 
-  const loadModels = useCallback(async (signal?: AbortSignal) => {
+  /**
+   * Which catalog read this surface is on.
+   *
+   * A read states what it found only while it is the newest one: a change this page applied drops the held answer and
+   * starts another read, and the answer the superseded one is still waiting on describes the catalog that change
+   * replaced. The number is that claim, so an answer that arrives last but was asked first writes nothing.
+   */
+  const modelReadSeqRef = useRef(0);
+
+  const loadModels = useCallback(async (signal?: AbortSignal, read = ++modelReadSeqRef.current) => {
     const modelCwd = newSessionCwd ?? session?.cwd ?? "";
     const modelsUrl = modelCwd ? `/api/models?cwd=${encodeURIComponent(modelCwd)}` : "/api/models";
     let d: ModelsResponse;
@@ -1808,11 +1817,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         readCatalogAnswer(await client.readJson<unknown>(modelsUrl)));
       signal?.throwIfAborted();
     } catch (e) {
-      if (!signal?.aborted && !(e instanceof DOMException && e.name === "AbortError")) {
+      // A failure is the same fact as an answer: it belongs to the read that asked, and states nothing once a newer read
+      // has claimed the surface — a change applied in between is not undone by a read it superseded going wrong.
+      if (!signal?.aborted && !(e instanceof DOMException && e.name === "AbortError") && read === modelReadSeqRef.current) {
         setModelError(e instanceof Error ? e.message : String(e));
       }
       throw e;
     }
+    // The read answered, but a later one owns this surface now: what it found is returned to whoever asked and never
+    // stated here, because the change that started that read already replaced the catalog this answer describes.
+    if (read !== modelReadSeqRef.current) return;
     setModelNames(d.models);
     setModelError(d.modelError ?? null);
     setModelScopeWarnings(d.modelScopeWarnings ?? []);
@@ -2319,22 +2333,27 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * page applied all ask the deployment the same way.
    *
    * The retry loop is not a second policy beside this read — it *is* this function, which is why a re-read retries on
-   * the same delays the first read does. Each attempt ends on an answer, on the connection going away, or on the
-   * caller's own controller; nothing here decides what the surface holds.
+   * the same delays the first read does. Each attempt ends on an answer, on the connection going away, on the caller's
+   * own controller, or on a newer read taking the surface over; nothing here decides what the surface holds.
+   *
+   * Starting one takes the newest claim, which is also how a change retires the read it superseded: that loop stops
+   * between attempts and after its delay instead of spending the rest of its bounded retries on a catalog nobody holds
+   * any more.
    */
   const readModels = useCallback(async (signal: AbortSignal) => {
+    const read = ++modelReadSeqRef.current;
     for (let attempt = 0; ; attempt++) {
       try {
-        await loadModels(signal);
+        await loadModels(signal, read);
         return;
       } catch {
         // The read this loop waits on is the connection's, so the only aborts that end this load are this consumer's
-        // own and the connection's own going away. Another consumer's exit retires nothing here, and the next ask may
-        // still be answered.
-        if (signal.aborted || client.disposed) return;
+        // own, the connection's own going away, and a newer read of this same surface. Another consumer's exit retires
+        // nothing here, and the next ask may still be answered.
+        if (signal.aborted || client.disposed || read !== modelReadSeqRef.current) return;
         if (attempt >= MODELS_RETRY_DELAYS_MS.length) return;
         await delay(MODELS_RETRY_DELAYS_MS[attempt]);
-        if (signal.aborted || client.disposed) return;
+        if (signal.aborted || client.disposed || read !== modelReadSeqRef.current) return;
       }
     }
   }, [client, loadModels]);
