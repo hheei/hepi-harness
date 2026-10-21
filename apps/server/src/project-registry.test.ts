@@ -269,9 +269,11 @@ test("the publication revision advances once per accepted mutation and never for
     assert.deepEqual([...host.registry.ids()].sort(), created.folders.map(folder => folder.workspaceId).sort());
     assert.deepEqual(created.folders.map(folder => folder.root).sort(), [app.directories[0], app.directories[1]].sort());
 
-    const second = created.folders[1]!;
+    const second = created.folders.find(folder => folder.id !== created.defaultFolderId)!;
     assert.equal(registry.setDefault(created.id, second.id, GATEWAY).ok, true);
     assert.equal(registry.revision(), 2);
+    assert.equal(registry.setDefault(created.id, second.id, GATEWAY).ok, true);
+    assert.equal(registry.revision(), 2, "keeping the same default publishes no metadata change");
     // A refusal changes neither the snapshot nor the revision.
     assert.deepEqual(registry.setDefault(created.id, "folder-9", GATEWAY), { ok: false, code: "unknown_folder", status: 400, error: "that folder does not belong to this project" });
     assert.equal(registry.revision(), 2);
@@ -280,12 +282,13 @@ test("the publication revision advances once per accepted mutation and never for
     assert.ok(added?.ok);
     assert.equal(registry.revision(), 3);
 
-    const unlinked = registry.unlink(created.id, created.folders[0]!.id, undefined, GATEWAY);
+    const originalDefault = created.folders.find(folder => folder.id === created.defaultFolderId)!;
+    const unlinked = registry.unlink(created.id, originalDefault.id, undefined, GATEWAY);
     assert.ok(unlinked.ok, JSON.stringify(unlinked));
     assert.equal(registry.revision(), 4);
     // The unlinked folder is retained from here on, and it is still not a target.
-    assert.equal(registry.resolve(created.folders[0]!.workspaceId)?.kind, "retained");
-    assert.equal(registry.isTarget(created.folders[0]!.workspaceId), false);
+    assert.equal(registry.resolve(originalDefault.workspaceId)?.kind, "retained");
+    assert.equal(registry.isTarget(originalDefault.workspaceId), false);
 
     assert.equal(registry.remove(created.id, GATEWAY).ok, true);
     assert.equal(registry.revision(), 5);

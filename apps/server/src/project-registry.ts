@@ -339,7 +339,7 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 				? { ok: false, code: changed.code, status: 404, error: "no project with that id is recorded" }
 				: { ok: false, code: changed.code, status: 400, error: "that folder does not belong to this project" };
 			replace(changed.project, projectId);
-			accept();
+			if (project.defaultFolderId !== changed.project.defaultFolderId) accept();
 			return { ok: true, value: changed.project };
 		},
 		unlink: (projectId, folderId, replacementDefaultId, hostId) => {
