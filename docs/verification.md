@@ -5556,3 +5556,30 @@ committed tree against it reports `5ec7ffe62a2a… (HEAD 0aab74e9c…)` and 53/5
 (`.dev/verify/nv01/postcommit.log`). The other 53 assertion outcomes and the report's key set are identical to the run
 above, which is the point of the assertion: a run against an artifact built from another revision is a different run, and
 it says so rather than passing. The passing runs are the two revision-matched ones.
+
+## Model workflow refresh (ticket 06, 2026-10-21)
+
+Branch `impl/ui-model-workflow`, base `b3ab7871`. The `modelsRefreshKey` hop from `AppShell` → `ChatWindow` →
+`useAgentSession` is gone, and with it the "closing Settings" refresh: every write of a model-domain resource now states
+its change through the catalog's own rule. `packages/ui/src/lib/models-cache.ts` keeps the one page cache and gained the
+mounted readers (`subscribeModelCatalog`); `invalidateModelCatalog()` drops the cached answer **and** tells those readers,
+each of which re-runs the read it already owns — the same bounded retry a mount performs.
+
+What each write states: a `models.json` save the Backend answered `applied:true` (plus the `enabledModels`
+re-verification it then performs), and an accepted `enabledModels` write, both call the rule. A `models.json` save
+answered `applied:false` is saved-but-not-applied: it reads the file back, states the failure and claims no catalog
+change, because the running runtime still serves what it had. A refused credential write returns before the rule, so the
+stored hint and the held catalog stay as they were. A catalog read that fails is stated where the model is chosen and
+offers one Retry, which is one more read of `/api/models` and no part of a mutation.
+
+| Check | Command | Revision | Exit | Result |
+| --- | --- | --- | --- | --- |
+| Selector over the changed packages and their dependents | `pnpm verify:changed --base=b3ab7871` | `b3ab7871` + this change (`dirty: true`) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/ui` **465 pass / 0 fail**, `@hepi/app` green), `web-unit` 0 (14 pass), `check-docs` 0 (465 files, 0 broken links) — `.dev/verify/2026-10-21T19-04-09-799-verify-changed/verify.json` |
+| The settings panels' own browser seam, with the workflow's observations | `pnpm --filter @hepi/web test:panel-ingress` | `b3ab7871` + this change (`dirty: true`) | 0 | **77 checks, all ok** — `.dev/verify/ticket06/panel-ingress.log`. A stored credential re-read the mounted reader's catalog with Settings still open; a refused key write claimed no change; an applied `models.json` save re-read it; a save the runtime could not apply added no catalog read and re-read the file instead; an accepted `enabledModels` write re-read it; a removal re-read it |
+| The provider acceptance journey, with Settings kept open | `pnpm --filter @hepi/web test:provider-acceptance` | `b3ab7871` + this change (`dirty: true`) | 0 | **70 checks, 0 failures** — `.dev/verify/ticket06/provider-acceptance.log`. A stored key re-read the catalog behind the still-open dialog (1 → 2 reads of `/api/models`); no conversation-settings write followed the change; the composer offered the newly authenticated model; the removal re-read it again (2 → 3); closing an unedited Settings made no read at all |
+| The rule is load-bearing, not incidental | same two drivers, mutated tree | `b3ab7871` + mutation | 1 | Removing the reader loop in `invalidateModelCatalog()` fails `test:panel-ingress` with `the fixture threw: page.waitForFunction: Timeout 30000ms exceeded`. Calling the rule on a saved-but-not-applied save fails the same driver with `FAIL a save that was not applied claimed an applied catalog change (4 → 5)`. Both mutations were reverted before the runs recorded above |
+
+**Not claimed.** No deployment was restarted or inspected, no App-host journey ran, and nothing was built or run on
+`remote-host`. The unit cases in `packages/ui/src/lib/models-cache.test.ts` and
+`packages/ui/src/hooks/useAgentSession.lifecycle.test.ts` state the same contract at their own seams and ran inside
+`changed-test` above.

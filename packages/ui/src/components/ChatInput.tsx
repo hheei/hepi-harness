@@ -90,6 +90,8 @@ interface Props {
   modelNames?: Record<string, string>;
   modelList?: { id: string; name: string; provider: string; input?: string[] }[];
   modelError?: string | null;
+  /** Re-read the catalog after it failed to load: the model readout's own recovery, never a resend. */
+  onModelRetry?: () => void;
   /** The framework's own outcome for the newest terminal run: a missing model or a failed request. */
   runFailure?: { reason: string; message: string } | null;
   /** Diagnostics from resolving `enabledModels`, e.g. a pattern that matched nothing. */
@@ -348,7 +350,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(p
         />
       )}
       <div style={{ maxWidth: "var(--chat-content-max-width, 820px)", margin: "0 auto" }}>
-        <ModelErrorBanner error={props.modelError} />
+        <ModelErrorBanner error={props.modelError} onRetry={props.onModelRetry} />
         <RunFailureBanner failure={props.runFailure} />
         <ModelScopeWarningBanner warnings={props.modelScopeWarnings} />
         {draft.storageIssue !== null && <DraftStorageBanner onClose={draft.dismissStorageIssue} />}

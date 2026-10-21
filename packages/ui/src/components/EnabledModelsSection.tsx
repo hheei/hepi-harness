@@ -12,6 +12,7 @@ import {
 } from "./enabled-models-helpers";
 import { unsupportedCapability, useCapabilityServed } from "../lib/capability-availability";
 import { useApiRequest } from "../lib/api-request";
+import { invalidateModelCatalog } from "../lib/models-cache";
 import { ConfigButton, ConfigSwitch } from "./SettingsUi";
 
 /**
@@ -163,6 +164,10 @@ export function useEnabledModels(cwd?: string | null): EnabledModelsController {
           return;
         }
         setView(data);
+        // The setting narrows the catalog every selector reads, so a write that landed changed what the deployment
+        // offers — the same fact a `models.json` save or a credential change states, through the same rule. A refusal
+        // above returns before this, so a save that did not happen claims no refresh.
+        invalidateModelCatalog();
       } catch (error) {
         setFailure({ message: error instanceof Error ? error.message : String(error) });
       } finally {

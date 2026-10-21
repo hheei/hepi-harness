@@ -80,7 +80,8 @@ reader's parse error quotes the file's own bytes. `PUT /api/models-config` valid
 file and the running runtime untouched and answers `400`. On success it writes the file atomically with mode `0600` and
 refreshes the live runtime with network access disabled; `{"success":true,"applied":true}` means the running backend
 serves the new configuration, and `{"success":true,"applied":false,"error":…}` means the file was written but could not
-be applied — the editor shows that as saved-but-not-applied rather than as Saved. There is no queue or lock in front of a
+be applied — the editor shows that as saved-but-not-applied, reads the file back, and states no catalog change, because
+the running runtime still serves the configuration it had (docs/client-ingress.md). There is no queue or lock in front of a
 save: each `PUT` writes a complete file through a private temporary file renamed over `models.json`, so the last
 completed replacement is what stands on disk and a reader during a write sees the old or the new file, never a partial
 one. An ordinary save's refresh is what the running backend then serves. Two overlapping saves can still leave the file

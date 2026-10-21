@@ -82,7 +82,6 @@ interface Props {
   onAgentEnd?: () => void;
   onSessionCreated?: (session: SessionInfo, sourceDraftKey: string) => void;
   onSessionForked?: (newSessionId: string) => void;
-  modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
@@ -306,7 +305,7 @@ function ProcessDetailsGroup({ messageCount, toolCallCount, expanded, reveal = f
   );
 }
 
-export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
+export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const completionNotificationsEnabled = session?.relation?.kind !== "subagent";
@@ -351,11 +350,11 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     handleRecallQueue, handleEditItem, handleCancelItem, handleContinue,
     handleBuiltinSlashCommand,
     handleThinkingLevelChange, loadSlashCommands,
-    loadContext, activeLeafId, landWindow,
+    loadContext, activeLeafId, landWindow, retryModels,
   } = useAgentSession({
     session, newSessionCwd, newSessionDraftKey, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd: wrappedOnAgentEnd, onSessionCreated, onSessionForked,
     subscribeAgentEvents, onProjectionChange, onLiveSettlement,
-    modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
+    chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
     onConversationReloadChange, onOpenSettings,
   });
   const sessionBusy = agentRunning;
@@ -1382,6 +1381,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       modelNames={modelNames}
       modelList={modelList}
       modelError={modelError}
+      onModelRetry={retryModels}
       runFailure={runFailure}
       modelScopeWarnings={modelScopeWarnings}
       onModelChange={handleModelChange}

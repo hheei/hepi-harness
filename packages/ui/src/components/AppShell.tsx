@@ -400,7 +400,6 @@ export function AppShell() {
   }, [selection]);
   const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
-  const [modelsRefreshKey, setModelsRefreshKey] = useState(0);
   const [projectTrust, setProjectTrust] = useState<ProjectTrustStatus | null>(null);
   const [projectTrustDialogOpen, setProjectTrustDialogOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => !locationQuery.get("sidebar"));
@@ -2432,7 +2431,6 @@ export function AppShell() {
               onAgentEnd={handleAgentEnd}
               onSessionCreated={handleSessionCreated}
               onSessionForked={handleSessionForked}
-              modelsRefreshKey={modelsRefreshKey}
               chatInputRef={chatInputRef}
               onSystemPromptChange={handleSystemPromptChange}
               onSystemToolsChange={handleSystemToolsChange}
@@ -2638,10 +2636,7 @@ export function AppShell() {
         initialSection={settingsSection}
         quoteSelectionEnabled={quoteSelectionEnabled}
         onQuoteSelectionChange={handleQuoteSelectionChange}
-        onClose={() => {
-          setSettingsSection(null);
-          setModelsRefreshKey((key) => key + 1);
-        }}
+        onClose={() => setSettingsSection(null)}
         projectTrust={projectTrust}
         onProjectTrustChanged={handleProjectTrustChanged}
       />
