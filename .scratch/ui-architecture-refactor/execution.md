@@ -18,7 +18,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | resolved／integrated；全部 material findings 已修正並複審 |
 | 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
-| 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | in-progress；agent-234 發現 clipboard 回歸，worker 修正中 |
+| 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | clipboard 修正已整合並驗證；agent-234 窄幅複審中 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -60,6 +60,10 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+09 clipboard correction `ec128568` 已整合為 `216d669c`：resolved fast path 使用 textAt(index)，不再退回 frame preview。新增 production MessageView/createClient browser driver `test:message-copy` 覆蓋 mount zero reads、first copy 讀一次、second copy full／no extra read、展開後 copy full，包含 sibling inline block。Worker 原始 clean `ec128568` report 已複製 `.dev/verify/2026-10-21T11-45-01-602-verify-changed/`。agent-234 只複查單一原 finding 與 correction regressions。
+
+整合 revision `216d669c`（dirty 僅既有 durable-ledger scratch）changed checks exit 0，report `.dev/verify/ui-message-copy-integrated/verify.json`；message-copy browser exit 0，raw log `.dev/verify/ui-architecture-refactor/message-copy-browser.log`。Coordinator graph update exit 0，log `.dev/verify/ui-architecture-refactor/message-copy-graph.log`。未重跑 unchanged token/footer/window source，也未宣稱完整 Backend history acceptance 已執行。
 
 09 review agent-234：Standards 無 material findings；Spec 一項 P2 fix：UserMessageView.useWholePrompt 的 no-unread fast path 忽略 resolvedTexts，展開 deferred prompt 後複製或第二次複製得到 preview。Chromium clean `f180f716` 重現 firstCopy full／secondCopy preview／expandedCopy preview，正常複製操作會靜默截斷輸出，判為 material。worker 在 owner 修正，補兩個精確操作 regression。Evidence `.dev/verify/ui-architecture-refactor/ticket09-copy-review.json`。Reviewer 另確認 streaming thinking/tool identity、展開與焦點保持，mount zero reads，無 runtime cycles；不新增理論 findings。01 保持 resolved，03 繼續實作。
 
