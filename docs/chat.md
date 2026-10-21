@@ -1255,6 +1255,40 @@ saved by the user before that page's first refresh, and every reload after it is
 [deployment runbook](deployment-runbook.md#existing-open-pages-at-a-web-contract-switch) states that step for the
 cutover.
 
+## The composer: one editor, one write path, one command port
+
+`packages/ui/src/components/ChatInput.tsx` is the layout, and the behaviour behind it is four modules in
+`packages/ui/src/components/composer/`, each with one question to answer:
+
+- `useComposerDraft.ts` owns the live text, its pictures and the **one** write to the connection's draft store. Adoption is
+  not a write: a composer that has not yet read its stored draft holds an empty value that is not the user's text, so it
+  reads before it may save, and the save effect is rebuilt exactly once when it has. Rekey, a restored submission and a
+  clear replace the live value and let that same effect persist the result — no second writer exists to race them.
+- `useComposerMenus.ts` owns the `@` index, the `/` palette, the input history and the open popups, and answers each
+  keystroke by delegating to `keyboard.ts`, where the priority between menu, send, queue, built-in and native newline is a
+  pure decision (`decideComposerKey`) rather than an untestable key handler. IME comes first in that decision: a composition
+  is never a command, and the Enter that confirms one is swallowed for a short grace period.
+- `dispatch.ts` owns what a submit, a queued steer/follow-up and a built-in command do with the draft — including the
+  shell-draft refusal, which keeps the draft on screen because the host refuses the turn before it is sent.
+- `editor-text.ts` holds the operations that must stay native: `replaceTextareaRange` performs a completion or an insertion
+  as real `execCommand` edits so the textarea's own undo stack records them, and `replaceLinksWithMarkdown` turns a pasted
+  fragment's labels into links.
+
+The conversation operations arrive as one `ComposerCommands` value in `composer/commands.ts` — send, steer, follow up, run a
+built-in, continue after the user's own stop, recall the queue, edit or cancel a queued item by the identity the host gave
+it. The chat surface states that object; the composer never receives the session's runtime state, its request ids or a
+pending flag it would have to interpret. The model and reasoning readout (`ComposerControls.tsx`) and the queue rows
+(`ComposerQueue.tsx`) are readers of the conversation's own facts: a selection the catalog no longer lists is named as
+unavailable rather than replaced, and a queued item is drawn from the projection the host stated, so a refused edit puts
+the host's current text back on screen. The imperative handle (`insertText`, `prependText`, `rekeyDraft`,
+`restoreSubmission`, `addImages`) stays because a surrounding surface legitimately needs to put text into a textarea; those
+are editor operations on the native element, not a second path into the draft.
+
+The composer's own cases live beside it (`ChatInput.test.ts` renders the shipped surface in a real connection;
+`composer/*.test.ts` cover dispatch and the key decision), and `apps/web/e2e/chat/ux-composer-interaction.ts` is the browser
+half: IME, undo and redo of a completed mention, both completions, a pasted picture, and drafts that survive a reload, a
+promotion and a move to another key.
+
 ## Submission recovery
 
 The open conversation's lifecycle is decided in exactly one place: `packages/ui/src/lib/lifecycle-projection.ts`, a pure
