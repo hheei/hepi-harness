@@ -15,7 +15,7 @@ import {
 	GatewayExecutionJournal,
 	MemoryLedger,
 	OutputCapture,
-	encodeFrame,
+	validExecuteRequest,
 	type ExecuteFailureCode,
 	type LedgerEntry,
 	type ExecuteFrame,
@@ -29,17 +29,20 @@ import {
 import { createSystemSshRunner, managedControlMaster, type SshRunner } from "./runner.ts";
 import type { TerminalSessions } from "./terminal.ts";
 import { FilePayloadTransport, filePayloadRoute } from "./transport/file-payload.ts";
-import { readJson, writeJson } from "./transport/http.ts";
+import { writeJson } from "./transport/http.ts";
+import { ControlTransport, controlRoute } from "./transport/control.ts";
+import { ExecutionTransport, executionRoute } from "./transport/execution.ts";
+import { McpTransport, mcpRoute } from "./transport/mcp.ts";
+import { ProviderTransport, providerRoute } from "./transport/providers.ts";
 import { TerminalTransport, terminalRoute } from "./transport/terminal.ts";
-import { installFailure, type InstallRequest, type InstallServer } from "./install.ts";
-import { GatewayWorkbench, type WorkbenchRequest } from "./workbench/index.ts";
-import type { WorktreeRequest, WorktreeServer } from "./worktrees.ts";
-import { workspaceOwner, WorkspaceRegistry, type WorkspaceRequest, type WorkspaceServer } from "./workspaces.ts";
+import type { InstallServer } from "./install.ts";
+import type { GatewayWorkbench } from "./workbench/index.ts";
+import type { WorktreeServer } from "./worktrees.ts";
+import { workspaceOwner, WorkspaceRegistry, type WorkspaceServer } from "./workspaces.ts";
 import type { SshWorkspaceServer } from "./ssh-workspaces.ts";
 import { agentDirOf } from "./mcp/config.ts";
-import { McpHostService, type McpHostRequest, type McpHostResult } from "./mcp/host.ts";
-import type { ProviderAuthRequest, ProviderAuthResult, ProviderAuthService } from "./provider-auth.ts";
-import type { ProviderLoginRequest, ProviderLoginResult } from "@hepi/protocol/gateway";
+import { McpHostService } from "./mcp/host.ts";
+import type { ProviderAuthService } from "./provider-auth.ts";
 import type { ProviderLoginService } from "./provider-login.ts";
 
 export { gatewayEnvironment } from "./environment.ts";
@@ -504,16 +507,18 @@ export class SshGateway extends Gateway {
 export class GatewayRpcServer {
 	readonly server: Server;
 	readonly gateway: LocalGateway | SshGateway;
-	readonly #workbench?: GatewayWorkbench;
 	/** The filesystem capability this gateway borrows: the JSON file RPC's own, and the payload routes' behind it. */
 	readonly #files?: FilesystemServer;
+	/** The execution family: the frame stream of one call, and the abort that ends one. */
+	readonly #execution: ExecutionTransport;
 	/** The file payload routes: one file in or out as a body, over that filesystem. */
 	readonly #filePayload: FilePayloadTransport;
-	readonly #installs?: InstallServer;
-	/** The workspace surface this gateway serves: the local one, or an SSH gateway's own remote one. */
-	readonly #workspaces?: WorkspaceServer | SshWorkspaceServer;
-	/** The worktree surface: the local one, or an SSH gateway's remote one. Absent, the host answers its own limit. */
-	readonly #worktrees?: WorktreeServer;
+	/** The host control family: workspaces, worktrees, the workbench, the JSON file RPC and installations. */
+	readonly #control: ControlTransport;
+	/** The MCP family: this host's own configuration, servers and sign-ins. */
+	readonly #mcpTransport: McpTransport;
+	/** The provider family: this account's stored connections, and the sign-ins that outlive a request. */
+	readonly #providersTransport: ProviderTransport;
 	/** The terminal sessions this gateway holds, when the execution host it serves can open one at all. */
 	readonly #terminals?: TerminalSessions;
 	/** The terminal surface, over those sessions. */
@@ -525,28 +530,22 @@ export class GatewayRpcServer {
 	 */
 	readonly #mcp?: McpHostService;
 	/**
-	 * The provider connection surface this host owns. An SSH gateway serves none: the credentials a person manages here
-	 * belong to the account whose `auth.json` the Web host's own gateway writes, and that is the host the Web process runs
-	 * beside rather than the machine it reaches over SSH.
-	 */
-	readonly #providers?: ProviderAuthService;
-	/**
-	 * The provider sign-ins this host is running. It shares the credential file and the agent directory with
-	 * {@link #providers} and is composed beside it, so a gateway that serves no provider accounts serves no sign-ins either.
+	 * The provider sign-ins this host is running, which {@link close} ends because no host is left to finish them once this
+	 * gateway stops. The credential surface beside them needs no disposal of its own: every call of it completes within the
+	 * request that carried it.
 	 */
 	readonly #providerLogins?: ProviderLoginService;
 	constructor(gateway: LocalGateway | SshGateway, workbench?: GatewayWorkbench, files?: FilesystemServer, installs?: InstallServer, workspaces?: WorkspaceServer | SshWorkspaceServer, worktrees?: WorktreeServer, terminals?: TerminalSessions, mcp?: McpHostService, providers?: ProviderAuthService, providerLogins?: ProviderLoginService) {
 		this.gateway = gateway;
-		this.#workbench = workbench;
 		this.#files = files;
+		this.#execution = new ExecutionTransport(gateway);
 		this.#filePayload = new FilePayloadTransport(files);
-		this.#installs = installs;
-		this.#workspaces = workspaces;
-		this.#worktrees = worktrees;
+		this.#control = new ControlTransport({ files, installs, workspaces, worktrees, workbench });
+		this.#mcpTransport = new McpTransport(mcp);
+		this.#providersTransport = new ProviderTransport(providers, providerLogins);
 		this.#terminals = terminals;
 		this.#terminal = new TerminalTransport(terminals);
 		this.#mcp = mcp;
-		this.#providers = providers;
 		this.#providerLogins = providerLogins;
 		this.server = createServer((request, response) => {
 			void this.#handle(request, response).catch(() => {
@@ -563,149 +562,38 @@ export class GatewayRpcServer {
 		return false;
 	}
 
+	/**
+	 * Answer one request: recognise whose route it is here, admit it once, and hand it to that family.
+	 *
+	 * Recognition is the entry's own and it comes first, so an unknown route is a 404 whether or not the caller held a
+	 * credential — nothing here serves it either way. The credential is then checked once, before any family reads a body,
+	 * so no family can be reached without it. What happens after that belongs to the family the route named: its own
+	 * parsing, its own statuses and envelopes, and its own lifetime rule for the work it starts.
+	 */
 	async #handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
 		const url = request.url ?? "";
-		// A transport family recognises its own routes and owns its own framing, and both of them sit behind the same
-		// credential: the token is checked here, before a body is read, so no family can be reached without it.
-		const terminal = terminalRoute(url, request.method ?? "");
-		if (terminal !== undefined) {
-			if (!this.#admitted(request, response)) return;
-			await this.#terminal.handle(terminal, request, response);
-			return;
-		}
-		// The file payload routes carry a file as a body rather than as base64 inside the 1 MiB JSON request the
-		// file RPC reads. They are the same capability and the same token, so they sit beside that route rather than
-		// becoming a second file surface.
+		const method = request.method ?? "";
 		const target = new URL(url, "http://gateway");
-		const payload = filePayloadRoute(target.pathname, request.method ?? "");
-		if (payload !== undefined) {
-			if (!this.#admitted(request, response)) return;
-			await this.#filePayload.handle(payload, request, response, target);
-			return;
-		}
-		if (request.method !== "POST" || !["/v1/execute", "/v1/workbench", "/v1/files", "/v1/installs", "/v1/abort", "/v1/workspaces", "/v1/worktrees", "/v1/mcp", "/v1/providers/auth", "/v1/providers/login"].includes(url)) {
+		const terminal = terminalRoute(url, method);
+		// The payload routes carry a file as a body rather than as base64 inside the 1 MiB JSON request the file RPC
+		// reads, so they are recognised by the path the query is stripped from.
+		const payload = filePayloadRoute(target.pathname, method);
+		const execution = executionRoute(url, method);
+		const control = controlRoute(url, method);
+		const mcp = mcpRoute(url, method);
+		const provider = providerRoute(url, method);
+		if (terminal === undefined && payload === undefined && execution === undefined && control === undefined && mcp === undefined && provider === undefined) {
 			response.writeHead(404);
 			response.end();
 			return;
 		}
 		if (!this.#admitted(request, response)) return;
-		const body = await readJson(request);
-		if (!body || typeof body !== "object" || (request.url === "/v1/execute" && !validExecuteRequest(body)) || ((request.url === "/v1/workspaces" || request.url === "/v1/worktrees" || request.url === "/v1/mcp" || request.url === "/v1/providers/auth" || request.url === "/v1/providers/login") && typeof (body as {operation?: unknown}).operation !== "string") || (request.url === "/v1/abort" && (typeof (body as {callId?: unknown}).callId !== "string" || !(body as {callId: string}).callId.trim()))) {
-      response.writeHead(400, { "content-type": "application/json" });
-      response.end(JSON.stringify({ ok: false, code: "invalid_request" })); return;
-    }
-		if (request.url === "/v1/execute") {
-			await this.#execute(request, body as ExecuteRequest, response);
-			return;
-		}
-		if (request.url === "/v1/abort") {
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify({ ok: this.gateway.abort((body as { callId: string }).callId) }));
-			return;
-		}
-		// MCP is the host's own capability, beside execution and files: it reads and writes this account's
-		// MCP configuration, starts a configured server to report what it found, and signs in to one. A
-		// gateway that serves no MCP answers the named limit instead of a generic refusal, so the surface
-		// can say the host cannot serve it while every other setting keeps working.
-		if (request.url === "/v1/mcp") {
-			// A caller that goes away ends the operation it asked for: the ingress aborts its own call on a revoked
-			// credential or a disconnected client, and this is where that reaches the work it started — a server being
-			// started, or a sign-in mid-exchange — so nothing keeps running, and nothing keeps writing, after the caller
-			// that asked for it is gone.
-			const controller = new AbortController();
-			response.on("close", () => { if (!response.writableEnded) controller.abort(); });
-			const result: McpHostResult = this.#mcp === undefined
-				? { ok: false, code: "mcp_unavailable", message: "this gateway host serves no MCP capability" }
-				: await this.#mcp.execute(body as McpHostRequest, controller.signal);
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify(result));
-			return;
-		}
-		// Provider connection state is the execution host's own, beside MCP: the credential file belongs to the account this
-		// gateway runs as. The answer is a listing after the change — never the value that was written — so nothing here can
-		// be read back into a caller's hands.
-		if (request.url === "/v1/providers/auth") {
-			const result: ProviderAuthResult = this.#providers === undefined
-				? { ok: false, code: "unsupported_operation", message: "this gateway host serves no provider-auth capability" }
-				: await this.#providers.execute(body as ProviderAuthRequest);
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify(result));
-			return;
-		}
-		// A provider sign-in is the host's own work with a life of its own: the flow runs here while the person finishes in
-		// another browser, so an operation on an open flow is not ended by the request that carried it — its deadline, an
-		// explicit cancel, or this gateway stopping are. A start whose caller vanished during the create is cancelled by the
-		// service itself, because nobody holds its id.
-		if (request.url === "/v1/providers/login") {
-			const result: ProviderLoginResult = this.#providerLogins === undefined
-				? { ok: false, code: "unsupported_operation", message: "this gateway host serves no provider sign-in capability" }
-				: await this.#providerLogins.execute(body as ProviderLoginRequest);
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify(result));
-			return;
-		}
-		// Workspace management is its own narrow surface: which roots this gateway serves, and the host's own
-		// directories to choose one from. It is not the file RPC and grants no access to any of those directories.
-		if (request.url === "/v1/workspaces") {
-			const result = await this.#workspaces?.execute(body as WorkspaceRequest) ?? { ok: false, code: "operation_failed" };
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify(result));
-			return;
-		}
-		// Worktrees are a host capability of their own: which checkouts a registered root has, one created on a branch,
-		// and one removed. A gateway with no worktree surface answers the host's own named limit rather than a generic
-		// failure, so a caller can tell "this host cannot do that" from "that request was wrong".
-		if (request.url === "/v1/worktrees") {
-			const result = await this.#worktrees?.execute(body as WorktreeRequest) ?? { ok: false, code: "not_supported", message: "this host cannot serve worktree operations" };
-			response.writeHead(200, { "content-type": "application/json" });
-			response.end(JSON.stringify(result));
-			return;
-		}
-		// The read-only workbench reads on the host that really holds the workspace, so a caller that goes away leaves no
-		// reason for that read to keep running: this is where the disconnect reaches the work it started — the remote Git
-		// command, or the listing's walk — and ends it, exactly as the MCP route ends a server it was starting. The route
-		// then answers the refusal itself, since a cancelled call has no caller left to write to; a refused path keeps the
-		// workbench's own 409 and code, which is what the caller's classification reads.
-		if (request.url === "/v1/workbench") {
-			const controller = new AbortController();
-			response.on("close", () => { if (!response.writableEnded) controller.abort(); });
-			const answered = await this.#workbench?.execute(body as WorkbenchRequest, { signal: controller.signal }) ?? { ok: false, code: "not_supported" };
-			if (response.writableEnded || response.destroyed) return;
-			response.writeHead(answered.ok ? 200 : 409, { "content-type": "application/json" });
-			response.end(JSON.stringify(answered));
-			return;
-		}
-		// The installation capability is not the general file RPC: it publishes whole directories into one installation
-		// scope and stores the scope lock, and it never accepts a caller-chosen destination path.
-		const result = request.url === "/v1/files"
-			? await this.#files?.execute(body as never) ?? { ok: false }
-			: await this.#installs?.execute(body as InstallRequest) ?? installFailure("not_supported", "installation is not enabled on this gateway");
-		response.writeHead(200, { "content-type": "application/json" });
-		response.end(JSON.stringify(result, (_key, value) => (value instanceof Error ? { code: (value as Error & { code?: string }).code, message: value.message } : value)));
-	}
-
-	/** Stream one call: output frames as they arrive, then the single result frame that ends the response. */
-	async #execute(incoming: IncomingMessage, request: ExecuteRequest, response: ServerResponse): Promise<void> {
-		const write = async (frame: ExecuteFrame) => {
-      if (response.writableEnded || response.destroyed) return;
-      const encoded = encodeFrame(frame);
-      if (response.writableLength + Buffer.byteLength(encoded) > 1024 * 1024) { response.destroy(); return; }
-      if (!response.write(encoded)) await new Promise<void>(resolve => {
-        const done = () => { response.off("drain", done); response.off("close", done); resolve(); };
-        response.once("drain", done); response.once("close", done);
-      });
-    };
-		response.writeHead(200, { "content-type": "application/x-ndjson", "cache-control": "no-cache", "transfer-encoding": "chunked" });
-		let clientGone = false;
-		response.on("close", () => {
-			// A client that stops listening does not stop the call: nothing says whether it ran, so the ledger keeps it.
-			if (!response.writableEnded) clientGone = true;
-		});
-		const result = await this.gateway.execute(request, (chunk) => {
-			return write({ type: "output", stream: chunk.stream, text: chunk.text, ...(chunk.skipped === undefined ? {} : { skipped: chunk.skipped }) });
-		});
-		if (!clientGone) await write({ type: "result", result });
-		response.end();
+		if (terminal !== undefined) return await this.#terminal.handle(terminal, request, response);
+		if (payload !== undefined) return await this.#filePayload.handle(payload, request, response, target);
+		if (execution !== undefined) return await this.#execution.handle(execution, request, response);
+		if (control !== undefined) return await this.#control.handle(control, request, response);
+		if (mcp !== undefined) return await this.#mcpTransport.handle(mcp, request, response);
+		return await this.#providersTransport.handle(provider!, request, response);
 	}
 
 	async close(): Promise<void> {
@@ -722,9 +610,4 @@ export class GatewayRpcServer {
 			else this.server.close(() => resolveClose());
 		});
 	}
-}
-
-function validExecuteRequest(value: unknown): value is ExecuteRequest {
-  const r = value as ExecuteRequest;
-  return !!r && typeof r.gatewayId === "string" && typeof r.workspaceId === "string" && typeof r.callId === "string" && !!r.callId.trim() && Array.isArray(r.command) && r.command.length > 0 && r.command.every(c => typeof c === "string" && !c.includes("\0")) && (r.cwd === undefined || typeof r.cwd === "string") && (r.timeoutMs === undefined || Number.isFinite(r.timeoutMs) && r.timeoutMs >= 0);
 }

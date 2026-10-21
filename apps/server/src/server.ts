@@ -49,7 +49,7 @@ type SubtreeProjectedOutcome = SubtreeChildOutcome & { readonly session?: Catalo
 /** One subtree request's answer as the HTTP surface states it: the recorded outcomes plus each child's current row. */
 type SubtreeProjectedResult = Omit<SubtreeControlResult, "outcomes"> & { readonly outcomes: readonly SubtreeProjectedOutcome[] };
 import { advanceCatalogueStats, advanceHistoryFacts, appendedEntries, catalogueStats, continuationIndex, deferHistoryMessage, FRAME_LIMIT_BYTES, historyFacts, oversizeFrame, scopeFromFacts, tokenFromFacts, VISIBLE_WINDOW, WindowProjector, type CatalogueStats, type HeldWindow, type HistoryFacts, type ProjectedWindow, type WindowItem } from "./history-window.ts";
-import { createProjectRegistry, type GatewayConnection } from "./project-registry.ts";
+import { createProjectRegistry, WEB_HOST_REQUIRED, type GatewayConnection, type ProjectMutation } from "./project-registry.ts";
 import type { ProjectFolder, ProjectRecord, ProjectStore } from "./project-store.ts";
 import type { DeviceCredentials } from "./device-credentials.ts";
 
@@ -629,15 +629,6 @@ function sidebarRefusal(response: ServerResponse, status: number, reason: Sessio
 }
 
 /**
- * A Web origin names the gateway that serves its own execution host, and the backend resolves that name against the
- * gateways this deployment configured. Nothing else can tell the backend which host a browser is served from: two Web
- * origins can be pointed at one backend, each with its own local host, and the backend's own account, default
- * workspace and container directory are unrelated to either. An unnamed or unknown host is an explicit configuration
- * error rather than a guessed one, which would show one computer's directories under another computer's account.
- */
-const WEB_HOST_REQUIRED = "no Web host gateway is named: the Web UI server sends the configured gateway id it serves (HEPI_WEB_LOCAL_GATEWAY_ID) on every host-scoped request";
-
-/**
  * One project as a client sees it: its identity and name, the host every folder is on, and each recorded folder with
  * the `/workspace/<id>` routing its conversations bind plus whether it is the project's default. The default is what a
  * new conversation uses; naming another folder the default (PATCH) never moves a binding an existing conversation
@@ -995,21 +986,6 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     const connection = gateways.get(hostId);
     return connection === undefined
       ? { ok: false, error: "the Web UI server named gateway " + hostId + ", which this deployment does not configure" }
-      : { ok: true, connection };
-  };
-  /**
-   * The host a **recorded Project's** metadata operations act on: the one the Project itself names, which the request
-   * may only confirm. A Project's folders live on one host, recorded when it was created, and that is the identity the
-   * operation belongs to — the calling Web origin's own host mapping says which computer it serves, not which host
-   * every Project it can see is on. A named host that differs from the recorded one is still the caller asking for
-   * another origin's Project, and is refused exactly as before; a caller that names none acts on the recorded host,
-   * which is what lets a Web origin remove the remote Project it created without claiming it on its own gateway.
-   */
-  const projectHostOf = (project: ProjectRecord, named: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string; mismatch: "wrong_host" | "configuration_required" } => {
-    if (named !== undefined && named !== project.hostId) return { ok: false, error: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve", mismatch: "wrong_host" };
-    const connection = gateways.get(project.hostId);
-    return connection === undefined
-      ? { ok: false, error: "the gateway " + project.hostId + " this project's folders are on is not configured", mismatch: "configuration_required" }
       : { ok: true, connection };
   };
   /**
@@ -1961,70 +1937,30 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // project is recorded until every folder has been accepted.
     if (request.method === "POST" && url.pathname === "/api/projects") {
       const body = await readBody(request) as { name?: unknown; folders?: unknown; hostId?: unknown; profileId?: unknown } | undefined;
-      const host = webHostOf(hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
-      if (!host.ok) { json(response, 409, { code: "configuration_required", error: host.error }); return; }
-      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
-      // A remote project names the one profile its folders are on. It is validated against what that gateway actually
-      // serves, so a project can never be recorded against a profile the host does not have.
+      const folders = Array.isArray(body?.folders) ? body.folders.map(entry => { const folder = entry as { root?: unknown; default?: unknown }; return { root: typeof folder.root === "string" ? folder.root : "", isDefault: folder.default === true }; }) : undefined;
+      if (folders === undefined) { json(response, 400, { code: "invalid_request", error: "at least one folder on the Web host is required" }); return; }
       const profileId = typeof body?.profileId === "string" && body.profileId.trim() !== "" ? body.profileId.trim() : undefined;
-      if (profileId !== undefined) {
-        const available = await hostProfiles(host.connection);
-        if (!available.ok) { json(response, available.code === "gateway_offline" ? 503 : 502, { code: available.code, error: "the host's execution targets could not be read: " + available.code }); return; }
-        if (!(available.value as readonly { id: string }[]).some(profile => profile.id === profileId)) { json(response, 400, { code: "unknown_profile", error: "gateway " + host.connection.gatewayId + " does not serve a profile named " + profileId }); return; }
-      }
-      const name = typeof body?.name === "string" ? body.name.trim() : "";
-      if (name === "" || name.length > 120) { json(response, 400, { code: "invalid_request", error: "a project name of 1 to 120 characters is required" }); return; }
-      if (!Array.isArray(body?.folders) || body.folders.length === 0) { json(response, 400, { code: "invalid_request", error: "at least one folder on the Web host is required" }); return; }
-      const requested: { root: string; isDefault: boolean }[] = [];
-      for (const entry of body.folders) {
-        const folder = entry as { root?: unknown; default?: unknown };
-        const root = typeof folder.root === "string" ? folder.root.trim() : "";
-        if (root === "") { json(response, 400, { code: "invalid_request", error: "a folder on the Web host is required" }); return; }
-        requested.push({ root, isDefault: folder.default === true });
-      }
-      const defaultCount = requested.filter(folder => folder.isDefault).length;
-      if (defaultCount !== 1) { json(response, 400, { code: "invalid_request", error: "exactly one folder must be the default" }); return; }
-      if (new Set(requested.map(folder => folder.root)).size !== requested.length) { json(response, 400, { code: "invalid_request", error: "the same folder cannot be added twice" }); return; }
-      // Each folder's workspace id is opaque and unrelated to its path: a later default change picks another workspace
-      // instead of moving one that existing conversations are already bound to. The ids are minted before the roots are
-      // registered so a folder keeps its id across the whole request.
-      const candidates = requested.map(folder => ({ id: randomUUID(), workspaceId: randomUUID(), root: folder.root, isDefault: folder.isDefault }));
-      const folders: { id: string; workspaceId: string; root: string }[] = [];
-      for (const candidate of candidates) {
-        const registered = await hostRequest(host.connection, { operation: "register", workspaceId: candidate.workspaceId, root: candidate.root, ...(profileId === undefined ? {} : { profileId }) });
-        if (!registered.ok) { json(response, registered.status, { code: registered.code, error: "the folder was not accepted on the Web host: " + registered.code }); return; }
-        folders.push({ id: candidate.id, workspaceId: candidate.workspaceId, root: (registered.value as { root: string }).root });
-      }
-      const defaultCandidate = candidates.find(candidate => candidate.isDefault)!;
-      let project: ProjectRecord;
+      // The registry owns the whole creation: the host identity, the profile's validation, every folder's registration
+      // before anything is recorded, the Project row, the live snapshot it publishes and the revision — a route that
+      // wrote any of those itself could publish a Project no lookup resolves, or resolve one no store holds.
+      let created: ProjectMutation<ProjectRecord>;
       try {
-        // The registry owns the recorded Project, the live snapshot it publishes and the revision: a route that wrote
-        // any of the three itself could publish a Project no lookup resolves, or resolve one no store holds.
-        const created = registry.create({ id: randomUUID(), name, hostId: host.connection.gatewayId, ...(profileId === undefined ? {} : { profileId }), defaultFolderId: defaultCandidate.id, folders, createdAt: new Date().toISOString() });
-        if (created === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
-        project = created;
+        created = await registry.create({ name: typeof body?.name === "string" ? body.name : "", folders, ...(profileId === undefined ? {} : { profileId }) }, hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
       } catch (error) { json(response, 500, { error: safeFailure(error) }); return; }
-      json(response, 201, { protocol: PROTOCOL_VERSION, project: projectView(project) }); return;
+      if (!created.ok) { json(response, created.status, { ...(created.code === undefined ? {} : { code: created.code }), error: created.error }); return; }
+      json(response, 201, { protocol: PROTOCOL_VERSION, project: projectView(created.value) }); return;
     }
     // Naming another of a project's own folders the default: new conversations bind it from then on, while every
     // conversation already bound keeps the folder it has. This is the metadata contract ticket 08 defines; no editor
     // for it is part of this phase.
     if (request.method === "PATCH" && url.pathname.startsWith("/api/projects/")) {
       const projectId = decodeURIComponent(url.pathname.slice("/api/projects/".length));
-      const project = registry.projects().find(item => item.id === projectId);
-      if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
       const body = await readBody(request) as { hostId?: unknown; defaultFolderId?: unknown } | undefined;
-      // The recorded Project names its host; a named one may only confirm it (see `projectHostOf`). Naming a remote
-      // Project's own host is what a Web origin does when it edits a folder there, and it stays accepted.
-      const host = projectHostOf(project, hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
-      if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
-      const defaultFolderId = typeof body?.defaultFolderId === "string" ? body.defaultFolderId : "";
-      if (defaultFolderId === "") { json(response, 400, { code: "invalid_request", error: "a folder of this project is required" }); return; }
-      const changed = registry.setDefault(project.id, defaultFolderId);
-      if (changed === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
-      if (!changed.ok) { json(response, changed.code === "unknown_project" ? 404 : 400, { code: changed.code, error: changed.code === "unknown_project" ? "no project with that id is recorded" : "that folder does not belong to this project" }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(changed.project) }); return;
+      // The recorded Project names its host; a named one may only confirm it. Naming a remote Project's own host is what
+      // a Web origin does when it edits a folder there, and it stays accepted.
+      const changed = registry.setDefault(projectId, typeof body?.defaultFolderId === "string" ? body.defaultFolderId : "", hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
+      if (!changed.ok) { json(response, changed.status, { ...(changed.code === undefined ? {} : { code: changed.code }), error: changed.error }); return; }
+      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(changed.value) }); return;
     }
     // Unlinking one folder of a project: the folder's own operation, separate from the default selector. A non-default
     // folder goes on its own and the project's default is unchanged. The default folder may only go when the request
@@ -2036,26 +1972,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // to it executing while the folder is never a target for a new conversation again.
     if (request.method === "DELETE" && folderUnlinkPath.test(url.pathname)) {
       const [, projectId, folderId] = folderUnlinkPath.exec(url.pathname)!;
-      const project = registry.projects().find(item => item.id === decodeURIComponent(projectId!));
-      if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
-      const host = projectHostOf(project, hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
-      if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
-      const replacement = namedHostId(url.searchParams.get("defaultFolderId"));
-      const unlinked = registry.unlink(project.id, decodeURIComponent(folderId!), replacement);
-      if (unlinked === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
-      if (!unlinked.ok) {
-        const refusal = unlinked.code === "unknown_project" ? { status: 404, error: "no project with that id is recorded" }
-          : unlinked.code === "unknown_folder" ? { status: 400, error: "that folder is not another folder of this project" }
-          : unlinked.code === "unexpected_replacement" ? { status: 400, error: "only the default folder's removal names a replacement default" }
-          : { status: 400, error: "removing this project's default folder requires another folder of this project as the replacement default" };
-        json(response, refusal.status, { code: unlinked.code, error: refusal.error }); return;
-      }
-      // The registry already followed the answer: the folder that left is gone from its live snapshot, the
-      // replacement it named is the default, the project itself is gone when its last folder was, the folder's binding
-      // is retained from here on, and the revision moved once — so a conversation that already holds the folder
-      // re-registers and resolves it like any other retained record.
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: unlinked.project === null ? null : projectView(unlinked.project), removedFolderId: unlinked.removedFolderId }); return;
+      const unlinked = registry.unlink(decodeURIComponent(projectId!), decodeURIComponent(folderId!), namedHostId(url.searchParams.get("defaultFolderId")), hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
+      if (!unlinked.ok) { json(response, unlinked.status, { ...(unlinked.code === undefined ? {} : { code: unlinked.code }), error: unlinked.error }); return; }
+      json(response, 200, { protocol: PROTOCOL_VERSION, project: unlinked.value.project === null ? null : projectView(unlinked.value.project), removedFolderId: unlinked.value.removedFolderId }); return;
     }
     // Removing a project removes metadata only: the project record and its folder links go, in one transaction with
     // the retained binding of every folder, and nothing else changes. No directory on the host is created, changed or
@@ -2064,18 +1983,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // the removed folders resolvable for the conversations that already hold them while never becoming a target for a
     // new one.
     if (request.method === "DELETE" && url.pathname.startsWith("/api/projects/")) {
-      const projectId = decodeURIComponent(url.pathname.slice("/api/projects/".length));
-      const project = registry.projects().find(item => item.id === projectId);
-      if (project === undefined) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      if (!registry.canRecord()) { json(response, 500, { error: "project storage is not configured" }); return; }
-      const host = projectHostOf(project, hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
-      if (!host.ok) { json(response, 409, { code: host.mismatch, error: host.error }); return; }
-      const removed = registry.remove(project.id);
-      if (removed === undefined) { json(response, 500, { error: "project storage is not configured" }); return; }
-      if (!removed.ok) { json(response, 404, { code: "unknown_project", error: "no project with that id is recorded" }); return; }
-      // This process keeps serving the removed folders from here on: the retained records are what the next
-      // conversation request re-registers and what the workspace list answers their display root from.
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(removed.project) }); return;
+      const removed = registry.remove(decodeURIComponent(url.pathname.slice("/api/projects/".length)), hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
+      if (!removed.ok) { json(response, removed.status, { ...(removed.code === undefined ? {} : { code: removed.code }), error: removed.error }); return; }
+      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(removed.value) }); return;
     }
     // A project's checkouts, and the two mutations of them, on the execution host that holds the project's folders.
     // The host owns the git work — which checkouts a registered root has, one created on a branch, one removed, and
@@ -2153,7 +2063,8 @@ export async function createBackendServer(options: Options): Promise<BackendServ
         if (project !== undefined && folder !== undefined) {
           // The record that made the checkout a target is dropped by the one unlink operation the folder route also uses,
           // so a checkout removal and a folder unlink keep the same retained binding in the same transaction.
-          const dropped = registry.unlink(project.id, folder.id);
+          // The Project names its own host, so the unlink is named with no host and the recorded one is what it acts on.
+          const dropped = registry.unlink(project.id, folder.id, undefined, undefined);
           if (dropped === undefined || !dropped.ok) { json(response, 502, { ok: false, code: "not_recorded", error: "the checkout was removed on the host but this deployment could not drop its folder record" }); return; }
           // The default folder is refused above, so the project survives; the registry already applied both outcomes to
           // its snapshot and retained the folder's binding, exactly as the folder route's unlink does.
