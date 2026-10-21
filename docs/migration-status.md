@@ -369,7 +369,7 @@ whatever the host holds. The producer prunes while it walks, applying the same i
 stopping at a declared skill or at the prompts root's own level, so ignored and supporting content is neither read nor
 transmitted nor counted. Both producers read a gitignore pattern with the same grammar: the SSH helper matches with a Python port of the
 `node-ignore` 7.0.5 engine the loader and the local producer already use
-(`packages/gateway/src/ssh-filesystem.ts`, license kept in `packages/gateway/src/node-ignore.LICENSE`), so an ignored
+(`packages/gateway/src/ssh-filesystem-helper.ts`, license kept in `packages/gateway/src/node-ignore.LICENSE`), so an ignored
 file or subtree is pruned before it is read on either host. A declared skill directory stays terminal, so supporting
 documents are never read into the snapshot.
 

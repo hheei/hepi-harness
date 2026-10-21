@@ -4,7 +4,7 @@ import { execFile } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
-import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem.ts";
+import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem-helper.ts";
 import type { SshRunner, SshRunnerRequest } from "../src/index.ts";
 
 const run = promisify(execFile);
