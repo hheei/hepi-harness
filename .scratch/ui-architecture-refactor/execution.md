@@ -18,6 +18,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | resolved／integrated；全部 material findings 已修正並複審 |
 | 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
+| 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | integrated；agent-234 獨立 review 中 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -59,6 +60,10 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 ### Native 驗收準備
 
 ### 並行調整
+
+09 source `8919714a`／evidence `f180f716` 已整合為 `6abeac0a`／`b06e3d8f`，保留 MessageView public props 與 memo，內部異質角色／blocks 分配至實際 owners。agent-234 正審查 Standards／Spec，重點為 dynamic streaming identity、展開／focus 與 lazy resource reads。worker clean `8919714a` 的原始 report 已複製 `.dev/verify/2026-10-21T11-19-18-855-verify-changed/`；25 scenario static HTML 等價性為 worker 臨時 driver 結果，driver 未保留，不當作持久 regression suite。
+
+整合 revision `b06e3d8f`（dirty 僅既有 durable-ledger scratch）changed checks exit 0：UI 410／App 26／web-unit 14，typecheck/docs 全 pass，report `.dev/verify/ui-message-integrated/verify.json`。token-footer／history-window browser commands exit 0，raw logs `.dev/verify/ui-architecture-refactor/message-token-footer.log`、`message-history-window.log`。Coordinator graph update exit 0，log `.dev/verify/ui-architecture-refactor/message-graph.log`。完整 Backend history navigation 與系統 streaming acceptance 仍屬 04／12，未宣稱已執行。
 
 agent-230 最終窄幅複審確認剩餘 A／B／C 全部 fixed，correction scope 無 material regression。parked text/images 由 selection test、conversation → remembered workspace 由 public selection test、cross-project raw panel 與 dismissal 由 browser scene 10 覆蓋；file-tab clearing 經 owner effect inspection。複用 clean `20120fdc` 的 verify report 與 browser logs，不重跑無變更 source。ticket 01 resolved；03 的完整整合依賴解除，03／09 持續實作。
 
