@@ -207,6 +207,15 @@ state — that its target is still the one on screen: a superseded read publishe
 host's inventory, cannot report the old host's error, and cannot end the loading state the new host is still in. A
 `disposed` refusal is not a host failure and is not shown as one.
 
+The panels also ask the right conversation to pick a change up. A definition save, a skill operation and the
+shell-tool setting are changes one conversation re-reads through the connection's `refreshes`
+(`lib/conversation-refreshes.ts`): the mounted chat publishes its own reload for its own id, and a panel names only the
+`sessionId` it was opened for — never a session key, a mount counter or a refresh counter. A write to one conversation
+cannot reload another, a read answered after the reader moved to another conversation is not published as the new one's,
+and a conversation nothing holds answers `not_open` rather than claiming a reload. `AgentsConfig` therefore settles its
+own inventory from the answer and reports the conversation's read beside it, and `SkillsConfig` re-reads the host's
+inventory directly instead of counting a key.
+
 Two consequences a caller has to get right. A panel whose operation writes to a folder other than the one on screen —
 the add pane under a Project, whose scope resolves to the project's own default folder — needs a target for **that**
 folder, not the selected one; without it the pane has nowhere to install and says so. And a read that answers after the

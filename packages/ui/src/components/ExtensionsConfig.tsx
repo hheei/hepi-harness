@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../hooks/useI18n";
 import type { DurableExtension, DurableExtensionFailure, DurableExtensionsResponse } from "../lib/api-types";
 import { SETTINGS_SECTION_LABEL_KEYS, type SettingsSection } from "../lib/settings-navigation";
@@ -173,6 +173,15 @@ export function ExtensionsConfig({
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [groupError, setGroupError] = useState<string | null>(null);
+  /**
+   * The conversation this panel is showing right now.
+   *
+   * A write and a read both answer later than they were asked, and the panel stays mounted while the reader moves
+   * between conversations: the answer belongs to the conversation it named, or it is not this panel's to publish. This
+   * is the identity the completion is checked against — the conversation, not the surface that asked.
+   */
+  const shownSessionIdRef = useRef<string | null>(sessionId);
+  shownSessionIdRef.current = sessionId;
 
   const installed = useMemo(() => inventory?.installed.map((extension) => extension.name) ?? [], [inventory]);
   // A conversation's own selection is only usable once it was read: while it is unread, the scope stays the default
@@ -243,21 +252,30 @@ export function ExtensionsConfig({
     const current = activeScope === "conversation" ? conversationSelection : inventory?.default;
     if (current === null || current === undefined) return;
     const next = switchedSelection(installed, current, targets, enabled);
+    // The conversation this write is about, as it is when the write starts. A conversation write's answer is published
+    // only while that conversation is still the one on screen; the deployment's default belongs to the connection
+    // rather than to one conversation, so its answer is always this panel's own.
+    const writtenSessionId = activeScope === "conversation" ? sessionId : null;
+    const belongsToShown = () => writtenSessionId === null || shownSessionIdRef.current === writtenSessionId;
     setBusy(true);
     setNotice(null);
     setActionError(null);
     setGroupError(null);
     try {
-      if (activeScope === "conversation") {
-        const response = await request(`/api/conversations/${encodeURIComponent(sessionId ?? "")}/extensions`, {
+      if (writtenSessionId !== null) {
+        const response = await request(`/api/conversations/${encodeURIComponent(writtenSessionId)}/extensions`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ extensions: next }),
         });
         const body = (await response.json()) as { extensions?: readonly string[]; error?: string };
         if (!response.ok || body.error || !Array.isArray(body.extensions)) throw new Error(body.error ?? `HTTP ${response.status}`);
-        setConversation({ sessionId: sessionId ?? "", extensions: body.extensions });
-        setNotice(t("extensions.savedConversation"));
+        // The answer states the selection that conversation now holds: the route writes it through the conversation's
+        // own configure seam, so this readback is that conversation's state and not a second copy of the default.
+        if (belongsToShown()) {
+          setConversation({ sessionId: writtenSessionId, extensions: body.extensions });
+          setNotice(t("extensions.savedConversation"));
+        }
       } else {
         const response = await request("/api/extensions", {
           method: "POST",
@@ -266,13 +284,21 @@ export function ExtensionsConfig({
         });
         const body = (await response.json()) as DurableExtensionsResponse & { error?: string };
         if (!response.ok || body.error || !Array.isArray(body.installed)) throw new Error(body.error ?? `HTTP ${response.status}`);
+        // The default belongs to the connection rather than to one conversation, so every mounted reader of it is this
+        // panel itself: the answer is the whole selection the backend now stores.
         setInventory(body);
         setNotice(t("extensions.savedDefault"));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (bulk) setGroupError(message); else setActionError(message);
+      // A failure about a conversation the reader has left is not this panel's error to state: the conversation they are
+      // looking at did not ask for this write, so reporting it here would attribute it to the wrong selection.
+      if (belongsToShown()) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (bulk) setGroupError(message); else setActionError(message);
+      }
     } finally {
+      // The in-flight indicator is this panel's own and the write has settled either way: leaving it set because the
+      // reader moved on would leave the next conversation's panel permanently saving.
       setBusy(false);
     }
   }, [activeScope, conversationSelection, installed, inventory, request, sessionId, t]);

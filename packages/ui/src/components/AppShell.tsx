@@ -33,6 +33,8 @@ import { copyText } from "../lib/clipboard";
 import { catalogueRow, type CatalogueEntry } from "../lib/conversation-catalogue";
 import { createRequestId, operationFailure } from "../lib/conversation-api";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
+import type { ConversationRefresh, ConversationRefreshes } from "../lib/conversation-refreshes";
+import type { ReloadOutcome } from "../hooks/useAgentSession";
 import { getFileName } from "../lib/file/file-paths";
 import { buildAtMentionText, buildFileAtMentionsText, buildFileLineMentionText } from "../lib/file/file-fuzzy";
 import {
@@ -157,6 +159,23 @@ export function AppShell() {
    * no longer knows that a remount ever stood in for one.
    */
   const chatIdentity = selectedSession?.id ?? newSessionDraftKey ?? null;
+  // The same identity, for the one registration that happens after a commit rather than during this render: the chat
+  // publishes its reload from an effect, and the conversation it belongs to is the one on screen when it does.
+  const chatIdentityRef = useRef<string | null>(chatIdentity);
+  chatIdentityRef.current = chatIdentity;
+  /**
+   * The reload this shell published, the registry it published into, and the conversation it was published for.
+   *
+   * It is held so the withdrawal names exactly what was published: the chat reports a registration change without
+   * carrying the identity it had, and a cleanup must not remove a registration that a newer chat already made. The
+   * registry is part of the record because a connection can be replaced while the chat stays mounted, and the
+   * withdrawal then belongs to the registry that holds the registration rather than to the new connection's.
+   */
+  const publishedConversationReloadRef = useRef<{
+    readonly refreshes: ConversationRefreshes;
+    readonly conversationId: string;
+    readonly refresh: ConversationRefresh;
+  } | null>(null);
   // Keep the system-theme subscription mounted for the lifetime of the app.
   useTheme();
   // Restore fonts even when Settings and the chat composer have not been opened.
@@ -508,20 +527,27 @@ export function AppShell() {
     setSystemInfoLoading(false);
   }, []);
   /**
-   * The conversation's own reload, registered by the chat that owns it.
+   * The conversation's own reload, published by the chat that owns it.
    *
-   * Settings › General changes the runtime's tool configuration and then needs the conversation to pick it up. That is
-   * one operation on the conversation — the Backend's reload, the read that states it and the notice that reports it —
-   * so this holds the chat's own function instead of remounting the tree: a reload of the same conversation is not a new
-   * conversation, and a surface that rebuilt the chat for it lost the reader's place, its stream and its paging.
+   * Settings › General and Settings › Agents change resources the open conversation runs with, and that conversation
+   * then picks them up. The pick-up is one operation on the conversation — the Backend's reload, the read that states
+   * it and the notice reporting it — so the chat publishes that operation on the connection and a panel asks the
+   * conversation its write landed on. The shell holds no key, no callback and no result of its own: a reload of the
+   * same conversation is not a new conversation, so nothing here rebuilds the tree for one.
    */
-  const conversationReloadRef = useRef<(() => Promise<void>) | null>(null);
-  const handleConversationReloadChange = useCallback((reload: (() => Promise<void>) | null) => {
-    conversationReloadRef.current = reload;
-  }, []);
-  const reloadConversation = useCallback(async () => {
-    await conversationReloadRef.current?.();
-  }, []);
+  const handleConversationReloadChange = useCallback((reload: (() => Promise<ReloadOutcome>) | null) => {
+    const published = publishedConversationReloadRef.current;
+    // The registration being withdrawn is the one this shell published, whichever conversation it named: a chat that
+    // unmounted must not leave its operation behind for the next one to answer with.
+    if (published !== null) {
+      published.refreshes.release(published.conversationId, published.refresh);
+      publishedConversationReloadRef.current = null;
+    }
+    const conversationId = chatIdentityRef.current;
+    if (reload === null || conversationId === null) return;
+    connection.refreshes.hold(conversationId, reload);
+    publishedConversationReloadRef.current = { refreshes: connection.refreshes, conversationId, refresh: reload };
+  }, [connection]);
 
   // Session stats (tokens + cost) — populated by ChatWindow, displayed in top bar
   const [sessionStats, setSessionStats] = useState<SessionStatsInfo | null>(null);
@@ -2616,7 +2642,6 @@ export function AppShell() {
           setSettingsSection(null);
           setModelsRefreshKey((key) => key + 1);
         }}
-        onSessionReloaded={reloadConversation}
         projectTrust={projectTrust}
         onProjectTrustChanged={handleProjectTrustChanged}
       />
