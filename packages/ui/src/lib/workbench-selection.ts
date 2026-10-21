@@ -643,27 +643,32 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
         });
         return;
       }
-      adoptComposer(target);
-      return;
+    } else if (state.composer !== null) {
+      if (state.composer.cwd === target.cwd) {
+        adoptWorkspaceIdentity(target);
+        return;
+      }
+      if (sameProject) {
+        // Within one project a destination's parked draft is the thing to restore, which is what a fresh composer does.
+        adoptComposer(target);
+        return;
+      }
     }
-    if (state.composer !== null && state.composer.cwd === target.cwd) {
-      adoptWorkspaceIdentity(target);
-      return;
-    }
-    if (sameProject && state.composer !== null) {
-      // Within one project a destination's parked draft is the thing to restore, which is what a fresh composer does.
-      adoptComposer(target);
-      return;
-    }
-    // Another project's workspace: the composer of that folder, and — when the workspace's own memory names a
-    // conversation the catalogue still lists — that conversation instead, which is what an explicit return to a
-    // workspace restores. The composer is the answer either way, so a catalogue that names nothing leaves the reader in
-    // a working composer rather than in a pending restore. A bare route invents nothing: only a choice restores.
-    adoptComposer(target);
+    // Another project's workspace, from either a conversation or a composer: what the destination holds decides it, and
+    // that is answered *before* anything is adopted. Its memory names a conversation the delivered catalogue still
+    // lists, so that conversation is the destination; otherwise the folder's composer is, and its parked draft comes
+    // with it. A composer adopted first and discarded a moment later would consume the destination's parked draft into
+    // a key nothing shows, so the text would be neither on screen nor reachable again. A bare route invents nothing:
+    // only a choice restores, and a catalogue that names nothing leaves the reader in a working composer rather than in
+    // a pending restore.
     const remembered = rememberedRow(projectKey);
-    // `adoptComposer` is synchronous and has just accepted this workspace, so the row is applied to the choice that is
-    // on screen — not to one the reader has replaced in the meantime.
-    if (remembered !== null && state.projectKey === projectKey) adoptConversation(remembered, {}, { projectKey });
+    if (remembered === null) {
+      adoptComposer(target);
+      return;
+    }
+    // Leaving a composer parks its own text in its own folder — the destination's parked draft is not taken.
+    parkComposerDraft();
+    adoptConversation(remembered, {}, { projectKey });
   };
 
   const acceptPromotion = (session: SessionInfo, sourceDraftKey?: string | null) => {

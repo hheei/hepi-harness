@@ -110,7 +110,14 @@ function answer(path: string, params: URLSearchParams, body: string | null, meth
       // The conversation's own DELETE is its removal, answered as the removal it is: the row leaves the list this page
       // reads next, so nothing has to pretend the tombstone away.
       if ((method ?? "GET") === "DELETE") { removed.add(id); return json({ removed: true }); }
-      return json({ ...sessionRow(id), conversation: { id, cwd: folderOf(id) }, state: snapshotOf(id) });
+      return json({
+        ...sessionRow(id),
+        conversation: { id, cwd: folderOf(id) },
+        state: snapshotOf(id),
+        // One conversation points at an entry of the *other* project that its history no longer holds. Following it is
+        // the move that both changes project and asks for the raw surface, which is what the shell must present at once.
+        ...(id === "one" ? { references: [{ conversationId: "two", entryId: "gone", outcome: "entry-missing" }] } : {}),
+      });
     }
     // Any other named read of one conversation: its identity and its row in one body.
     return json({ ...sessionRow(id), conversation: { id, cwd: folderOf(id) }, state: snapshotOf(id) });

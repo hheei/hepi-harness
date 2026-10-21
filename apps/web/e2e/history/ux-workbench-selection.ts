@@ -276,6 +276,24 @@ try {
     await deep.waitForTimeout(800);
     check(await deep.locator("[data-raw-history]").count() === 0, "another conversation does not reopen a panel for the previous one's entry");
 
+    // --- 10. A reference into another project's entry keeps the surface it asked for open. ---------------------------
+    // The follow-up review's P2: following a reference whose block is no longer in the target's transcript opens the
+    // raw surface *and* changes project. The shell's cleanup of the project just left must not erase the presentation
+    // this same choice asked for.
+    const refPage = await openAt(context, origin + "/?session=one");
+    await refPage.locator(COMPOSER).waitFor({ timeout: 30000 });
+    await refPage.getByRole("button", { name: "Full history" }).evaluate((node) => (node as HTMLElement).click());
+    const followRaw = refPage.locator("[data-reference-open-raw]");
+    await followRaw.waitFor({ timeout: 20000 });
+    await followRaw.evaluate((node) => (node as HTMLElement).click());
+    const refPanel = refPage.locator("[data-raw-history]");
+    await refPanel.waitFor({ timeout: 20000 });
+    check(await refPanel.getAttribute("data-raw-history") === "two",
+      "the reference opens its target's raw surface, in the other project, and the panel stays on screen");
+    await refPage.locator("[data-raw-entry='gone']").waitFor({ timeout: 20000 });
+    check(await refPage.locator("[data-raw-focus='gone']").count() === 1, "positioned on the entry the reference named");
+    check(refPage.url().includes("session=two"), "the URL names the conversation the reference opened: " + refPage.url());
+
     const unanswered = await doomed.evaluate(() => window.__uxSelectionFixture?.failures ?? []);
     check(unanswered.length === 0, "the fixture answered every route the removal asked: " + JSON.stringify(unanswered.slice(0, 5)));
     const errored = failures.filter(message => message.startsWith("page error:"));

@@ -534,19 +534,6 @@ export function AppShell() {
     if (rightPanelFullWidth) setActiveTopPanel(null);
   }, [rightPanelFullWidth]);
 
-  // A navigation that only the raw-history surface can show opens it. The position is the selection's — it states which
-  // entry the request named — while the panel being on screen is this shell's own presentation.
-  //
-  // Opening follows a *new* request, not the standing one: closing the panel is the reader's own decision and the
-  // position stays where the request put it, so an effect keyed on the value would reopen a panel they just dismissed.
-  // Another conversation clears the position entirely, which is what keeps it from carrying over.
-  const rawHistoryRequestRef = useRef<typeof rawHistoryFocus>(null);
-  useEffect(() => {
-    if (rawHistoryFocus === rawHistoryRequestRef.current) return;
-    rawHistoryRequestRef.current = rawHistoryFocus;
-    if (rawHistoryFocus !== null) setActiveTopPanel("history");
-  }, [rawHistoryFocus]);
-
   const toggleTopPanel = useCallback((
     panel: "agents" | "delegate" | "system" | "tools" | "session" | "history",
     keepMobileToolbarOpen = false,
@@ -711,6 +698,49 @@ export function AppShell() {
     } catch { /* storage is optional */ }
   }, [terminalTabs, activeFileTabId, rightPanelOpen, terminalsRestored]);
 
+  /**
+   * What an accepted selection means for this shell's own surfaces: the file tabs and the raw-history panel.
+   *
+   * Both decisions read the same committed selection, so they belong in one effect. Written apart, the cleanup of the
+   * project just left could erase the presentation the very same acceptance asked for — a reference in another
+   * project's conversation whose block is no longer in the transcript opens its raw surface *and* changes project, and
+   * the reader should not have to watch a panel that closes the instant it was asked to open.
+   *
+   * Tabs are keyed by absolute path, so the previous project's must not linger under a folder they do not belong to,
+   * while a same-project worktree move keeps them and a resolved identity — the same project, learned rather than
+   * chosen — is not a transition at all.
+   *
+   * The panel follows a *new* request, not the standing one: closing it is the reader's own decision and the position
+   * stays where the request put it, so an effect keyed on the value alone would reopen a panel they just dismissed.
+   * Every intent that moves the selection either states a fresh position or clears it, which is what keeps a stale one
+   * from being presented in a project it was never asked about.
+   */
+  const projectTransition = selectionState.projectTransition;
+  const projectTransitionSeenRef = useRef(projectTransition);
+  const rawHistoryRequestRef = useRef(rawHistoryFocus);
+  const activeFileTabIdRef = useRef(activeFileTabId);
+  activeFileTabIdRef.current = activeFileTabId;
+  useEffect(() => {
+    // The page's own restore of its saved tabs is not a project change; only a later acceptance is.
+    const transitioned = projectTransition !== projectTransitionSeenRef.current;
+    projectTransitionSeenRef.current = projectTransition;
+    const newRequest = rawHistoryFocus !== rawHistoryRequestRef.current;
+    rawHistoryRequestRef.current = rawHistoryFocus;
+    if (transitioned) {
+      setFileTabs([]);
+      // A terminal tab belongs to the page, not to a project, and stays; the file tab it replaced cannot.
+      const open = activeFileTabIdRef.current;
+      if (open === null || open.startsWith("file:")) {
+        setActiveFileTabId(null);
+        setRightPanelOpen(false);
+      }
+      // A cross-project acceptance states its own position, so what is on screen is what this choice asked for.
+      setActiveTopPanel(rawHistoryFocus !== null ? "history" : null);
+      return;
+    }
+    if (newRequest && rawHistoryFocus !== null) setActiveTopPanel("history");
+  }, [projectTransition, rawHistoryFocus]);
+
   const handleFileViewerStateChange = useCallback((
     tabId: string,
     viewerRevision: number,
@@ -768,32 +798,6 @@ export function AppShell() {
    * The selection decides what it costs: a conversation of the same project stays open while the folder around it
    * moves; anything else is replaced by the destination's own restore.
    */
-  /**
-   * File tabs follow the accepted project, not the callers that move it.
-   *
-   * The sidebar, the bar and a keyboard shortcut all send the selection an intent, so a cleanup written beside one of
-   * them only covers that caller. It is stated here instead, from what the selection accepted: tabs are keyed by absolute
-   * path, so the previous project's must not linger under a folder they do not belong to, while a same-project worktree
-   * move keeps them and a resolved identity — the same project, learned rather than chosen — is not a transition at all.
-   */
-  const projectTransition = selectionState.projectTransition;
-  const projectTransitionSeenRef = useRef(projectTransition);
-  const activeFileTabIdRef = useRef(activeFileTabId);
-  activeFileTabIdRef.current = activeFileTabId;
-  useEffect(() => {
-    // The page's own restore of its saved tabs is not a project change; only a later acceptance is.
-    if (projectTransition === projectTransitionSeenRef.current) return;
-    projectTransitionSeenRef.current = projectTransition;
-    setFileTabs([]);
-    // A terminal tab belongs to the page, not to a project, and stays; the file tab it replaced cannot.
-    const open = activeFileTabIdRef.current;
-    if (open === null || open.startsWith("file:")) {
-      setActiveFileTabId(null);
-      setRightPanelOpen(false);
-    }
-    setActiveTopPanel(null);
-  }, [projectTransition]);
-
   const handleNewSession = useCallback((target: WorkspaceTarget, options?: StartComposerOptions) => {
     if (options?.carry === true) setCarriedNewSessionChoices(newSessionChoicesRef.current);
     selection.startComposer(target, options);

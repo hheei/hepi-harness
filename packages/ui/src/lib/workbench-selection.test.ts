@@ -524,3 +524,49 @@ test("a remembered conversation comes only from the catalogue the sidebar delive
   assert.equal(state(gone.selection).composer?.cwd, "/b");
   assert.equal(gone.local.values.get("pi-web:last-open-by-workspace") ?? null, null, "a listing without the row is the answer that forgets it");
 });
+
+test("a destination that restores a conversation leaves its own parked draft for the next composer", () => {
+  // The follow-up review finding: choosing a workspace whose memory names a conversation used to adopt that folder's
+  // composer first and throw it away a moment later, which consumed the destination's parked draft into a key nothing
+  // showed. The unsent text was neither on screen nor reachable again.
+  const w = workbench({ search: "", catalogue: [row("b-conv", "/b")] });
+  w.selection.start();
+  w.selection.startComposer({ cwd: "/a", projectKey: "/a" });
+  const atA = state(w.selection).composer!.draftKey;
+  w.drafts.setDraft(atA, { value: "writing at a", images: [{ data: "data:image/png;base64,AAA", mimeType: "image/png" }] });
+  // Something the reader left in the destination folder earlier.
+  w.drafts.setDraft(parkedComposerDraftKey("/b"), { value: "parked in b", images: [{ data: "data:image/png;base64,BBB", mimeType: "image/png" }] });
+  w.local.values.set("pi-web:last-open-by-workspace", JSON.stringify({ "/b": "b-conv" }));
+
+  w.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  assert.equal(state(w.selection).conversation?.id, "b-conv", "the destination's conversation is what is on screen");
+  assert.equal(state(w.selection).composer, null);
+  assert.equal(w.drafts.getDraft(parkedComposerDraftKey("/b"))?.value, "parked in b",
+    "the destination's parked draft was not consumed by a composer that was immediately discarded");
+  assert.equal(w.drafts.getDraft(parkedComposerDraftKey("/b"))?.images.length, 1, "with its images");
+  assert.equal(w.drafts.getDraft(parkedComposerDraftKey("/a"))?.value, "writing at a",
+    "and the composer the reader left is parked in its own folder");
+
+  // New in that folder is the composer the destination always held.
+  w.selection.startComposer({ cwd: "/b", projectKey: "/b" });
+  const fresh = state(w.selection).composer!.draftKey;
+  assert.equal(w.drafts.getDraft(fresh)?.value, "parked in b", "New in the destination brings back the text it kept");
+  assert.deepEqual(w.drafts.getDraft(fresh)?.images.map((image) => image.data), ["data:image/png;base64,BBB"], "and its images");
+});
+
+test("a conversation that leaves for another project's remembered conversation restores it", () => {
+  // The same decision for the other outgoing branch. A conversation of another project used to return early on a fresh
+  // composer, so the workspace's remembered conversation was never restored from the catalogue already delivered.
+  const w = workbench({ search: "", catalogue: [row("a-conv", "/a"), row("b-conv", "/b")] });
+  w.selection.start();
+  w.selection.selectConversation(row("a-conv", "/a"));
+  const stored = w.drafts;
+  stored.setDraft("a-conv", { value: "unsent in a", images: [] });
+  w.local.values.set("pi-web:last-open-by-workspace", JSON.stringify({ "/b": "b-conv" }));
+
+  w.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  assert.equal(state(w.selection).conversation?.id, "b-conv", "the destination's remembered conversation is restored");
+  assert.equal(state(w.selection).projectKey, "/b");
+  assert.equal(w.drafts.getDraft("a-conv")?.value, "unsent in a", "and the conversation left behind keeps its own draft");
+  assert.equal(w.currentSearch(), "?session=b-conv", "the URL names what is on screen");
+});
