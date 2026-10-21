@@ -1,0 +1,9 @@
+# Architecture and implementation routes
+
+User authorized graphify-led multi-worker analysis of architecture, design and performance. Analyze current master 1758c1f plus existing uncommitted audit/design fixes; source is working tree, not deployed runtime. Default graph: graphify-out/graph.json. Supplemental semantic graph: graphify-deep/graphify-out/graph.json. Both are navigation evidence, not proof of runtime contracts.
+
+Workers own separate route reports only; no product edits, graph rebuilds, deployment, restarts or broad test repeats. Each new question starts with a narrow graph query; confirm returned locations in source. Report query/path/explain evidence and graph limitations, distinguish AST/semantic origin from confidence, and current contracts from historical docs. Use Module, Interface, Seam, Adapter, Depth, Locality and Leverage vocabulary.
+
+Routes: backend lifecycle/persistence; Web acquisition/projection/rendering; Gateway/CLI execution; cross-host trust/resources/protocol; backend transport/search/resource performance; browser performance and verification architecture. Findings require concrete trigger, actual impact, likelihood, evidence level and owning seam; classify design, logic or mixed. Previously fixed issues are historical examples, not open findings. Recommendations remain analysis, not automatic implementation.
+
+Evidence reuse: recent unchanged-source workspace tests/typechecks passed; Web 2307 pass/16 existing fail, no new names; browser deferred text17/history11/Settings23 passed. Reference .scratch/design-fixes/results.md and docs/verification.md for original raw logs. Existing performance measurements must retain their measured source and fixture limits. Only rerun focused probes when needed to resolve a specific uncertainty, in owned .dev/architecture-routes/<route>/ with cleanup by PID and recorded command/exit/source. No build on remote-host.

@@ -1,0 +1,13 @@
+:root {
+  --border: #d4d4d8;
+  --bg: #ffffff;
+  --bg-panel: #fafafa;
+  --bg-subtle: #f4f4f5;
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-dim: #a1a1aa;
+  --tool-bg: #f4f4f5;
+  --font-mono: ui-monospace, monospace;
+}
+
+html, body, #root { height: 100%; margin: 0; }

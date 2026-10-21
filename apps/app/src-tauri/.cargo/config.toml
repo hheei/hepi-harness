@@ -1,0 +1,11 @@
+# The App's Rust build settings, in the directory `cargo` runs in, so they apply to every build of the shell — the
+# artifact script, `tauri dev` and a bare `cargo build` alike. They are stated once here rather than repeated on each
+# command line, because a build whose job count depends on who started it is a build nobody can compare.
+#
+# The target directory is deliberately NOT set here. It is a single shared directory for the whole repository
+# (`.dev/cargo-target`, computed from the git common dir), and a relative path in this file cannot name it: its depth
+# differs between the main checkout and a worktree. `apps/app/scripts/cargo-build.mjs` computes it and passes
+# CARGO_TARGET_DIR; use `eval "$(node apps/app/scripts/cargo-build.mjs)"` for an ad-hoc cargo or `tauri dev` run so it
+# lands in the same cache instead of creating a second tree.
+[build]
+jobs = 6

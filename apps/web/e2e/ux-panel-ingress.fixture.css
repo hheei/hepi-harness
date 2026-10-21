@@ -1,0 +1,2 @@
+/* The shared settings stylesheet, from the package the workbench moved into (ticket 05). */
+@import "@hepi/ui/styles/settings.css";

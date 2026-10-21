@@ -1,0 +1,168 @@
+/**
+ * Resource-discovery RPC counter (PHASE 1 diagnostic, throwaway).
+ *
+ * Drives the real loader (apps/server/src/workspace-resources.ts discover()) through the real gateway RPC surface
+ * (packages/gateway GatewayRpcServer + GatewayFiles + gatewayEnvironment) over a synthetic execution host, and counts
+ * every host round trip by method, the peak number in flight, and the wall time at a modelled RTT.
+ *
+ * The RTT is the measured live number (168 ms per authenticated round trip), injected as a fixed latency so the
+ * scaling is a modelled number and not a busy machine's. Nothing here sleeps to decide anything.
+ *
+ * Usage: node .scratch/submit-stall/rpc-count.ts [--rtt=168] [--skills=130] [--nodes=179]
+ */
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
+import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
+import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { gatewayEnvironment } from "../../../packages/gateway/src/environment.ts";
+import { createWorkspaceResources } from "../src/workspace-resources.ts";
+import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
+
+const arg = (name: string, fallback: number): number => {
+  const hit = process.argv.find((value) => value.startsWith("--" + name + "="));
+  return hit === undefined ? fallback : Number(hit.slice(name.length + 3));
+};
+const rttMs = arg("rtt", 168);
+const skillCount = arg("skills", 130);
+const nodeCount = arg("nodes", 179);
+// Live resources are mostly loose .md files rather than one directory per skill; the shape decides how many
+// directories the walk descends and therefore how many listings and ignore probes it issues.
+const flat = process.argv.includes("--flat");
+
+/** One gateway filesystem that counts round trips by method, tracks peak concurrency, and injects the modelled RTT. */
+const IGNORE_NAMES = [".gitignore", ".ignore", ".fdignore"];
+/** What one round trip is for: an absent-file probe, a directory walk step, a content read, or the host record. */
+function categoryOf(request: { method: string; path?: string }): string {
+  const base = (request.path ?? "").split("/").pop() ?? "";
+  if (request.method === "executionHost") return "host";
+  if (request.method === "readTextFile" && IGNORE_NAMES.includes(base)) return "ignoreProbe";
+  if (request.method === "listDir") return "dirListing";
+  if (request.method === "canonicalPath") return "canonical";
+  if (request.method === "readTextFile") return "contentRead";
+  return request.method;
+}
+function instrumented(inner: GatewayFiles, delayMs: number) {
+  const state = { total: 0, inFlight: 0, peak: 0, bytes: 0, bytesByCategory: new Map<string, number>(), bytesKept: new Map<string, number>(), byMethod: new Map<string, number>(), byCategory: new Map<string, number>(), paths: new Map<string, number>() };
+  const server: GatewayFiles = {
+    execute: async (request) => {
+      state.total += 1;
+      state.inFlight += 1;
+      state.peak = Math.max(state.peak, state.inFlight);
+      state.byMethod.set(request.method, (state.byMethod.get(request.method) ?? 0) + 1);
+      const category = categoryOf(request);
+      state.byCategory.set(category, (state.byCategory.get(category) ?? 0) + 1);
+      const key = request.method + " " + (request.path ?? "");
+      state.paths.set(key, (state.paths.get(key) ?? 0) + 1);
+      try {
+        if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+        const result = await inner.execute(request) as { ok?: boolean; value?: unknown };
+        // Bytes the host actually moved back, and what the loader kept of it: a skill file is read whole to parse
+        // frontmatter, a prompt body is kept as the template, a context file is kept as the prefix.
+        const raw = result?.ok === true && typeof result.value === "string" ? result.value : "";
+        if (raw !== "") {
+          const bytes = Buffer.byteLength(raw, "utf8");
+          state.bytes += bytes;
+          state.bytesByCategory.set(category, (state.bytesByCategory.get(category) ?? 0) + bytes);
+          const base = (request.path ?? "").split("/").pop() ?? "";
+          if (base === "SKILL.md" || base.endsWith(".md")) {
+            const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+            const needed = fm === null ? bytes : Buffer.byteLength(fm[0], "utf8");
+            state.bytesKept.set(category, (state.bytesKept.get(category) ?? 0) + needed);
+          }
+        }
+        // One discovery moves its whole scope set in one response, so that response is the bytes it moved, and every
+        // byte of it is kept: the snapshot carries a declaration or a body, never both.
+        if (request.method === "resourceSnapshot" && result?.ok === true && result.value !== undefined) {
+          const bytes = Buffer.byteLength(JSON.stringify(result.value), "utf8");
+          state.bytes += bytes;
+          state.bytesByCategory.set(category, (state.bytesByCategory.get(category) ?? 0) + bytes);
+          state.bytesKept.set(category, (state.bytesKept.get(category) ?? 0) + bytes);
+        }
+        return result;
+      } finally { state.inFlight -= 1; }
+    },
+    close: () => inner.close(),
+  };
+  return { server, state };
+}
+
+/** The synthetic execution host: N markdown resources spread over M directories, shaped like the live deployment. */
+async function buildHost(base: string): Promise<{ home: string; root: string }> {
+  const home = join(base, "home");
+  const root = join(base, "workspace");
+  await mkdir(join(home, ".pi", "agent", "prompts"), { recursive: true });
+  await mkdir(join(home, ".agents", "skills"), { recursive: true });
+  await mkdir(join(root, ".agents", "skills"), { recursive: true });
+  await mkdir(join(root, ".pi", "prompts"), { recursive: true });
+  await writeFile(join(home, ".pi", "agent", "SYSTEM.md"), "SYSTEM\n");
+  await writeFile(join(home, ".pi", "agent", "AGENTS.md"), "CONTEXT\n");
+  await writeFile(join(root, "AGENTS.md"), "PROJECT CONTEXT\n");
+  // Skills live in groups so the walk has real directories to descend, not one flat list.
+  const groupCount = Math.max(1, Math.round(nodeCount / 12));
+  const perGroup = Math.ceil(skillCount / groupCount);
+  let written = 0;
+  for (let group = 0; group < groupCount && written < skillCount; group += 1) {
+    const home_ = group % 2 === 0;
+    const dir = join(home_ ? home : root, ".agents", "skills", "group-" + group);
+    await mkdir(dir, { recursive: true });
+    for (let index = 0; index < perGroup && written < skillCount; index += 1) {
+      const name = "skill-" + group + "-" + index;
+      if (flat) {
+        await writeFile(join(dir, name + ".md"), "---\nname: " + name + "\ndescription: Skill " + name + "\n---\nBody of " + name + "\n");
+      } else {
+        await mkdir(join(dir, name), { recursive: true });
+        await writeFile(join(dir, name, "SKILL.md"), "---\nname: " + name + "\ndescription: Skill " + name + "\n---\nBody of " + name + "\n");
+      }
+      written += 1;
+    }
+  }
+  for (let index = 0; index < 3; index += 1) await writeFile(join(root, ".pi", "prompts", "prompt-" + index + ".md"), "---\ndescription: Prompt " + index + "\n---\nDo " + index + "\n");
+  await writeFile(join(home, ".pi", "agent", "prompts", "global.md"), "---\ndescription: Global\n---\nGlobal\n");
+  return { home, root };
+}
+
+const base = await mkdtemp(join(tmpdir(), "hepi-rpc-count-"));
+try {
+  const { home, root } = await buildHost(base);
+  const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
+  const inner = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const { server, state } = instrumented(inner, rttMs);
+  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, server);
+  await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
+  const address = gateway.server.address();
+  if (address === null || typeof address !== "object") throw new Error("the gateway did not start");
+  const binding = { id: "local", gatewayId: "workstation", gatewayOrigin: "http://127.0.0.1:" + address.port, gatewayToken: "gateway-token" };
+  const env = gatewayEnvironment(binding, "/");
+  const resources = createWorkspaceResources({ projectTrusted: true, diagnostics: () => {} });
+
+  const startedAt = Date.now();
+  const discovered = await resources.discover(env, BACKGROUND_CONTEXT);
+  const wallMs = Date.now() - startedAt;
+  await gateway.close();
+
+  const byMethod = [...state.byMethod.entries()].sort((left, right) => right[1] - left[1]);
+  const repeated = [...state.paths.entries()].filter(([, count]) => count > 1).sort((left, right) => right[1] - left[1]);
+  const report = {
+    modelledRttMs: rttMs,
+    requestedSkills: skillCount,
+    requestedNodes: nodeCount,
+    catalogSize: discovered.status === "loaded" ? discovered.catalog.length : null,
+    contextFiles: discovered.status === "loaded" ? discovered.contextFiles.length : null,
+    totalRoundTrips: state.total,
+    peakInFlight: state.peak,
+    serializedRttMs: state.total * rttMs,
+    wallMs,
+    byMethod: Object.fromEntries(byMethod),
+    byCategory: Object.fromEntries([...state.byCategory.entries()].sort((left, right) => right[1] - left[1])),
+    bytesMoved: state.bytes,
+    bytesByCategory: Object.fromEntries([...state.bytesByCategory.entries()].sort((left, right) => right[1] - left[1])),
+    bytesKeptByCategory: Object.fromEntries([...state.bytesKept.entries()].sort((left, right) => right[1] - left[1])),
+    repeatedPaths: repeated.slice(0, 12),
+    repeatedPathCount: repeated.length,
+  };
+  console.log(JSON.stringify(report, null, 1));
+} finally {
+  await rm(base, { recursive: true, force: true });
+}

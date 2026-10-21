@@ -1,0 +1,4433 @@
+{
+ "held": {
+  "frames": [
+   {
+    "t": 206,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 220,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 348,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 351,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 366,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 375,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 392,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 410,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 425,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 441,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 458,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 475,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 491,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 508,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 525,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 541,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 558,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 575,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 591,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 608,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 625,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 641,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 658,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 675,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 691,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 708,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 725,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 741,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 758,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 775,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 791,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 808,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 825,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 841,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 858,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 875,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 891,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 908,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 925,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 941,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 958,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 975,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 991,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1008,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1025,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1041,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1058,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1075,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1098,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nauto\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1111,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nauto\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1175,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1192,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1291,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1341,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1391,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1441,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1492,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1592,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1616,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1642,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1676,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1692,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1708,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1725,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1742,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1758,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1775,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1792,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1808,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1825,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1842,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1858,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1875,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1892,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1908,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1925,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1942,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1958,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1975,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1991,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2008,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2025,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2041,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2058,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2075,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2091,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2108,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2175,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2191,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2291,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2341,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2392,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2442,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2491,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2591,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2608,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2641,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2675,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2691,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2708,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2725,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2741,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2758,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2775,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2791,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2808,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2825,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2841,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2858,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2875,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2891,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2908,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2925,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2942,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2958,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2975,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2991,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3008,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3025,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3041,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3058,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3075,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3091,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3108,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   }
+  ],
+  "audio": [],
+  "sse": [
+   {
+    "t": 1625,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"15\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 1626,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1661,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"15\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}}"
+   },
+   {
+    "t": 1661,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":1,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":2,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":3,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":4,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":5,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "http": [
+   {
+    "t": 360,
+    "path": "/api/projects",
+    "doneAt": 381,
+    "status": 200
+   },
+   {
+    "t": 361,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 383,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/sessions?summary=1",
+    "doneAt": 405,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/open-in-explorer",
+    "doneAt": 375,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/agent/running",
+    "doneAt": 384,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/home",
+    "doneAt": 400,
+    "status": 200
+   },
+   {
+    "t": 384,
+    "path": "/api/sessions",
+    "doneAt": 406,
+    "status": 200
+   },
+   {
+    "t": 412,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 419,
+    "status": 200
+   },
+   {
+    "t": 1087,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1113,
+    "status": 501
+   },
+   {
+    "t": 1088,
+    "path": "/api/files/workspace/local?type=list",
+    "doneAt": 1100,
+    "status": 502
+   },
+   {
+    "t": 1088,
+    "path": "/api/git/status?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1101,
+    "status": 502
+   },
+   {
+    "t": 1089,
+    "path": "/api/app-update",
+    "doneAt": 1100,
+    "status": 501
+   },
+   {
+    "t": 1089,
+    "path": "/api/home",
+    "doneAt": 1112,
+    "status": 200
+   },
+   {
+    "t": 1089,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1103,
+    "status": 200
+   },
+   {
+    "t": 1090,
+    "path": "/api/project-trust?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1115,
+    "status": 503
+   },
+   {
+    "t": 1092,
+    "path": "/?cwd=%2Fworkspace%2Flocal&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1106,
+    "status": 200
+   },
+   {
+    "t": 1146,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1160,
+    "status": 200
+   },
+   {
+    "t": 1146,
+    "path": "/?cwd=%2Fworkspace%2Flocal&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1160,
+    "status": 200
+   },
+   {
+    "t": 1160,
+    "path": "/api/sessions?force=1",
+    "doneAt": 1166,
+    "status": 200
+   },
+   {
+    "t": 1615,
+    "path": "/api/agent/new",
+    "doneAt": 1621,
+    "status": 200
+   },
+   {
+    "t": 1626,
+    "path": "/api/agent/15",
+    "doneAt": 1632,
+    "status": 200
+   },
+   {
+    "t": 1633,
+    "path": "/api/sessions",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 1633,
+    "path": "/?session=15&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1637,
+    "status": 200
+   },
+   {
+    "t": 1635,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1670,
+    "status": 501
+   },
+   {
+    "t": 1635,
+    "path": "/api/sessions?force=1",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 1636,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 2906,
+    "path": "/api/agent/running",
+    "doneAt": 2910,
+    "status": 200
+   },
+   {
+    "t": 2911,
+    "path": "/api/sessions?force=1",
+    "doneAt": 2917,
+    "status": 200
+   }
+  ],
+  "loading": false,
+  "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+  "bodyText": "Sessions\nFiles\nNew\nworkspace\n7\ntest\nNew Project…\nOpen another project…\nModels\nSkills\nSettings\nFull history\nGenerate title\nSystem\nTools\n\ntest\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop\nNo file open"
+ },
+ "answered": {
+  "frames": [
+   {
+    "t": 206,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 220,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 348,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 351,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 366,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 375,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 392,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 410,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 425,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 441,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 458,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 475,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 491,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 508,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 525,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 541,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 558,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 575,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 591,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 608,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 625,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 641,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 658,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 675,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 691,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 708,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 725,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 741,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 758,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 775,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 791,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 808,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 825,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 841,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 858,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 875,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 891,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 908,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 925,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 941,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 958,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 975,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 991,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1008,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1025,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1041,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1058,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1075,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1098,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nauto\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1111,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nauto\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1175,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1192,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1291,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1341,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1391,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1441,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1492,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1592,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "web v0.10.0\npi v1.0.0\nPi Web\n/tmp/hepi-clf-j8j1TC/backend/workspace\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1616,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1642,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 1,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1676,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1692,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1708,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1725,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1742,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1758,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1775,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1792,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1808,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1825,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1842,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1858,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1875,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1892,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1908,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1925,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1942,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1958,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1975,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1991,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2008,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2025,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2041,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2058,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2075,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2091,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2108,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2175,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2191,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2291,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2341,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2392,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2442,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2491,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2591,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2608,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2641,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2675,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2691,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2708,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2725,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2741,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2758,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2775,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2791,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2808,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2825,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2841,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2858,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2875,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2891,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2908,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2925,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2942,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2958,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2975,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2991,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3008,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3025,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3041,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3058,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3075,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3091,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3108,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nNew session\n01:25 PM\nWaiting for model...\nSteer\nFollow-up\nDeepSeek V4.1 Flash\noff\nStop",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3182,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3191,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3292,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3342,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3391,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3441,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3491,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3591,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3608,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3641,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3675,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3691,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3708,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3725,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3741,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3758,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3775,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3791,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3808,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3825,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3842,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3858,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3875,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3891,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3908,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3925,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3941,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3958,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3975,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 3992,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4008,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4025,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4041,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4058,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4075,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4091,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4108,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4125,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4141,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4158,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4175,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4191,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4208,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4225,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4241,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4258,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4275,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4291,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4308,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4325,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4341,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4358,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4375,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4391,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4408,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4425,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4441,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4458,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4475,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4491,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4508,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4525,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4541,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4558,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4575,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4591,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4608,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4625,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4641,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4658,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   },
+   {
+    "t": 4675,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 2,
+    "notice": ""
+   }
+  ],
+  "audio": [
+   {
+    "t": 3173,
+    "group": 0,
+    "freq": 523.25,
+    "contextState": "running"
+   },
+   {
+    "t": 3173,
+    "group": 0,
+    "freq": 659.25,
+    "contextState": "running"
+   }
+  ],
+  "sse": [
+   {
+    "t": 1625,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"15\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 1626,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1661,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"15\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}}"
+   },
+   {
+    "t": 1661,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":1,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":2,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":3,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":4,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1662,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":5,\"run\":{\"inputs\":[\"24\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"23\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888}],\"entryIds\":[\"23\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 3173,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"15\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"done\",\"entryId\":\"23\",\"answerId\":\"27\"}}"
+   },
+   {
+    "t": 3174,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":6,\"run\":null,\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"15\",\"submissionId\":\"24\",\"requestId\":\"ab954d58-98eb-47d0-8e39-b83ab6334c87\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"23\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"27\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"FOREGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869138914,\"responseId\":\"chatcmpl-clf\",\"rawStopReason\":\"stop\",\"durationMs\":1513}],\"entryIds\":[\"23\",\"27\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 3174,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"27\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"FOREGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869138914,\"responseId\":\"chatcmpl-clf\",\"rawStopReason\":\"stop\",\"durationMs\":1513}],\"entryIds\":[\"23\",\"27\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "http": [
+   {
+    "t": 360,
+    "path": "/api/projects",
+    "doneAt": 381,
+    "status": 200
+   },
+   {
+    "t": 361,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 383,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/sessions?summary=1",
+    "doneAt": 405,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/open-in-explorer",
+    "doneAt": 375,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/agent/running",
+    "doneAt": 384,
+    "status": 200
+   },
+   {
+    "t": 362,
+    "path": "/api/home",
+    "doneAt": 400,
+    "status": 200
+   },
+   {
+    "t": 384,
+    "path": "/api/sessions",
+    "doneAt": 406,
+    "status": 200
+   },
+   {
+    "t": 412,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 419,
+    "status": 200
+   },
+   {
+    "t": 1087,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1113,
+    "status": 501
+   },
+   {
+    "t": 1088,
+    "path": "/api/files/workspace/local?type=list",
+    "doneAt": 1100,
+    "status": 502
+   },
+   {
+    "t": 1088,
+    "path": "/api/git/status?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1101,
+    "status": 502
+   },
+   {
+    "t": 1089,
+    "path": "/api/app-update",
+    "doneAt": 1100,
+    "status": 501
+   },
+   {
+    "t": 1089,
+    "path": "/api/home",
+    "doneAt": 1112,
+    "status": 200
+   },
+   {
+    "t": 1089,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1103,
+    "status": 200
+   },
+   {
+    "t": 1090,
+    "path": "/api/project-trust?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1115,
+    "status": 503
+   },
+   {
+    "t": 1092,
+    "path": "/?cwd=%2Fworkspace%2Flocal&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1106,
+    "status": 200
+   },
+   {
+    "t": 1146,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1160,
+    "status": 200
+   },
+   {
+    "t": 1146,
+    "path": "/?cwd=%2Fworkspace%2Flocal&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1160,
+    "status": 200
+   },
+   {
+    "t": 1160,
+    "path": "/api/sessions?force=1",
+    "doneAt": 1166,
+    "status": 200
+   },
+   {
+    "t": 1615,
+    "path": "/api/agent/new",
+    "doneAt": 1621,
+    "status": 200
+   },
+   {
+    "t": 1626,
+    "path": "/api/agent/15",
+    "doneAt": 1632,
+    "status": 200
+   },
+   {
+    "t": 1633,
+    "path": "/api/sessions",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 1633,
+    "path": "/?session=15&_rsc=0KOophXk8HtVdcJn",
+    "doneAt": 1637,
+    "status": 200
+   },
+   {
+    "t": 1635,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1670,
+    "status": 501
+   },
+   {
+    "t": 1635,
+    "path": "/api/sessions?force=1",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 1636,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 1670,
+    "status": 200
+   },
+   {
+    "t": 2906,
+    "path": "/api/agent/running",
+    "doneAt": 2910,
+    "status": 200
+   },
+   {
+    "t": 2911,
+    "path": "/api/sessions?force=1",
+    "doneAt": 2917,
+    "status": 200
+   },
+   {
+    "t": 3173,
+    "path": "/api/sessions",
+    "doneAt": 3182,
+    "status": 200
+   },
+   {
+    "t": 3177,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 3189,
+    "status": 501
+   },
+   {
+    "t": 3179,
+    "path": "/api/sessions?force=1",
+    "doneAt": 3187,
+    "status": 200
+   },
+   {
+    "t": 3180,
+    "path": "/api/files/workspace/local?type=list",
+    "doneAt": 3185,
+    "status": 502
+   },
+   {
+    "t": 3181,
+    "path": "/api/git/status?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 3185,
+    "status": 502
+   }
+  ],
+  "loading": false,
+  "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+  "bodyText": "Sessions\nFiles\nNew\nworkspace\n7\ntest\nNew Project…\nOpen another project…\nModels\nSkills\nSettings\nFull history\nGenerate title\nSystem\nTools\n5\n3\n\ntest\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact\nNo file open"
+ }
+}

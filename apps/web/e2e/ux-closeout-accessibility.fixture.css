@@ -1,0 +1,10 @@
+/* Just enough of the workbench's own layout for the production surfaces to lay out inside this page.
+   The hosts compile Tailwind for their own builds; this fixture bundles with esbuild, so the few rules the transcript,
+   the composer and the read-failure panel depend on are stated here. */
+html, body, #root { height: 100%; margin: 0; }
+body { font: 14px/1.4 system-ui, sans-serif; background: #fff; color: #111; }
+#root { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.chat-content { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.chat-content > .relative { display: flex; min-height: 0; flex: 1; }
+[data-chat-scroll] { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+button { font: inherit; cursor: pointer; }

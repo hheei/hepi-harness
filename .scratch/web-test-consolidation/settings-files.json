@@ -1,0 +1,898 @@
+[
+  {
+    "file": "lib/builtin-extensions.test.mjs",
+    "calls": 8,
+    "names": [
+      "PI_WEB_DISABLE_MCP turns MCP off for any value but empty, 0, or false",
+      "MCP is available only when the operator allows it and the internals loaded",
+      "the codemode self-test runs a script in the SDK's sandbox",
+      "the codemode self-test reports a sandbox that fails, answers wrong, or hangs",
+      "the MCP extension gets no servers from mcp.json but keeps autoEnableCodemode, read with fresh trust",
+      "Settings reads the sandbox self-test's result without ever starting it",
+      "the extensions settings switch built-ins off as the session's resource loader would",
+      "a trusted project's settings that are not a regular file never stall the switches read"
+    ]
+  },
+  {
+    "file": "lib/codemode-settings.test.mjs",
+    "calls": 16,
+    "names": [
+      "Code mode is always on only when the resolved defaultTools list holds codemode",
+      "switching Code mode edits only the entries that name codemode",
+      "writing Code mode keeps other settings and leaves an unchanged file alone",
+      "Code mode survives the PowerShell switch, which rewrites the list as plain names",
+      "an unreadable settings file is reported, not overwritten",
+      "a project's defaultTools decides Code mode only where the global choice no longer matters",
+      "a project's settings file is read raw, and anything but a regular file is skipped",
+      "the default inline budget is the SDK's",
+      "the inline budget is read as the codemode extension reads it",
+      "writing the inline budget keeps codemode.mode and other settings, and empties nothing it did not fill",
+      "a project's settings decide the inline budget only where they replace the global one",
+      "a project's inline budget is read from its settings file",
+      "the mode is read as the codemode extension reads it",
+      "writing the mode keeps codemode.inlineBudget and other settings, and \\",
+      "a project's settings decide the mode only where they replace the global one",
+      "a project's mode is read from its settings file"
+    ]
+  },
+  {
+    "file": "lib/codemode-view.test.mjs",
+    "calls": 7,
+    "names": [
+      "reads the script only from a string code argument",
+      "reads nested calls defensively and counts the ones a snapshot left out",
+      "drops the script header and keeps rejected input whole",
+      "formats durations and costs as pi's TUI does",
+      "totals model costs only when more than one call reported one",
+      "previews the first line that is neither blank nor the options line",
+      "reports the newest running call while a script runs"
+    ]
+  },
+  {
+    "file": "lib/enabled-models-runtime.test.mjs",
+    "calls": 13,
+    "names": [
+      "each pattern is resolved on its own, with its thinking pin",
+      "a bare id shared by two providers resolves to a single owner",
+      "the view groups models by provider and marks custom ones",
+      "a stale-only scope reads as everything enabled",
+      "thinking pins reach the view read-only",
+      "a provider glob is verified, so nested model ids are not dropped",
+      "a glob is rejected when another provider's model id wears it as a prefix",
+      "provider globs are only resolved for an edit",
+      "providers defined only by models.json count as custom",
+      "a project-level value is reported as shadowing the global one",
+      "the banner's path shortens the home directory to a tilde",
+      "writing keeps unrelated settings and drops the key when unscoped",
+      "a malformed settings file fails the write instead of silently dropping it"
+    ]
+  },
+  {
+    "file": "lib/enabled-models.test.mjs",
+    "calls": 47,
+    "names": [
+      "state reports everything enabled when no pattern narrows the list",
+      "state treats a fully stale list as unscoped and keeps the stale patterns",
+      "state resolves globs, pins and stale entries together",
+      "first disable materializes provider globs instead of the whole catalog",
+      "disable expands only the pattern that covers the model and keeps its pin",
+      "disable drops a pattern that matched only the removed model",
+      "disable removes the model from every pattern that covers it",
+      "disabling a whole provider leaves the other providers untouched",
+      "disabling the last enabled model is refused",
+      "stale patterns alone do not count as an enabled model",
+      "enable appends the model and preserves entry order",
+      "enable collapses a fully enabled provider into one glob at its first slot",
+      "enable keeps explicit entries when the provider carries a thinking pin",
+      "enable is a no-op when the model is already covered",
+      "enabling the last missing provider drops the setting",
+      "a stale pattern keeps the setting alive even when everything is enabled",
+      "a thinking pin keeps the setting alive even when everything is enabled",
+      "a model id containing a colon round-trips through an expansion",
+      "unknown references are ignored instead of being written out",
+      "clearing the scope drops every pattern, stale ones included",
+      "a provider with nested model ids collapses to a glob that covers them",
+      "enabling a provider whose stored glob under-matches repairs the entry",
+      "nested ids materialize through a covering glob, not provider/*",
+      "a provider with no covering glob is written model by model",
+      "without a covering glob, a full provider keeps its explicit entries",
+      "an untouched provider that is fully enabled is normalized to its glob",
+      "a single exact reference is left alone, even when it covers its provider",
+      "a redundant entry beside a glob is merged away",
+      "normalizing leaves partly enabled providers and stale entries alone",
+      "normalizing keeps a provider whose entries pin a thinking level",
+      "pruning drops only the unmatched entries",
+      "pruning is a no-op when every entry matches",
+      "pruning a list that is only stale removes the setting",
+      "pruning keeps the scope when the survivors still narrow it",
+      "a wider pattern already covering a provider is not rewritten",
+      "renaming rewrites the entries of that provider and keeps the rest",
+      "renaming several providers at once is one rewrite",
+      "renaming is a no-op without patterns or without a real rename",
+      "a glob reaching into another provider is cut back to its own",
+      "cutting an entry back keeps its thinking pin",
+      "an entry that stays inside its provider is left alone",
+      "a bare model id that only looks like a prefix is left alone",
+      "a catch-all pattern names no provider and is never cut back",
+      "renaming a model rewrites its entry and keeps the pin",
+      "a colon inside a model id is not mistaken for a thinking pin",
+      "renaming a model is a no-op without patterns or without a real rename",
+      "a model rename spells the provider id the settings file still uses"
+    ]
+  },
+  {
+    "file": "lib/mcp-add.test.mjs",
+    "calls": 10,
+    "names": [
+      "a pasted address becomes the importer's entry, under the name it derived or the one given",
+      "what cannot be read, picked, named or filled in is refused with the importer's notes",
+      "a name the file already defines is refused with a free one to suggest",
+      "typed values are escaped as literals, and a host variable is stored as a reference",
+      "a literal secret keeps the server global, a typed password included",
+      "a pasted literal secret read from a variable instead is stored as a reference, and may go to the project",
+      "what pi would refuse, or what references PI_WEB_PASSWORD, is never written",
+      "a pasted header that reads a variable set on the host needs that variable confirmed",
+      "the host variables counted are those an HTTP entry sends, never PI_WEB_PASSWORD",
+      "the request's values are field ids to text or to a variable, and nothing else"
+    ]
+  },
+  {
+    "file": "lib/mcp-command.test.mjs",
+    "calls": 7,
+    "names": [
+      "the built-in /mcp is the one named mcp that pi's built-in MCP extension registered",
+      "only /mcp on its own is a bare /mcp",
+      "a bare /mcp opens Settings when the built-in owns it or nothing answers to it",
+      "another extension's /mcp, or a prompt template named mcp, keep the message",
+      "the MCP host's owner is an extension's /mcp, also when pi renamed several of them",
+      "a prompt waits for MCP servers unless it is an extension command, and the built-in /mcp only registers them",
+      "the MCP host and the read-only policy read the shared constant, not their own copy"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-file.test.mjs",
+    "calls": 16,
+    "names": [
+      "every edit writes exactly the bytes the SDK's own editor writes",
+      "an exposure is set as the SDK sets it: codemode removes the key, toolExposure stays",
+      "a file without mcpServers, or none at all, is created as the SDK creates it",
+      "an edit that changes nothing leaves the file's bytes alone",
+      "several servers switch in one write, each with its own outcome",
+      "an entry that is not an object is never switched, only told apart from a missing one, and can be removed",
+      "a file that cannot be parsed is refused and left untouched, without quoting it",
+      "removing or switching a server the file does not define is refused; adding a defined name is too",
+      "a server named after an Object.prototype key is a key like any other",
+      "a removed entry goes back where it stood",
+      "the global file is written 0600, through a link that stays a link, a dangling one too",
+      "a project file keeps its mode, and a new one is 0644",
+      "a project file is written only where the reader's link rule lets it be read",
+      "concurrent writes are serialized, so none is lost",
+      "a write waits for another process's lock on the same file",
+      "an edit's own refusal writes nothing"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-key.test.mjs",
+    "calls": 3,
+    "names": [
+      "an entry's key ignores the order of its keys and changes with its content",
+      "an entry nested far deeper than the stack allows still gets a key",
+      "content is followed to the depth limit, and only past it do entries compare equal"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-read.test.mjs",
+    "calls": 20,
+    "names": [
+      "both files are listed, each entry described without its secret values",
+      "an untrusted project's command and arguments are listed as written, and masked once a decision trusts it",
+      "a !command value is labelled and never run, and a PI_WEB_PASSWORD reference is flagged",
+      "values that read the host's variables are named, never expanded, and a !command is not one",
+      "the local variable parser agrees with the SDK's on every escape and malformed reference",
+      "an untrusted or broken file is reported while the other still lists",
+      "a JSON syntax error never quotes the file, wherever in it the error is",
+      "invalid entries are listed with the SDK's reason, and only a loadable project entry shadows a global one",
+      "an entry with a url connects over HTTP, whatever its type says",
+      "the signed-in state comes from a raw read of mcp-auth.json, which is never created",
+      "a project file is read only where its real path is allowed",
+      "a project file declaring more servers than are listed is a problem, and the global file is still listed",
+      "an entry nested deeper than the stack allows is listed with the rest of its file",
+      "what loadMcpConfig reports is logged without the source text a parse error quotes",
+      "a FIFO in place of the project file is never opened for reading",
+      "the global file follows a link wherever it leads; a dangling one reads as no file",
+      "without the SDK's validator, raw entries are still listed and a leading ! still marks a command",
+      "on a trusted merge the per-file reader agrees with the SDK's loadMcpConfig",
+      "an entry's key follows its content, not its key order, and reveals none of it",
+      "one entry is read for a route the way the listing reads it, link rule included"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-values.test.mjs",
+    "calls": 2,
+    "names": [
+      "the value walk and the PI_WEB_PASSWORD rule are client-safe, and the server uses the very same ones",
+      "the browser's parsers find PI_WEB_PASSWORD where the SDK's do"
+    ]
+  },
+  {
+    "file": "lib/mcp-host.test.mjs",
+    "calls": 51,
+    "names": [
+      "PI_WEB_MCP_IDLE_MS defaults to 10 minutes and 0 keeps servers connected",
+      "without a codemode sandbox, script-only tools are offered through tool_search",
+      "a connection is ready once its tool lists are answered, every page of them",
+      "a server without lists is ready after the handshake, and a closed one is not",
+      "a transport is followed for its whole life, with what made it fail",
+      "nothing is registered until a prompt, then only the servers that may connect",
+      "project entries follow the project's trust, which the SDK applies when it reads mcp.json",
+      "a prompt waits for servers with direct tools still connecting, until they are ready",
+      "Stop ends the wait at once",
+      "a prompt does not wait for servers whose tools reach the model through Code mode or tool search",
+      "a server that outlasted one wait does not hold up the next prompt",
+      "a server whose transport cannot be built fails without a wait",
+      "a changed entry is replaced only once the extension has opened its connection",
+      "a connection the extension opens after the host gave up waiting to unregister it gets no transport",
+      "the built-in /mcp registers the servers without waiting for them to connect",
+      "an unchanged entry is left connected, however its file orders the keys",
+      "servers are registered with the exposure codemode can serve",
+      "the host stays out of the way when another extension owns /mcp",
+      "an idle host unregisters its servers, but not while a run is going",
+      "servers registered for a prompt that starts no run still idle out",
+      "a sync that finishes after Stop gave up on it still lets its servers idle out",
+      "the idle timer does not run while a prompt waits for its servers",
+      "a session records each server's state for Settings, keyed by the entry as its file holds it",
+      "a server that asks for a sign-in reads needs-auth, and connected once a reconnect after the sign-in is ready",
+      "a 401 is a sign-in only for a server that signs in with OAuth",
+      "a connection that drops after it was ready reads disconnected with its stderr, and one the client closed does not",
+      "what a session records is masked, and a transport that could not be built is recorded too",
+      "a transport failure's message is masked before it is recorded",
+      "a server let go while it connects leaves no connecting record, and a closed session no drops",
+      "a connection the host closes when it idles out is marked closed, and the next prompt's connection is not",
+      "a session still holding an entry from before an edit never replaces what was recorded for the file as it is now",
+      "a status is keyed by the entry as its file holds it, not by the config the host registered without a sandbox",
+      "a name another extension registered first is a conflict that names it, recorded once while it lasts",
+      "a session whose /mcp is another extension's is recorded with that extension, until the session ends",
+      "a host disposed as its session starts closing lets go of everything it reported, before any session_shutdown",
+      "a disposed host forgets that its session's /mcp is another extension's",
+      "several extensions' /mcp name an owner too, and a prompt template named mcp does not",
+      "a project's mcp.json that appears after the session started connects only once the project is trusted",
+      "trust inherited from a parent folder connects a project's servers, and an exact false beneath it does not",
+      "an untrusted project entry named like a global one leaves the global one connected",
+      "an unreadable trust.json counts as untrusted, with one warning",
+      "a trust.json still locked by another process counts as untrusted",
+      "a project's mcp.json that lands between the trust read and the SDK's read is not read",
+      "what a session saw reaches the listing: a connected global server, then an untrusted project entry until it is trusted",
+      "an untrusted project's entries are read with their values, only to key their status",
+      "mcp.json errors are logged once each instead of dropped",
+      "a parse error is logged without the part of mcp.json it quotes",
+      "a file with many broken entries logs a few of them and a count, once",
+      "an untrusted project's entry nested thousands of levels deep stops neither the global servers nor the other reports",
+      "an untrusted project declaring hundreds of servers reports only the first hundred, and keeps everyone else's records",
+      "an untrusted project's server names are read only from a regular file inside the project"
+    ]
+  },
+  {
+    "file": "lib/mcp-import.integration.test.mjs",
+    "calls": 9,
+    "names": [
+      "`pi mcp add` pastes produce exactly the entry the SDK's own command writes",
+      "`pi mcp add` with mixed quoting reads each argument as the shell joins it",
+      "escaped literals read back unchanged through the SDK resolver and reference no variable",
+      "the importer's reference scan agrees with the SDK's",
+      "the validator port refuses exactly what validateMcpServerConfig refuses",
+      "every imported and filled-in config is one the SDK accepts",
+      "a foreign `!command` value is stored as text: resolving it runs nothing",
+      "a field stored as a reference resolves from the environment like any pi reference",
+      "typed values are escaped like literals in resolved fields and kept raw elsewhere"
+    ]
+  },
+  {
+    "file": "lib/mcp-import.test.mjs",
+    "calls": 68,
+    "names": [
+      "escapes literals the way pi reads them back",
+      "reads each client's references, and `%NAME%` only where pi resolves values",
+      "finds placeholders inside values",
+      "a bare endpoint URL becomes an HTTP server named after its host",
+      "a legacy SSE address is refused with its streamable HTTP sibling offered",
+      "a loopback address typed without its scheme is read as http",
+      "plain http to another host is imported with a warning",
+      "credentials in the address move into a Basic header, which pi's fetch can send",
+      "a placeholder in the query becomes a password field, filled in URL-encoded",
+      "an address whose host is a placeholder is a field, not a refusal",
+      "repository pages, registry names and badges are explained, not saved",
+      "a link wrapped in Markdown, angle brackets or a code fence is unwrapped",
+      "Cursor and LM Studio links decode their base64 server, splitting a whole command line",
+      "GitHub's Cursor links ask for the token their placeholders stand for",
+      "base64 survives a `+` read as a space, URL-safe letters, missing padding and UTF-8",
+      "VS Code links unwrap the web redirect and read the twice-encoded JSON",
+      "VS Code inputs become fields that replace their placeholder inside a value",
+      "Visual Studio and GitHub Copilot app links carry the same JSON",
+      "a server's command line, with `NAME=value` prefixes moved into env",
+      "a variable in an argument becomes a field: pi passes arguments as written",
+      "cleans up what documentation pages add to a command",
+      "shell syntax a spawned command cannot run is refused with its own note",
+      "Windows paths keep their backslashes, and example paths become fields",
+      "names a server after the package, image or script it runs",
+      "`npx mcp-remote <url>` is noted: pi can connect to the URL directly",
+      "`pi mcp add` keeps `${VAR}` and `!command` as written, and labels the command",
+      "`pi mcp add` with variables the shell would have expanded",
+      "`pi mcp add` refusals carry the CLI's reason",
+      "`claude mcp add` for a remote server, with options after the positionals",
+      "`claude mcp add` for a local server, and `-e` that stops at the server name",
+      "`claude mcp add` values: Claude's `${VAR}` stays a reference, other text is escaped",
+      "`claude mcp add` OAuth options and refused transports",
+      "`claude mcp add-json` and `add-from-claude-desktop`",
+      "`codex mcp add`: bearer variable, literal env values, ignored options",
+      "`gemini mcp add`: one value per -e, milliseconds, tool filters, Gemini's own references",
+      "`code --add-mcp` and unknown CLIs",
+      "a CLI's management commands are refused: as a server, the Test after Add would run them on the host",
+      "a legacy `/sse` address is refused when a CLI's transport is guessed from it",
+      "Claude Desktop config: literal values escaped, placeholders asked for",
+      "Claude Code .mcp.json: references kept, defaults dropped, milliseconds converted, unknown keys noted",
+      "a foreign `!command` and `$` are escaped; the pi toggle keeps them",
+      "pi's own keys are kept; anything unknown is dropped with a note",
+      "Windsurf, Cline and Copilot spellings of the same shape",
+      "a command and a URL without a type are ambiguous",
+      "Gemini settings.json: httpUrl, bare `$VAR`, `%VAR%`, OAuth and tool filters",
+      "Cursor mcp.json: `${env:X}`, `${userHome}`, `${workspaceFolder}` and `auth`",
+      "VS Code mcp.json with comments: inputs, number and null env values, dropped options",
+      "VS Code's older settings.json form and an undefined input",
+      "Zed settings.json: only context_servers is read; extension servers are explained",
+      "opencode: command arrays, environment, `{env:X}` and what pi cannot represent",
+      "fragments, bare objects, server maps and arrays of named servers",
+      "an MCP registry server.json: streamable remotes with their variables and headers",
+      "sanitizes names and keeps them unique within the paste and against taken ones",
+      "a name pi accepts is kept as written; only an invalid one is rewritten",
+      "a name the source chose that is already in use is kept and reported, not renamed",
+      "converts and clamps timeouts to pi's seconds",
+      "pi syntax keeps pi 1.0's description, OAuth client name and metadata URL, and reads the old exposure name as codemode",
+      "reads a timeout's unit from the client that wrote it: Cline seconds, Gemini milliseconds",
+      "a variable used in several places is one field that fills them all",
+      "an empty secret env value is asked for; an empty Authorization header is dropped",
+      "finds literal secrets but not references to them",
+      "literal secrets follow the shared rules of lib/mcp-secrets.ts",
+      "a field can be stored as a reference to a host environment variable instead of the secret",
+      "typed password fields count as literal secrets wherever they land",
+      "only assignments, or `env` alone, name no command",
+      "never throws: every prefix of every sample paste parses to a result",
+      "every note the importer writes has a code with a severity, and every code is written somewhere",
+      "a pasted literal secret where pi resolves values can be stored as a reference instead; one in the URL cannot"
+    ]
+  },
+  {
+    "file": "lib/mcp-read-only-policy.test.mjs",
+    "calls": 2,
+    "names": [
+      "a pinned selection is read-only when it names tools and none can write or run commands",
+      "MCP tools are the MCP extension's and any named mcp__"
+    ]
+  },
+  {
+    "file": "lib/mcp-secrets.test.mjs",
+    "calls": 10,
+    "names": [
+      "names that hold a credential, however they are spelled",
+      "values that look like keys or tokens, and the ones that do not",
+      "a value made only of references names where the secret lives",
+      "URLs keep everything but their credentials, character for character",
+      "a value of several words is masked word by word, its whitespace kept",
+      "command, args and url are used as written, so only placeholder-shaped values name a secret",
+      "connection strings and --auth values are masked",
+      "arguments mask flag values, headers, pairs, URLs and bare tokens",
+      "what a mask hides can be listed, raw and percent-decoded, to find it again in other text",
+      "literal secrets are the credentials written into the entry itself"
+    ]
+  },
+  {
+    "file": "lib/mcp-server-display.test.mjs",
+    "calls": 7,
+    "names": [
+      "a command line quotes the parts a reader could not retype as shown",
+      "hidden characters are shown escaped and force quotes, so the text shown is the text that runs",
+      "an entry's target is its URL over HTTP and its command line over stdio",
+      "field labels name the value without its content",
+      "variable references read as one chip per variable, worded by where they go",
+      "a file problem shows a diagnostic only where it adds something"
+    ]
+  },
+  {
+    "file": "lib/mcp-sign-in.integration.test.mjs",
+    "calls": 9,
+    "names": [
+      "a pasted redirected address signs in through the SDK, and the reconnect lists the tools",
+      "a browser on this computer finishes the sign-in through the loopback listener, with no paste",
+      "once signed in, a sign-in needs no browser, and an expired token is refreshed by the connection itself",
+      "a refresh a sign-in's connection has on its way when the URL is signed out stores nothing",
+      "a refresh a Test has on its way when the URL is signed out stores nothing, and the Test records nothing",
+      "cancelling a waiting sign-in ends it, and closes the loopback listener",
+      "signing out deletes the tokens, so the next sign-in shows the page again",
+      "credentials are kept per server: another name at the same URL signs in on its own, and a legacy record is taken over",
+      "an HTTP server with auth, with an Authorization header, and a stdio server do not sign in, as the SDK decides"
+    ]
+  },
+  {
+    "file": "lib/mcp-sign-in.test.mjs",
+    "calls": 23,
+    "names": [
+      "a sign-in connects, shows the page, takes a pasted address, reconnects and records what it found",
+      "a pasted address is checked before the SDK sees it, and a bad one leaves the sign-in waiting",
+      "the state a paste must carry is the one the SDK stored, which it checks against",
+      "the loopback callback finishes the sign-in without a paste",
+      "a stored refresh token finishes with no page at all",
+      "a server that is already signed in, or does not connect, needs no sign-in",
+      "a failing sign-in ends failed with the SDK's words, masked",
+      "a cancel before the sign-in started stops it there; the SDK is never called",
+      "a cancel before the page is shown is applied the moment the SDK asks for the address",
+      "a cancel while the page is shown answers the SDK's prompt with an empty value",
+      "the time limit ends a waiting sign-in, which is forgotten a while after",
+      "a second start for the same server joins the sign-in under way; once it ended, a start begins anew",
+      "a new sign-in of a URL waits until the previous one has unwound",
+      "a sign-in nobody polls goes on by itself",
+      "a sign-in whose entry may no longer connect ends signed in, without connecting again",
+      "a sign-in masks the oauth.clientSecret it resolved wherever a message quotes it",
+      "mcpOAuthUrl follows the SDK: an HTTP entry without an Authorization header, in any case",
+      "signing out deletes the server's credentials, cancels its sign-in, and never creates mcp-auth.json",
+      "signing out stops a code exchange already on its way from storing its tokens",
+      "signing out also bars a cancelled run that is still refreshing, but not a sign-in started after it",
+      "a sign-in's connection gets the guard its credential store calls before writing",
+      "guardedCredentialStore is the SDK's store over mcp-auth.json, whose writes call the guard first",
+      "a sign-in that has its code when the limit comes gets one grace period to finish"
+    ]
+  },
+  {
+    "file": "lib/mcp-status.test.mjs",
+    "calls": 7,
+    "names": [
+      "a status is keyed by scope, file and name, so same-named entries never share one",
+      "a status recorded for other content is stale: dropped, and not back when the entry is changed back",
+      "the listing gets each server's current status, and a read file's vanished names lose theirs",
+      "the store is bounded, dropping the entry written longest ago, and lives on globalThis",
+      "a writer behind the file never replaces the record for the entry as the file holds it",
+      "a writer forgets only the record it wrote, never one written since",
+      "sessions whose /mcp is another extension's are held per session, the panel's folder first"
+    ]
+  },
+  {
+    "file": "lib/mcp-test.test.mjs",
+    "calls": 20,
+    "names": [
+      "a stdio server connects, lists its tools, and never sees PI_WEB_PASSWORD",
+      "a server that cannot start reports the SDK's message, with its stderr tail apart",
+      "a server's tool fields other than name and schema are read only when they are strings, and it is closed either way",
+      "an oversized error is masked first and then shortened, so no secret is cut in half",
+      "a server that never answers is stopped at the deadline, and the answer does not wait for it to exit",
+      "the hang fixture ends by itself once the test process that started it is gone",
+      "each request waits at most the test's request timeout, whatever the entry says",
+      "an HTTP server that answers 401 with a challenge needs a sign-in",
+      "a failing !command is named by its field, never by its text",
+      "a !command's text is masked where the SDK quotes it, and its words never garble other words",
+      "URL and argument secrets are masked where a message quotes them on their own",
+      "literal values, what references resolved to, and URL and argument secrets are masked in messages",
+      "tests of entries that run a shell command run one at a time; others run alongside",
+      "a press after every caller gave up starts a new test, even while the old one still closes",
+      "presses on the same entry join its test; another folder is another test",
+      "a sign-out while an OAuth entry's test runs keeps its result out of the record, and the next press starts afresh",
+      "a test every caller gave up on is stopped and not recorded; one still awaited is",
+      "a deadline that passes is recorded as no answer; a queue that holds a test past it never starts that test",
+      "a connect that ignores the deadline still ends the test shortly after it",
+      "an aborted signal connects nothing"
+    ]
+  },
+  {
+    "file": "lib/mcp-tool-display.test.mjs",
+    "calls": 2,
+    "names": [
+      "an MCP call reads server/tool only from its result's details",
+      "a result that is one JSON document is indented, anything else is kept"
+    ]
+  },
+  {
+    "file": "lib/mcp-transport.test.mjs",
+    "calls": 11,
+    "names": [
+      "stdio servers start without the variables that configure or guard pi-web",
+      "a stdio server's stderr reaches the connection error",
+      "closing the connection ends the server and the processes it started",
+      "an entry's own env applies on top of the sanitized environment",
+      "on Windows, names match whatever their casing",
+      "stdio transports keep every option the SDK's transport passes",
+      "HTTP servers use the SDK's transport unchanged",
+      "refuses entries whose resolved values reference PI_WEB_PASSWORD",
+      "a refused entry fails to connect without starting a process",
+      "never falls back to a transport pi-web did not sanitize",
+      "the values pi resolves are walked as the transport walks them, on unvalidated entries too"
+    ]
+  },
+  {
+    "file": "lib/mcp-undo.test.mjs",
+    "calls": 6,
+    "names": [
+      "a removal is held for 60 seconds by default and taken back once",
+      "an expired removal cannot be taken, and its timer forgets it on its own",
+      "a failed undo hands the removal back for the time it had left",
+      "a hold never keeps the process alive",
+      "the oldest removal goes first once the store is full",
+      "the store is one per process, whichever copy of the module holds it"
+    ]
+  },
+  {
+    "file": "lib/model-catalog-refresh.test.mjs",
+    "calls": 5,
+    "names": [
+      "catalog signature ignores the order models are listed in",
+      "catalog signature moves when a model is added, renamed, or changes provider",
+      "catalog signature does not confuse a provider/id split with a model id",
+      "PI_OFFLINE keeps its pi meaning: any value, empty included, disables the network",
+      "an offline refresh says so instead of building a runtime"
+    ]
+  },
+  {
+    "file": "lib/model-catalog.test.mjs",
+    "calls": 9,
+    "names": [
+      "flattens supported models.dev metadata and prices",
+      "ranks exact model IDs and provider hints first",
+      "prefers an exact Pi provider match",
+      "matches canonical and catalog Base URLs by hostname",
+      "uses stable metadata and price consensus with cache modes",
+      "defaults omitted consensus cache prices to zero",
+      "accepts a unique five-record price plurality below 60 percent",
+      "still rejects four-record pluralities and five-record ties",
+      "refuses tied or single-record fallback prices"
+    ]
+  },
+  {
+    "file": "lib/model-discovery.test.mjs",
+    "calls": 5,
+    "names": [
+      "builds protocol-appropriate model list URLs",
+      "parses OpenAI, Anthropic, Google, and string model lists",
+      "resolves environment-backed headers without an API key",
+      "resolves the effective base URL and API for the requested provider",
+      "asks for a Base URL when a custom provider has none and pi ships no endpoint"
+    ]
+  },
+  {
+    "file": "lib/model-scope.test.mjs",
+    "calls": 16,
+    "names": [
+      "returns every available model when no patterns are configured",
+      "expands provider globs alongside exact references (#307)",
+      "matches bare model id globs across providers without duplicates",
+      "rejects an ambiguous bare exact model id before fuzzy matching",
+      "accepts provider-qualified and unique bare exact model ids",
+      "rejects an ambiguous bare exact model id with a thinking suffix",
+      "keeps thinking-level suffixes out of the matched reference and reports them as pins",
+      "leaves models without a pinned thinking level unpinned",
+      "keeps models that matched and stays quiet about leftover unmatched globs",
+      "keeps unmatched exact and malformed glob warnings when another model matches",
+      "falls back to all available models when nothing matches at all",
+      "selects the saved scoped default and applies its thinking pin",
+      "uses the saved default without creating a synthetic scope when unconfigured",
+      "uses resolver order when the saved default is outside the enabled scope",
+      "applies a requested scoped model pin unless thinking was explicitly overridden",
+      "rejects an explicit model outside the enabled scope"
+    ]
+  },
+  {
+    "file": "lib/models-cache.test.mjs",
+    "calls": 6,
+    "names": [
+      "caches model data independently for each cwd",
+      "shares one loader between concurrent requests for the same cwd",
+      "does not cache a stale load that finishes after invalidation",
+      "retries after a model load fails",
+      "adds runtime errors without discarding available models",
+      "uses a safe error for unexpected model load failures"
+    ]
+  },
+  {
+    "file": "lib/node-cli.test.mjs",
+    "calls": 4,
+    "names": [
+      "both bundled install layouts are probed",
+      "the Windows layout wins when both candidates exist",
+      "npm and npx run through node instead of a .cmd shim",
+      "a missing CLI script keeps the bare command and its args"
+    ]
+  },
+  {
+    "file": "lib/node-version.test.mjs",
+    "calls": 4,
+    "names": [
+      "accepts the minimum supported Node.js version and newer versions",
+      "rejects older and invalid Node.js versions",
+      "keeps the package engine aligned with the startup check",
+      "reports both the required and current Node.js versions"
+    ]
+  },
+  {
+    "file": "lib/pi-web-node-args.test.mjs",
+    "calls": 3,
+    "names": [
+      "passes the no-wasm-lazy-compilation flag to Node on RISC-V",
+      "keeps the existing Node arguments on other architectures",
+      "does not mutate the caller's Next.js arguments"
+    ]
+  },
+  {
+    "file": "lib/pi-web-options.test.mjs",
+    "calls": 11,
+    "names": [
+      "opens the browser by default",
+      "supports --help and -h without starting the server",
+      "rejects unknown options with a help hint",
+      "rejects unexpected positional arguments",
+      "CLI writes help and parse errors before exiting",
+      "supports the no-open CLI option",
+      "supports truthy PI_WEB_NO_OPEN values",
+      "does not disable browser opening for false PI_WEB_NO_OPEN values",
+      "preserves port and hostname options",
+      "rejects port values that could inject cmd arguments",
+      "supports PI_WEB_HOSTNAME without trusting the ambient system HOSTNAME"
+    ]
+  },
+  {
+    "file": "lib/process-lifecycle.test.mjs",
+    "calls": 8,
+    "names": [
+      "forwards the first shutdown signal and force-kills on repeated signals",
+      "propagates a child exit code and clears its shutdown wiring",
+      "force-kills the child when graceful shutdown times out",
+      "uses conventional exit statuses for known child signals",
+      "reports a spawn failure instead of crashing on an unhandled error event",
+      "names the reason when the child stops on its own",
+      "keeps the shutdown fallback armed when signaling the child fails",
+      "stays quiet for a shutdown the user asked for"
+    ]
+  },
+  {
+    "file": "lib/provider-api-key-route.test.mjs",
+    "calls": 1,
+    "names": [
+      "API key saves do not use ModelRuntime.login's network refresh"
+    ]
+  },
+  {
+    "file": "lib/provider-credential-store.test.mjs",
+    "calls": 5,
+    "names": [
+      "removes only the expected credential type and preserves other providers",
+      "stores a provider credential while preserving other providers",
+      "a stale API-key delete cannot remove a newly stored OAuth credential",
+      "missing credentials are a successful no-op",
+      "saving and removing an API key updates the SDK authentication status"
+    ]
+  },
+  {
+    "file": "lib/provider-listing.test.mjs",
+    "calls": 8,
+    "names": [
+      "lists an API-key-configured dual-auth provider in the API-key list (#309)",
+      "an OAuth-authenticated provider counts as configured only in the OAuth list",
+      "switching auth method moves the provider between lists in both directions",
+      "environment-provided keys are reported as configured",
+      "custom models.json providers stay out of the API-key list",
+      "providers without an API-key login method are excluded",
+      "keeps friendlier OAuth labels and falls back to the provider name",
+      "duplicate provider ids are collapsed"
+    ]
+  },
+  {
+    "file": "lib/provider-usage.test.mjs",
+    "calls": 5,
+    "names": [
+      "recognizes only providers with usage adapters",
+      "accepts only the official origin for provider usage credentials",
+      "normalizes Codex windows into remaining percentages and reset times",
+      "normalizes MiniMax token-plan counts using the reported remaining percent",
+      "normalizes OpenCode Go windows into remaining percentages and reset times"
+    ]
+  },
+  {
+    "file": "lib/rotate-preview-secrets.test.mjs",
+    "calls": 8,
+    "names": [
+      "rotates all three preview secrets away from the published values",
+      "preserves the rest of the manifest and leaves no temp files",
+      "produces a different previewModeId on every call",
+      "reports a reason instead of throwing when the manifest is missing",
+      "reports unreadable for malformed JSON",
+      "reports unexpected-shape when there is no preview block",
+      "reports unwritable and leaves the manifest untouched on a read-only dir",
+      "the rotation warning names the bypass header so the risk is visible"
+    ]
+  },
+  {
+    "file": "lib/subagent-extension.integration.test.mjs",
+    "calls": 3,
+    "names": [
+      "subagent control tools are declared to the model but cannot be called from another tool",
+      "Agent resume rejects creation overrides before dispatch and accepts empty defaults",
+      "a session with the subagent feature switched off registers no control tools"
+    ]
+  },
+  {
+    "file": "lib/subagent-extension.test.mjs",
+    "calls": 19,
+    "names": [
+      "integrated extension exposes the legacy-compatible tool names",
+      "control tools are model-only and activated on registration",
+      "integrated extension registers no tools while its feature is disabled",
+      "Agent tool description lists enabled effective profiles and refreshes when its factory reloads",
+      "integrated extension removes a legacy extension that owns the same tools",
+      "integrated extension removes recognized legacy extensions with any reserved tool",
+      "foreground Agent streams updates and returns the completed result",
+      "only the background notification text marks itself as not a user message",
+      "a resumed run's notification says it supersedes the earlier report (#985)",
+      "foreground Agent reports startup and execution failures as tool errors",
+      "Agent resume routes the prompt to the existing-session runtime",
+      "background Agent returns immediately and delegates one completion notification",
+      "get_subagent_result covers missing, running, completed, failed, and aborted runs",
+      "get_subagent_result wait honors abort signals",
+      "steer_subagent returns success and runtime failures",
+      "legacy preference leaves unrelated and partial-overlap extensions intact",
+      "collecting a finished background result marks it consumed so the completion notification is skipped",
+      "a background result that is still running is not marked consumed",
+      "a foreground result is not marked consumed because it never notifies the parent"
+    ]
+  },
+  {
+    "file": "lib/subagent-input.test.mjs",
+    "calls": 3,
+    "names": [
+      "loads cwd-relative UTF-8 files and formats them as delegated user input",
+      "rejects files outside cwd, including symlink targets",
+      "rejects invalid UTF-8 and bounded input sets"
+    ]
+  },
+  {
+    "file": "lib/subagent-isolation.test.mjs",
+    "calls": 2,
+    "names": [
+      "isolated worktrees are unique, write-safe, and cleaned without deleting dirty work",
+      "worktree isolation rejects non-git directories"
+    ]
+  },
+  {
+    "file": "lib/subagent-prompt.test.mjs",
+    "calls": 4,
+    "names": [
+      "a tool-free subagent uses only its profile as the exact system prompt",
+      "a tool-enabled subagent retains inherited context in its appended system prompt",
+      "a resource-enabled tool-free subagent keeps the normal system prompt pipeline",
+      "replace prompt mode makes the profile body the exact system prompt"
+    ]
+  },
+  {
+    "file": "lib/subagent-queue.test.mjs",
+    "calls": 2,
+    "names": [
+      "runs FIFO with a per-parent concurrency limit and drains after completion",
+      "cancels queued work without starting it"
+    ]
+  },
+  {
+    "file": "lib/subagent-settings.test.mjs",
+    "calls": 5,
+    "names": [
+      "subagent settings default the built-in extension to disabled",
+      "subagent settings persist both states and preserve unrelated fields",
+      "disabling a built-in is a minimal edit of the stored name list",
+      "a name no built-in claims is kept, and a damaged list is ignored",
+      "damaged settings fail closed and are not overwritten"
+    ]
+  },
+  {
+    "file": "lib/subagent-skills.test.mjs",
+    "calls": 2,
+    "names": [
+      "explicit disable keeps extension-contributed skills, as pi's noSkills does",
+      "named discovery preserves SDK diagnostics while hiding collision winners privately"
+    ]
+  },
+  {
+    "file": "lib/subagents.test.mjs",
+    "calls": 41,
+    "names": [
+      "built-in profile IDs use lowercase kebab-case and read-only profiles cannot execute shell commands",
+      "override detection follows scope precedence case-insensitively",
+      "project profiles override built-ins and round-trip their runtime settings",
+      "tintinweb extension selectors stay scoped to the selected extension tools",
+      "extension selectors resolve scoped npm names and unambiguous short names",
+      "a pinned npm source contributes its package name, not the pin",
+      "one package shipping several extension files stays addressable as a unit",
+      "extension selectors keep wildcard, trailing-slash and name/* semantics",
+      "a shared basename or unscoped name stays unaddressable",
+      "a longer name wins over a shorter unrelated one",
+      "auto-discovered and settings-listed extensions are never one unit",
+      "a denied extension covers selectors scoped below it",
+      "deny selectors are resolved against the same aliases as the grant",
+      "an uppercase EXT: selector round-trips and a denied extension blocks its star spelling",
+      "tool names stay case-sensitive while extension names do not",
+      "reads tintinweb profile aliases and frontmatter identity",
+      "persisted subagent metadata reconstructs the final run",
+      "persisted subagent resources restore the exact isolated prompt and tools",
+      "legacy subagent resource snapshots keep skills and extensions disabled",
+      "named skill scopes normalize without losing an explicit off switch",
+      "skill defaults and aliases retain main's activation priority without coercing lists",
+      "persisted named scopes never broaden malformed lists",
+      "an extensions list scopes loading while the switch keeps main's spellings",
+      "a save keeps an extensions list as authored and rewrites only switch spellings",
+      "persisted extension scopes never broaden malformed lists",
+      "an extension scope keeps named extensions, pi-web's inline ones, and their registrations only",
+      "the extension switch wins over a list and no list loads every extension",
+      "extension tools are merged while subagent control tools stay excluded",
+      "an empty tool selection round-trips without restoring default tools",
+      "saved profiles normalize runtime values and reject invalid settings",
+      "project profiles override workspace profiles and deletion restores the workspace version",
+      "global and project sources with the same name stay visible while project wins at runtime",
+      "global profiles round-trip and deleting an override restores the built-in",
+      "a built-in is switched off through settings.json, not a copied-out file",
+      "disabled profiles cannot be resolved for execution",
+      "persisted runs distinguish interrupted, failed, aborted, and latest results",
+      "project profile directories cannot escape cwd through symbolic links",
+      "a save keeps frontmatter keys this app does not manage",
+      "a save refuses to overwrite malformed existing frontmatter",
+      "the pi-subagents flag aliases are seeded, kept in step, and never overwrite a whitelist",
+      "profile flags fall back to the pi-subagents spellings"
+    ]
+  },
+  {
+    "file": "lib/web-auth-lifecycle.test.mjs",
+    "calls": 7,
+    "names": [
+      "the session surface answers whether this deployment is gated, without a session of its own",
+      "every other route still requires the session cookie",
+      "logging out from another origin is refused and writes no cookie",
+      "logging out clears the cookie the login set, with the same attributes",
+      "a secure deployment clears the cookie with the same Secure attribute the login set",
+      "after logout the gate no longer accepts the session, and both name the same cookie",
+      "an unsupported method on the session surface is named rather than answered as a capability"
+    ]
+  },
+  {
+    "file": "lib/web-auth-proxy.test.mjs",
+    "calls": 9,
+    "names": [
+      "redirects page navigation to the login page and preserves its query",
+      "accepts a signed session for pages",
+      "keeps Basic Auth compatibility for APIs but not pages",
+      "leaves the login endpoint reachable without a session",
+      "a wrong Basic password blocks further attempts, even with the right password",
+      "GET /api/web-auth cannot be used to check Basic passwords without the throttle",
+      "a signed session keeps working while Basic attempts are blocked",
+      "only Basic credentials count as password attempts",
+      "a Basic success does not reset earlier failures"
+    ]
+  },
+  {
+    "file": "lib/web-auth.test.mjs",
+    "calls": 6,
+    "names": [
+      "enables password authentication only for a non-empty configured password",
+      "accepts only the fixed pi username and configured password",
+      "supports UTF-8 passwords and colons in the password",
+      "rejects missing, malformed, and non-canonical authorization values",
+      "does not authenticate when password protection is disabled",
+      "creates signed sessions that expire and cannot be altered"
+    ]
+  },
+  {
+    "file": "lib/web-push.test.mjs",
+    "calls": 10,
+    "names": [
+      "generates and persists VAPID keys when no state exists",
+      "reuses persisted VAPID keys",
+      "addSubscription upserts by endpoint and persists",
+      "addSubscription persists even after getVapidPublicKey already saved",
+      "notifySessionComplete sends localized payloads with the session name",
+      "notifySessionComplete falls back to the localized generic title",
+      "notifySessionComplete prunes subscriptions dropped by the push service",
+      "localeText falls back to English for unknown locales",
+      "push requests immediate delivery with a long TTL",
+      "vapidSubject defaults to a valid https URL, not mailto:localhost"
+    ]
+  }
+]

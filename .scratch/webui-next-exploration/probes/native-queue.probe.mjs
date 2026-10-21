@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+const serverRoot = new URL("../../../apps/server/", import.meta.url);
+const require = createRequire(new URL("package.json", serverRoot));
+const { Harness, MemoryStorage, createRegistry, InboxDoc } = await import(require.resolve("@earendil-works/pi-durable"));
+const { createModels } = await import(new URL("node_modules/@earendil-works/pi-ai/dist/models.js", serverRoot));
+const { fauxProvider, fauxAssistantMessage } = await import(new URL("node_modules/@earendil-works/pi-ai/dist/providers/faux.js", serverRoot));
+const context = {};
+let modelCalls = 0;
+const faux = fauxProvider();
+faux.setResponses(Array.from({ length: 6 }, () => async () => { modelCalls += 1; return fauxAssistantMessage("done"); }));
+const models = createModels();
+models.setProvider(faux.provider);
+const all = process.argv.includes("--all");
+const harness = await Harness.open(new MemoryStorage(), { models, registry: createRegistry(), settings: all ? { followUpMode: "all" } : {} }, context);
+try {
+  const conversation = await harness.createConversation({ ownership: { kind: "ownerless" }, agent: { model: { provider: "faux", modelId: "faux-1" } } }, context);
+  const queueOnly = async (requestId, content) => conversation.commit(async tx => {
+    const existing = await tx.submissionByRequest(conversation.id, requestId);
+    if (existing) return existing.id;
+    const inbox = await tx.doc(InboxDoc, conversation.id);
+    const record = await tx.createSubmission({ conversationId: conversation.id, requestId, type: "input", status: "queued" });
+    inbox.items.push({ id: record.id, mode: "followUp", content });
+    return record.id;
+  }, context);
+  const readQueue = async () => (await harness.snapshot(InboxDoc, conversation.id, context)).items;
+  const first = await queueOnly("probe-first", "original");
+  assert.equal(await queueOnly("probe-first", "duplicate"), first);
+  harness.resume();
+  await conversation.waitForIdle(context);
+  assert.equal(modelCalls, 0);
+  assert.equal((await readQueue()).length, 1);
+  assert.equal((await (await harness.submission(first, context)).status(context)).status, "queued");
+  await conversation.commit(async tx => {
+    const inbox = await tx.doc(InboxDoc, conversation.id);
+    inbox.items.find(item => item.id === first).content = "edited";
+  }, context);
+  assert.equal((await readQueue())[0].content, "edited");
+  assert.equal(await harness.abortSubmission(first, context, conversation.id), "aborted");
+  assert.equal((await readQueue()).length, 0);
+  console.log(JSON.stringify({ case: "native queue-only, dedup, edit, cancel", modelCalls, passed: true }));
+  const second = await queueOnly("probe-second", "queued report");
+  await conversation.submit({ type: "write", requestId: "probe-passive", entry: { kind: "probe.note", data: { text: "passive" } } }, context);
+  await conversation.waitForIdle(context);
+  assert.equal(modelCalls, 1);
+  assert.equal((await (await harness.submission(second, context)).status(context)).status, "done");
+  console.log(JSON.stringify({ case: "passive write flushes queued input and triggers run", modelCalls, passed: true }));
+  await conversation.submit({ type: "write", requestId: "probe-passive-empty", entry: { kind: "probe.note", data: { text: "passive empty" } } }, context);
+  await conversation.waitForIdle(context);
+  assert.equal(modelCalls, 1);
+  console.log(JSON.stringify({ case: "passive write with empty inbox does not trigger run", modelCalls, passed: true }));
+  await queueOnly("probe-third", "before continue");
+  await conversation.submit({ type: "input", requestId: "probe-continue", content: "continue" }, context);
+  await conversation.waitForIdle(context);
+  assert.equal((await readQueue()).length, 0);
+  const messages = (await conversation.context(context)).messages;
+  assert.ok(JSON.stringify(messages).includes("before continue"));
+  assert.equal(modelCalls, all ? 2 : 3);
+  console.log(JSON.stringify({ case: "explicit input drains native queue", followUpMode: all ? "all" : "one-at-a-time", modelCalls, passed: true }));
+} finally {
+  await harness.close(context);
+}

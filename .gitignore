@@ -1,0 +1,29 @@
+node_modules/
+.next/
+# The static builds of the two hosts: produced artifacts, not sources.
+apps/web/dist/
+apps/app/dist/
+apps/app/.bundle-test/
+# The shell's Cargo build tree, and the local knowledge-base index a session creates.
+apps/app/src-tauri/target/
+.serena/
+*.tsbuildinfo
+apps/server/public/chat.js
+apps/web/next-env.d.ts
+**/data/
+# `pnpm dev` keeps its development SQLite files here.
+.dev/
+.env
+.env.local
+.env.*.local
+deploy/.env
+# Real host names, addresses, logins and roots for the deployment roles; placeholders live in docs.
+deploy/deploy.local.env
+
+# graphify local graph and cache artifacts (cc-switch skill); graphify-deep/ holds the
+# optional deep semantic graph, kept separate from the default AST graph.
+graphify-out/
+graphify-deep/
+
+# Pi harness user/workspace runtime state and agent profiles
+.pi/

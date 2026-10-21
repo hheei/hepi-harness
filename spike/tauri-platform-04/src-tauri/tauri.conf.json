@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "hepi-spike-04",
+  "version": "0.0.0",
+  "identifier": "dev.hepi.spike04",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "hepi spike 04",
+        "width": 900,
+        "height": 700,
+        "visible": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; connect-src 'self' http://127.0.0.1:18080 http://127.0.0.1:18081 http://127.0.0.1:18090; img-src 'self' data: blob:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  }
+}

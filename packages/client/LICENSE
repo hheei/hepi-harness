@@ -1,0 +1,10 @@
+UNLICENSED
+
+Copyright (c) 2026 the Hepi Harness authors. All rights reserved.
+
+This package is published for the Hepi Harness project without a license grant. No permission is granted to use,
+copy, modify, distribute or sublicense this package or its contents except as separately agreed in writing with the
+copyright holders. The repository this package was built from carries no root LICENSE and no broader grant.
+
+This package bundles third-party code under its own license terms. Those terms, and the notices they require, are in
+THIRD_PARTY_NOTICES.md and in the license comments preserved at the end of each file in dist/.

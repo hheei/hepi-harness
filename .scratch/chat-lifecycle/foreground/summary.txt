@@ -1,0 +1,28 @@
+FAILED: scene1: no completion tone while the provider is held before its first token ([{"t":1573,"freq":523.25,"contextState":"running"},{"t":1573,"freq":659.25,"contextState":"running"}]) | scene1: the sent turn is still on screen while the provider is held | scene1 control: exactly one completion tone once the answer exists ([{"t":1573,"freq":523.25,"contextState":"running"},{"t":1573,"freq":659.25,"contextState":"running"}]) | scene1: the tone followed the answer rather than preceding it | scene2: the held conversation read does not hold the surface on Loading | scene2: the transcript arrived from the stream's projection while the read was held | scene3: an aborted run plays no completion tone ([{"t":1357,"freq":523.25,"contextState":"running"},{"t":1357,"freq":659.25,"contextState":"running"}]) | scene3: the reason the runtime gave is shown to the user ("aborted") | scene4: no tone while the run carrying the steer is still held | scene4 control: both inputs settled with one shared answer ([["49","53"],["52","56"]]) | scene4: a steer group sharing one answer sounds exactly once ([{"t":1360,"freq":523.25,"contextState":"running"},{"t":1360,"freq":659.25,"contextState":"running"}])
+FAILED: scene1: the sent turn is still on screen while the provider is held | scene1 control: exactly one completion tone once the answer exists ([{"t":3102,"freq":523.25,"contextState":"running"},{"t":3102,"freq":659.25,"contextState":"running"}]) | scene1: the tone followed the answer rather than preceding it | scene4 control: both inputs settled with one shared answer ([["49","53"],["52","56"]]) | scene4: a steer group sharing one answer sounds exactly once ([{"t":2965,"freq":523.25,"contextState":"running"},{"t":2965,"freq":659.25,"contextState":"running"},{"t":2978,"freq":523.25,"contextState":"running"},{"t":2978,"freq":659.25,"contextState":"running"}])
+FAILED: scene1 control: exactly one completion tone once the answer exists ([{"t":3086,"freq":523.25,"contextState":"running"},{"t":3086,"freq":659.25,"contextState":"running"}]) | scene4: one tone per distinct answer, never per submission frame ([["49","53",2996],["52","56",3009]] -> [{"t":2998,"freq":523.25,"contextState":"running"},{"t":2998,"freq":659.25,"contextState":"running"},{"t":3009,"freq":523.25,"contextState":"running"},{"t":3009,"freq":659.25,"contextState":"running"}])
+FAILED: driver error: Cannot access 'answerTones' before initialization
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+FAILED: scene1 control: exactly one completion tone once the answer exists ([{"t":3107,"oscillators":1},{"t":3108,"oscillators":1}])
+PASSED
+PASSED
+FAILED: scene4: one tone per distinct answer, never per submission frame ([["49","53",2987],["52","56",2998]] -> [{"t":2988,"oscillators":4}])
+FAILED: scene4: one tone per distinct answer, never per submission frame ([["49","53",2987],["52","56",2988]] -> [{"t":2988,"oscillators":4}])
+FAILED: scene4: one tone per distinct answer, never per submission frame ([["49","53",2981],["52","56",2983]] -> [{"t":2982,"oscillators":4}])
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED

@@ -1,0 +1,3 @@
+/* The shared sidebar stylesheet, from the package the workbench moved into (ticket 05). */
+@import "@hepi/ui/styles/sidebar.css";
+@import "@hepi/ui/styles/sidebar-menu.css";

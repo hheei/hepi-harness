@@ -1,0 +1,3 @@
+/* The panel's own stylesheet, from the shared package the workbench moved into: `apps/web/app/settings.css` was the
+   Next app's copy and no longer exists (ticket 05). */
+@import "@hepi/ui/styles/settings.css";

@@ -1,0 +1,795 @@
+[
+  {
+    "file": "hooks/context-usage.test.mjs",
+    "calls": 7,
+    "names": [
+      "a usage read applies the answer it asked for",
+      "a newer usage read wins over a delayed one",
+      "a usage answer that lands after a newer window refines nothing",
+      "a usage answer from the attachment a reconnect replaced refines nothing, even with a larger revision",
+      "usage replies from another session or an unmounted hook are ignored",
+      "failed reads preserve usage and a subsequent read can recover",
+      "only completed assistant messages trigger an immediate usage read"
+    ]
+  },
+  {
+    "file": "hooks/mcp-slash-command.test.mjs",
+    "calls": 12,
+    "names": [
+      "a bare /mcp the built-in owns opens Settings › MCP with no notice and no request",
+      "another extension's /mcp is sent as before",
+      "with several extensions' mcp:1 / mcp:2, a bare /mcp opens Settings and /mcp:1 is sent",
+      "every /mcp subcommand is sent, without asking whose /mcp it is",
+      "a command list still loading is awaited, not guessed",
+      "with no list yet, /mcp asks for one and keeps it",
+      "a list that cannot be read sends /mcp as before",
+      "a list cleared by set_tools is not written back by a request it outdated",
+      "an older request answering after a newer one does not overwrite it",
+      "without a way to open Settings, /mcp is sent",
+      "the /mcp case returns before anything a prompt does, and the list ref has one writer",
+      "AppShell opens Settings on the section the chat asks for"
+    ]
+  },
+  {
+    "file": "hooks/model-loading.test.mjs",
+    "calls": 3,
+    "names": [
+      "model-load failures stay visible through bounded retries and clear on recovery",
+      "cancelling model loads prevents state writes and further retries",
+      "a picked model the folder offers keeps its pinned reasoning level; one it does not list goes back to automatic"
+    ]
+  },
+  {
+    "file": "hooks/useAgentSession.lifecycle.test.mjs",
+    "calls": 25,
+    "names": [
+      "a remount keeps the projection's acquisition sequence, so a fresh stream frame is still accepted",
+      "a page loaded after the stream moved the head is stamped with the head the stream stated",
+      "switching away and back keeps the history the reader had paged in",
+      "a send whose session cannot be created settles the turn, restores the draft once and shows the reason",
+      "a refused steer restores its text and images exactly once",
+      "a ",
+      "a fresh composer releases the stream it acquired, even though its session prop is still null",
+      "rejoining a conversation whose stream was retained asks about the turn it left waiting",
+      "a live completion of the conversation on screen is reported once, so no other owner can sound it",
+      "a run that ended before its stream was acquired is silent: the limit leaves the marker, never a sound",
+      "an oversize refusal is shown by name, settles no turn and restores no draft",
+      "a real backend's refusal to carry a window reaches this surface by name, and settles nothing",
+      "the frame that states no live message is what ends the streaming surface",
+      "a stale HTTP read cannot rewind the facts a fresher stream already stated",
+      "a remount whose read states the revision the projection already holds still hydrates its facts",
+      "a stale read on a remounted conversation leaves the restored view exactly as the page memory left it",
+      "an HTTP read from another attachment keeps the accepted view and asks for a fresh stream",
+      "a stale read publishes none of the facts it carries, not just the transcript",
+      "a refused read publishes none of the shared facts the receiver owns, on either transport",
+      "the accepted window is the one owner of the model and reasoning level, so a refused frame cannot move them",
+      "an agent-state answer that lands after a newer window does not move the model or the reasoning level back",
+      "a state answer from the attachment a reconnect replaced does not move the model or the reasoning level back",
+      "a delayed state answer cannot clear a queue a fresher frame already stated",
+      "a stream frame the fold refuses renders nothing either"
+    ]
+  },
+  {
+    "file": "hooks/useFontPreferences.test.mjs",
+    "calls": 6,
+    "names": [
+      "server rendering uses stable defaults without touching browser APIs",
+      "mounting restores both fonts without opening Settings",
+      "weight edits preserve font names, notify consumers and reset one font atomically",
+      "edits notify all consumers, preserve typed spaces and reset each font independently",
+      "storage changes in another tab, including clear, update the current page",
+      "blocked storage and malformed saved values leave usable defaults and live editing"
+    ]
+  },
+  {
+    "file": "hooks/useGroupDrag.test.mjs",
+    "calls": 15,
+    "names": [
+      "a mouse press that does not move is a click: no drag, and the click goes through",
+      "a mouse drag starts after a few pixels, follows the pointer and drops next to the target",
+      "a click long after a drop, or after a new press, is the user's own",
+      "Escape puts a dragged group back, and is left alone before the drag starts",
+      "a press whose release never came back ends on the next move without buttons",
+      "presses that are no drag: other buttons, Ctrl, a second pointer, the group's own buttons, a disabled tree",
+      "a second pointer or the window losing focus ends a drag",
+      "touch: a swipe scrolls, a long-press picks the group up and holds the list still",
+      "a pen takes the long-press path, not the mouse's threshold",
+      "the context menu ends a press not picked up yet and is held back after",
+      "new rows without the dragged group cancel it; with it, the drop is taken again",
+      "a drag stops when the tree is disabled or hidden",
+      "near an edge the list scrolls, never past the rows' own height",
+      "unmounting mid-drag removes every listener, timer and frame",
+      "the hook's sources stay within the platform rules"
+    ]
+  },
+  {
+    "file": "hooks/useKeyboardShortcuts.test.mjs",
+    "calls": 3,
+    "names": [
+      "Escape stops a running agent when nothing else took the key",
+      "an Escape something nearer already handled does not stop the agent too",
+      "with no run to stop, Escape is left alone"
+    ]
+  },
+  {
+    "file": "hooks/useSessionUiState.test.mjs",
+    "calls": 2,
+    "names": [
+      "a failed first GET settles loaded but not synced; a write response syncs it for good",
+      "a successful first GET sets loaded and synced together and adopts the server's state"
+    ]
+  },
+  {
+    "file": "hooks/useViewportHeight.test.mjs",
+    "calls": 8,
+    "names": [
+      "uses the visual viewport for a focused editor when the keyboard shrinks it",
+      "does not keep the keyboard height after the visual viewport restores",
+      "restores the dynamic height as soon as the editor loses focus",
+      "does not mistake pinch zoom for an open keyboard",
+      "keeps the dynamic viewport height when the visual viewport is not reduced",
+      "detects the keyboard while the page is zoomed",
+      "ignores the Safari toolbar shift while an editor is focused",
+      "falls back to an unscaled comparison for a missing scale"
+    ]
+  },
+  {
+    "file": "lib/agent-client.test.mjs",
+    "calls": 3,
+    "names": [
+      "agent command HTTP rejections are distinguishable from transport failures",
+      "a submission ID is still available when the page is not a secure context",
+      "only an explicit negative prompt acknowledgement is definitive"
+    ]
+  },
+  {
+    "file": "lib/agent-event-connection.test.mjs",
+    "calls": 6,
+    "names": [
+      "two readers of one conversation share one source and both hear every frame",
+      "conversations are independent: one source each, and leaving one leaves the other alone",
+      "a subscription survives a dropped stream and is reconnected by its reader",
+      "a reader can drop and reopen its own source without losing its place",
+      "a released reader hears nothing more, and a handshake that never completes fails its waiter",
+      "an explicit startup error is not retried, and a closed connection revives nothing"
+    ]
+  },
+  {
+    "file": "lib/agent-event-stream.test.mjs",
+    "calls": 15,
+    "names": [
+      "opens the transport before a slow session is ready and snapshots after subscribing",
+      "reports a startup failure in-band after opening the transport",
+      "does not subscribe when the client cancels during startup",
+      "session_shutdown from a live wrapper closes the SSE stream",
+      "does not subscribe when the wrapper died before the snapshot",
+      "closes an already-aborted request and handles a later startup rejection",
+      "connected names the extension UI requests the session replays, so a client can drop the rest",
+      "terminates the stream when an unread, non-rebuildable backlog exceeds the limit",
+      "drops rebuildable deltas while the client is behind instead of disconnecting it",
+      "keeps the start and end of a streamed block while dropping its deltas",
+      "delivers every update to a client that reads promptly",
+      "coalesces a burst of tool updates into the latest one per tool call",
+      "never delivers a tool update after that tool call's end",
+      "discards pending tool updates when the run ends",
+      "replays a running tool's start and latest update after the snapshot"
+    ]
+  },
+  {
+    "file": "lib/agent-event-wire.test.mjs",
+    "calls": 19,
+    "names": [
+      "projects message_update onto Pi 0.84's JSON/RPC delta shape",
+      "keeps tool identity on toolcall_start without sending the cumulative partial",
+      "refreshes late tool identity on toolcall_delta",
+      "does not whitelist assistant delta event types",
+      "rejects a malformed message_update without breaking the stream",
+      "recognizes only the in-flight event already covered by a snapshot",
+      "keeps the existing event omissions and slim agent_end",
+      "forwards tool execution progress without repeating tool arguments",
+      "keeps a model-issued tool start as is",
+      "slims the start of a nested call and keeps its parent",
+      "drops the progress updates of nested calls before rebuilding updates",
+      "sends a tool end without its result",
+      "recognizes nested calls only by a parent id on tool execution events",
+      "keeps the newest calls of a large codemode snapshot and counts the rest",
+      "leaves small codemode snapshots and other tools' details untouched",
+      "serialized codemode progress grows linearly once snapshots hit the limit",
+      "serialized streaming traffic grows linearly with response length",
+      "serialized tool-input traffic grows linearly with write content",
+      "drops transcript system messages before they reach the browser"
+    ]
+  },
+  {
+    "file": "lib/chat-lazy-load.test.mjs",
+    "calls": 7,
+    "names": [
+      "treats only the real message tail as live-follow attached",
+      "shows the scroll-to-latest affordance only when the tail is out of reach",
+      "prompt anchor spacer uses the rendered content end",
+      "prompt anchor spacer includes the viewport deficit for short conversations",
+      "prompt anchor spacer clamps at zero once content can reach the target",
+      "prompt anchor spacer rounds fractional layout measurements up",
+      "streaming content consumes the prompt anchor before advancing the tail"
+    ]
+  },
+  {
+    "file": "lib/chat-only.test.mjs",
+    "calls": 2,
+    "names": [
+      "Chat only disables optional resources but retains Pi context discovery",
+      "Chat only preserves Pi context-file order without filtering CLAUDE files"
+    ]
+  },
+  {
+    "file": "lib/chat-phase-label.test.mjs",
+    "calls": 5,
+    "names": [
+      "reports the phase the stream is actually in",
+      "describes the tools currently running",
+      "compaction overrides the model phase so a long compaction does not read as a hang",
+      "a turn staged before the run exists is preparing, not waiting for a model that has not been asked",
+      "compaction flag off keeps the phase label"
+    ]
+  },
+  {
+    "file": "lib/chat-scroll-position.test.mjs",
+    "calls": 5,
+    "names": [
+      "anchors the most recent turn that started before the viewport",
+      "falls back to the last message when the viewport is below all candidates",
+      "uses the first turn when the viewport starts above it",
+      "names which candidate won, so the winning element is not guessed by entry id",
+      "returns null when the conversation has no anchor candidates"
+    ]
+  },
+  {
+    "file": "lib/chat-turn-identity.test.mjs",
+    "calls": 4,
+    "names": [
+      "a leading mid-turn segment is identified by its first message, not by an anchor",
+      "an entry resolves to the turn containing it, including the leading segment",
+      "a turn resolves from the entry it is anchored on, and a leading segment resolves from its first entry",
+      "the leading segment has no anchor message, so a positional turn index counts one turn too few"
+    ]
+  },
+  {
+    "file": "lib/chat-turn-model.test.mjs",
+    "calls": 9,
+    "names": [
+      "describes a complete turn as anchor, process and answer",
+      "groups a leading segment whose page began mid-turn",
+      "a turn with no final answer shows its process open",
+      "the live tail renders as individual messages rather than a collapsed process",
+      "a turn's written files come from its own tool calls and results",
+      "refs are assigned by message identity and are stable across a rebuild",
+      "a search target inside a process group is revealed there",
+      "a search target resolves to its message and block, and to nothing when unloaded",
+      "only the last reply before the next user message carries a timestamp"
+    ]
+  },
+  {
+    "file": "lib/completion-delivery.test.mjs",
+    "calls": 20,
+    "names": [
+      "a nominated conversation's completion is reported from its own live terminal fact",
+      "a nomination with nothing outstanding opens no second stream, and one conversation never has two",
+      "a run that settles immediately after admission is observed, because the interest precedes the dispatch",
+      "history, a baseline acquired after the run ended, a recovery and a resync are all silent",
+      "one answer group is one notice, however many frames carry it",
+      "an abort is not a success, and the reason is never a tone",
+      "the open conversation's frames are its own surface's to fold, so a handover folds nothing twice",
+      "a queued follow-up placed after the first answer keeps the stream, and its own answer is its own notice",
+      "a handover that has nothing to report never takes a watch's interest away",
+      "a send staged but never answered keeps the stream across a leave, and its own answer is reported",
+      "a watch left holding unfinished work keeps its stream until its own frames settle it",
+      "only an answered terminal fact is a completion: an unanswered run is never reported as one",
+      "the open surface reports its own completion through the same registry, and the first owner of an answer is the one that reports it",
+      "idle visits release their stream, however many conversations are opened and left",
+      "a settled projection the owner hands over releases the stream, so a finished conversation holds nothing",
+      "a baseline acquired after the run ended is silent: the limit leaves the marker, never a tone",
+      "a subagent's completion is claimed but never sounded, so no later owner reports it",
+      "a nomination beyond the page's budget holds no source, and the deferred watch acquires when a slot frees",
+      "a mounted terminal tab costs one background slot, and closing it gives the slot back",
+      "the conversation on screen keeps its stream however many background watches are deferred"
+    ]
+  },
+  {
+    "file": "lib/deferred-text.test.mjs",
+    "calls": 8,
+    "names": [
+      "recognises exactly a text block that names the read block restoring it",
+      "reads the block's own URL and returns the entry's text, not the preview",
+      "a failed read rejects and is not cached, so asking again retries",
+      "one block read once serves an expand and the copy that follows it",
+      "a request evicted while it is still in flight does not re-insert itself over a newer one",
+      "the byte bound trims the oldest resolved text and a later ask re-reads it",
+      "restores every text block of one message in order, reading only the deferred ones",
+      "refuses the whole answer when one block cannot be restored"
+    ]
+  },
+  {
+    "file": "lib/history-prefix.test.mjs",
+    "calls": 8,
+    "names": [
+      "a reader who loaded nothing keeps nothing",
+      "the window moving past a loaded prefix migrates the evicted entries into it instead of deleting them",
+      "a reader who never paged gets no prefix invented for them",
+      "an overlap is truncated by id, and a prefix the window now covers is dropped",
+      "a head marker that moved re-baselines: the prefix is dropped, not truncated",
+      "a window that is the whole active range drops the prefix: there is nothing behind it to page to",
+      "deciding twice against the same pair of windows states the same prefix, never a duplicated entry",
+      "a window that did not move keeps the prefix exactly, with nothing to migrate"
+    ]
+  },
+  {
+    "file": "lib/initial-navigation.test.mjs",
+    "calls": 14,
+    "names": [
+      "uses cwd instead of session when both parameters are present",
+      "restores session when cwd is absent",
+      "treats an empty cwd as absent",
+      "preserves a URL-encoded Windows path",
+      "keeps the sidebar open when no sidebar parameter is present",
+      "collapses the sidebar for sidebar=collapsed",
+      "collapses the sidebar when combined with a cwd parameter",
+      "collapses the sidebar when combined with a session parameter",
+      "ignores any other sidebar value",
+      "parses a URL-encoded sidebar parameter",
+      "treats an empty session parameter as absent",
+      "withTabOpen fills tab memory only when the URL chose nothing",
+      "withTabOpen restores a remembered new-session composer as cwd",
+      "first-render navigation matches SSR even when a tab session exists"
+    ]
+  },
+  {
+    "file": "lib/lifecycle-acquisition.test.mjs",
+    "calls": 3,
+    "names": [
+      "an accepted statement carries the common facts the receiver publishes, from either transport",
+      "the fold decides first, and only an accepted statement reports its facts as published",
+      "a read that names no attachment states no window, so the receiver publishes no facts for it"
+    ]
+  },
+  {
+    "file": "lib/lifecycle-projection.test.mjs",
+    "calls": 42,
+    "names": [
+      "a new projection is loading with nothing to show and nothing to announce",
+      "a staged turn plus an idle snapshot announces nothing, so a sound can never precede the answer",
+      "the overlay ends at the placed entry and the answer interest survives the commitment",
+      "an older projection revision never regresses an accepted one",
+      "terminal beats placed beats queued: a later lower-status fact never moves a turn back",
+      "a steer group sharing one answer produces exactly one notice",
+      "separately delivered frames for the same answer are one notice",
+      "a queued follow-up stays pending across an earlier answer and gets its own later notice",
+      "a write's completion and an unanswered abort are never success notices",
+      "a refused submission restores the staged content",
+      "a refusal that names no conversation still settles the turn it is about",
+      "a refusal naming another conversation is a contradiction that keeps the staged turn",
+      "a recovery asks about every unresolved turn by name, once each, and never resends",
+      "a recovery with nothing unresolved asks about nothing",
+      "a fact for another conversation is a protocol issue that keeps the last good view",
+      "a promoted composer binds its conversation and refuses another one",
+      "a terminal input without an answer identity is a protocol contradiction",
+      "a lifecycle fact that moves a placed turn back to the queue is an invalid transition",
+      "readiness leaves loading on the first complete projection from either transport",
+      "a lifecycle-only frame never hydrates the conversation",
+      "a held HTTP read cannot hide a complete stream projection",
+      "a read that fails with no prior projection is unread with a transport issue",
+      "a failed read after a good projection keeps the last view",
+      "a null lookup leaves the interest outstanding and unknown, never rejected and never resent",
+      "an admitted turn the transport lost stays outstanding and unknown, and is never restored or resent",
+      "a recovery lookup settles silently and never rings",
+      "admission is idempotent",
+      "duplicate facts are no-ops",
+      "the unfinished-interest registry is capped and evicts the oldest entries",
+      "a delayed old HTTP projection over a fresh stream keeps the view and asks for a fresh acquisition",
+      "an HTTP read begun after stream acquisition cannot rebase onto another identity",
+      "an older revision from the same projection is ignored",
+      "a cancelled acquisition's late response is fenced out",
+      "a reconnect keeps the good view and a new acquisition takes the new backend's identity",
+      "an acquired baseline whose submission is already terminal is silent",
+      "native activity is the run's inputs, and no run is null",
+      "the view states what is happening: preparation before the run, running with it, idle after it",
+      "an unknown outcome is not work in flight, because its own state is what the surface states",
+      "a refused turn is not work in flight",
+      "an equal-revision snapshot is idempotent",
+      "a terminal lifecycle record survives a snapshot at the same revision",
+      "the fold opens no connection and runs no timer"
+    ]
+  },
+  {
+    "file": "lib/run-marks.test.mjs",
+    "calls": 7,
+    "names": [
+      "a run that ended while the window watched is a marker even though it was never seen running",
+      "a repeated or older end is not an event, and a run in flight states none",
+      "the open conversation and a subagent's are never markers",
+      "a conversation running again keeps the marker for the end it already had",
+      "an empty listing does not consume the baseline, and a family's repeated id marks once",
+      "the input map is not mutated, so a caller can hold it as its own state",
+      "a malformed end is ignored rather than marked"
+    ]
+  },
+  {
+    "file": "lib/scroll-settlement.test.mjs",
+    "calls": 12,
+    "names": [
+      "a target taller than the viewport still counts as arrived",
+      "a target below the viewport is not arrived",
+      "a target above the viewport is not arrived",
+      "a target whose start is far below the alignment is not arrived",
+      "settles a target that is off screen, then stops",
+      "abandons the settlement as soon as the reader scrolls",
+      "a scroll the surface itself makes is not taken for the reader taking over",
+      "the reader's gesture stops the settlement even while it is settling",
+      "gives up after a bounded number of frames instead of scrolling forever",
+      "a target that is not mounted stops the settlement without scrolling",
+      "each way of stopping names its own reason, because the caller acts differently on them",
+      "cancel stops the settlement without reporting an arrival"
+    ]
+  },
+  {
+    "file": "lib/session-family.test.mjs",
+    "calls": 3,
+    "names": [
+      "groups nested subagents under their main session and uses family activity for sorting",
+      "does not promote orphaned or cyclic subagent metadata into the main session list",
+      "a fork is a family of its own, and its subagents fold into it, not into its origin"
+    ]
+  },
+  {
+    "file": "lib/session-file-references.test.mjs",
+    "calls": 14,
+    "names": [
+      "detects exact external file paths referenced in session entries",
+      "does not authorize sibling files by prefix match",
+      "does not authorize paths from transcript system messages",
+      "does not authorize paths from MCP, codemode or extension tool result text",
+      "authorizes paths from coding tool and subagent tool results",
+      "authorizes tool call arguments, including calls to MCP tools",
+      "authorizes the full output path of a non-coding tool result",
+      "authorizes nested coding tool call arguments but not nested call errors",
+      "does not authorize arguments a script passed to a nested MCP call",
+      "keeps authorizing paths from the entries the chat renders",
+      "does not authorize paths from context edit replacements",
+      "authorizes user message paths but not the codemode script store",
+      "authorizes full output only from a bash execution message",
+      "validates session ids before resolving session paths"
+    ]
+  },
+  {
+    "file": "lib/session-fork.test.mjs",
+    "calls": 14,
+    "names": [
+      "copies the file's leaf branch beside the source and leaves the source as it was",
+      "an open wrapper's leaf picks the branch it shows",
+      "a shell-only branch is written even though pi would wait for a message",
+      "refuses what it cannot copy, with a code the sidebar can name",
+      "names the copy after a named source plus a short random suffix, in the copy's file only",
+      "an unnamed source lends its first message, as its sidebar row shows it",
+      "the name the sidebar shows is used even when it was given on another branch",
+      "a long title is shortened by code points: a name, not a whole first message",
+      "a fork of a fork replaces the earlier suffix instead of stacking another",
+      "a shell-only copy is written with its name",
+      "a source with no title of its own leaves the copy unnamed, to take its first real message",
+      "a blank title falls back to the source's id, so forks of the copy do not stack suffixes",
+      "the source's title follows the sidebar row's rule; the row and the toast split the suffix off"
+    ]
+  },
+  {
+    "file": "lib/session-list-scanner.test.mjs",
+    "calls": 7,
+    "names": [
+      "matches SDK metadata and tie ordering across cache hits, mutations, and restarts",
+      "discards malformed persisted entries and rebuilds the list from valid session files",
+      "retains SDK handling of partial lines, activity timestamps, and empty sessions",
+      "defers changed-file details to a later scan",
+      "a summary listing does not downgrade an already-scanned file",
+      "a summary listing defers only the files the index has not scanned",
+      "discovers sessions through project directory symlinks"
+    ]
+  },
+  {
+    "file": "lib/session-liveness.test.mjs",
+    "calls": 7,
+    "names": [
+      "documented global registry contract remains compatible with extensions",
+      "session liveness providers are matched by exact session id or file",
+      "each registration receives an independent idempotent disposer",
+      "malformed registrations are rejected",
+      "provider failures preserve the matching session",
+      "non-stringifiable provider failures preserve the session until recovery",
+      "selected-session leases expire, renew together, and release cleanly"
+    ]
+  },
+  {
+    "file": "lib/session-path.test.mjs",
+    "calls": 2,
+    "names": [
+      "normalizes Windows separators and casing for session identity",
+      "preserves case when session paths are case-sensitive"
+    ]
+  },
+  {
+    "file": "lib/session-reader-latest-entry.test.mjs",
+    "calls": 6,
+    "names": [
+      "returns the newest entry id",
+      "skips the session header so a fresh, entry-less session reads as undefined",
+      "ignores a torn trailing line mid-append",
+      "returns undefined when the file is absent or the path is unknown",
+      "reads only a bounded tail of a large session",
+      "handles CRLF-terminated entries"
+    ]
+  },
+  {
+    "file": "lib/session-reader.pagination.test.mjs",
+    "calls": 18,
+    "names": [
+      "sliceActiveBranch returns the most-recent `tail` ancestors, in time order",
+      "sliceActiveBranch walks from leaf back toward root, not forward",
+      "sliceActiveBranch defaults to the last entry when leafId is null",
+      "deep linear chain (5000 entries) slices without overflowing the stack",
+      "buildSessionContext with tail returns only the tail window",
+      "buildSessionContext without tail still returns the full chain",
+      "buildSessionContext excludeLeaf pages upward without duplicating `before`",
+      "pagination stops before the root instead of returning it again",
+      "pagination preserves chronological order across compaction",
+      "pagination loses no history when compaction kept entries fall outside the page",
+      "tail pagination preserves settings from earlier entries",
+      "buildSessionContext accepts a large tail and returns the whole chain",
+      "real sessions may store assistant content as a string (deferThinking guard)",
+      "session stats cover the full file independently of the displayed tail",
+      "sliceActiveBranch: tail counts visible messages — toolResults ride along free",
+      "sliceActiveBranch: compaction divider counts as visible, custom/meta do not",
+      "sliceActiveBranch: a span of tool traffic with no visible anchors hits the raw cap",
+      "buildSessionContext hasMore stays true when the visible window truncates"
+    ]
+  },
+  {
+    "file": "lib/session-reader.test.mjs",
+    "calls": 32,
+    "names": [
+      "reuses unchanged session managers and invalidates after external appends",
+      "a session larger than the per-file cap is served fresh instead of cached",
+      "the byte budget evicts least-recently-used sessions",
+      "the entry-count cap still applies to small sessions",
+      "renders history and compaction in chronological order with aligned entry IDs",
+      "uses the latest explicit model change instead of assistant response metadata",
+      "preserves earlier history and every compaction on the active path",
+      "uses the selected leaf's path before a later compaction",
+      "returns an empty context for a null leaf",
+      "defers historical thinking without changing live-session content",
+      "does not defer empty historical thinking blocks",
+      "defers only base64 images from historical tool results",
+      "preserves hidden custom messages so the UI can render them collapsed",
+      "preserves valid epoch timestamps on synthetic UI messages",
+      "reads only a bounded session header, including headers larger than 4 KiB",
+      "returns null for malformed or unbounded session headers",
+      "session listing reads subagent relations and terminal status without reopening full session files",
+      "keeps forward and reverse session path caches in sync",
+      "resolves a matching session header without a catalogue scan",
+      "does not resolve a parent path outside the default session storage",
+      "preserves project symlinks exposed by the session catalogue",
+      "falls back to the catalogue when a targeted candidate header is invalid",
+      "falls back to the catalogue when a targeted lookup finds duplicate IDs",
+      "forced session listing bypasses the fresh server cache",
+      "allowStale serves the previous scan and refreshes in the background",
+      "allowStale still rebuilds when there is no previous scan to serve",
+      "an invalidated catalogue still rebuilds for callers that need fresh data",
+      "allowStale reuses a fresh catalogue without scanning",
+      "a scan invalidated in flight retries before returning to its caller",
+      "disk sessions replace runtime snapshots with the same id",
+      "hides transcript system messages and metadata entries while keeping entry ids aligned",
+      "an existing session still reads its history after its historical model leaves the catalog"
+    ]
+  },
+  {
+    "file": "lib/session-row-context-menu.test.mjs",
+    "calls": 3,
+    "names": [
+      "leaves the native context menu unclaimed when no listener is installed",
+      "delivers the stable session-row detail without requiring a listener to claim it",
+      "reports the menu as handled when a listener cancels the extension event"
+    ]
+  },
+  {
+    "file": "lib/session-stats.test.mjs",
+    "calls": 8,
+    "names": [
+      "sums usage across ALL entries, including history compacted away",
+      "counts tool calls and includes tool result usage",
+      "includes branch summary usage",
+      "tolerates entries without usage (older session files)",
+      "returns zeros for an empty session",
+      "full-file stats never shrink relative to the post-compaction context",
+      "adds messages completed after load to compacted file totals",
+      "includes cache-warming usage entries and counts transcript system messages like the SDK"
+    ]
+  },
+  {
+    "file": "lib/session-timing.test.mjs",
+    "calls": 9,
+    "names": [
+      "empty or single-entry session yields zero",
+      "counts active gaps within a turn",
+      "drops human idle before the next user message",
+      "keeps compacted history and compaction time in append order",
+      "counts work appended on every branch exactly once",
+      "treats user-initiated bash as a boundary",
+      "ignores metadata without breaking the active interval",
+      "counts branch summaries and custom messages",
+      "skips invalid timestamps and ignores negative gaps"
+    ]
+  },
+  {
+    "file": "lib/session-title.test.mjs",
+    "calls": 11,
+    "names": [
+      "cleans common session title response wrappers",
+      "rejects responses without a usable title",
+      "names a running session from what it holds right now, without waiting for idle",
+      "generates a title when compaction removed all literal user messages",
+      "title request is a standalone stream and does not reuse the session prefix",
+      "names with the cheapest thinking level the session model accepts",
+      "sends one flat transcript without tool traffic on the session's own model",
+      "keeps every user turn whole and clips replies to their opening",
+      "bounds the transcript so a long session costs no more than a short one",
+      "keeps an image placeholder when a user turn has no text",
+      "refuses to name a session with no usable text"
+    ]
+  },
+  {
+    "file": "lib/session-tool-selection.test.mjs",
+    "calls": 8,
+    "names": [
+      "a missing tool-selection entry identifies a legacy session",
+      "an empty selection is distinct from a missing selection",
+      "the newest valid tool selection wins and invalid newer entries are ignored",
+      "tool selections accept only built-in tools",
+      "appending a selection writes the versioned custom entry",
+      "a cleared entry retracts an earlier pin so the session follows configured defaults",
+      "a cleared entry is not a usable tool selection",
+      "appending a clear writes the versioned custom entry"
+    ]
+  },
+  {
+    "file": "lib/session-tree.test.mjs",
+    "calls": 48,
+    "names": [
+      "a recorded project is named and shown by its own folder, not by the id it is addressed by",
+      "a group whose folder a Project removal retained says so, and its conversations stay listed",
+      "a conversation's own folder is shown as the host reported it, never as its routing path",
+      "family ids list the root first, then every subagent",
+      "forks stay separate rows while subagents fold into their root",
+      "a family is archived until its root session gets a newer message",
+      "a running member keeps the family live; summary rows trust the flag",
+      "pinned requires a pin and a live family; prototype keys never match",
+      "project names use the last path segment on POSIX and Windows",
+      "groups list the current project first among unpinned projects, then by activity",
+      "a cwd that names no workspace is no project group",
+      "pinned projects come first in pin order and use the stored root without sessions",
+      "a project root comes from its newest family",
+      "expanded groups show six families plus running, unread and selected ones",
+      "show more reveals 20 families a click and offers show less",
+      "each click reveals 20 more even when running, unread or selected families sit in the next window",
+      "show less appears only when it would fold rows back",
+      "show more counts are per key, ignore malformed values and leave other keys alone",
+      "explicit group choices win over the current/pinned default",
+      "a group open only because it was current stays open when another project becomes current",
+      "pinned families move to the global section, newest pin first",
+      "the pinned section shows eight families, then more or less",
+      "archived families leave the tree and are counted across projects",
+      "with no sessions and no current or pinned project only the footer remains",
+      "archiving the only conversation in a recorded project retains the empty project group",
+      "row keys are unique and session rows carry transient status",
+      "archive rows group by project, newest archive first",
+      "bulk archive candidates skip pinned, running, unread, selected, transient and recent families",
+      "row offsets follow each kind's height for the layout",
+      "visible indices cover the viewport and overscan, sorted and unique",
+      "visible indices stay valid for short, empty and unmeasured lists",
+      "a row out of view is scrolled to the middle; one in view stays put",
+      "a reveal request is shown while fresh, waits a few rows updates for its row, and is dropped when old",
+      "a project with a place keeps it when another project gets newer activity",
+      "projects without a place come first in their band, those not saved on their own first of all",
+      "the pinned band follows the stored order and stays above the others",
+      "a current project with a place keeps it while it has no sessions",
+      "saving new projects changes nothing on screen",
+      "saving more new projects than one request holds goes bottom first, so nothing moves on screen",
+      "a key sent but still unsaved ends the next batch: nothing is saved above it",
+      "a move with more unsaved projects in its band than one request holds saves the bottom ones",
+      "every drop target, applied with its band's unsaved keys, puts the group where it was dropped",
+      "group blocks run from each header to the bottom of its spacer",
+      "a drop target stays in the dragged group's band and is null where the group already is",
+      "Move up and Move down swap with the neighbour in the band, and stop at its edges",
+      "auto-scroll speeds up toward an edge and is still in the middle",
+      "the drag ghost follows the pointer and moves only to keep clear of it and of the drop line",
+      "the drag ghost uses the room beside the pointer before covering anything"
+    ]
+  },
+  {
+    "file": "lib/session-view-cache.test.mjs",
+    "calls": 13,
+    "names": [
+      "stores, reads, and deletes one snapshot with LRU touch",
+      "refuses snapshots without a session id or revision",
+      "evicts least-recently-used sessions beyond the session cap",
+      "reading a snapshot refreshes its recency",
+      "clearSessionViewCache drops every entry (logout path)",
+      "restores the window, the paged prefix and its head marker by reference",
+      "measures a snapshot once, and never reserializes a stored payload to account for it",
+      "deleting a window releases its measure, so the next write needs no eviction",
+      "clearing the cache releases every measure",
+      "replacing a window releases the measure it replaces",
+      "an expired window releases its measure",
+      "refuses an oversize snapshot without disturbing the stored ones",
+      "refuses a payload that cannot be measured, leaving the cache as it was"
+    ]
+  },
+  {
+    "file": "lib/streaming-message.test.mjs",
+    "calls": 11,
+    "names": [
+      "builds thinking and text blocks from official assistant deltas",
+      "a reconnect snapshot replaces the old partial before deltas continue",
+      "resuming a running session preserves an already-received partial",
+      "a thinking start clears the first chunk leaked into the assistant snapshot",
+      "a text start clears text leaked into the assistant snapshot",
+      "a tool call start clears streamed input leaked into the snapshot",
+      "text deltas update immutably so React observes each chunk",
+      "shows and streams a tool call after thinking, then accepts the authoritative end",
+      "restores the raw tool input from a reconnect snapshot",
+      "ignores deltas without a baseline and unknown future deltas",
+      "normalizes tool calls in snapshots and clears on end"
+    ]
+  },
+  {
+    "file": "lib/transcript-window.test.mjs",
+    "calls": 17,
+    "names": [
+      "mounts the run covering the viewport plus overscan",
+      "a turn taller than the viewport is not skipped",
+      "a reveal mounts the named turn as its own range instead of spanning to it",
+      "a reveal inside the viewport adds no second range",
+      "a reveal adjacent to the viewport merges, so no zero-height spacer is emitted",
+      "unmeasured turns use the estimate and still produce a range",
+      "a transcript that fits the viewport mounts whole",
+      "an empty transcript produces no range and no height",
+      "the tail keeps the turns on screen mounted even when the scroll position overshoots",
+      "a transcript that fits the viewport is mounted whole without being told",
+      "a measured height is used and an absent or zero one falls back to the estimate",
+      "a page prepended in front of the transcript keeps the reader's turn in place",
+      "a turn above the reader growing taller keeps the reader's turn in place",
+      "a turn below the reader growing taller does not move them",
+      "a transcript whose anchored turn is gone is left where it is",
+      "a reader above the first turn is anchored on it rather than left unanchored",
+      "the reader keeps their distance into the anchored turn, whichever way it moved"
+    ]
+  },
+  {
+    "file": "lib/turn-written-files.test.mjs",
+    "calls": 18,
+    "names": [
+      "extracts a file from a successful write tool call",
+      "extracts a file from a successful edit tool call using input.path",
+      "accepts namespaced write/edit tool names from MCP servers",
+      "skips a tool call whose result errored",
+      "skips a tool call whose result has not arrived (streaming)",
+      "deduplicates the same file written then edited",
+      "resolves a relative path against cwd",
+      "resolves extensionless and dot-prefixed filenames against cwd",
+      "preserves path characters that have special meaning in hrefs",
+      "normalizes Windows-relative tool paths against a Windows cwd",
+      "skips non-writing tools like read and bash",
+      "ignores paths that only appear in the reply text",
+      "lists only the file actually written, not others named in the text",
+      "skips a write call missing both file_path and path",
+      "returns an empty array for an empty or text-only turn",
+      "apply_patch uses appliedFiles and drops deletes",
+      "apply_patch returned failures write nothing unless some files applied",
+      "apply_patch falls back to preview newPath and ignores planned deletes"
+    ]
+  }
+]

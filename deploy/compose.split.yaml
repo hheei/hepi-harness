@@ -1,0 +1,24 @@
+# Bridge-network override for deploy/compose.yaml. The backend moves to Compose's default network, so a caller on
+# that network reaches it by service name, and only the host's loopback is published. The backend loses direct access
+# to the host's loopback — read the "Split profile" section of docs/container-deployment.md before using this,
+# especially for the SSH reverse forward.
+#
+# The Web origin is not part of this file: it is the client ingress systemd unit, which runs on the host beside the
+# backend (docs/client-runtime-release.md). An ingress that must reach a bridge backend names it as
+# `HEPI_INGRESS_BACKEND=http://backend:8787` on that same network.
+services:
+  backend:
+    # Clears the base file's `network_mode: host`; without an explicit reset the merge would keep it and the
+    # published ports below would be ignored.
+    network_mode: !reset null
+    # The host port is configurable so a busy 8787 does not force editing this file; the default is the documented
+    # one. Only 127.0.0.1 on the host is published.
+    ports:
+      - "127.0.0.1:${HEPI_BACKEND_PORT:-8787}:8787"
+    environment:
+      # The container's own loopback is not the published one, so the process has to listen on its interface. Only
+      # 127.0.0.1 on the host is published, so the reachable surface is unchanged.
+      HEPI_BIND_HOST: 0.0.0.0
+      # The base file's PORT tracks the host port, which is wrong here: inside this network the backend keeps 8787
+      # and it is the published side that moves.
+      PORT: "8787"

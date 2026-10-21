@@ -1,0 +1,15 @@
+.git
+.github
+.agents
+.scratch
+node_modules
+**/node_modules
+.next
+**/.next
+**/*.tsbuildinfo
+**/data
+# Local configuration, including the app directories the Dockerfiles copy wholesale. `**/` so a nested
+# apps/*/.env.local is covered too; a bare `.env` pattern would only match the repository root.
+deploy
+**/.env
+**/.env.*

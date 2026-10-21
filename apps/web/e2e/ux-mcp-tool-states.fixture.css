@@ -1,0 +1,3 @@
+@import "./ux-skills-inventory-race.fixture.css";
+.mcp-conversation-tools { display: block; }
+.mcp-conversation-server, .mcp-conversation-tool { display: block; }

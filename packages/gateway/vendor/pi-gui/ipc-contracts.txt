@@ -1,0 +1,44 @@
+  payload: SelectedTranscriptRecord | null,
+) => void;
+export type PiDesktopCommand = (typeof desktopCommands)[keyof typeof desktopCommands];
+
+export type ChangedFileStatus =
+  "added" | "copied" | "deleted" | "modified" | "renamed" | "untracked";
+
+export interface ChangedFileEntry {
+  readonly path: string;
+  readonly previousPath?: string;
+  readonly stagingSourcePath?: string;
+  readonly status: ChangedFileStatus;
+  readonly staged: boolean;
+}
+
+export type ChangedFilesErrorCode =
+  "git-status-failed" | "git-status-invalid" | "workspace-unavailable";
+
+export interface ChangedFilesError {
+  readonly code: ChangedFilesErrorCode;
+  readonly message: string;
+}
+
+export type ChangedFilesResult =
+  | {
+      readonly state: "available";
+      readonly files: readonly ChangedFileEntry[];
+    }
+  | {
+      readonly state: "unavailable";
+      readonly error: ChangedFilesError;
+    };
+
+export interface WorkspaceFilePreview {
+  readonly path: string;
+  readonly content: string;
+  readonly truncated: boolean;
+  readonly binary: boolean;
+  readonly sizeBytes: number;
+}
+
+export interface TerminalSize {
+
+[488 more lines in file. Use offset=417 to continue.]

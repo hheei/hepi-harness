@@ -1,0 +1,66 @@
+{
+  "name": "@hepi/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./workbench": "./src/workbench.tsx",
+    "./host-router": "./src/host-router.tsx",
+    "./client": "./src/client.ts",
+    "./components/*": "./src/components/*",
+    "./hooks/*": "./src/hooks/*",
+    "./lib/*": "./src/lib/*",
+    "./lib/mcp-panel": "./src/lib/mcp-panel.ts",
+    "./lib/mcp-import": "./src/lib/mcp-import.ts",
+    "./lib/project-routing": "./src/lib/project-routing.ts",
+    "./lib/third-party-notices": "./src/lib/third-party-notices.ts",
+    "./styles/*": "./src/styles/*"
+  },
+  "scripts": {
+    "test": "node --test $(find src -name '*.test.mjs' | sort)",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.0",
+    "@hepi/protocol": "workspace:*",
+    "@hepi/session": "workspace:*",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
+    "js-yaml": "^5.2.3",
+    "mammoth": "^1.12.0",
+    "micromark-util-types": "^2.0.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "unified": "^11.0.5",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@tanstack/react-virtual": "3.14.19",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mdast": "^4.0.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "ansi_up": "^6.0.6",
+    "esbuild": "0.27.0",
+    "jiti": "^2.7.0",
+    "katex": "^0.16.47",
+    "mermaid": "^11.16.1",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "rehype-katex": "^7.0.1",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-cjk-friendly": "^2.3.2",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "typescript": "^5",
+    "react-router": "^7.18.4",
+    "@tailwindcss/postcss": "^4.2.2"
+  },
+  "peerDependencies": {
+    "react-router": "^7.18.4"
+  }
+}

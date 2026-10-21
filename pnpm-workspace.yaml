@@ -1,0 +1,18 @@
+packages:
+  - packages/*
+  - apps/*
+allowBuilds:
+  '@google/genai': true
+  esbuild: true
+  protobufjs: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@tanstack/react-virtual@3.14.19'
+  - '@tanstack/virtual-core@3.19.4'
+  - '@earendil-works/chord@1.3.0'
+  - '@earendil-works/pi-ai@1.3.0'
+  - '@earendil-works/pi-codemode@1.3.0'
+  - '@earendil-works/pi-durable@1.3.0'
+  - '@earendil-works/pi-telemetry@1.3.0'
+patchedDependencies:
+  '@earendil-works/pi-durable@1.3.0': patches/pi-durable-1.3.0-input-control.patch

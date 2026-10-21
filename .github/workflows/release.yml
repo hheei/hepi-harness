@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      npm-tag: ${{ steps.plan.outputs.npm-tag }}
+      image-prefix: ${{ steps.plan.outputs.image-prefix }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.4.1'
+      - run: pnpm install --frozen-lockfile
+      - run: node --test scripts/release-plan.test.mjs
+      - id: plan
+        run: node scripts/release-plan.mjs --prepare-package
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm --filter @hepi/client build
+      - name: Prepare isolated SSH smoke prerequisites
+        run: |
+          if ! test -x /usr/sbin/sshd; then sudo apt-get update && sudo apt-get install -y openssh-server; fi
+          sudo mkdir -p /run/sshd
+      - run: pnpm --filter @hepi/client smoke:pack
+        env:
+          HEPI_REQUIRE_SSH_SMOKE: '1'
+      - uses: docker/setup-buildx-action@v3
+      - run: bash deploy/docker/smoke.sh
+      - run: mkdir -p release-artifacts && npm pack ./packages/client --pack-destination release-artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: release-artifacts/*.tgz
+          if-no-files-found: error
+
+  npm:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - run: npm install --global npm@11.21.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+          path: release-artifacts
+      - name: Publish with npm Trusted Publishing
+        env:
+          NPM_DIST_TAG: ${{ needs.verify.outputs.npm-tag }}
+        run: npm publish release-artifacts/*.tgz --access public --tag "$NPM_DIST_TAG"
+
+  docker:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/backend.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ needs.verify.outputs.image-prefix }}/backend:${{ needs.verify.outputs.version }}
+            ${{ needs.verify.outputs.image-prefix }}/backend:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.verify.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend

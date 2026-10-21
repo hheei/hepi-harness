@@ -1,0 +1,787 @@
+diff --git a/dist/harness/control.d.ts b/dist/harness/control.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..92bd6a09336884b631079a0c059e1d49d6dab8e3
+--- /dev/null
++++ b/dist/harness/control.d.ts
+@@ -0,0 +1,45 @@
++import type { Context } from "@earendil-works/chord";
++import type { Transaction } from "../session/transaction.ts";
++import type { ConversationId } from "../types.ts";
++import type { ConversationControlState, ContinueConversationRequest, ContinueConversationResult, InboxControl, QueueMode, StopConversationRequest, StopConversationResult } from "./types.ts";
++/** What the control seam needs from the Harness host; the concrete host type is internal to harness.ts. */
++export type ControlHost = {
++    readonly harness: {
++        snapshot(token: unknown, conversationId: ConversationId, context: Context): Promise<unknown>;
++        commitWith<T>(change: (tx: Transaction) => T | Promise<T>, context: Context): Promise<T>;
++    };
++    readonly tasks: {
++        stopConversation<T>(conversationId: ConversationId, context: Context, change: (tx: Transaction) => Promise<{
++            readonly withdraw: boolean;
++            readonly value: T;
++        }>): Promise<{
++            readonly value: T;
++            readonly drain: "idle" | "stopping";
++        }>;
++        commitWhenIdle<T>(conversationId: ConversationId, context: Context, change: (tx: Transaction) => Promise<T>): Promise<{
++            readonly idle: false;
++        } | {
++            readonly idle: true;
++            readonly value: T;
++        }>;
++    };
++    now(): number;
++    queueModes(): {
++        readonly steeringMode: QueueMode;
++        readonly followUpMode: QueueMode;
++    };
++};
++/** The public projection of one conversation's control record. */
++export declare function controlView(control: InboxControl): ConversationControlState;
++/** The control record of one conversation, as a caller reads it. */
++export declare function readControl(host: ControlHost, conversationId: ConversationId, context: Context): Promise<ConversationControlState>;
++/**
++ * Hold a conversation in one commit: persist `held` with the trusted stop source and a new control revision, mark the
++ * ordinary live tasks for abort, and withdraw the queued inputs at this commit point.
++ */
++export declare function stopConversation(host: ControlHost, conversationId: ConversationId, request: StopConversationRequest, context: Context): Promise<StopConversationResult>;
++/**
++ * Resume a held conversation in one commit once the old stop's ordinary scope is idle; while it still drains, answer
++ * `stopping` with the held state and every queued input intact.
++ */
++export declare function continueConversation(host: ControlHost, conversationId: ConversationId, request: ContinueConversationRequest, context: Context): Promise<ContinueConversationResult>;
+diff --git a/dist/harness/control.js b/dist/harness/control.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..b5a3f08791cacfd3b2046874dc9095deee3c1f51
+--- /dev/null
++++ b/dist/harness/control.js
+@@ -0,0 +1,233 @@
++import { copyJson } from "@earendil-works/chord";
++import { admitSubmission } from "./submissions.js";
++import { applyBoundary, controlReceipt, draftControl, InboxDoc, inboxControl, initialControl, prepareBoundary, recordControlReceipt, } from "./inbox.js";
++import { LiveDoc } from "./live.js";
++import { startRun } from "./generation.js";
++/** A stored receipt as a detached value: a draft node cannot be read once its commit settled. */
++function receiptCopy(receipt) {
++    return copyJson(receipt, { omitUndefinedProperties: true });
++}
++/** The answer of a stored receipt, replaying its status and reason so a retry reads exactly like the first answer. */
++function receiptAnswer(receipt) {
++    return {
++        status: receipt.status,
++        ...(receipt.reason === undefined ? {} : { reason: receipt.reason }),
++        receipt: receiptCopy(receipt),
++    };
++}
++/** The public projection of one conversation's control record. */
++export function controlView(control) {
++    return {
++        state: control.state,
++        revision: control.revision,
++        ...(control.stopSource === undefined ? {} : { stopSource: control.stopSource }),
++        ...(control.stoppedAt === undefined ? {} : { stoppedAt: control.stoppedAt }),
++    };
++}
++/** Reject a control request an untyped caller got wrong, before any read or write. */
++function checkControlRequest(request, field) {
++    if (typeof request !== "object" || request === null)
++        throw new TypeError("A control request must be an object");
++    if (typeof request.requestId !== "string" || request.requestId.length === 0)
++        throw new TypeError("A control request needs a non-empty requestId");
++    const source = request[field];
++    if (source !== "user" && source !== "agent")
++        throw new TypeError(`${field} must be "user" or "agent", got ${String(source)}`);
++}
++/** The control record of one conversation, as a caller reads it. */
++export async function readControl(host, conversationId, context) {
++    const state = await host.harness.snapshot(InboxDoc, conversationId, context);
++    return controlView(state === undefined ? initialControl() : inboxControl(state));
++}
++/** Record a rejected control receipt and return its result. */
++function reject(control, operation, request, reason, now) {
++    const receipt = {
++        requestId: request.requestId,
++        operation,
++        status: "rejected",
++        reason,
++        revision: control.revision,
++        ...(operation === "stop" ? { stopSource: request.stopSource } : { caller: request.caller }),
++        at: now,
++    };
++    recordControlReceipt(control, receipt);
++    return { status: "rejected", reason, receipt, control: controlView(control) };
++}
++/**
++ * Hold a conversation: in one commit, persist `held` with the trusted stop source and a new control revision, mark the
++ * ordinary live tasks for abort, and withdraw the queued inputs at this commit point. A request this conversation
++ * already answered is returned unchanged; a later stop while already held keeps the inputs that arrived since and never
++ * downgrades a user stop to an agent one.
++ */
++export async function stopConversation(host, conversationId, request, context) {
++    checkControlRequest(request, "stopSource");
++    const now = host.now();
++    const result = await host.tasks.stopConversation(conversationId, context, async (tx) => {
++        const control = draftControl(await tx.doc(InboxDoc, conversationId));
++        const replay = controlReceipt(control, "stop", request.requestId);
++        if (replay !== undefined)
++            return { withdraw: false, value: { ...receiptAnswer(replay), control: controlView(control) } };
++        if (request.expectedControlRevision !== undefined && request.expectedControlRevision !== control.revision)
++            return { withdraw: false, value: reject(control, "stop", request, "revision_mismatch", now) };
++        if (control.state === "held") {
++            // The first stop withdrew the queued inputs; this one keeps what arrived since, and a user stop upgrades an
++            // agent stop while an agent stop never downgrades a user one.
++            if (request.stopSource === "user" && control.stopSource !== "user")
++                control.stopSource = "user";
++            // Every newly recorded stop intent advances the revision, so no pending continue outlives it.
++            control.revision += 1;
++            const receipt = {
++                requestId: request.requestId,
++                operation: "stop",
++                status: "held",
++                revision: control.revision,
++                stopSource: control.stopSource,
++                at: now,
++            };
++            recordControlReceipt(control, receipt);
++            return { withdraw: false, value: { status: "held", receipt, control: controlView(control) } };
++        }
++        control.state = "held";
++        control.stopSource = request.stopSource;
++        control.stoppedAt = now;
++        control.revision += 1;
++        const receipt = {
++            requestId: request.requestId,
++            operation: "stop",
++            status: "accepted",
++            revision: control.revision,
++            stopSource: request.stopSource,
++            at: now,
++        };
++        recordControlReceipt(control, receipt);
++        return { withdraw: true, value: { status: "accepted", receipt, control: controlView(control) } };
++    });
++    return { ...result.value, drain: result.drain };
++}
++/** Whether this caller may clear the recorded stop source: a user stop yields only to a trusted user continue. */
++function sourceLocked(control, request) {
++    return control.stopSource === "user" && request.caller !== "user";
++}
++/**
++ * What one continue intent decides against the committed control record. A request ID is not authorization: an intent
++ * this conversation already answered is answered again from its receipt, and one that is still pending is settled only
++ * by the caller that recorded it, under the same stop-source rule a first attempt meets.
++ */
++function decideContinue(control, request) {
++    const replay = controlReceipt(control, "continue", request.requestId);
++    if (replay !== undefined && replay.status !== "stopping")
++        return { kind: "receipt", receipt: replay };
++    if (replay !== undefined) {
++        // A pending intent may resume only the exact held state it observed: a later stop supersedes it.
++        if (control.state !== "held" || control.revision !== replay.revision)
++            return { kind: "reject", reason: "superseded" };
++        // The validation runs before the settlement this replay would perform, so a substituted caller cannot clear
++        // the stop or admit its own input.
++        if (sourceLocked(control, request))
++            return { kind: "refuse", reason: "source_locked", receipt: replay };
++        if (replay.caller !== request.caller)
++            return { kind: "refuse", reason: "caller_mismatch", receipt: replay };
++        return { kind: "pending", receipt: replay };
++    }
++    if (request.expectedControlRevision !== undefined && request.expectedControlRevision !== control.revision)
++        return { kind: "reject", reason: "revision_mismatch" };
++    if (control.state !== "held")
++        return { kind: "allowed" };
++    // A user stop is only cleared by a trusted user continue; an agent stop also accepts an explicit agent resume.
++    if (sourceLocked(control, request))
++        return { kind: "reject", reason: "source_locked" };
++    return { kind: "resume" };
++}
++/**
++ * Settle one continue intent inside a commit. With `canResume`, the drain has ended, so the held state is cleared, the
++ * optional new input is admitted natively, and whatever the held period queued is consumed from the same inbox in this
++ * same commit; without it, the intent is recorded as pending and the held state and every queued input stay.
++ */
++async function settleContinue(host, tx, conversationId, request, now, canResume) {
++    const control = draftControl(await tx.doc(InboxDoc, conversationId));
++    const decision = decideContinue(control, request);
++    if (decision.kind === "receipt")
++        return { ...receiptAnswer(decision.receipt), control: controlView(control) };
++    if (decision.kind === "reject")
++        return reject(control, "continue", request, decision.reason, now);
++    if (decision.kind === "refuse")
++        // A refused settlement writes nothing, so the request keeps the receipt its own caller recorded and can still be
++        // settled by that caller once it is the one asking.
++        return { status: "rejected", reason: decision.reason, receipt: decision.receipt, control: controlView(control) };
++    if (decision.kind === "allowed") {
++        const receipt = {
++            requestId: request.requestId,
++            operation: "continue",
++            status: "allowed",
++            revision: control.revision,
++            caller: request.caller,
++            at: now,
++        };
++        recordControlReceipt(control, receipt);
++        return { status: "allowed", receipt, control: controlView(control) };
++    }
++    if (!canResume) {
++        // A retry of an intent that is already pending reads the same receipt; only a first attempt records one.
++        if (decision.kind === "pending")
++            return { ...receiptAnswer(decision.receipt), control: controlView(control) };
++        const receipt = {
++            requestId: request.requestId,
++            operation: "continue",
++            status: "stopping",
++            revision: control.revision,
++            caller: request.caller,
++            at: now,
++        };
++        recordControlReceipt(control, receipt);
++        return { status: "stopping", receipt, control: controlView(control) };
++    }
++    control.state = "allowed";
++    delete control.stopSource;
++    delete control.stoppedAt;
++    control.revision += 1;
++    const modes = host.queueModes();
++    const input = request.input;
++    if (input !== undefined) {
++        // The native admission places the new input, or queues it behind what the held period kept and runs one final
++        // boundary over both, exactly as an ordinary idle submit does.
++        await admitSubmission(tx, conversationId, {
++            type: "input",
++            content: input.content,
++            ...(input.entry === undefined ? {} : { entry: input.entry }),
++            ...(input.requestId === undefined ? {} : { requestId: input.requestId }),
++            ...(input.whenBusy === undefined ? {} : { whenBusy: input.whenBusy }),
++        }, now, modes);
++    }
++    else {
++        // An empty continue still consumes the held period's queue: one final boundary, and no message when it is empty.
++        const boundary = await prepareBoundary(tx, conversationId, modes);
++        const live = await tx.doc(LiveDoc, conversationId);
++        const { users } = await applyBoundary(tx, boundary, "final", now);
++        if (users.length > 0)
++            await startRun(tx, conversationId, live, users);
++    }
++    const receipt = {
++        requestId: request.requestId,
++        operation: "continue",
++        status: "resumed",
++        revision: control.revision,
++        caller: request.caller,
++        at: now,
++    };
++    recordControlReceipt(control, receipt);
++    return { status: "resumed", receipt, control: controlView(control) };
++}
++/**
++ * Resume a held conversation with a trusted caller: while the old stop's ordinary scope still drains, record the
++ * pending intent and answer `stopping` with the held state and the input intact; once the native scope is idle, clear
++ * `held` and consume the same inbox in one commit. A request already answered is returned unchanged, and a stop that
++ * landed after a pending intent supersedes it.
++ */
++export async function continueConversation(host, conversationId, request, context) {
++    checkControlRequest(request, "caller");
++    const now = host.now();
++    const idle = await host.tasks.commitWhenIdle(conversationId, context, (tx) => settleContinue(host, tx, conversationId, request, now, true));
++    if (idle.idle)
++        return idle.value;
++    return host.harness.commitWith((tx) => settleContinue(host, tx, conversationId, request, now, false), context);
++}
+diff --git a/dist/harness/generation.js b/dist/harness/generation.js
+index 136bed43fe2c45f1739109e34af5590d5036a3f7..f7d3a55721476ad80dcb892b12e45fb91f1a65ba 100644
+--- a/dist/harness/generation.js
++++ b/dist/harness/generation.js
+@@ -429,8 +429,9 @@ async function answer(runtime, message, context) {
+         const live = await tx.doc(LiveDoc, conversationId);
+         const entry = await appendAssistant(tx, conversationId, message);
+         const result = { status: "terminal", outcome: { status: "completed", result: { entryId: entry.id } } };
+-        const { users, reset } = await applyBoundary(tx, boundary, "final", runtime.now());
+-        if (continuation !== undefined && users.length === 0 && !reset) {
++        const { users, reset, held } = await applyBoundary(tx, boundary, "final", runtime.now());
++        // Held: the run's own continuation must not start the next turn either.
++        if (!held && continuation !== undefined && users.length === 0 && !reset) {
+             const user = { role: "user", content: continuation, timestamp: runtime.now() };
+             await tx.appendEntry(UserEntry, conversationId, { model: [user] });
+             handOver(live, runtime.taskId, await createGeneration(tx, conversationId));
+@@ -524,8 +525,12 @@ async function finishToolRound(runtime, assistant, tools, context) {
+                 await startRun(tx, conversationId, live, users);
+         }
+         else {
+-            const { users, reset } = await applyBoundary(tx, boundary, "postTools", now);
+-            if (reset) {
++            const { users, reset, held } = await applyBoundary(tx, boundary, "postTools", now);
++            if (held) {
++                // Held: no successor generation, so the run ends here and the conversation stays quiet.
++                endRun(tx, live, runtime.taskId, { status: "done", answer: assistant });
++            }
++            else if (reset) {
+                 // The queued reset cut the run's context before an answer.
+                 endRun(tx, live, runtime.taskId, { status: "unanswered", reason: "reset" });
+                 if (users.length > 0)
+diff --git a/dist/harness/harness.js b/dist/harness/harness.js
+index d228c4c4aafde8bb5de06c8c0c132c085a53ba8e..bf4abfbd570229389c55a9e08258e22d1b8b23a7 100644
+--- a/dist/harness/harness.js
++++ b/dist/harness/harness.js
+@@ -4,6 +4,7 @@ import { contained, SessionImpl } from "../session/session.js";
+ import { ROOT_CONVERSATION_ID } from "../types.js";
+ import { AgentDoc, configure, createAgent, resolveAgent, resolveSettings } from "./agent.js";
+ import { createCompaction } from "./compaction.js";
++import { continueConversation, readControl, stopConversation } from "./control.js";
+ import { readContext } from "./context.js";
+ import { InboxDoc, withdrawQueuedInputs } from "./inbox.js";
+ import { LiveDoc, settleSchedulerOutcome } from "./live.js";
+@@ -72,6 +73,17 @@ class ConversationImpl {
+         this.#host.tasks.resume();
+         return this.#host.tasks.waitForIdle(this.id, context);
+     }
++    control(context) {
++        return readControl(this.#host, this.id, context);
++    }
++    stop(request, context) {
++        this.#host.tasks.resume();
++        return stopConversation(this.#host, this.id, request, context);
++    }
++    continue(request, context) {
++        this.#host.tasks.resume();
++        return continueConversation(this.#host, this.id, request, context);
++    }
+     viewState(context) {
+         return this.#host.views.state(this.id, context);
+     }
+@@ -124,6 +136,7 @@ class HarnessImpl extends SessionImpl {
+             submissions: this.#submissions,
+             views: new ConversationViews(this, storage),
+             now,
++            queueModes: settings,
+             create: (target, createOptions, context) => this.#create(target, createOptions, context),
+         };
+     }
+diff --git a/dist/harness/inbox.d.ts b/dist/harness/inbox.d.ts
+index ee7a0718b1430ca405ab3fb5a037a92fd781ef29..c1e0838d95cae5afabfbbf6d027f53b780d32ad0 100644
+--- a/dist/harness/inbox.d.ts
++++ b/dist/harness/inbox.d.ts
+@@ -1,5 +1,5 @@
+ import { type Draft, type JsonRepresentation } from "@earendil-works/chord";
+-import type { ConversationId, EntryDraft, EntryId, EntryRecord, JsonObject, SubmissionId, Tx } from "../types.ts";
++import type { ConversationId, EntryDraft, EntryId, EntryRecord, InboxControl, InboxControlReceipt, JsonObject, SubmissionId, Tx } from "../types.ts";
+ import type { InputEntry, QueueMode, Settings, UserInput } from "./types.ts";
+ /** A queued submission: user input for a run, with the entry it is placed as when not `pi.user`, or an entry write. */
+ export type InboxItem = {
+@@ -14,10 +14,25 @@ export type InboxItem = {
+     mode: "write";
+     entry: JsonObject;
+ };
+-/** Built-in queue of one conversation's submissions waiting for a boundary, in ID order. */
++/** Built-in queue of one conversation's submissions waiting for a boundary, in ID order, and its control record. */
+ export type InboxState = {
+     items: InboxItem[];
++    control: InboxControl;
+ };
++/** Newest control receipts kept per conversation. */
++export declare const MAX_CONTROL_RECEIPTS = 64;
++/** The default control record of an inbox that no stop has ever held. */
++export declare function initialControl(): InboxControl;
++/** The control record of an inbox value; a version 1 record reads as `allowed` before its migration commits. */
++export declare function inboxControl(inbox: InboxState): InboxControl;
++/** The control record of an inbox draft, creating the default in place when an older value lacks one. */
++export declare function draftControl(inbox: InboxState): InboxControl;
++/** Whether input admission is held for this inbox. */
++export declare function isHeld(inbox: InboxState): boolean;
++/** The stored receipt of `operation` for `requestId`, if this conversation already answered that request. */
++export declare function controlReceipt(control: InboxControl, operation: "stop" | "continue", requestId: string): InboxControlReceipt | undefined;
++/** Record a control receipt, newest first, replacing an earlier receipt of the same request; bounded retention. */
++export declare function recordControlReceipt(control: InboxControl, receipt: InboxControlReceipt): void;
+ export declare const InboxDoc: import("../types.ts").ConversationDocToken<InboxState>;
+ /** The settings a boundary reads, on the Session line. */
+ export type QueueModes = Pick<Settings, "steeringMode" | "followUpMode">;
+@@ -30,10 +45,14 @@ export type Boundary = {
+     /** Start of the active range, the newest head marker's `head`; advanced by heads written in this commit. */
+     head: EntryId | undefined;
+ };
+-/** Selected user items, in ID order, and whether a `head: "self"` write (a reset) was placed. */
++/**
++ * Selected user items, in ID order, whether a `head: "self"` write (a reset) was placed, and whether the boundary was
++ * held (nothing was consumed, so no item was selected and no reset could be placed).
++ */
+ export type BoundaryResult = {
+     readonly users: SubmissionId[];
+     readonly reset: boolean;
++    readonly held: boolean;
+ };
+ /**
+  * Read what a boundary needs. Table reads must precede the commit's first table write, so callers prepare the
+@@ -45,7 +64,8 @@ export declare function prepareBoundary(tx: Tx, conversationId: ConversationId,
+  * or all follow-ups. A selected reset turns a `postTools` boundary into `final`. Writes are placed first and user
+  * items after them, each in ID order, so user items queued before a reset run in the new context. A write whose head
+  * targets an entry before the active range, including a range started earlier in this commit, is stale. Selected and
+- * stale items are removed positionally.
++ * stale items are removed positionally. A held conversation consumes nothing: every item waits for an explicit
++ * `Conversation.continue()`.
+  */
+ export declare function applyBoundary(tx: Tx, boundary: Boundary, at: "postTools" | "final", now: number): Promise<BoundaryResult>;
+ /** Append the entry an input is placed as: `entry`'s kind and data, or `pi.user`, with the user message of `content`. */
+diff --git a/dist/harness/inbox.js b/dist/harness/inbox.js
+index e8e07656188833bffa17af35cd2dbc4eb65b2a24..af39c5d8fc9efa0191e1e34c598969870d7c8a95 100644
+--- a/dist/harness/inbox.js
++++ b/dist/harness/inbox.js
+@@ -1,15 +1,57 @@
+ import { copyJson } from "@earendil-works/chord";
+ import { defineDoc } from "../documents.js";
+ import { UserEntry } from "../entries.js";
++/** Newest control receipts kept per conversation; older ones are dropped. */
++export const MAX_CONTROL_RECEIPTS = 64;
++/** The default control record: input is admitted until a trusted stop holds the conversation. */
++export function initialControl() {
++    return { state: "allowed", revision: 0, receipts: [] };
++}
++/**
++ * Materialize a version 1 `pi.inbox` value as version 2: the queued items stay, and the conversation starts `allowed`,
++ * because no version 1 record ever held input.
++ */
++function migrateInbox(value) {
++    const items = Array.isArray(value.items) ? value.items : [];
++    return { items, control: initialControl() };
++}
+ export const InboxDoc = defineDoc({
+     kind: "pi.inbox",
+-    version: 1,
++    version: 2,
+     scope: "conversation",
+     history: "latest",
+     fork: "initial",
+-    initial: () => ({ items: [] }),
++    initial: () => ({ items: [], control: initialControl() }),
++    migrate: migrateInbox,
+     checkpointWhen: (value) => value.items.length === 0,
+ });
++/** The control record of an inbox value; every committed inbox carries one, version 1 records migrate to `allowed`. */
++export function inboxControl(inbox) {
++    return inbox.control ?? initialControl();
++}
++/** The control record of an inbox draft, creating the default in place when an older value lacks one. */
++export function draftControl(inbox) {
++    inbox.control ??= initialControl();
++    return inbox.control;
++}
++/** Whether input admission is held for this inbox. */
++export function isHeld(inbox) {
++    return inboxControl(inbox).state === "held";
++}
++/** The stored receipt of `operation` for `requestId`, if this conversation already recorded that request. */
++export function controlReceipt(control, operation, requestId) {
++    return control.receipts.find((receipt) => receipt.operation === operation && receipt.requestId === requestId);
++}
++/** Record a control receipt, newest first, replacing an earlier receipt of the same request; bounded retention. */
++export function recordControlReceipt(control, receipt) {
++    const receipts = control.receipts;
++    const index = receipts.findIndex((each) => each.operation === receipt.operation && each.requestId === receipt.requestId);
++    if (index >= 0)
++        receipts.splice(index, 1);
++    receipts.unshift(copyJson(receipt, { omitUndefinedProperties: true }));
++    if (receipts.length > MAX_CONTROL_RECEIPTS)
++        receipts.splice(MAX_CONTROL_RECEIPTS);
++}
+ /**
+  * Read what a boundary needs. Table reads must precede the commit's first table write, so callers prepare the
+  * boundary at the start of their commit.
+@@ -34,6 +76,9 @@ export async function prepareBoundary(tx, conversationId, modes) {
+  */
+ export async function applyBoundary(tx, boundary, at, now) {
+     const { conversationId, inbox } = boundary;
++    // Held input is never consumed: no write lands, no user item is placed, and no run starts.
++    if (isHeld(inbox))
++        return { users: [], reset: false, held: true };
+     const items = inbox.items;
+     const reset = hasQueuedReset(items);
+     const final = at === "final" || reset;
+@@ -67,7 +112,7 @@ export async function applyBoundary(tx, boundary, at, now) {
+     const removed = [...writes, ...users].sort((a, b) => b - a);
+     for (const index of removed)
+         items.splice(index, 1);
+-    return { users: placed, reset };
++    return { users: placed, reset, held: false };
+ }
+ /** Append the entry an input is placed as: `entry`'s kind and data, or `pi.user`, with the user message of `content`. */
+ export function appendInput(tx, conversationId, content, entry, now) {
+diff --git a/dist/harness/scheduler.d.ts b/dist/harness/scheduler.d.ts
+index 9aaf34d4f4f674a5be436cdc25bdb849da04ce73..9f8ed3bf7e87da2a33aaf46fc76ba35b928d9122 100644
+--- a/dist/harness/scheduler.d.ts
++++ b/dist/harness/scheduler.d.ts
+@@ -90,6 +90,31 @@ export declare class TaskScheduler {
+      * crosses background boundaries, and the wait also covers every task it reached.
+      */
+     abortConversation(conversationId: ConversationId, background: boolean, context: Context): Promise<void>;
++    /** Whether ordinary traversal from `conversationId` reaches no live non-background task: the native drain fact. */
++    isIdle(conversationId: ConversationId): boolean;
++    /**
++     * `Conversation.stop()`: in one commit, let `change` decide and record the control state, and only when that
++     * decision says the stop takes effect now mark every live non-background task ordinary traversal from the
++     * conversation reaches and withdraw the queued inputs. A refused or already-answered request commits its answer
++     * without touching a run it did not stop. Never waits: `drain` reports whether the ordinary scope is already idle.
++     */
++    stopConversation<T>(conversationId: ConversationId, context: Context, change: (tx: Transaction) => Promise<{
++        readonly withdraw: boolean;
++        readonly value: T;
++    }>): Promise<{
++        readonly value: T;
++        readonly drain: "idle" | "stopping";
++    }>;
++    /**
++     * Commit `change` only while ordinary traversal from `conversationId` is idle, in the same commit that reads that
++     * fact. `{ idle: false }` without calling `change` when the ordinary scope still has live work.
++     */
++    commitWhenIdle<T>(conversationId: ConversationId, context: Context, change: (tx: Transaction) => Promise<T>): Promise<{
++        readonly idle: false;
++    } | {
++        readonly idle: true;
++        readonly value: T;
++    }>;
+     /** Sizes of the ownership indexes, for tests that bound the scheduler's memory. */
+     get indexSizes(): Readonly<Record<"live" | "settled" | "edges" | "below" | "roots" | "unloaded" | "dropQueue", number>>;
+     /**
+diff --git a/dist/harness/scheduler.js b/dist/harness/scheduler.js
+index e40b59720224b1f180b0745066e251cc52b499f3..1a2a020a6f6f161ecd7eab3f0b373721e8746f07 100644
+--- a/dist/harness/scheduler.js
++++ b/dist/harness/scheduler.js
+@@ -263,6 +263,53 @@ export class TaskScheduler {
+                 await this.waitForTask(id, context);
+         await this.waitForIdle(conversationId, context);
+     }
++    /** Whether ordinary traversal from `conversationId` reaches no live non-background task: the native drain fact. */
++    isIdle(conversationId) {
++        return this.#idle(conversationId);
++    }
++    /**
++     * `Conversation.stop()`: in one commit, let `change` decide and record the control state, and only when that
++     * decision says the stop takes effect now mark every live non-background task ordinary traversal from the
++     * conversation reaches and withdraw the queued inputs. A refused or already-answered request therefore commits its
++     * answer without touching a run it did not stop. Never waits: the returned drain state reports whether the ordinary
++     * scope is already idle.
++     */
++    async stopConversation(conversationId, context, change) {
++        const decision = await this.#session.commitWith(async (tx) => {
++            const queued = await this.#loadScopes(true);
++            const decided = await change(tx);
++            if (!decided.withdraw)
++                return decided;
++            const scope = { conversation: conversationId };
++            const marks = [];
++            for (const { node, live } of this.#walkDown(conversationNode(conversationId))) {
++                if (live === undefined || node.background)
++                    continue;
++                if (!live.abortRequested || live.abortReason !== undefined)
++                    marks.push(live);
++            }
++            for (const live of marks)
++                tx.setTask(withAbortMark(live));
++            for (const id of queued) {
++                if (this.#inScope({ conversation: id }, scope) === true)
++                    await this.#withdrawInputs(tx, id);
++            }
++            return decided;
++        }, context);
++        return { value: decision.value, drain: this.#idle(conversationId) ? "idle" : "stopping" };
++    }
++    /**
++     * Commit `change` only while ordinary traversal from `conversationId` is idle, in the same commit that reads that
++     * fact, so a resume cannot race the drain it waits for. Returns `{ idle: false }` without calling `change` when the
++     * ordinary scope still has live work.
++     */
++    async commitWhenIdle(conversationId, context, change) {
++        return this.#session.commitWith(async (tx) => {
++            if (!this.#idle(conversationId))
++                return { idle: false };
++            return { idle: true, value: await change(tx) };
++        }, context);
++    }
+     // ─── Scheduling ────────────────────────────────────────────────────────
+     #observe(publication) {
+         const updated = [];
+diff --git a/dist/harness/submissions.js b/dist/harness/submissions.js
+index ee076b5ea977ae39bca78a22e43827c26ba386a5..f6ee672720fada099db35233b6c80cf26eea53a8 100644
+--- a/dist/harness/submissions.js
++++ b/dist/harness/submissions.js
+@@ -1,7 +1,7 @@
+ import { copyJson } from "@earendil-works/chord";
+ import { ConversationBusy } from "../errors.js";
+ import { startRun } from "./generation.js";
+-import { appendInput, applyBoundary, hasQueuedReset, InboxDoc, isDisplayOnly, isStale, pickInputEntry, prepareBoundary, removeInboxItem, } from "./inbox.js";
++import { appendInput, applyBoundary, hasQueuedReset, InboxDoc, isDisplayOnly, isHeld, isStale, pickInputEntry, prepareBoundary, removeInboxItem, } from "./inbox.js";
+ import { LiveDoc } from "./live.js";
+ import { closedError, Waiters } from "./util.js";
+ /** Admission, waits, and withdrawal of the durable submissions of one Harness. */
+@@ -107,7 +107,7 @@ function isSettled(record) {
+     return record.status === "done" || record.status === "unanswered";
+ }
+ /** Reject an input entry an untyped caller got wrong: its kind must be a non-empty string outside the `pi.` prefix. */
+-function checkInputEntry(entry) {
++export function checkInputEntry(entry) {
+     const { kind } = entry;
+     if (typeof kind !== "string" || kind.length === 0 || kind.startsWith("pi.")) {
+         throw new TypeError(`An input entry's kind must be a non-empty string not starting with "pi.", got ${String(kind)}`);
+@@ -122,6 +122,8 @@ function checkInputEntry(entry) {
+  * queues it behind them and runs a final boundary. Otherwise idle input places its entry (`pi.user`, or the input's
+  * own) and starts a run, and an idle write appends its entry and settles `done`, or `stale` when its head reaches
+  * before the active range.
++ * A conversation whose control state is `held` consumes nothing: every input and every model-visible write is queued
++ * and no run starts, whatever the queue modes are, until an explicit `Conversation.continue()` resumes it.
+  */
+ export async function admitSubmission(tx, conversationId, draft, now, queueModes) {
+     if (draft.type === "input" && draft.entry !== undefined)
+@@ -136,9 +138,11 @@ export async function admitSubmission(tx, conversationId, draft, now, queueModes
+         }
+     }
+     const requestId = draft.requestId === undefined ? {} : { requestId: draft.requestId };
++    const inbox = await tx.doc(InboxDoc, conversationId);
++    // A display-only write changes nothing the model sees, so it lands at once even while held: it consumes no input.
+     if (draft.type === "write" &&
+         isDisplayOnly(draft.entry) &&
+-        !hasQueuedReset((await tx.doc(InboxDoc, conversationId)).items)) {
++        !hasQueuedReset(inbox.items)) {
+         const entry = await tx.appendEntry(conversationId, draft.entry);
+         const write = { conversationId, ...requestId, type: "write", status: "done", entry: entry.id };
+         return (await tx.createSubmission(write)).id;
+@@ -147,8 +151,8 @@ export async function admitSubmission(tx, conversationId, draft, now, queueModes
+     const busy = live.run !== undefined;
+     if (busy && draft.type === "input" && draft.whenBusy === "reject")
+         throw new ConversationBusy(conversationId);
+-    // A boundary reads the table, so it is prepared before the first table write; a busy one needs none.
+-    const boundary = busy ? undefined : await prepareBoundary(tx, conversationId, queueModes);
++    // A boundary reads the table, so it is prepared before the first table write; a busy or held one needs none.
++    const boundary = busy || isHeld(inbox) ? undefined : await prepareBoundary(tx, conversationId, queueModes);
+     if (boundary === undefined || boundary.inbox.items.length > 0) {
+         const { id } = await tx.createSubmission({
+             conversationId,
+diff --git a/dist/harness/types.d.ts b/dist/harness/types.d.ts
+index ea3adc9e21bcc4b101da614ce9913e3858777f0d..da740efcb28644833fdd5ce3c8cb37b2cc5b2cf2 100644
+--- a/dist/harness/types.d.ts
++++ b/dist/harness/types.d.ts
+@@ -584,6 +584,83 @@ export type ContextView = {
+     /** Model context for the next provider request. */
+     readonly messages: readonly Message[];
+ };
++/** Trusted origin of a control request: a user decision, or the runtime's own agent caller. */
++export type ControlStopSource = "user" | "agent";
++/** Whether new input may start a turn (`allowed`) or must stay queued (`held`). */
++export type ControlState = "allowed" | "held";
++/** One durable receipt, answering one `requestId` of a stop or continue operation. */
++export type InboxControlReceipt = {
++    readonly requestId: string;
++    readonly operation: "stop" | "continue";
++    readonly status: "accepted" | "held" | "rejected" | "stopping" | "resumed" | "allowed";
++    readonly reason?: "revision_mismatch" | "source_locked" | "superseded";
++    /** Control revision this receipt answers. */
++    readonly revision: number;
++    readonly stopSource?: ControlStopSource;
++    readonly caller?: ControlStopSource;
++    readonly at: number;
++};
++/**
++ * Native input control of one conversation, part of its `pi.inbox` record: whether admission is held, by which trusted
++ * stop source, at which revision, and the receipts of the control requests already answered. A version 1 record
++ * migrates to `allowed` with its queued items; a runtime that predates version 2 refuses the record instead of reading
++ * it as `allowed`.
++ */
++export type InboxControl = {
++    state: ControlState;
++    revision: number;
++    stopSource?: ControlStopSource;
++    stoppedAt?: number;
++    /** Newest first, bounded retention. */
++    receipts: InboxControlReceipt[];
++};
++/** The committed control state of one conversation. */
++export type ConversationControlState = {
++    readonly state: ControlState;
++    readonly revision: number;
++    readonly stopSource?: ControlStopSource;
++    readonly stoppedAt?: number;
++};
++/** One atomic stop request; `stopSource` is the trusted caller's origin, never the model's own claim. */
++export type StopConversationRequest = {
++    readonly requestId: string;
++    readonly stopSource: ControlStopSource;
++    /** Reject the request when the committed control revision is not this one. */
++    readonly expectedControlRevision?: number;
++};
++/** Outcome of one stop request; `drain` reports whether the ordinary scope is already idle after the commit. */
++export type StopConversationResult = {
++    readonly status: "accepted" | "held" | "rejected";
++    readonly reason?: "revision_mismatch";
++    readonly drain: "idle" | "stopping";
++    readonly control: ConversationControlState;
++    readonly receipt: InboxControlReceipt;
++};
++/** One atomic continue request; `caller` is the trusted caller's origin, never the model's own claim. */
++export type ContinueConversationRequest = {
++    readonly requestId: string;
++    readonly caller: ControlStopSource;
++    readonly expectedControlRevision?: number;
++    /** An input admitted in the same commit that clears `held`; native admission places it and consumes the queue. */
++    readonly input?: {
++        readonly content: UserInput;
++        readonly entry?: InputEntry;
++        readonly requestId?: string;
++        readonly whenBusy?: "steer" | "followUp";
++    };
++};
++/** Outcome of one continue request; `stopping` keeps `held` and every queued input for a retry. */
++export type ContinueConversationResult = {
++    readonly status: "resumed" | "stopping" | "allowed" | "rejected";
++    /** `source_locked` and `caller_mismatch` also refuse a replay of a request another caller recorded. */
++    readonly reason?: "revision_mismatch" | "source_locked" | "superseded" | "caller_mismatch";
++    readonly control: ConversationControlState;
++    /**
++     * The receipt of this call. A settled receipt is returned verbatim. A refused settlement of an already-recorded
++     * pending request returns that pending receipt unchanged: its own caller can still settle it.
++     */
++    readonly receipt: InboxControlReceipt;
++};
+ /** Stateless handle for one conversation, bound to the Harness that returned it. Compare handles by `id`. */
+ export interface Conversation {
+     readonly id: ConversationId;
+@@ -596,6 +673,8 @@ export interface Conversation {
+      * writes that affect model context in `pi.inbox`; `whenBusy: "reject"` rejects input with `ConversationBusy` instead
+      * and writes nothing. A write of only `kind` and `data` (no `model`, `head`, or `edits`) is appended at once,
+      * even mid-run, as it changes nothing the model sees.
++     * A `held` conversation (see `stop()`) consumes nothing: every input and every model-visible write is queued and no
++     * run starts, until an explicit `continue()`.
+      */
+     submit(submission: SubmissionDraft, context: Context): Promise<Submission>;
+     /**
+@@ -630,6 +709,21 @@ export interface Conversation {
+      * owned, transitively, by its non-background tasks.
+      */
+     waitForIdle(context: Context): Promise<void>;
++    /** The committed control state: `allowed` or `held`, its revision, and the trusted stop source when held. */
++    control(context: Context): Promise<ConversationControlState>;
++    /**
++     * Hold this conversation in one commit: persist `held` with `stopSource`, mark the ordinary live tasks for abort,
++     * and withdraw the queued inputs at this commit point. Input arriving later stays queued and starts no turn; a later
++     * stop keeps what arrived since and never downgrades a user stop to an agent one.
++     */
++    stop(request: StopConversationRequest, context: Context): Promise<StopConversationResult>;
++    /**
++     * Resume a held conversation in one commit, once the old stop's ordinary scope is idle: clear `held`, admit the
++     * optional new input, and consume the same `pi.inbox`. While it still drains, the answer is `stopping` with the held
++     * state and every queued input intact. A user stop only accepts a user caller; an agent stop also accepts an
++     * explicit agent resume.
++     */
++    continue(request: ContinueConversationRequest, context: Context): Promise<ContinueConversationResult>;
+     /** The structural view (spec §9.3) as a disposable read-only Chord state. */
+     viewState(context: Context): Promise<AttachedReplicatedState<ConversationView>>;
+     /** The structural view as a serialized exact-frame watch with bounded pending frames. */
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 47a494dd6366809840c8fd1d8a7161b9240e4ce7..fe3463ae6d89811d12c2d4d42b0e8019f29d96de 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -13,7 +13,7 @@ export { ProviderDoc, type ProviderState } from "./harness/provider.ts";
+ export { createRegistry } from "./harness/registry.ts";
+ export type { TaskGraph, TaskGraphNode, TaskGraphState, TaskGraphWatch } from "./harness/task-graph.ts";
+ export { NestedCallDoc, type NestedCallState, ToolTask, type ToolTaskCheckpoint, type ToolTaskInput, type ToolTaskResult, } from "./harness/tool.ts";
+-export type { Agent, AgentChange, AgentState, AnyTask, CompactionHooks, CompactionPolicy, CompactionReason, CompactionResult, ContextView, Conversation, ConversationAbortOptions, ConversationCreateOptions, ConversationHandle, ConversationInit, ConversationRetryPolicy, ConversationStreamOptions, ConversationWatch, EnvTarget, Extension, GenerationHooks, HarnessInspection, HarnessOptions, HarnessSettings, HookApi, HookRegistration, HookResult, HooksOf, InputEntry, InputSubmissionDraft, ModelRef, NestedToolExecutionResult, ProgressPolicy, PromptInput, PromptSection, QueueMode, Registry, RegistryReader, RegistrySnapshot, Settings, SettledSubmissionRecord, SettledTask, Submission, SubmissionDraft, TaskInspection, ToolControl, ToolDiagnostic, ToolExecutionApi, ToolExecutionMode, ToolExecutionResult, ToolHookCall, ToolHooks, ToolRegistration, UserInput, Wrap, } from "./harness/types.ts";
++export type { Agent, AgentChange, AgentState, AnyTask, CompactionHooks, CompactionPolicy, CompactionReason, CompactionResult, ContextView, ContinueConversationRequest, ContinueConversationResult, ControlState, ControlStopSource, Conversation, ConversationAbortOptions, ConversationControlState, ConversationCreateOptions, ConversationHandle, ConversationInit, ConversationRetryPolicy, ConversationStreamOptions, ConversationWatch, EnvTarget, Extension, GenerationHooks, HarnessInspection, HarnessOptions, HarnessSettings, HookApi, HookRegistration, HookResult, HooksOf, InboxControl, InboxControlReceipt, InputEntry, InputSubmissionDraft, ModelRef, NestedToolExecutionResult, ProgressPolicy, PromptInput, PromptSection, QueueMode, Registry, RegistryReader, RegistrySnapshot, Settings, SettledSubmissionRecord, SettledTask, StopConversationRequest, StopConversationResult, Submission, SubmissionDraft, TaskInspection, ToolControl, ToolDiagnostic, ToolExecutionApi, ToolExecutionMode, ToolExecutionResult, ToolHookCall, ToolHooks, ToolRegistration, UserInput, Wrap, } from "./harness/types.ts";
+ export { UsageDoc, type UsageState } from "./harness/usage.ts";
+ export type { ConversationView } from "./harness/view.ts";
+ export { createSession } from "./session/session.ts";

@@ -1,0 +1,27 @@
+{
+  "name": "hepi-harness",
+  "private": true,
+  "packageManager": "pnpm@12.4.1",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:entrypoints": "node scripts/check-entrypoints.mjs",
+    "test:web:unit": "node scripts/test-web-unit.mjs",
+    "test:scripts": "node --test $(find scripts -name '*.test.mjs' -not -path '*/node_modules/*' | sort)",
+    "verify": "node scripts/verify.mjs",
+    "verify:changed": "node scripts/verify.mjs --profile=changed",
+    "compare:tests": "node scripts/compare-tests.mjs",
+    "test:protocol": "pnpm --filter @hepi/protocol test",
+    "typecheck:protocol": "pnpm --filter @hepi/protocol typecheck",
+    "test:server": "pnpm --filter @hepi/server test",
+    "typecheck:server": "pnpm --filter @hepi/server typecheck",
+    "test:session": "pnpm --filter @hepi/session test",
+    "typecheck:session": "pnpm --filter @hepi/session typecheck",
+    "test:gateway": "pnpm --filter @hepi/gateway test",
+    "typecheck:gateway": "pnpm --filter @hepi/gateway typecheck",
+    "deploy:inspect": "node scripts/deploy-inspect.mjs",
+    "deploy:plan": "node scripts/deploy-plan.mjs",
+    "build:client-runtime": "node scripts/build-client-runtime.mjs",
+    "ingress:unit": "node scripts/ingress-unit.mjs"
+  }
+}

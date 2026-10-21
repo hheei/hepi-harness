@@ -1,0 +1,467 @@
+{
+ "before2": {
+  "audio": [],
+  "sse": [
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"27\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "streams": [
+   {
+    "t": 143,
+    "url": "/api/agent/27/events"
+   }
+  ],
+  "polls": [
+   {
+    "t": 133,
+    "path": "/api/sessions/ui-state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 133,
+    "path": "/api/agent/running",
+    "runningSessionIds": []
+   },
+   {
+    "t": 136,
+    "path": "/api/sessions?summary=1",
+    "runningSessionIds": []
+   },
+   {
+    "t": 140,
+    "path": "/api/sessions",
+    "runningSessionIds": []
+   },
+   {
+    "t": 149,
+    "path": "/api/sessions/27?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 156,
+    "path": "/api/sessions/27/state",
+    "runningSessionIds": null
+   }
+  ],
+  "url": "http://127.0.0.1:43390/?session=27"
+ },
+ "left": {
+  "audio": [],
+  "sse": [
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"27\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"27\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":1,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":2,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":3,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":4,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":5,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"14\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"14\",\"projectionId\":\"73cf8f7f-eb1d-4753-8ac5-7e4e61e1f053\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"26\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"settled before the page looked\",\"timestamp\":1791869084310},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869084339,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":27}],\"entryIds\":[\"22\",\"26\"],\"oldestEntryId\":\"22\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869084308,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "streams": [
+   {
+    "t": 143,
+    "url": "/api/agent/27/events"
+   },
+   {
+    "t": 604,
+    "url": "/api/agent/14/events"
+   }
+  ],
+  "polls": [
+   {
+    "t": 133,
+    "path": "/api/sessions/ui-state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 133,
+    "path": "/api/agent/running",
+    "runningSessionIds": []
+   },
+   {
+    "t": 136,
+    "path": "/api/sessions?summary=1",
+    "runningSessionIds": []
+   },
+   {
+    "t": 140,
+    "path": "/api/sessions",
+    "runningSessionIds": []
+   },
+   {
+    "t": 149,
+    "path": "/api/sessions/27?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 156,
+    "path": "/api/sessions/27/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 618,
+    "path": "/api/sessions/14?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 627,
+    "path": "/api/sessions/14/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 894,
+    "path": "/api/sessions?force=1",
+    "runningSessionIds": [
+     "27"
+    ]
+   }
+  ],
+  "url": "http://127.0.0.1:43390/?session=14"
+ },
+ "away": {
+  "audio": [
+   {
+    "t": 986,
+    "group": 0,
+    "freq": 523.25
+   },
+   {
+    "t": 986,
+    "group": 0,
+    "freq": 659.25
+   }
+  ],
+  "sse": [
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"27\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"27\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":1,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":2,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":3,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":4,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":5,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"14\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"14\",\"projectionId\":\"73cf8f7f-eb1d-4753-8ac5-7e4e61e1f053\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"26\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"settled before the page looked\",\"timestamp\":1791869084310},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869084339,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":27}],\"entryIds\":[\"22\",\"26\"],\"oldestEntryId\":\"22\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869084308,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 985,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"27\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"done\",\"entryId\":\"49\",\"answerId\":\"53\"}}"
+   },
+   {
+    "t": 986,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":6,\"run\":null,\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"53\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869090859,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":462}],\"entryIds\":[\"49\",\"53\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "streams": [
+   {
+    "t": 143,
+    "url": "/api/agent/27/events"
+   },
+   {
+    "t": 604,
+    "url": "/api/agent/14/events"
+   }
+  ],
+  "polls": [
+   {
+    "t": 133,
+    "path": "/api/sessions/ui-state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 133,
+    "path": "/api/agent/running",
+    "runningSessionIds": []
+   },
+   {
+    "t": 136,
+    "path": "/api/sessions?summary=1",
+    "runningSessionIds": []
+   },
+   {
+    "t": 140,
+    "path": "/api/sessions",
+    "runningSessionIds": []
+   },
+   {
+    "t": 149,
+    "path": "/api/sessions/27?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 156,
+    "path": "/api/sessions/27/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 618,
+    "path": "/api/sessions/14?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 627,
+    "path": "/api/sessions/14/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 894,
+    "path": "/api/sessions?force=1",
+    "runningSessionIds": [
+     "27"
+    ]
+   }
+  ],
+  "url": "http://127.0.0.1:43390/?session=14"
+ },
+ "returned": {
+  "audio": [
+   {
+    "t": 986,
+    "group": 0,
+    "freq": 523.25
+   },
+   {
+    "t": 986,
+    "group": 0,
+    "freq": 659.25
+   }
+  ],
+  "sse": [
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"27\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 154,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":0,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":null,\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[],\"entryIds\":[],\"oldestEntryId\":null,\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"failed\",\"error\":\"no resource loading result has been committed\",\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"27\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":1,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":2,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":3,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":4,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 522,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":5,\"run\":{\"inputs\":[\"50\"]},\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"49\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857}],\"entryIds\":[\"49\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":true,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"14\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 619,
+    "url": "/api/agent/14/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"14\",\"projectionId\":\"73cf8f7f-eb1d-4753-8ac5-7e4e61e1f053\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"26\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"settled before the page looked\",\"timestamp\":1791869084310},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869084339,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":27}],\"entryIds\":[\"22\",\"26\"],\"oldestEntryId\":\"22\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869084308,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 985,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_submission\",\"sessionId\":\"27\",\"submission\":{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"done\",\"entryId\":\"49\",\"answerId\":\"53\"}}"
+   },
+   {
+    "t": 986,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":6,\"run\":null,\"submissions\":[{\"protocol\":\"hepi.v1\",\"conversationId\":\"27\",\"submissionId\":\"50\",\"requestId\":\"req-27-g58d3ou3ngs\",\"type\":\"input\",\"status\":\"placed\",\"entryId\":\"49\"}],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"53\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869090859,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":462}],\"entryIds\":[\"49\",\"53\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   },
+   {
+    "t": 1088,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"27\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 1088,
+    "url": "/api/agent/27/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"27\",\"projectionId\":\"59c1ec89-8727-47c3-b0ad-e3744e23a3ae\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"53\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"run the user leaves\",\"timestamp\":1791869090857},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BACKGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869090859,\"responseId\":\"chatcmpl-clb\",\"rawStopReason\":\"stop\",\"durationMs\":462}],\"entryIds\":[\"49\",\"53\"],\"oldestEntryId\":\"49\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869090854,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "streams": [
+   {
+    "t": 143,
+    "url": "/api/agent/27/events"
+   },
+   {
+    "t": 604,
+    "url": "/api/agent/14/events"
+   },
+   {
+    "t": 1070,
+    "url": "/api/agent/27/events"
+   }
+  ],
+  "polls": [
+   {
+    "t": 133,
+    "path": "/api/sessions/ui-state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 133,
+    "path": "/api/agent/running",
+    "runningSessionIds": []
+   },
+   {
+    "t": 136,
+    "path": "/api/sessions?summary=1",
+    "runningSessionIds": []
+   },
+   {
+    "t": 140,
+    "path": "/api/sessions",
+    "runningSessionIds": []
+   },
+   {
+    "t": 149,
+    "path": "/api/sessions/27?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 156,
+    "path": "/api/sessions/27/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 618,
+    "path": "/api/sessions/14?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 627,
+    "path": "/api/sessions/14/state",
+    "runningSessionIds": null
+   },
+   {
+    "t": 894,
+    "path": "/api/sessions?force=1",
+    "runningSessionIds": [
+     "27"
+    ]
+   },
+   {
+    "t": 1085,
+    "path": "/api/sessions/27?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "runningSessionIds": null
+   },
+   {
+    "t": 1091,
+    "path": "/api/sessions/27/state",
+    "runningSessionIds": null
+   }
+  ],
+  "url": "http://127.0.0.1:43390/?session=27"
+ }
+}

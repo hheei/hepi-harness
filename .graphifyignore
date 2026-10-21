@@ -1,0 +1,15 @@
+# Third-party snapshots and pinned submodules: not this project's architecture.
+# The graph answers questions about hepi-harness, so vendored upstream copies
+# would only add nodes that no question here is about.
+.pi/skills/
+apps/web/vendor/
+apps/server/vendor/
+packages/gateway/vendor/
+
+# graphify's own output, caches and sidecars: the default AST graph and the
+# separate deep semantic graph, which a deep build writes under graphify-deep/.
+graphify-out/
+graphify-deep/
+
+# Local graphify interpreter stamp.
+.graphify_python

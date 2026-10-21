@@ -1,0 +1,2136 @@
+[
+  {
+    "file": "adapters/durable-api.test.mjs",
+    "lines": 169,
+    "calls": 4,
+    "names": [
+      "unsupported durableApi capability routes return 501 with code unsupported",
+      "durable routes forward bounded entry reads, recovery, configuration and reload outcomes",
+      "stream oversize refusals reach the browser through the real HTTP stream"
+    ]
+  },
+  {
+    "file": "adapters/durable-lifecycle.test.mjs",
+    "lines": 368,
+    "calls": 6,
+    "names": [
+      "HTTP and stream lifecycle frame payloads preserve identity, absent model, submissions, and resource summary",
+      "stream acquisition, revision ordering, and race handling",
+      "stream folding, settlement, window boundaries, and resync markers"
+    ]
+  },
+  {
+    "file": "adapters/extensions.test.mjs",
+    "lines": 82,
+    "calls": 1,
+    "names": [
+      "extensions adapter handles listing, global updates, per-conversation overrides, and refusals"
+    ]
+  },
+  {
+    "file": "adapters/files-transfer.test.mjs",
+    "lines": 248,
+    "calls": 2,
+    "names": [
+      "upload workflows handle batch bounds, preflight checks, conflicts, and cache invalidation",
+      "file transfer handles previews, downloads, and host refusal forwarding"
+    ]
+  },
+  {
+    "file": "adapters/host-cwd-ownership.test.mjs",
+    "lines": 202,
+    "calls": 2,
+    "names": [
+      "gateway and host ownership refuse cross-host folders and validate distinct host targets",
+      "host resolution preserves retained bindings, remote worktrees, and refusal contracts"
+    ]
+  },
+  {
+    "file": "adapters/mcp-surface.test.mjs",
+    "lines": 345,
+    "calls": 2,
+    "names": [
+      "MCP host operations handle listing, deployment limits, additions, mutations, testing, and sign-in",
+      "MCP project trust, checkouts, and route dispatch keep host routing intact"
+    ]
+  },
+  {
+    "file": "adapters/project-removal.test.mjs",
+    "lines": 140,
+    "calls": 2,
+    "names": [
+      "project removal and folder unlinking reach backend DELETE operations without claiming host and preserve refusals",
+      "retained bindings are preserved with markers, excluded from default directories, and keep bound sessions listed"
+    ]
+  },
+  {
+    "file": "adapters/recall-and-session-list.test.mjs",
+    "lines": 121,
+    "calls": 3,
+    "names": [
+      "session catalog and running poll preserve versions, subagent relations, and run times without per-conversation fanout",
+      "queue recall operations and sidebar state persist revisions and handle refusals"
+    ]
+  },
+  {
+    "file": "adapters/remote-project-removal.test.mjs",
+    "lines": 203,
+    "calls": 1,
+    "names": [
+      "a Project of another configured gateway is removed and unlinked from this Web origin"
+    ]
+  },
+  {
+    "file": "adapters/session-auto-name.test.mjs",
+    "lines": 59,
+    "calls": 1,
+    "names": [
+      "session auto-name forwards naming requests to backend and preserves refusals"
+    ]
+  },
+  {
+    "file": "adapters/session-delete.test.mjs",
+    "lines": 80,
+    "calls": 1,
+    "names": [
+      "session deletion forwards DELETE, preserves backend errors, and advances list version"
+    ]
+  },
+  {
+    "file": "adapters/session-fork.test.mjs",
+    "lines": 124,
+    "calls": 2,
+    "names": [
+      "session fork reaches backend operation, maps catalogue row with relation, and advances list version",
+      "transcript fork command reaches backend operation and preserves refusals"
+    ]
+  },
+  {
+    "file": "adapters/session-rename.test.mjs",
+    "lines": 82,
+    "calls": 1,
+    "names": [
+      "session rename preserves hepi title, forwards rename requests, and handles refusals"
+    ]
+  },
+  {
+    "file": "adapters/session-search.test.mjs",
+    "lines": 74,
+    "calls": 1,
+    "names": [
+      "session search performs bounded catalogue scan without fan-out and preserves errors"
+    ]
+  },
+  {
+    "file": "adapters/stream-heartbeat.test.mjs",
+    "lines": 79,
+    "calls": 1,
+    "names": [
+      "stream proxies forward origin comment frames without injection"
+    ]
+  },
+  {
+    "file": "adapters/terminal.test.mjs",
+    "lines": 50,
+    "calls": 1,
+    "names": [
+      "terminal proxy forwards reconnect cursor, initial attach, and routing cwd query"
+    ]
+  },
+  {
+    "file": "adapters/worktree-picker.test.mjs",
+    "lines": 137,
+    "calls": 2,
+    "names": [
+      "worktree list resolves workspace from cwd and omits unconfigured paths",
+      "worktree creation and deletion forward parameters, handle dirty state, and return upstream responses"
+    ]
+  },
+  {
+    "file": "components/AgentSessionPanel.test.mjs",
+    "lines": 30,
+    "calls": 1,
+    "names": [
+      "agent family selection, running order, and persisted status"
+    ]
+  },
+  {
+    "file": "components/AgentsConfig.test.mjs",
+    "lines": 80,
+    "calls": 2,
+    "names": [
+      "profile draft selection is copied independently of activation",
+      "profile scope ownership governs editing, toggling, duplication, and deletion"
+    ]
+  },
+  {
+    "file": "components/AnsiText.test.mjs",
+    "lines": 98,
+    "calls": 2,
+    "names": [
+      "ANSI escape code parsing and color styling matrix",
+      "ANSI HTML injection prevention, newline retention, and style isolation matrix"
+    ]
+  },
+  {
+    "file": "components/AppShell.mobile-toolbar.test.mjs",
+    "lines": 68,
+    "calls": 2,
+    "names": [
+      "mobile toolbar responsive layout, actions gating, and panel positioning matrix",
+      "mobile action layer focus containment, outside dismiss, and drawer close matrix"
+    ]
+  },
+  {
+    "file": "components/AppShell.session-delete.test.mjs",
+    "lines": 97,
+    "calls": 1,
+    "names": [
+      "session deletion callback ref-synchronization and navigation guard matrix"
+    ]
+  },
+  {
+    "file": "components/AppShell.terminal.test.mjs",
+    "lines": 40,
+    "calls": 1,
+    "names": [
+      "terminal tab creation, identity retention, and storage corruption recovery matrix"
+    ]
+  },
+  {
+    "file": "components/AppShell.workspace-memory.test.mjs",
+    "lines": 224,
+    "calls": 3,
+    "names": [
+      "workspace context invalidation, folder display, and cross-project restore matrix",
+      "active session transitions, tab memory, auto-name, and sidebar breakpoint matrix",
+      "New session draft restoration and project parking lifecycle matrix"
+    ]
+  },
+  {
+    "file": "components/BranchNavigator.test.mjs",
+    "lines": 176,
+    "calls": 3,
+    "names": [
+      "compressChain metadata and label resolution matrix",
+      "selectTopLevelBranches and hasSessionBranches structure matrix",
+      "buildActivePath stack safety and locked UI branch switching"
+    ]
+  },
+  {
+    "file": "components/ChatAppearance.test.mjs",
+    "lines": 35,
+    "calls": 1,
+    "names": [
+      "chat appearance width and font size clamping validation matrix"
+    ]
+  },
+  {
+    "file": "components/ChatInput.test.mjs",
+    "lines": 724,
+    "calls": 7,
+    "names": [
+      "composer input transforms, link preservation, and keyboard shortcut matrix",
+      "file mention navigation, arrow wrapping, and upward menu positioning matrix",
+      "slash command layout ordering, submission, and streaming /mcp handling matrix",
+      "image compression and attachment handling matrix",
+      "draft lifecycle, edit restoration, and key migration matrix",
+      "model selector, image support warnings, and thinking level control matrix",
+      "composer Enter actions preserve queue, completion, mobile, and IME priorities"
+    ]
+  },
+  {
+    "file": "components/ChatMinimap.test.mjs",
+    "lines": 68,
+    "calls": 1,
+    "names": [
+      "chat minimap outline navigation and tool call counting matrix"
+    ]
+  },
+  {
+    "file": "components/ChatWindow.extension-request.test.mjs",
+    "lines": 20,
+    "calls": 1,
+    "names": [
+      "extension requests keep composer access, markdown options, cancellation, and request identity"
+    ]
+  },
+  {
+    "file": "components/EnabledModelsSection.test.mjs",
+    "lines": 188,
+    "calls": 5,
+    "names": [
+      "enabled model filtering and narrowed-provider badge",
+      "bulk and individual changes preserve at least one enabled model and respect read-only scope",
+      "enabled model writes serialize queued intent and resync saved references",
+      "provider toggle resolves complete, partial, empty, and blocked selections",
+      "enabled-model routes currently report unsupported capability"
+    ]
+  },
+  {
+    "file": "components/ExtensionStatusBar.test.mjs",
+    "lines": 216,
+    "calls": 3,
+    "names": [
+      "status text normalization, ordering, visibility, and widget composition",
+      "command statuses accept only slash commands and reflect availability",
+      "command button sends its declared command"
+    ]
+  },
+  {
+    "file": "components/ExtensionWidgets.test.mjs",
+    "lines": 145,
+    "calls": 2,
+    "names": [
+      "extension widget content change detection and expansion toggle matrix",
+      "extension widget rendering and layout expansion matrix"
+    ]
+  },
+  {
+    "file": "components/ExtensionsConfig.test.mjs",
+    "lines": 70,
+    "calls": 4,
+    "names": [
+      "extension toggles retain installed selections in registry order",
+      "extension settings ownership and conversation-specific persistence"
+    ]
+  },
+  {
+    "file": "components/FileExplorer.linked-directory.test.mjs",
+    "lines": 83,
+    "calls": 2,
+    "names": [
+      "outside links disclose targets, collapsed state, and enclosing-folder risk",
+      "link authorization sends the shown target and reports listing failures"
+    ]
+  },
+  {
+    "file": "components/ImagePreview.test.mjs",
+    "lines": 33,
+    "calls": 1,
+    "names": [
+      "image modal isolates Escape, restores focus, and closes only on its backdrop"
+    ]
+  },
+  {
+    "file": "components/MarkdownBody.test.mjs",
+    "lines": 321,
+    "calls": 6,
+    "names": [
+      "CJK typography, sentence emphasis, brackets, and strikethrough matrix",
+      "LaTeX and KaTeX math delimiters, equations, and formula syntax matrix",
+      "currency and price protection vs math parsing matrix",
+      "link routing, URL sanitization, and CJK autolink boundary matrix",
+      "line break transformations, tight lists, headings, and raw-text tag safety matrix",
+      "Mermaid preview/streaming toggle and markdown image preview matrix"
+    ]
+  },
+  {
+    "file": "components/McpConfig.test.mjs",
+    "lines": 663,
+    "calls": 6,
+    "names": [
+      "MCP inventory and detail disclose scope, trust, transport, and masked fields",
+      "MCP controls reflect Code mode availability and configured exposure",
+      "MCP connection and sign-in surfaces report current state"
+    ]
+  },
+  {
+    "file": "components/MermaidBlock.test.mjs",
+    "lines": 125,
+    "calls": 2,
+    "names": [
+      "Mermaid and CodeBlock rendering modes and streaming fallback matrix",
+      "downloadMermaidSvg XML serialization and blob URL lifecycle"
+    ]
+  },
+  {
+    "file": "components/MessageView.test.mjs",
+    "lines": 546,
+    "calls": 5,
+    "names": [
+      "MessageView content and markdown formatting matrix",
+      "Tool call display, file write diffs, and subagent session buttons matrix",
+      "Thinking preview, deferred content, and search match highlighting matrix",
+      "Codemode execution, script summary, and MCP tool call labelling matrix",
+      "Assistant error handling, compaction truncation notices, and token metrics matrix"
+    ]
+  },
+  {
+    "file": "components/ModelSelector.test.mjs",
+    "lines": 12,
+    "calls": 1,
+    "names": [
+      "does not autofocus the model filter on mobile"
+    ]
+  },
+  {
+    "file": "components/ModelsConfig.test.mjs",
+    "lines": 204,
+    "calls": 5,
+    "names": [
+      "model header editing preserves identity, omits drafts, and writes explicit compatibility overrides",
+      "model cost drafts distinguish complete, blank, invalid, and negative prices",
+      "model rename tracking distinguishes saved references from added, removed, and blank rows",
+      "provider renames preserve order, tracking, and collision safety",
+      "model save applies pending provider names and reports saved-but-not-applied results"
+    ]
+  },
+  {
+    "file": "components/NewSessionContextBar.test.mjs",
+    "lines": 85,
+    "calls": 2,
+    "names": [
+      "new composer exposes project and eligible worktree controls",
+      "composer move returns focus to the originating control"
+    ]
+  },
+  {
+    "file": "components/OAuthPastePanel.test.mjs",
+    "lines": 70,
+    "calls": 2,
+    "names": [
+      "OAuth paste panel displays supplied content and disables empty or pending submissions",
+      "OAuth submission keys respect modifiers and IME composition"
+    ]
+  },
+  {
+    "file": "components/ProjectRemovalMenu.test.mjs",
+    "lines": 100,
+    "calls": 2,
+    "names": [
+      "project removal discloses retained directories and uses host paths",
+      "folder unlink requires an eligible replacement and preserves refusal context"
+    ]
+  },
+  {
+    "file": "components/ProjectTrustDialog.test.mjs",
+    "lines": 337,
+    "calls": 6,
+    "names": [
+      "trust listing discloses execution, secrets, refusal, and hidden characters",
+      "trust listing explains missing, unchecked, unreadable, and failed files",
+      "trust dialog remains informational across loading, trusted, and locked-store states",
+      "trust response decoding preserves listing and status independently",
+      "trust dialog aborts stale reads, isolates focus, and never writes decisions"
+    ]
+  },
+  {
+    "file": "components/ProjectWorktreePicker.test.mjs",
+    "lines": 220,
+    "calls": 4,
+    "names": [
+      "project picker renders current path, branch, activity, and missing-list states",
+      "picker routing preserves workspace identity and restricts checkout removal",
+      "checkout mutation responses apply only to the requesting open menu",
+      "checkout removal places initial focus on Cancel and displays backend errors"
+    ]
+  },
+  {
+    "file": "components/SessionSearch.test.mjs",
+    "lines": 68,
+    "calls": 2,
+    "names": [
+      "session search replaces the tree only for active nonempty queries",
+      "search result routing, excerpts, partial answers, and refusal bounds"
+    ]
+  },
+  {
+    "file": "components/SessionSidebar.marker-effect.test.mjs",
+    "lines": 186,
+    "calls": 2,
+    "names": [
+      "unread completion persists through queued runs and refresh until opened",
+      "initial listings, subagents, and visible completions do not create false unread markers"
+    ]
+  },
+  {
+    "file": "components/SessionSidebar.test.mjs",
+    "lines": 132,
+    "calls": 2,
+    "names": [
+      "sidebar deletion and project navigation preserve owning session and folder identity",
+      "sidebar running polling and stable session-id sets"
+    ]
+  },
+  {
+    "file": "components/SessionTree.test.mjs",
+    "lines": 437,
+    "calls": 7,
+    "names": [
+      "tree headers disclose collapsed activity and retained-project action eligibility",
+      "session row actions respect running, unread, selected, transient, pinned, and archived state",
+      "row editing, delete confirmation, and title fallback",
+      "tree pagination, loading, empty, and failure states",
+      "windowed tree keeps interaction and reveal targets mounted",
+      "catalog projection renders unique family row keys",
+      "tree keyboard and pagination focus ownership"
+    ]
+  },
+  {
+    "file": "components/SettingsPanel.test.mjs",
+    "lines": 74,
+    "calls": 1,
+    "names": [
+      "settings navigation mounts registered sections and manages dialog focus"
+    ]
+  },
+  {
+    "file": "components/SettingsUi.test.mjs",
+    "lines": 142,
+    "calls": 1,
+    "names": [
+      "settings controls expose scope, disabled reasons, trust actions, and submit semantics"
+    ]
+  },
+  {
+    "file": "components/SidebarMenu.test.mjs",
+    "lines": 361,
+    "calls": 5,
+    "names": [
+      "menu and sheet render accessible actions and conditional custom bodies",
+      "menu placement flips and clamps point and button anchors",
+      "menu shortcuts and focus restoration skip unavailable targets",
+      "menu event ownership isolates Escape, activation, and outside presses",
+      "menu filtering retains actions and renders empty-result feedback"
+    ]
+  },
+  {
+    "file": "components/SidebarToast.test.mjs",
+    "lines": 66,
+    "calls": 2,
+    "names": [
+      "toast live region renders messages, optional actions, and dismiss controls",
+      "toast lifecycle pauses dismissal and dismisses before activating an action"
+    ]
+  },
+  {
+    "file": "components/SkillsConfig.dormancy.test.mjs",
+    "lines": 21,
+    "calls": 1,
+    "names": [
+      "skill listing keeps active entries before dormant entries in stable order"
+    ]
+  },
+  {
+    "file": "components/SkillsRetirement.test.mjs",
+    "lines": 12,
+    "calls": 1,
+    "names": [
+      "Skills settings remain the user entry point after standalone Market retirement"
+    ]
+  },
+  {
+    "file": "components/TerminalPanel.test.mjs",
+    "lines": 119,
+    "calls": 2,
+    "names": [
+      "terminal requests, cwd routing confinement, and diagnostic error handling matrix",
+      "terminal input streaming, ordered batching, unicode bounds, and failure queue discard matrix"
+    ]
+  },
+  {
+    "file": "components/ToolDefinitionsPanel.test.mjs",
+    "lines": 24,
+    "calls": 1,
+    "names": [
+      "tool inspection includes only declared active tools and exposes schema metadata"
+    ]
+  },
+  {
+    "file": "components/TurnWrittenFiles.test.mjs",
+    "lines": 47,
+    "calls": 1,
+    "names": [
+      "written files pill rendering and empty state matrix"
+    ]
+  },
+  {
+    "file": "components/file-tab-state.test.mjs",
+    "lines": 130,
+    "calls": 2,
+    "names": [
+      "file tab opening, session switching, diff mode, and PDF navigation matrix",
+      "viewer state snapshots and revision fencing against stale updates"
+    ]
+  },
+  {
+    "file": "components/mcp-add-helpers.test.mjs",
+    "lines": 179,
+    "calls": 3,
+    "names": [
+      "analyzeMcpAddPaste command, URL, secret extraction, and format examples matrix",
+      "MCP add field validation, variable names, draft edits, and refusal reason matrix",
+      "MCP add importer notes, validator problems, and locale message completeness matrix"
+    ]
+  },
+  {
+    "file": "components/mcp-config-helpers.test.mjs",
+    "lines": 444,
+    "calls": 5,
+    "names": [
+      "mcpRowState, badges, trust hierarchy, and file problems resolution matrix",
+      "MCP Code mode preference, autoEnableCodemode merge, budget, and reach notices matrix",
+      "loadMcpOverview and preference saving request lifecycle and timeout abort matrix",
+      "MCP group switch calculation, targets, and read-only policy matrix",
+      "MCP test status reporting, session refinement, timestamps, and test request matrix"
+    ]
+  },
+  {
+    "file": "components/mcp-sign-in-helpers.test.mjs",
+    "lines": 147,
+    "calls": 2,
+    "names": [
+      "MCP sign-in summary, block policies, URL validation, and outcome tones matrix",
+      "MCP sign-in flow lifecycle, error cleanup, and HTTP route communication matrix"
+    ]
+  },
+  {
+    "file": "components/session-catalog-helpers.test.mjs",
+    "lines": 63,
+    "calls": 1,
+    "names": [
+      "mergeCatalogRow reconciles local draft state with server catalogue rows"
+    ]
+  },
+  {
+    "file": "components/settings-capabilities.test.mjs",
+    "lines": 63,
+    "calls": 1,
+    "names": [
+      "capability availability and notice classification matrix"
+    ]
+  },
+  {
+    "file": "components/settings-ui-helpers.test.mjs",
+    "lines": 63,
+    "calls": 1,
+    "names": [
+      "settings UI helper calculations and group toggle matrices"
+    ]
+  },
+  {
+    "file": "hooks/context-usage.test.mjs",
+    "lines": 128,
+    "calls": 2,
+    "names": [
+      "context-usage read lifecycle, race handling, and error recovery",
+      "only completed assistant messages trigger an immediate usage read"
+    ]
+  },
+  {
+    "file": "hooks/mcp-slash-command.test.mjs",
+    "lines": 217,
+    "calls": 2,
+    "names": [
+      "mcp slash command routing matrix: built-in vs other extensions, subcommands, and settings availability",
+      "slash command async loading, caching, race resolution, and error fallback"
+    ]
+  },
+  {
+    "file": "hooks/model-loading.test.mjs",
+    "lines": 137,
+    "calls": 1,
+    "names": [
+      "model loading lifecycle: bounded retries, error recovery, cancellation, and model picking invariants"
+    ]
+  },
+  {
+    "file": "hooks/useAgentSession.lifecycle.test.mjs",
+    "lines": 1232,
+    "calls": 7,
+    "names": [
+      "stream acquisition, remounting sequence preservation, and stream release",
+      "conversation switching and paged history retention across mounts",
+      "submission failures, steer refusals, and oversize refusals",
+      "live completion reporting, sound dispatch uniqueness, and stream termination",
+      "stale HTTP read rejection, equal-revision snapshot hydration, and fold refusal",
+      "accepted window authority over model, reasoning level, and queues against delayed/reconnected state"
+    ]
+  },
+  {
+    "file": "hooks/useFontPreferences.test.mjs",
+    "lines": 167,
+    "calls": 2,
+    "names": [
+      "font preferences SSR defaults, mount restoration, and storage failure tolerance",
+      "font preferences editing, independent family/weight reset, subscriber notifications, and cross-tab sync"
+    ]
+  },
+  {
+    "file": "hooks/useGroupDrag.test.mjs",
+    "lines": 502,
+    "calls": 3,
+    "names": [
+      "mouse pointer drag lifecycle: threshold, move tracking, drop, escape, and click preservation",
+      "touch and pen gestures: swipe scrolling, long-press, context menu, and edge auto-scroll",
+      "gesture guards, multi-pointer/blur interruption, tree changes, and unmount cleanup"
+    ]
+  },
+  {
+    "file": "hooks/useKeyboardShortcuts.test.mjs",
+    "lines": 46,
+    "calls": 1,
+    "names": [
+      "global Escape shortcut routing and handler lifecycle"
+    ]
+  },
+  {
+    "file": "hooks/useSessionUiState.test.mjs",
+    "lines": 104,
+    "calls": 1,
+    "names": [
+      "session UI state sync lifecycle: recovery from failed initial GET, successful sync, and later errors"
+    ]
+  },
+  {
+    "file": "hooks/useViewportHeight.test.mjs",
+    "lines": 23,
+    "calls": 1,
+    "names": [
+      "shouldUseVisualViewportHeight resolves viewport adjustments by input state and geometry"
+    ]
+  },
+  {
+    "file": "lib/agent-client.test.mjs",
+    "lines": 71,
+    "calls": 1,
+    "names": [
+      "agent command error distinctions, request ID generation, and prompt rejection checks"
+    ]
+  },
+  {
+    "file": "lib/agent-event-connection.test.mjs",
+    "lines": 173,
+    "calls": 3,
+    "names": [
+      "shared readers and independent conversations",
+      "automatic and explicit reconnect preserve readers",
+      "release, readiness timeout and startup refusal stop delivery"
+    ]
+  },
+  {
+    "file": "lib/agent-event-stream.test.mjs",
+    "lines": 553,
+    "calls": 3,
+    "names": [
+      "stream startup and reconnect order subscriptions, snapshots and replay around cancellation",
+      "backpressure bounds backlog and preserves authoritative block boundaries",
+      "tool progress coalesces per call and ends before terminal facts"
+    ]
+  },
+  {
+    "file": "lib/agent-event-wire.test.mjs",
+    "lines": 494,
+    "calls": 3,
+    "names": [
+      "assistant deltas retain identity without cumulative payloads",
+      "tool and system events obey transport ownership and omission rules",
+      "bounded codemode snapshots and slim deltas keep serialized traffic linear"
+    ]
+  },
+  {
+    "file": "lib/ansi.test.mjs",
+    "lines": 25,
+    "calls": 1,
+    "names": [
+      "ansi utilities strip escape sequences and normalize custom panel output"
+    ]
+  },
+  {
+    "file": "lib/app-update.test.mjs",
+    "lines": 11,
+    "calls": 1,
+    "names": [
+      "updates compare stable versions and link only stable releases"
+    ]
+  },
+  {
+    "file": "lib/apply-patch.test.mjs",
+    "lines": 114,
+    "calls": 1,
+    "names": [
+      "applyPatch utilities parse patches, previews, results, and file paths"
+    ]
+  },
+  {
+    "file": "lib/atomic-file.test.mjs",
+    "lines": 35,
+    "calls": 1,
+    "names": [
+      "writePrivateFileAtomicSync atomically writes private files and cleans up on failure"
+    ]
+  },
+  {
+    "file": "lib/auth-throttle.test.mjs",
+    "lines": 70,
+    "calls": 1,
+    "names": [
+      "auth throttle tracks failures, exponential backoff, expirations, and success resets"
+    ]
+  },
+  {
+    "file": "lib/bash-output.test.mjs",
+    "lines": 55,
+    "calls": 1,
+    "names": [
+      "bash output paths and readers validate filenames, size limits, and reject symlinks"
+    ]
+  },
+  {
+    "file": "lib/bounded-form-data.test.mjs",
+    "lines": 95,
+    "calls": 1,
+    "names": [
+      "bounded form data enforces byte limits, streams parts, and handles errors"
+    ]
+  },
+  {
+    "file": "lib/browser-notifications.test.mjs",
+    "lines": 168,
+    "calls": 2,
+    "names": [
+      "notification delivery uses a service worker, falls back to the page and tolerates unavailable APIs",
+      "notification attention depends on visibility and focus and claims blocking requests once"
+    ]
+  },
+  {
+    "file": "lib/chat-lazy-load.test.mjs",
+    "lines": 98,
+    "calls": 2,
+    "names": [
+      "live follow attachment and scroll-to-latest button visibility",
+      "prompt anchor spacer geometry: viewport deficit, streaming absorption, clamping, and rounding"
+    ]
+  },
+  {
+    "file": "lib/chat-only.test.mjs",
+    "lines": 28,
+    "calls": 1,
+    "names": [
+      "Chat only loader options and context-file prompt formatting"
+    ]
+  },
+  {
+    "file": "lib/chat-phase-label.test.mjs",
+    "lines": 31,
+    "calls": 1,
+    "names": [
+      "phaseLabel maps stream phases, tool status, and compaction overrides"
+    ]
+  },
+  {
+    "file": "lib/chat-scroll-position.test.mjs",
+    "lines": 60,
+    "calls": 1,
+    "names": [
+      "findChatScrollAnchor selects winning anchor element across candidates and offsets"
+    ]
+  },
+  {
+    "file": "lib/chat-turn-identity.test.mjs",
+    "lines": 52,
+    "calls": 1,
+    "names": [
+      "chat turn identity resolution and leading mid-turn segment invariants"
+    ]
+  },
+  {
+    "file": "lib/chat-turn-model.test.mjs",
+    "lines": 168,
+    "calls": 2,
+    "names": [
+      "turn model structure: anchor, process, answer, leading split turn, streaming vs settled layout, and written files",
+      "turn model identity stability, ref indexing, and search target resolution"
+    ]
+  },
+  {
+    "file": "lib/codemode-settings.test.mjs",
+    "lines": 293,
+    "calls": 3,
+    "names": [
+      "manages code mode preference resolution and settings persistence with PowerShell interop",
+      "manages project-level code mode overrides and filesystem boundaries",
+      "manages inline budget and mode validation, persistence, and project scoping"
+    ]
+  },
+  {
+    "file": "lib/codemode-view.test.mjs",
+    "lines": 94,
+    "calls": 2,
+    "names": [
+      "parses scripts, previews, headers, and nested calls defensively",
+      "formats duration, cost aggregation, and runtime progress"
+    ]
+  },
+  {
+    "file": "lib/compaction-summary.test.mjs",
+    "lines": 34,
+    "calls": 1,
+    "names": [
+      "parseCompactionSummary extracts file metadata tags while preserving summary body"
+    ]
+  },
+  {
+    "file": "lib/completion-delivery.test.mjs",
+    "lines": 563,
+    "calls": 4,
+    "names": [
+      "live answers have one reporting owner while baselines, unanswered runs and subagents stay silent",
+      "idle and settled conversations release their sources",
+      "handover preserves queued and unresolved answer interests",
+      "terminal and foreground sources reserve the page connection budget"
+    ]
+  },
+  {
+    "file": "lib/custom-ui-terminal.test.mjs",
+    "lines": 34,
+    "calls": 1,
+    "names": [
+      "headless custom UI supplies stable dimensions and forwards plugin render requests"
+    ]
+  },
+  {
+    "file": "lib/default-cwd.test.mjs",
+    "lines": 23,
+    "calls": 1,
+    "names": [
+      "defaultCwdPath stamps local calendar dates under ~/pi-cwd"
+    ]
+  },
+  {
+    "file": "lib/default-preferences.test.mjs",
+    "lines": 87,
+    "calls": 1,
+    "names": [
+      "default-preferences writes model and thinking preferences, detects shadowing, and validates levels"
+    ]
+  },
+  {
+    "file": "lib/deferred-provider-models.test.mjs",
+    "lines": 48,
+    "calls": 1,
+    "names": [
+      "deferred provider models remain discoverable only while the current runtime lacks their provider"
+    ]
+  },
+  {
+    "file": "lib/deferred-text.test.mjs",
+    "lines": 127,
+    "calls": 2,
+    "names": [
+      "deferred text recognition, deduplication, and memory/byte bounds eviction",
+      "message text block original restoration, ordering, and failure refusal"
+    ]
+  },
+  {
+    "file": "lib/directory-browser.test.mjs",
+    "lines": 85,
+    "calls": 1,
+    "names": [
+      "directory browser handles directory listing, path resolution, drives, creation, and validation"
+    ]
+  },
+  {
+    "file": "lib/display-path.test.mjs",
+    "lines": 29,
+    "calls": 1,
+    "names": [
+      "displayPath utilities shorten home paths, format relative roots, and translate routing paths"
+    ]
+  },
+  {
+    "file": "lib/enabled-models-runtime.test.mjs",
+    "lines": 219,
+    "calls": 3,
+    "names": [
+      "resolves model patterns, thinking pins, and provider globs with nesting and collision handling",
+      "builds enabled models views with provider grouping, custom providers, stale patterns, and thinking pins",
+      "reads and persists enabled models settings across project/global scopes and protects against malformed files"
+    ]
+  },
+  {
+    "file": "lib/enabled-models.test.mjs",
+    "lines": 444,
+    "calls": 5,
+    "names": [
+      "computeEnabledModelsState resolves globs, pins, stale patterns, and scope clearance",
+      "setModelsEnabled handles disable operations, pattern expansion, pins, and last-model guards",
+      "setModelsEnabled handles enable operations, provider collapsing, order preservation, and no-ops",
+      "handles nested model IDs, provider glob repairs, and untouched provider normalization",
+      "handles stale model pruning, provider overmatch constraints, and pattern renaming"
+    ]
+  },
+  {
+    "file": "lib/exact-system-prompt.test.mjs",
+    "lines": 40,
+    "calls": 1,
+    "names": [
+      "exact system prompt follows the current configuration on each run and leaves unconfigured runs alone"
+    ]
+  },
+  {
+    "file": "lib/extension-dialog-fit.test.mjs",
+    "lines": 13,
+    "calls": 1,
+    "names": [
+      "dialog fit ignores rounding overflow, grows to the widest step and stabilizes on remeasurement"
+    ]
+  },
+  {
+    "file": "lib/extension-ui-queue.test.mjs",
+    "lines": 36,
+    "calls": 2,
+    "names": [
+      "extension dialogs preserve arrival order, reconcile replay, and close only named requests",
+      "custom panel updates replace in place and expose the latest waiting render"
+    ]
+  },
+  {
+    "file": "lib/extension-widgets.test.mjs",
+    "lines": 35,
+    "calls": 1,
+    "names": [
+      "widget updates preserve order, append new keys and remove cleared entries"
+    ]
+  },
+  {
+    "file": "lib/file-access.test.mjs",
+    "lines": 57,
+    "calls": 1,
+    "names": [
+      "path security confines files within roots and rejects symlink escapes or parent traversals"
+    ]
+  },
+  {
+    "file": "lib/file-dirent.test.mjs",
+    "lines": 46,
+    "calls": 1,
+    "names": [
+      "resolveDirentIsDirectory resolves directories from Dirent, stat fallback, and followed symlinks"
+    ]
+  },
+  {
+    "file": "lib/file-fuzzy.test.mjs",
+    "lines": 30,
+    "calls": 1,
+    "names": [
+      "file mention builders format file and line-scoped mentions with quoting"
+    ]
+  },
+  {
+    "file": "lib/file-links.test.mjs",
+    "lines": 76,
+    "calls": 2,
+    "names": [
+      "shouldOpenLocalFileInApp identifies in-app open clicks versus browser defaults",
+      "resolveLocalFileHref and parsePdfPageFragment resolve paths, URL schemes, UNC, and PDF pages"
+    ]
+  },
+  {
+    "file": "lib/file-paths.test.mjs",
+    "lines": 34,
+    "calls": 1,
+    "names": [
+      "file-paths utilities encode API segments, parse file names/dirs, join, and compute relative paths"
+    ]
+  },
+  {
+    "file": "lib/file-tree-visibility.test.mjs",
+    "lines": 166,
+    "calls": 2,
+    "names": [
+      "Git work tree visibility distinguishes tracked, ignored, untracked, dotfiles, and nested repositories",
+      "Git path literals, fsmonitor hooks, non-git fallback, and fallback name lists"
+    ]
+  },
+  {
+    "file": "lib/file-types.test.mjs",
+    "lines": 47,
+    "calls": 1,
+    "names": [
+      "file types utilities detect MIME types, extensions, and media preview paths"
+    ]
+  },
+  {
+    "file": "lib/file-upload-client.test.mjs",
+    "lines": 33,
+    "calls": 1,
+    "names": [
+      "file upload client categorizes dropped items and builds mention text"
+    ]
+  },
+  {
+    "file": "lib/file-upload.test.mjs",
+    "lines": 59,
+    "calls": 1,
+    "names": [
+      "file upload validation checks names, conflicts, non-replaceable targets, and conflict strategies"
+    ]
+  },
+  {
+    "file": "lib/file-viewer-state.test.mjs",
+    "lines": 17,
+    "calls": 1,
+    "names": [
+      "resolveInitialFileDisplayMode prefers restored state and falls back to open hint or default"
+    ]
+  },
+  {
+    "file": "lib/font-preferences.test.mjs",
+    "lines": 42,
+    "calls": 1,
+    "names": [
+      "font preferences validate weights, parse CSS font family names, and build stack overrides"
+    ]
+  },
+  {
+    "file": "lib/frontmatter.test.mjs",
+    "lines": 50,
+    "calls": 1,
+    "names": [
+      "parseFrontmatter parses fences, tolerates malformed YAML, and formats scalar values"
+    ]
+  },
+  {
+    "file": "lib/gfm-autolink-email-loader.test.mjs",
+    "lines": 46,
+    "calls": 2,
+    "names": [
+      "gfm-autolink-email-loader rewrites email regex and handles lookbehind fallbacks"
+    ]
+  },
+  {
+    "file": "lib/git-changes.test.mjs",
+    "lines": 39,
+    "calls": 1,
+    "names": [
+      "git status parser extracts porcelain entries and classifies status badges"
+    ]
+  },
+  {
+    "file": "lib/history-prefix.test.mjs",
+    "lines": 42,
+    "calls": 1,
+    "names": [
+      "decidePrefix determines loaded prefix retention, migration, truncation, and idempotency"
+    ]
+  },
+  {
+    "file": "lib/http-dispatcher.test.mjs",
+    "lines": 84,
+    "calls": 1,
+    "names": [
+      "configures HTTP_PROXY, HTTPS_PROXY, and NO_PROXY for global fetch"
+    ]
+  },
+  {
+    "file": "lib/i18n/format.test.mjs",
+    "lines": 74,
+    "calls": 2,
+    "names": [
+      "translation interpolates parameters and falls back to English or the key",
+      "localized timestamps handle relative, same-day, compact and invalid dates"
+    ]
+  },
+  {
+    "file": "lib/i18n/registry.test.mjs",
+    "lines": 52,
+    "calls": 1,
+    "names": [
+      "locale registry negotiates browser languages and supplies complete translated keys and placeholders"
+    ]
+  },
+  {
+    "file": "lib/image-attachments.test.mjs",
+    "lines": 47,
+    "calls": 1,
+    "names": [
+      "image attachments enforce decoded byte limits, supported types and available slots"
+    ]
+  },
+  {
+    "file": "lib/initial-navigation.test.mjs",
+    "lines": 106,
+    "calls": 2,
+    "names": [
+      "initial URL navigation parameter matrix: cwd, session, and sidebar state",
+      "withTabOpen tab memory filling and SSR initial render stability"
+    ]
+  },
+  {
+    "file": "lib/json-response.test.mjs",
+    "lines": 39,
+    "calls": 1,
+    "names": [
+      "jsonResponse handles gzip compression negotiation and small payloads"
+    ]
+  },
+  {
+    "file": "lib/jsonc.test.mjs",
+    "lines": 65,
+    "calls": 1,
+    "names": [
+      "jsonc parser strips comments and trailing commas while respecting strings and token boundaries"
+    ]
+  },
+  {
+    "file": "lib/key-serializer.test.mjs",
+    "lines": 43,
+    "calls": 1,
+    "names": [
+      "serializeByKey queues tasks per key sequentially and shares state across module instances"
+    ]
+  },
+  {
+    "file": "lib/lifecycle-acquisition.test.mjs",
+    "lines": 54,
+    "calls": 1,
+    "names": [
+      "lifecycle statement acceptance, transport facts, fold decision, and attachment identity invariants"
+    ]
+  },
+  {
+    "file": "lib/lifecycle-projection.test.mjs",
+    "lines": 519,
+    "calls": 7,
+    "names": [
+      "loading and hydration depend on complete accepted projections",
+      "placement and terminal facts preserve queue order and answer identity",
+      "refusals and protocol contradictions preserve conversation and submission ownership",
+      "refusals restore only their own staged submission",
+      "conversation and lifecycle contradictions retain the last good view",
+      "admissions, facts and equal snapshots are idempotent with bounded interests",
+      "activity phases describe staged, running and settled work without side effects"
+    ]
+  },
+  {
+    "file": "lib/linked-directory.test.mjs",
+    "lines": 99,
+    "calls": 1,
+    "names": [
+      "linked directory resolution identifies outside targets, annotates listings, and validates approval boundaries"
+    ]
+  },
+  {
+    "file": "lib/login-destination.test.mjs",
+    "lines": 28,
+    "calls": 1,
+    "names": [
+      "safeLoginDestination returns local paths and rejects foreign hosts, protocols, or evasive formats"
+    ]
+  },
+  {
+    "file": "lib/markdown-list-continuation.test.mjs",
+    "lines": 83,
+    "calls": 1,
+    "names": [
+      "markdown list continuation handles markers, indentation, nesting, termination, and code blocks"
+    ]
+  },
+  {
+    "file": "lib/markdown.test.mjs",
+    "lines": 181,
+    "calls": 2,
+    "names": [
+      "normalizeDisplayMath normalizes display math, bracket blocks, and inline latex",
+      "splitAutolinkLiteralsAtCjkPunctuation splits autolinks at CJK punctuation while preserving valid paths"
+    ]
+  },
+  {
+    "file": "lib/mcp-add.test.mjs",
+    "lines": 127,
+    "calls": 2,
+    "names": [
+      "prepareMcpAdd derives entries, names, references, and escapes typed values",
+      "prepareMcpAdd validates requests, enforces PI_WEB_PASSWORD security, and confirms host environment variables"
+    ]
+  },
+  {
+    "file": "lib/mcp-command.test.mjs",
+    "lines": 80,
+    "calls": 2,
+    "names": [
+      "identifies built-in, bare, and extension /mcp commands",
+      "mcpPromptPreparation dispatches wait, register, and none modes appropriately"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-key.test.mjs",
+    "lines": 40,
+    "calls": 1,
+    "names": [
+      "mcpConfigKey and canonicalJson handle key order invariance, deep recursion safety, and depth limits"
+    ]
+  },
+  {
+    "file": "lib/mcp-config-values.test.mjs",
+    "lines": 34,
+    "calls": 1,
+    "names": [
+      "findWebPasswordField agrees across browser and SDK parsers and shares transport constants"
+    ]
+  },
+  {
+    "file": "lib/mcp-import.integration.test.mjs",
+    "lines": 277,
+    "calls": 2,
+    "names": [
+      "pi mcp add CLI output and shell argument quoting parity with SDK",
+      "mcp importer escaping, validation port, and environment variable resolution parity"
+    ]
+  },
+  {
+    "file": "lib/mcp-import.test.mjs",
+    "lines": 631,
+    "calls": 8,
+    "names": [
+      "parses value escapes, client reference grammars, and placeholders",
+      "imports URLs, handles protocols, unwraps deeplinks, and decodes base64 payloads",
+      "parses command lines, sanitizes shell syntax, and extracts command fields",
+      "imports CLI add commands across pi, claude, codex, gemini, and code",
+      "parses configuration formats across Claude, Gemini, Cursor, VS Code, Zed, and registry",
+      "sanitizes server names, resolves collisions, and normalizes timeouts",
+      "detects literal secrets, maps field references, and handles password inputs",
+      "robustness: never throws across prefixes and asserts import note catalog validity"
+    ]
+  },
+  {
+    "file": "lib/mcp-read-only-policy.test.mjs",
+    "lines": 23,
+    "calls": 1,
+    "names": [
+      "isReadOnlySelection and isMcpTool enforce read-only tool policy and MCP tool classification"
+    ]
+  },
+  {
+    "file": "lib/mcp-secrets.test.mjs",
+    "lines": 292,
+    "calls": 2,
+    "names": [
+      "detects and classifies secret names, values, references, and literal secret fields",
+      "masks sensitive secrets in URLs, commands, arguments, and extracts hidden secret parts"
+    ]
+  },
+  {
+    "file": "lib/mcp-server-display.test.mjs",
+    "lines": 82,
+    "calls": 3,
+    "names": [
+      "command line quoting, hidden characters escaping, and server target derivation matrix",
+      "field labels, variable chips, and file problem diagnostics matrix"
+    ]
+  },
+  {
+    "file": "lib/mcp-status.test.mjs",
+    "lines": 143,
+    "calls": 2,
+    "names": [
+      "mcp-status keys by scope/file/name, drops stale records, and maps current listing status",
+      "mcp-status bounds memory capacity, manages replacement concurrency, and tracks inactive hosts"
+    ]
+  },
+  {
+    "file": "lib/mcp-tool-display.test.mjs",
+    "lines": 25,
+    "calls": 1,
+    "names": [
+      "mcpToolLabel and prettyMcpResultText format MCP tool calls and result payloads"
+    ]
+  },
+  {
+    "file": "lib/mcp-transport.test.mjs",
+    "lines": 269,
+    "calls": 2,
+    "names": [
+      "stdio and HTTP transport lifecycle, environment sanitization, and options delegation",
+      "enforces PI_WEB_PASSWORD refusal, fallback defenses, and unvalidated config walks"
+    ]
+  },
+  {
+    "file": "lib/mcp-undo.test.mjs",
+    "lines": 76,
+    "calls": 2,
+    "names": [
+      "manages undo tokens: hold duration, single-use take, TTL expiration, and failed undo return",
+      "manages process lifecycle: unref timers, bounded store capacity, and cross-module process singleton"
+    ]
+  },
+  {
+    "file": "lib/message-display.test.mjs",
+    "lines": 112,
+    "calls": 2,
+    "names": [
+      "assistant block splitting isolates process, thinking, and final answer blocks",
+      "message display handles provider errors, turn anchors, and assistant truncation boundaries"
+    ]
+  },
+  {
+    "file": "lib/model-catalog.test.mjs",
+    "lines": 313,
+    "calls": 2,
+    "names": [
+      "flattens models catalog and ranks search matches with provider/base-url heuristics",
+      "computes price consensus with plurality voting, cache fallbacks, and conflict rejection"
+    ]
+  },
+  {
+    "file": "lib/model-discovery.test.mjs",
+    "lines": 67,
+    "calls": 2,
+    "names": [
+      "builds protocol-appropriate model list URLs and parses model responses",
+      "resolves environment-backed headers and effective provider endpoints"
+    ]
+  },
+  {
+    "file": "lib/model-scope.test.mjs",
+    "lines": 162,
+    "calls": 2,
+    "names": [
+      "resolveVisibleModels resolves patterns, bare IDs, thinking pins, warnings, and fallback scoping",
+      "selectInitialModelScope manages defaults, thinking pins, requested models, and out-of-scope guards"
+    ]
+  },
+  {
+    "file": "lib/models-cache.test.mjs",
+    "lines": 108,
+    "calls": 2,
+    "names": [
+      "loadModelsWithCache handles per-cwd caching, concurrency coalescing, invalidation, and retry",
+      "decorates model data with runtime errors and safe failure messages"
+    ]
+  },
+  {
+    "file": "lib/new-session-context.test.mjs",
+    "lines": 127,
+    "calls": 1,
+    "names": [
+      "newSessionContext manages cwd tracking, project choices, descriptions, worktrees, and cache keys"
+    ]
+  },
+  {
+    "file": "lib/next-config-esm.test.mjs",
+    "lines": 15,
+    "calls": 1,
+    "names": [
+      "resolves config paths without CommonJS globals"
+    ]
+  },
+  {
+    "file": "lib/next-config.test.mjs",
+    "lines": 32,
+    "calls": 1,
+    "names": [
+      "Next config roots linked packages at the workspace and buffers the upload request cap"
+    ]
+  },
+  {
+    "file": "lib/node-cli.test.mjs",
+    "lines": 45,
+    "calls": 1,
+    "names": [
+      "locates bundled CLI scripts and constructs node invocations"
+    ]
+  },
+  {
+    "file": "lib/normalize.test.mjs",
+    "lines": 53,
+    "calls": 1,
+    "names": [
+      "normalizeToolCalls and normalizeStreamingToolCalls manage streaming scratch buffers"
+    ]
+  },
+  {
+    "file": "lib/open-in-file-manager.test.mjs",
+    "lines": 51,
+    "calls": 1,
+    "names": [
+      "open-in-file-manager maps platform commands, detects loopback hosts, and validates platform support"
+    ]
+  },
+  {
+    "file": "lib/panel-layout.test.mjs",
+    "lines": 12,
+    "calls": 1,
+    "names": [
+      "panel sizing clamps finite widths and reserves chat space in split and overlay modes"
+    ]
+  },
+  {
+    "file": "lib/patch.test.mjs",
+    "lines": 80,
+    "calls": 1,
+    "names": [
+      "parseUnifiedPatch parses split diffs, pads additions, handles in-hunk headers, and rejects non-patches"
+    ]
+  },
+  {
+    "file": "lib/paths.test.mjs",
+    "lines": 59,
+    "calls": 1,
+    "names": [
+      "paths utilities convert separators, compare paths, and reconstruct API segment paths"
+    ]
+  },
+  {
+    "file": "lib/pi-sdk-internals.test.mjs",
+    "lines": 54,
+    "calls": 3,
+    "names": [
+      "the SDK adapter loads its required callable surface once across module copies",
+      "the SDK integration gates project MCP configuration on trust",
+      "the SDK adapter refuses redirected, different and unresolvable packages"
+    ]
+  },
+  {
+    "file": "lib/powershell-settings.test.mjs",
+    "lines": 36,
+    "calls": 1,
+    "names": [
+      "PowerShell settings resolve platform opt-in and modifiers and preserve settings across shell changes"
+    ]
+  },
+  {
+    "file": "lib/project-command-env.test.mjs",
+    "lines": 318,
+    "calls": 2,
+    "names": [
+      "environment sanitization and bash configuration preserve user env and tool priority",
+      "bash tool execution handles Stop signals, timeouts, and surviving descendant processes"
+    ]
+  },
+  {
+    "file": "lib/project-groups.test.mjs",
+    "lines": 70,
+    "calls": 1,
+    "names": [
+      "project groups manage recent projects, display roots, retained exclusions, and activity counts"
+    ]
+  },
+  {
+    "file": "lib/project-identity.test.mjs",
+    "lines": 14,
+    "calls": 1,
+    "names": [
+      "project identity normalizes Windows drive and UNC paths while preserving case-sensitive paths"
+    ]
+  },
+  {
+    "file": "lib/project-removal.test.mjs",
+    "lines": 91,
+    "calls": 2,
+    "names": [
+      "project removal describes folder consequences and encodes project and replacement routes",
+      "project removal adopts backend answers, preserves other projects and reports refusals"
+    ]
+  },
+  {
+    "file": "lib/project-routing.test.mjs",
+    "lines": 133,
+    "calls": 2,
+    "names": [
+      "project groups preserve folder display roots, default routing and retained identity",
+      "workspace routing accepts only declared workspaces and excludes unbound recent projects"
+    ]
+  },
+  {
+    "file": "lib/project-tree.summary.test.mjs",
+    "lines": 80,
+    "calls": 2,
+    "names": [
+      "summary tree keeps navigation fields and bounded previews only",
+      "summary tree serializes small even for deep trees"
+    ]
+  },
+  {
+    "file": "lib/project-tree.test.mjs",
+    "lines": 129,
+    "calls": 3,
+    "names": [
+      "tree projection preserves compressed branch representatives and their previews",
+      "tree previews exclude thinking, tool payloads, image bytes and unknown roles",
+      "tree compression handles deep, linear and system-message branches"
+    ]
+  },
+  {
+    "file": "lib/prompt-recovery.test.mjs",
+    "lines": 32,
+    "calls": 1,
+    "names": [
+      "optimistic message keys are stable and distinguish text and image contents"
+    ]
+  },
+  {
+    "file": "lib/provider-credential-store.test.mjs",
+    "lines": 120,
+    "calls": 2,
+    "names": [
+      "stores, removes, and guards credentials across providers with lockfile concurrency",
+      "reflects credential storage and removal through SDK ModelRuntime authentication status"
+    ]
+  },
+  {
+    "file": "lib/provider-listing.test.mjs",
+    "lines": 90,
+    "calls": 2,
+    "names": [
+      "buildApiKeyProviderList filters, configures sources, and excludes models.json/unsupported providers",
+      "buildOAuthProviderList handles labeling, auth method switches, and duplicate collapse"
+    ]
+  },
+  {
+    "file": "lib/provider-usage.test.mjs",
+    "lines": 74,
+    "calls": 2,
+    "names": [
+      "validates provider usage IDs and official origins",
+      "normalizes provider usage payloads across Codex, MiniMax, and OpenCode Go"
+    ]
+  },
+  {
+    "file": "lib/quoted-selection.test.mjs",
+    "lines": 13,
+    "calls": 1,
+    "names": [
+      "selected message text becomes a markdown quote"
+    ]
+  },
+  {
+    "file": "lib/regular-file.test.mjs",
+    "lines": 52,
+    "calls": 1,
+    "names": [
+      "a regular file is read whole, a missing one is undefined, and anything else throws without blocking"
+    ]
+  },
+  {
+    "file": "lib/request-security.test.mjs",
+    "lines": 145,
+    "calls": 2,
+    "names": [
+      "request security allows valid same-origin, LAN, IPv6, PWA export, and recognized content types",
+      "request security rejects cross-origin, host mismatch, DNS rebinding, malformed headers, and untrusted proxy origin"
+    ]
+  },
+  {
+    "file": "lib/response-usage-visibility.test.mjs",
+    "lines": 33,
+    "calls": 1,
+    "names": [
+      "response usage preference defaults visible, persists changes and unsubscribes, including unavailable storage and SSR"
+    ]
+  },
+  {
+    "file": "lib/run-marks.test.mjs",
+    "lines": 56,
+    "calls": 1,
+    "names": [
+      "advanceRunMarks baseline seeding, completion marking, exclusions, and immutability"
+    ]
+  },
+  {
+    "file": "lib/scroll-settlement.test.mjs",
+    "lines": 151,
+    "calls": 2,
+    "names": [
+      "scroll settlement target geometry: alignment and arrival predicate matrix",
+      "scroll settlement state machine: settling, reader intervention, bounded frames, abandonment reasons, and cancellation"
+    ]
+  },
+  {
+    "file": "lib/search-tree.test.mjs",
+    "lines": 60,
+    "calls": 1,
+    "names": [
+      "buildSearchTree groups flat paths into nested, sorted, and deduplicated directory trees"
+    ]
+  },
+  {
+    "file": "lib/session-family.test.mjs",
+    "lines": 63,
+    "calls": 1,
+    "names": [
+      "session family grouping: nested subagents, sorting, orphan rejection, and fork boundaries"
+    ]
+  },
+  {
+    "file": "lib/session-file-references.test.mjs",
+    "lines": 64,
+    "calls": 3,
+    "names": [
+      "rendered references authorize exact paths and exclude hidden metadata",
+      "tool provenance limits authorization to trusted calls and explicit output paths",
+      "bash output and session identifiers enforce their own path boundaries"
+    ]
+  },
+  {
+    "file": "lib/session-fork.test.mjs",
+    "lines": 365,
+    "calls": 3,
+    "names": [
+      "session fork file copying, branch leaves, shell-only branches, and refusal errors",
+      "session fork naming, suffix replacement, code point truncation, and fallback resolution"
+    ]
+  },
+  {
+    "file": "lib/session-list-scanner.test.mjs",
+    "lines": 280,
+    "calls": 3,
+    "names": [
+      "incremental and persisted scans preserve SDK metadata through mutations",
+      "summary scans defer only details not already cached",
+      "project symlinks remain discoverable"
+    ]
+  },
+  {
+    "file": "lib/session-liveness.test.mjs",
+    "lines": 123,
+    "calls": 1,
+    "names": [
+      "session liveness provider registry, matching, error resilience, and lease lifecycle"
+    ]
+  },
+  {
+    "file": "lib/session-path.test.mjs",
+    "lines": 25,
+    "calls": 1,
+    "names": [
+      "sessionPathKey normalizes paths by platform case-sensitivity and separators"
+    ]
+  },
+  {
+    "file": "lib/session-reader-latest-entry.test.mjs",
+    "lines": 78,
+    "calls": 1,
+    "names": [
+      "readLatestSessionEntryId detects latest entry id across tail shapes, headers, and torn appends"
+    ]
+  },
+  {
+    "file": "lib/session-reader.pagination.test.mjs",
+    "lines": 313,
+    "calls": 4,
+    "names": [
+      "ancestor slicing and page cursors retain ordered nonduplicated history",
+      "pagination crosses every compaction without losing entries or settings",
+      "historical conversion and full-file statistics are independent of the tail",
+      "visible-message budgets include tool results and bound unanchored traffic"
+    ]
+  },
+  {
+    "file": "lib/session-reader.test.mjs",
+    "lines": 1188,
+    "calls": 6,
+    "names": [
+      "session manager cache invalidation and byte/count limits",
+      "persisted session data owns active history, models and matching runtime identities",
+      "historical deferral preserves original live content and custom messages",
+      "bounded headers and relation prefixes avoid full-file listing reads",
+      "session path caches confine targeted resolution and use catalogue fallbacks",
+      "catalogue freshness, background refresh and invalidation races"
+    ]
+  },
+  {
+    "file": "lib/session-row-context-menu.test.mjs",
+    "lines": 44,
+    "calls": 1,
+    "names": [
+      "dispatchSessionRowContextMenu delivery, detail payload stability, and cancellation handling"
+    ]
+  },
+  {
+    "file": "lib/session-stats.test.mjs",
+    "lines": 234,
+    "calls": 2,
+    "names": [
+      "full-file accounting includes compacted history, tools and SDK usage records",
+      "live messages add to file totals once and reloading reconciles them"
+    ]
+  },
+  {
+    "file": "lib/session-timing.test.mjs",
+    "lines": 118,
+    "calls": 1,
+    "names": [
+      "computeSessionTotalActiveMs active interval calculation matrix"
+    ]
+  },
+  {
+    "file": "lib/session-title.test.mjs",
+    "lines": 314,
+    "calls": 3,
+    "names": [
+      "title parsing accepts wrappers and rejects unusable responses",
+      "title generation reads live or compacted content using an isolated model request",
+      "title transcripts retain the goal and outcome within a bounded text budget"
+    ]
+  },
+  {
+    "file": "lib/session-tool-selection.test.mjs",
+    "lines": 79,
+    "calls": 1,
+    "names": [
+      "session tool selection: parsing, precedence, validation, and cleared state lifecycle"
+    ]
+  },
+  {
+    "file": "lib/session-tree.test.mjs",
+    "lines": 1157,
+    "calls": 8,
+    "names": [
+      "project identity and expansion preserve host folders, routing keys and user choices",
+      "family membership, archive status and pins respect root ownership",
+      "family pagination reveals additional rows while preserving attention exceptions",
+      "archive rows, empty projects and bulk candidates preserve session status",
+      "row geometry and reveal requests bound visible and focused rows",
+      "saved project order remains stable across activity and incremental saves",
+      "group moves stay in their band and preserve unsaved ordering",
+      "drag scrolling and ghost geometry respect pointer and list boundaries"
+    ]
+  },
+  {
+    "file": "lib/session-view-cache.test.mjs",
+    "lines": 221,
+    "calls": 3,
+    "names": [
+      "snapshot validity, reference restoration and LRU ownership",
+      "byte accounting measures once and releases deleted, cleared and replaced windows",
+      "expiry releases budget and invalid writes preserve held windows"
+    ]
+  },
+  {
+    "file": "lib/settings-navigation.test.mjs",
+    "lines": 119,
+    "calls": 1,
+    "names": [
+      "settings navigation restores sections according to project requirements and scopes selections"
+    ]
+  },
+  {
+    "file": "lib/shell-words.test.mjs",
+    "lines": 118,
+    "calls": 1,
+    "names": [
+      "splitShellWords and formatShellCommand parse, validate, and round-trip shell words"
+    ]
+  },
+  {
+    "file": "lib/sidebar-actions.test.mjs",
+    "lines": 58,
+    "calls": 1,
+    "names": [
+      "sidebar menus offer actions according to group, running, archived and transient state"
+    ]
+  },
+  {
+    "file": "lib/sidebar-prefs.test.mjs",
+    "lines": 138,
+    "calls": 2,
+    "names": [
+      "sidebar preferences round-trip defaults, tabs, pins and bounded group choices",
+      "sidebar storage migration removes only retired keys and tolerates blocked storage"
+    ]
+  },
+  {
+    "file": "lib/skill-inventory.test.mjs",
+    "lines": 227,
+    "calls": 6,
+    "names": [
+      "skill targets preserve host identity, conversation ownership and selectable workspaces",
+      "skill catalogs distinguish loading, empty, partial results and failures",
+      "installed skill identity and update actions follow directory, scope and recorded provenance",
+      "skill installation outcomes report publication, backup and adoption independently",
+      "revision checks require GitHub provenance and report only compared revisions",
+      "skill toggles address directories and retain per-directory failures"
+    ]
+  },
+  {
+    "file": "lib/slash-display.test.mjs",
+    "lines": 41,
+    "calls": 1,
+    "names": [
+      "skillExpansionToCommand collapses SDK skill expansions and preserves non-skill text"
+    ]
+  },
+  {
+    "file": "lib/stacked-dialog.test.mjs",
+    "lines": 400,
+    "calls": 7,
+    "names": [
+      "Escape is handled by the nearest panel or dialog without stopping an agent underneath",
+      "composition and busy dialogs consume Escape without closing underlying surfaces",
+      "stacked dialogs focus and restore connected openers and clean up Escape listeners",
+      "focus recovery restores lost controls and respects focus the user moved elsewhere",
+      "modal panels move focus on open and restore it according to opener and pointer state",
+      "Escape on the panel, not on the composer, closes Settings and leaves a running agent alone",
+      "modal focus restoration respects coarse pointers, other surfaces and disconnected openers"
+    ]
+  },
+  {
+    "file": "lib/streaming-message.test.mjs",
+    "lines": 85,
+    "calls": 3,
+    "names": [
+      "assistant text and thinking deltas preserve immutable streaming state",
+      "reconnect, resume and block starts reconcile snapshots without duplicated chunks",
+      "tool input streams retain identity and authoritative completion replaces partials"
+    ]
+  },
+  {
+    "file": "lib/subagent-extension.integration.test.mjs",
+    "lines": 244,
+    "calls": 2,
+    "names": [
+      "subagent control tools isolation from nested callers and feature disablement",
+      "Agent resume dispatch parameter validation and execution"
+    ]
+  },
+  {
+    "file": "lib/subagent-extension.test.mjs",
+    "lines": 338,
+    "calls": 4,
+    "names": [
+      "subagent tool registration, lifecycle, exposure, and legacy deduplication",
+      "Agent tool execution: foreground streaming, errors, background delegation, and resume",
+      "subagent control tools: get_subagent_result states, abort handling, and steer_subagent",
+      "result consumption state machine and notification message formatting"
+    ]
+  },
+  {
+    "file": "lib/subagent-input.test.mjs",
+    "lines": 50,
+    "calls": 1,
+    "names": [
+      "loadSubagentInputFiles and appendSubagentInputFiles formatting, security, and validation matrix"
+    ]
+  },
+  {
+    "file": "lib/subagent-isolation.test.mjs",
+    "lines": 47,
+    "calls": 1,
+    "names": [
+      "git worktree isolation lifecycle, dirty tree safety, and non-git directory guard"
+    ]
+  },
+  {
+    "file": "lib/subagent-prompt.test.mjs",
+    "lines": 56,
+    "calls": 1,
+    "names": [
+      "buildSubagentPromptPlan generates prompt plans across tool, resource, and mode configurations"
+    ]
+  },
+  {
+    "file": "lib/subagent-queue.test.mjs",
+    "lines": 34,
+    "calls": 1,
+    "names": [
+      "SubagentQueue manages FIFO scheduling, concurrency limiting, and task cancellation"
+    ]
+  },
+  {
+    "file": "lib/subagent-settings.test.mjs",
+    "lines": 97,
+    "calls": 2,
+    "names": [
+      "subagent settings defaults, persistence, and minimal edits with case insensitivity",
+      "handles unknown names, damaged lists, and malformed files safely"
+    ]
+  },
+  {
+    "file": "lib/subagent-skills.test.mjs",
+    "lines": 37,
+    "calls": 1,
+    "names": [
+      "subagent skills binding handles extension skills preservation and collision diagnostics"
+    ]
+  },
+  {
+    "file": "lib/subagents.test.mjs",
+    "lines": 559,
+    "calls": 6,
+    "names": [
+      "subagent profile ID naming, scope precedence, override detection, and built-in disablement",
+      "subagent profile filesystem round-trips: project, workspace, and global scopes with override restore",
+      "extension tool selectors resolve package units, aliases, discovery scopes, and deny rules",
+      "subagent session persistence: run reconstruction, metadata, and resource snapshots",
+      "project path boundaries refuse symlink escapes",
+      "frontmatter preservation, alias fallback, unmanaged keys, and malformed-input refusal"
+    ]
+  },
+  {
+    "file": "lib/tab-session.test.mjs",
+    "lines": 52,
+    "calls": 2,
+    "names": [
+      "tab memory round-trips session and composer transitions and clears only a matching session",
+      "tab memory uses sessionStorage and tolerates blocked reads, writes, and access"
+    ]
+  },
+  {
+    "file": "lib/terminal-fan-in.test.mjs",
+    "lines": 189,
+    "calls": 4,
+    "names": [
+      "mounted terminal tabs share one stream addressed by routing cwd",
+      "a reconnect names the cursor each tab holds, so a dropped stream continues instead of resetting",
+      "terminal subscriptions release old sources and preserve only the rejoining widget's cursor",
+      "terminal refusal and explicit close never restart the stream"
+    ]
+  },
+  {
+    "file": "lib/terminal-input.test.mjs",
+    "lines": 15,
+    "calls": 1,
+    "names": [
+      "terminal input translates navigation and modifiers, leaves browser text alone and brackets paste"
+    ]
+  },
+  {
+    "file": "lib/text-preview.test.mjs",
+    "lines": 38,
+    "calls": 1,
+    "names": [
+      "readTextPreviewChunk reads large text in contiguous chunks without stalling on invalid UTF-8"
+    ]
+  },
+  {
+    "file": "lib/theme.test.mjs",
+    "lines": 21,
+    "calls": 1,
+    "names": [
+      "first paint restores every palette and falls back to the system for invalid or blocked storage"
+    ]
+  },
+  {
+    "file": "lib/thinking-expansion-preference.test.mjs",
+    "lines": 27,
+    "calls": 1,
+    "names": [
+      "thinking preference defaults collapsed, persists changes and notifies listeners with a safe SSR default"
+    ]
+  },
+  {
+    "file": "lib/thinking-level-mid-run.integration.test.mjs",
+    "lines": 62,
+    "calls": 1,
+    "names": [
+      "a thinking level set mid-run applies from the next model request"
+    ]
+  },
+  {
+    "file": "lib/tool-call-expansion.test.mjs",
+    "lines": 25,
+    "calls": 1,
+    "names": [
+      "tool expansion remembers each call id across remounts and ignores absent ids"
+    ]
+  },
+  {
+    "file": "lib/tool-execution-progress.test.mjs",
+    "lines": 16,
+    "calls": 1,
+    "names": [
+      "tool progress uses the latest nonblank text line and bounds it while ignoring non-text results"
+    ]
+  },
+  {
+    "file": "lib/tool-preset-preference.test.mjs",
+    "lines": 33,
+    "calls": 1,
+    "names": [
+      "tool preset preference round-trips supported choices and defaults unavailable or invalid storage to configured"
+    ]
+  },
+  {
+    "file": "lib/tool-presets.test.mjs",
+    "lines": 30,
+    "calls": 1,
+    "names": [
+      "tool presets map built-ins both ways, ignore custom tools and leave configured without an override"
+    ]
+  },
+  {
+    "file": "lib/tps.test.mjs",
+    "lines": 37,
+    "calls": 1,
+    "names": [
+      "token rate follows the recent slope without counting a head start and hides unsupported readings"
+    ]
+  },
+  {
+    "file": "lib/transcript-window.test.mjs",
+    "lines": 50,
+    "calls": 2,
+    "names": [
+      "transcript geometry mounts viewport, overscan and reveal ranges with bounded spacers",
+      "history prepends and height changes preserve distance into the reader's anchored turn"
+    ]
+  },
+  {
+    "file": "lib/turn-written-files.test.mjs",
+    "lines": 49,
+    "calls": 2,
+    "names": [
+      "written files require a successful paired writing call and normalize only its explicit path",
+      "apply_patch lists applied additions and moves, excludes deletes and respects partial failures"
+    ]
+  },
+  {
+    "file": "lib/web-auth-lifecycle.test.mjs",
+    "lines": 132,
+    "calls": 2,
+    "names": [
+      "session surface gating, route cookie protection, and method enforcement matrix",
+      "session authentication, logout origin security, and cookie clearance lifecycle"
+    ]
+  },
+  {
+    "file": "lib/web-auth.test.mjs",
+    "lines": 62,
+    "calls": 2,
+    "names": [
+      "authenticates Basic HTTP authorization headers against configured web password",
+      "creates and validates signed session tokens with expiration and tamper resistance"
+    ]
+  },
+  {
+    "file": "lib/web-push.test.mjs",
+    "lines": 134,
+    "calls": 2,
+    "names": [
+      "manages VAPID keys, subscription persistence, and locale fallback matrix",
+      "delivers session notifications with localization, pruning, and push configuration"
+    ]
+  },
+  {
+    "file": "lib/workspace-memory.test.mjs",
+    "lines": 53,
+    "calls": 2,
+    "names": [
+      "workspace memory isolates sessions by workspace, removes empty maps, and recovers malformed storage",
+      "workspace memory tolerates blocked storage operations and browser access"
+    ]
+  },
+  {
+    "file": "lib/worktree.test.mjs",
+    "lines": 84,
+    "calls": 1,
+    "names": [
+      "worktree operations resolve project roots, detect force requirements, and remove worktrees"
+    ]
+  },
+  {
+    "file": "public/sw.test.mjs",
+    "lines": 294,
+    "calls": 6,
+    "names": [
+      "push notifications always display valid payloads and ignore malformed ones",
+      "notification clicks reuse or navigate clients and confine new windows to this origin",
+      "network first-byte deadlines bound navigation and static requests while leaving live bodies streaming",
+      "a cache miss responds before the cache write finishes",
+      "a response that arrives in time is not cut off mid-stream"
+    ]
+  }
+]

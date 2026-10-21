@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "jsx": "react-jsx",
+    "target": "ES2022",
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "@/*": [
+        "../../packages/ui/src/*"
+      ],
+      // The shared package's own subpaths, the same way the Web host names them: a host that imports a seam names the
+      // package's source file rather than a build output, because there is no build output — `@hepi/ui` is source.
+      "@hepi/ui/*": [
+        "../../packages/ui/src/*"
+      ]
+    },
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vite.config.ts"
+  ]
+}

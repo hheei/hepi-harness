@@ -1,0 +1,39 @@
+/* The sidebar stylesheets the real surfaces read their layout from, from the package they live in.
+   The production stylesheet is Tailwind-compiled by the Web build and is not what these scenes are about: what is under
+   test is the shell's `inert` subtree and the focus it gates, which no rule here decides. The shell's own container
+   rules are restated because they are the ones that hide a collapsed sidebar by width or by transform — the states the
+   finding named — and the other two stylesheets carry the sidebar's own controls. */
+@import "@hepi/ui/styles/sidebar.css";
+@import "@hepi/ui/styles/sidebar-menu.css";
+
+:root {
+  --border: #d4d4d8;
+  --bg: #ffffff;
+  --bg-panel: #fafafa;
+  --bg-subtle: #f4f4f5;
+  --bg-hover: #f4f4f5;
+  --bg-selected: #e4e4e7;
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-dim: #a1a1aa;
+  --accent: #2563eb;
+  --font-mono: ui-monospace, monospace;
+  --app-viewport-height: 100dvh;
+}
+
+html, body, #root { height: 100%; margin: 0; }
+body { font: 14px/1.4 system-ui, sans-serif; }
+
+/* The shell's own sidebar container rules (the desktop collapse-by-width and the mobile translate), stated here so the
+   scene's closed state looks like the one the finding described rather than a plain block. */
+.sidebar-overlay-backdrop { display: none !important; }
+.sidebar-container { position: relative; overflow: hidden; }
+.sidebar-container.sidebar-open { width: var(--sidebar-width, 260px); min-width: var(--sidebar-width, 260px); }
+.sidebar-container.sidebar-closed { width: 0; min-width: 0; border-right: none !important; }
+.sidebar-container > * { width: var(--sidebar-width, 260px); min-width: var(--sidebar-width, 260px); }
+@media (max-width: 640px) {
+  .sidebar-container { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; max-width: 85vw; z-index: 200; }
+  .sidebar-container.sidebar-open { transform: translateX(0); width: 280px; min-width: 280px; }
+  .sidebar-container.sidebar-closed { transform: translateX(calc(-100% - env(safe-area-inset-left))); width: 280px; min-width: 280px; }
+  .sidebar-container > * { width: 280px; min-width: 280px; }
+}

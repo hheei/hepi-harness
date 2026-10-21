@@ -1,0 +1,39 @@
+FAILED: driver error: the driver submitted "settled before the page looked": 400 {"ok":false,"code":"unsupported_protocol"}
+
+400 !== 202
+
+FAILED: scene4: an aborted run in the background plays no completion tone | scene5: the unobserved run sounds nothing, which is the stated limit
+FAILED: scene4: an aborted run in the background plays no completion tone
+FAILED: scene1 control: the acquired stream really delivered the conversation's own projection | scene4: an aborted run in the background plays no completion tone
+FAILED: scene1 control: the acquired stream really delivered the conversation's own projection | scene4: an aborted run in the background plays no completion tone
+FAILED: scene4: an aborted run in the background plays no completion tone
+PASSED
+FAILED: driver error: timed out waiting for the backend to stop answering
+PASSED
+FAILED: scene2: the conversation now on screen has its own stream | scene2: selecting the conversation back duplicates no notice
+FAILED: driver error: locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('.session-tree-row.session-tree-session').filter({ hasText: '27' }).first() to be visible[22m
+
+FAILED: scene3: the first answer of a queued pair sounds once ([{"t":2657,"oscillators":1},{"t":2658,"oscillators":1}]) | scene3: one tone per distinct answer, never one per submission frame
+FAILED: scene4 control: the aborted submission settled as unanswered on the wire | scene4: an aborted run in the background plays no completion tone
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+FAILED: driver error: timed out waiting for model request 1
+PASSED
+FAILED: driver error: timed out waiting for the open conversation 14
+FAILED: driver error: timed out waiting for the open conversation 14
+FAILED: scene4c control: the two runs answered under distinct answers | scene4c: the queued follow-up own answer is its own notice ([{"t":3286,"oscillators":2}])
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED

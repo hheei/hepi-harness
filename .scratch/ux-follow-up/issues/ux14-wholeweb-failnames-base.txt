@@ -1,0 +1,24 @@
+|components/SessionSidebar.file-search.test.mjs
+|renders the model built from a catalog with unique row keys
+|components/SettingsPanel.test.mjs
+|near an edge the list scrolls, never past the rows' own height
+|lib/builtin-extensions.test.mjs
+|the default inline budget is the SDK's
+|leaves no lookbehind outside a string in the installed package
+|gfm-autolink-email-loader
+|lib/mcp-config-file.test.mjs
+|lib/mcp-config-read.test.mjs
+|lib/mcp-host.test.mjs
+|lib/mcp-sign-in.integration.test.mjs
+|lib/mcp-sign-in.test.mjs
+|lib/mcp-test.test.mjs
+|lib/model-catalog-refresh.test.mjs
+|asks for a Base URL when a custom provider has none and pi ships no endpoint
+|lib/node-version.test.mjs
+|lib/pi-web-node-args.test.mjs
+|lib/pi-web-options.test.mjs
+|lib/process-lifecycle.test.mjs
+|API key saves do not use ModelRuntime.login's network refresh
+|lib/rotate-preview-secrets.test.mjs
+|lib/terminal-manager.test.mjs
+|lib/web-auth-proxy.test.mjs

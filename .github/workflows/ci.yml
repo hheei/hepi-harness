@@ -1,0 +1,233 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '12.4.1'
+
+jobs:
+  # The ordinary gate. It does cross host boundaries — the gateway's SSH fixture runs a real sshd inside a bwrap pid
+  # namespace (packages/gateway/test/sshd-fixture.ts), so both binaries are installed here, and HEPI_REQUIRE_SSH_SMOKE=1
+  # turns a missing one into a failure instead of a skip. What makes this lane the gate is that those boundaries are
+  # short and deterministic; the lanes below need a browser, a container runtime or a desktop toolchain on top.
+  test:
+    name: test (unit, typecheck, builds)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Prepare SSH prerequisites
+        run: |
+          if ! test -x /usr/sbin/sshd; then sudo apt-get update && sudo apt-get install -y openssh-server; fi
+          if ! test -x /usr/bin/bwrap; then sudo apt-get update && sudo apt-get install -y bubblewrap; fi
+          sudo mkdir -p /run/sshd
+      - name: Workspace typecheck
+        run: pnpm -r typecheck
+      - name: Workspace tests
+        run: pnpm -r test
+        env:
+          HEPI_REQUIRE_SSH_SMOKE: '1'
+      - name: Web and App static builds
+        run: |
+          pnpm --filter @hepi/web build
+          pnpm --filter @hepi/app build
+      - name: Client bundle build
+        run: pnpm --filter @hepi/client build
+
+  # The Web unit suite gets its own job because apps/web declares no `test` script, so `pnpm -r test` never reaches it.
+  # Only test:web:unit writes files (.dev/verify: TAP plus raw log); the other three print to the job log.
+  checks:
+    name: checks (scripts, docs, web unit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Tooling tests
+        run: pnpm test:scripts
+      - name: Entrypoint check
+        run: pnpm check:entrypoints
+      - name: Documentation check
+        run: pnpm check:docs
+      - name: Web unit suite
+        run: pnpm test:web:unit
+      - name: Keep the Web unit report and raw log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: .dev/verify/
+          if-no-files-found: ignore
+
+  # Four browser journeys over the real shape: apps/web/dist served by the real client ingress, the real Backend over its
+  # own SQLite files, a real execution gateway, and one controlled completions endpoint in place of a paid model. One job,
+  # sequential steps: install, build and Chromium download are paid once, and the first real failure stops the run rather
+  # than costing three more legs. Each driver keeps its own log, and all four are uploaded.
+  browser:
+    name: browser (four drivers)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Prepare SSH prerequisites
+        run: |
+          # Every driver starts the real execution gateway, which the ingress reaches over ssh in the SSH-hosted profile.
+          if ! test -x /usr/sbin/sshd; then sudo apt-get update && sudo apt-get install -y openssh-server; fi
+          if ! test -x /usr/bin/bwrap; then sudo apt-get update && sudo apt-get install -y bubblewrap; fi
+          sudo mkdir -p /run/sshd
+      - name: Build the Web product the ingress serves
+        run: pnpm --filter @hepi/web build
+      - name: Install the browser driver's Chromium
+        run: pnpm --filter @hepi/web exec playwright install --with-deps chromium
+      - name: Prepare the driver log directory
+        run: mkdir -p .dev/e2e
+      # `shell: bash` is load-bearing, not cosmetic. GitHub's default non-Windows shell for `run: |` is `bash -e {0}`, with
+      # no pipefail, so `node … | tee …` would report tee's status and a failed journey would turn the job green.
+      # `shell: bash` expands to `bash --noprofile --norc -eo pipefail {0}`.
+      - name: Driver chat-scroll
+        shell: bash
+        run: node apps/web/e2e/ux-chat-scroll.mjs 2>&1 | tee .dev/e2e/chat-scroll.log
+      - name: Driver references-acceptance
+        shell: bash
+        run: node apps/web/e2e/ux-references-acceptance.mjs 2>&1 | tee .dev/e2e/references-acceptance.log
+      - name: Driver mcp-acceptance
+        shell: bash
+        run: node apps/web/e2e/ux-mcp-acceptance.mjs 2>&1 | tee .dev/e2e/mcp-acceptance.log
+      - name: Driver provider-connection
+        shell: bash
+        run: node apps/web/e2e/ux-provider-connection-acceptance.mjs 2>&1 | tee .dev/e2e/provider-connection.log
+      - name: Keep the driver logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-driver-logs
+          path: .dev/e2e/
+          if-no-files-found: ignore
+
+  # The packed tarball installed outside the checkout, against a real localhost sshd on a port this run owns. Separate from
+  # `test` because it needs that sshd plus an ephemeral port and a real install, not because it needs a browser.
+  client-smoke:
+    name: client smoke:pack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Prepare SSH prerequisites
+        run: |
+          if ! test -x /usr/sbin/sshd; then sudo apt-get update && sudo apt-get install -y openssh-server; fi
+          if ! test -x /usr/bin/bwrap; then sudo apt-get update && sudo apt-get install -y bubblewrap; fi
+          sudo mkdir -p /run/sshd
+      - name: Build the client bundle
+        run: pnpm --filter @hepi/client build
+      - name: Packed runtime smoke (local and SSH gateways)
+        run: pnpm --filter @hepi/client smoke:pack
+        env:
+          HEPI_REQUIRE_SSH_SMOKE: '1'
+
+  containers:
+    name: containers (backend smoke)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and run the packaged backend smoke
+        run: bash deploy/docker/smoke.sh
+
+  # cargo test needs the frontend bundle: tauri.conf.json sets `frontendDist` to `../dist`, and the build script fails with
+  # "The `frontendDist` configuration is set to \"../dist\" but this path doesn't exist" when it is absent. The App
+  # package's own `node --test` suite is not repeated here — `test` already runs it through `pnpm -r test`.
+  #
+  # The Rust tests touch no credential store: main.rs's tests call normalize_connection, content_security_policy and
+  # connection_script, and save.rs's tests use std::env::temp_dir(). The keyring functions are only reached from the
+  # commands the shell runs in a real session, so nothing here can read or write the host's Secret Service and no
+  # DBUS_SESSION_BUS_ADDRESS guard is needed. The desktop and offline-package journeys are what need that isolation, and
+  # they are developer-host checks — docs/ci.md states why.
+  native:
+    name: native (rust tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Prepare webkit and dpkg prerequisites
+        run: |
+          # The shell links WebKitGTK 4.1; the App package's offline-install suite builds a throwaway .deb with dpkg-deb to
+          # exercise a real dpkg transaction rather than an extraction.
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev librsvg2-dev libssl-dev dpkg-dev bubblewrap
+      - name: Restore the shared cargo target directory
+        uses: actions/cache@v4
+        with:
+          path: .dev/cargo-target
+          key: cargo-${{ runner.os }}-debug-${{ hashFiles('apps/app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-debug-
+      - name: Build the frontend bundle the shell reads
+        run: pnpm --filter @hepi/app build
+      - name: Rust tests (debug profile, shared target)
+        run: |
+          # The repository's own debug build accounting, read from the module that owns it rather than restated here:
+          # CARGO_TARGET_DIR=<repo>/.dev/cargo-target, CARGO_BUILD_JOBS=6, CARGO_INCREMENTAL=1.
+          eval "$(node apps/app/scripts/cargo-build.mjs --profile=debug)"
+          cargo test --manifest-path apps/app/src-tauri/Cargo.toml

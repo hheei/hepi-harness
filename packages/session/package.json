@@ -1,0 +1,17 @@
+{
+  "name": "@hepi/session",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts",
+    "./control": "./src/control.ts",
+    "./resources": "./src/resources.ts",
+    "./execution-resources": "./src/execution-resources.ts",
+    "./settings": "./src/settings.ts"
+  },
+  "scripts": { "test": "node --test test/*.test.ts", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@hepi/protocol": "workspace:*" },
+  "devDependencies": { "@types/node": "22.20.5", "typescript": "5.9.3" }
+}

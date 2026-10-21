@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@hepi/ui/*": [
+        "../../packages/ui/src/*"
+      ]
+    },
+    "target": "ES2017"
+  },
+  // The Next app was the only file that imported `next`, whose global types declared `*.module.css`. Ticket 17
+  // deleted it, so the shared package's own declaration is named here: the stylesheet a workbench component imports is
+  // the package's file, and its declaration belongs to the program whether or not a framework's types are in it.
+  "include": [
+    "../../packages/ui/src/styles.d.ts",
+    "e2e/**/*.ts",
+    "e2e/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "demo"
+  ]
+}

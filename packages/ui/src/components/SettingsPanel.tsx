@@ -1,0 +1,525 @@
+"use client";
+
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useI18n } from "../hooks/useI18n";
+import { useTheme } from "../hooks/useTheme";
+import { THEME_OPTIONS } from "../lib/theme";
+import { ThemeIcon } from "./ThemeIcon";
+import {
+  CHAT_CONTENT_WIDTH_DEFAULT,
+  CHAT_CONTENT_WIDTH_MAX,
+  CHAT_CONTENT_WIDTH_MIN,
+  CHAT_CONTENT_FONT_SIZE_DEFAULT,
+  CHAT_CONTENT_FONT_SIZE_MAX,
+  CHAT_CONTENT_FONT_SIZE_MIN,
+  useChatAppearance,
+} from "../hooks/useChatAppearance";
+import { useEnterSendMode, setEnterSendMode } from "../hooks/useEnterSendMode";
+import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { cookieLogoutOffered, endWebSession } from "../lib/web-logout";
+import type { ProjectTrustStatus, ToolSettingsResponse } from "../lib/api-types";
+import {
+  setLastSettingsSection,
+  settingsSectionRequiresProject,
+  SETTINGS_SECTION_LABEL_KEYS,
+  SETTINGS_SECTION_VALUES,
+  type SettingsSection,
+} from "../lib/settings-navigation";
+import { focusModalPanel, listenForPanelEscape } from "../lib/stacked-dialog";
+import {
+  isThinkingExpandedByDefault,
+  setThinkingExpandedByDefault,
+} from "../lib/thinking-expansion-preference";
+import {
+  isResponseUsageVisible,
+  setResponseUsageVisible,
+} from "../lib/response-usage-visibility";
+import { ModelsConfig } from "./ModelsConfig";
+import { useApiRequest } from "../lib/api-request";
+import { SkillsConfig } from "./SkillsConfig";
+import { AgentsConfig } from "./AgentsConfig";
+import { ExtensionsConfig } from "./ExtensionsConfig";
+import { McpConfig } from "./McpConfig";
+import { ConfigButton, ConfigSwitch } from "./SettingsUi";
+import { FontSettings } from "./FontSettings";
+
+interface Props {
+  cwd: string | null;
+  /**
+   * The same folder as its own host names it, for the section headers. \`cwd\` is a routing address
+   * (/workspace/<id>) and is what every request carries; showing it would name the project after its id.
+   */
+  displayCwd?: string | null;
+  sessionId: string | null;
+  initialSection: SettingsSection;
+  onClose: () => void;
+  onSessionReloaded: () => void;
+  quoteSelectionEnabled: boolean;
+  onQuoteSelectionChange: (enabled: boolean) => void;
+  /** The page's trust status for `cwd`; Settings › MCP reloads when it changes. */
+  projectTrust?: ProjectTrustStatus | null;
+  /** Settings › MCP added a project server, which changed `cwd`'s trust (and may have trusted a fresh folder). */
+  onProjectTrustChanged?: (cwd: string, status: ProjectTrustStatus) => void;
+}
+
+export function SettingsSectionIcon({ section, size = 16, strokeWidth = 1.8 }: { section: SettingsSection; size?: number; strokeWidth?: number }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    className: "settings-section-icon",
+  };
+
+  if (section === "general") return <svg {...common}><path d="M20 7h-9M14 17H5" /><circle cx="7" cy="7" r="3" /><circle cx="17" cy="17" r="3" /></svg>;
+  if (section === "models") return <svg {...common}><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" /></svg>;
+  if (section === "skills") return <svg {...common}><path d="m12 2-10 5 10 5 10-5-10-5Z" /><path d="m2 12 10 5 10-5M2 17l10 5 10-5" /></svg>;
+  if (section === "agents") return <svg {...common} className="settings-section-icon is-agent"><rect x="5" y="7" width="14" height="11" rx="2" /><path d="M9 11h.01M15 11h.01M9 15h6M12 7V4M10 4h4" /></svg>;
+  if (section === "mcp") return <svg {...common}><rect x="3" y="3" width="18" height="7" rx="2" /><rect x="3" y="14" width="18" height="7" rx="2" /><path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6" /></svg>;
+  return <svg {...common}><path d="M9 7V2M15 7V2M6 13V8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5a6 6 0 0 1-12 0ZM12 19v3" /></svg>;
+}
+
+function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, onQuoteSelectionChange }: Pick<Props, "sessionId" | "onSessionReloaded" | "quoteSelectionEnabled" | "onQuoteSelectionChange">) {
+  const { locale, setLocale, supportedLocales, t } = useI18n();
+  // The conversation API of this connection: a reload is the Backend's own route, asked through the connection it is
+  // inside rather than around it — its Gateway origin, under its credential.
+  const { api, client } = useWorkbenchConnection();
+  const { preference, setThemePreference } = useTheme();
+  const { width: chatContentWidth, setWidth: setChatContentWidth, fontSize, setFontSize } = useChatAppearance();
+  const enterSendMode = useEnterSendMode();
+  // Every read and write below belongs to the connection this Settings was opened under, so an App asks its own Gateway
+  // origin with its own credential instead of resolving `/api` against the bundle it was loaded from.
+  const request = useApiRequest();
+  const [shellSettings, setShellSettings] = useState<ToolSettingsResponse | null>(null);
+  const [shellSaving, setShellSaving] = useState(false);
+  const [shellError, setShellError] = useState<string | null>(null);
+  const [thinkingExpanded, setThinkingExpanded] = useState(false);
+  const [responseUsageVisible, setResponseUsageVisibleState] = useState(true);
+  const [webAuthEnabled, setWebAuthEnabled] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  // The logout this surface may offer is the credential's own: a Web page's cookie session has a route that ends it, and
+  // a device bearer has no cookie route to end and no business being revoked by one. Reading it here rather than
+  // deciding it in the markup is what keeps the two hosts from being offered each other's action.
+  const logoutOffered = cookieLogoutOffered(client.credential.kind);
+  useEffect(() => {
+    setThinkingExpanded(isThinkingExpandedByDefault());
+    setResponseUsageVisibleState(isResponseUsageVisible());
+    // A deployment that configured no login material has no session to end, so the question is only worth asking where
+    // the action could be offered at all.
+    if (!logoutOffered) return;
+    void request("/api/web-auth")
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { enabled?: boolean } | null) => setWebAuthEnabled(data?.enabled === true))
+      .catch(() => {});
+  }, [request, logoutOffered]);
+
+  const logOut = async () => {
+    setLoggingOut(true);
+    setLogoutError("");
+    const outcome = await endWebSession(request);
+    if (outcome.kind === "failed") {
+      // Nothing about the session is claimed here: the cookie is still the browser's, so the surface stays where it is
+      // and says the attempt failed instead of reloading into the session it never ended.
+      setLogoutError(t("auth.logoutFailed") + " (" + outcome.reason + ")");
+      setLoggingOut(false);
+      return;
+    }
+    // The session gate is the page's own first read, which reads the cookie this DELETE cleared, so the page is reloaded
+    // rather than sent to a route of its own: without the cookie it renders the login form. The pending state is left
+    // set on purpose — the page is going away, and a control that flickered back to "Log out" first would be a claim
+    // that the session is still there.
+    window.location.replace("/");
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    void request("/api/tools/settings")
+      .then(async (response) => {
+        const data = await response.json() as ToolSettingsResponse & { error?: string };
+        if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
+        if (!cancelled) setShellSettings(data);
+      })
+      .catch((cause) => {
+        if (!cancelled) setShellError(cause instanceof Error ? cause.message : String(cause));
+      });
+    return () => { cancelled = true; };
+  }, [request]);
+
+  const togglePowerShell = async (enabled: boolean) => {
+    setShellSaving(true);
+    setShellError(null);
+    try {
+      const response = await request("/api/tools/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await response.json() as ToolSettingsResponse & { error?: string };
+      if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
+      setShellSettings(data);
+      if (sessionId) {
+        await api.reload(sessionId);
+        onSessionReloaded();
+      }
+    } catch (cause) {
+      setShellError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setShellSaving(false);
+    }
+  };
+
+  return (
+    <div className="settings-general">
+      <h2 className="settings-general-title">{t("settings.general")}</h2>
+
+      <section className="settings-general-section">
+        <h3 className="settings-general-heading">{t("settings.appearance")}</h3>
+        <div role="radiogroup" aria-label={t("settings.appearance")} className="settings-theme-options">
+          {THEME_OPTIONS.map((option) => {
+            const selected = preference === option.id;
+            return (
+              <label
+                key={option.id}
+                className="settings-theme-option"
+              >
+                <input
+                  type="radio"
+                  name="theme"
+                  value={option.id}
+                  checked={selected}
+                  onChange={() => setThemePreference(option.id)}
+                  className="sr-only"
+                />
+                <ThemeIcon preference={option.id} />
+                <span className="settings-theme-option-label">{t(option.label)}</span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="settings-general-section">
+        <h3 className="settings-general-heading">{t("settings.typography")}</h3>
+        <p id="settings-typography-description" className="settings-general-description">{t("settings.fontDescription")}</p>
+        <div className="settings-chat-options">
+          <FontSettings />
+          <div className="settings-chat-option settings-chat-range-option">
+            <div className="settings-chat-range-header">
+              <label htmlFor="settings-chat-content-font-size">{t("settings.chatContentFontSize")}</label>
+              <output htmlFor="settings-chat-content-font-size">{fontSize}px</output>
+              <ConfigButton
+                variant="ghost"
+                size="small"
+                className="settings-chat-reset"
+                title={t("settings.resetChatContentFontSize")}
+                aria-label={t("settings.resetChatContentFontSize")}
+                disabled={fontSize === CHAT_CONTENT_FONT_SIZE_DEFAULT}
+                onClick={() => setFontSize(CHAT_CONTENT_FONT_SIZE_DEFAULT)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" />
+                </svg>
+              </ConfigButton>
+            </div>
+            <input
+              id="settings-chat-content-font-size"
+              type="range"
+              min={CHAT_CONTENT_FONT_SIZE_MIN}
+              max={CHAT_CONTENT_FONT_SIZE_MAX}
+              step={1}
+              value={fontSize}
+              onChange={(event) => setFontSize(Number(event.target.value))}
+            />
+          </div>
+          <div className="settings-chat-option settings-chat-range-option">
+            <div className="settings-chat-range-header">
+              <label htmlFor="settings-chat-content-width">{t("settings.chatContentWidth")}</label>
+              <output htmlFor="settings-chat-content-width">{chatContentWidth}px</output>
+              <ConfigButton
+                variant="ghost"
+                size="small"
+                className="settings-chat-reset"
+                title={t("settings.resetChatContentWidth")}
+                aria-label={t("settings.resetChatContentWidth")}
+                disabled={chatContentWidth === CHAT_CONTENT_WIDTH_DEFAULT}
+                onClick={() => setChatContentWidth(CHAT_CONTENT_WIDTH_DEFAULT)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" />
+                </svg>
+              </ConfigButton>
+            </div>
+            <input
+              id="settings-chat-content-width"
+              type="range"
+              min={CHAT_CONTENT_WIDTH_MIN}
+              max={CHAT_CONTENT_WIDTH_MAX}
+              step={10}
+              value={chatContentWidth}
+              onChange={(event) => setChatContentWidth(Number(event.target.value))}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-general-section">
+        <h3 className="settings-general-heading">{t("settings.chat")}</h3>
+        <div className="settings-chat-options">
+          <div className="settings-chat-option settings-chat-switch-option">
+            <span>{t("settings.thinkingExpandedDefault")}</span>
+            <ConfigSwitch
+              checked={thinkingExpanded}
+              label={t("settings.thinkingExpandedDefault")}
+              onChange={(enabled) => {
+                setThinkingExpandedByDefault(enabled);
+                setThinkingExpanded(enabled);
+              }}
+            />
+          </div>
+          <div className="settings-chat-option settings-chat-switch-option">
+            <span>{t("settings.responseUsage")}</span>
+            <ConfigSwitch
+              checked={responseUsageVisible}
+              label={t("settings.responseUsage")}
+              onChange={(enabled) => {
+                setResponseUsageVisible(enabled);
+                setResponseUsageVisibleState(enabled);
+              }}
+            />
+          </div>
+          <div className="settings-chat-option settings-chat-switch-option">
+            <span>{t("settings.quoteSelection")}</span>
+            <ConfigSwitch
+              checked={quoteSelectionEnabled}
+              label={t("settings.quoteSelection")}
+              onChange={onQuoteSelectionChange}
+            />
+          </div>
+          <div className="settings-chat-option settings-chat-switch-option" role="radiogroup" aria-label={t("settings.enterSendMode")}>
+            <span>{t("settings.enterSendMode")}</span>
+            <div className="settings-send-mode-options">
+              <label className="settings-send-mode-option">
+                <input
+                  type="radio"
+                  name="enter-send-mode"
+                  value="enter"
+                  checked={enterSendMode === "enter"}
+                  onChange={() => setEnterSendMode("enter")}
+                  className="sr-only"
+                />
+                <span className="settings-send-mode-label">{t("settings.enterSendModeEnter")}</span>
+              </label>
+              <label className="settings-send-mode-option">
+                <input
+                  type="radio"
+                  name="enter-send-mode"
+                  value="ctrlEnter"
+                  checked={enterSendMode === "ctrlEnter"}
+                  onChange={() => setEnterSendMode("ctrlEnter")}
+                  className="sr-only"
+                />
+                <span className="settings-send-mode-label">{t("settings.enterSendModeCtrlEnter")}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {shellSettings?.isWindows && (
+        <section className="settings-general-section">
+          <h3 className="settings-general-heading">{t("settings.shellTool")}</h3>
+          <p className="settings-general-description">{t("settings.shellToolDescription")}</p>
+          <div className="settings-shell-option">
+            <span>{t("settings.usePowerShell")}</span>
+            <ConfigSwitch
+              checked={shellSettings.powerShellEnabled}
+              loading={shellSaving}
+              label={t("settings.usePowerShell")}
+              onChange={(enabled) => void togglePowerShell(enabled)}
+            />
+          </div>
+          {shellError && <p role="alert" className="settings-general-error">{shellError}</p>}
+        </section>
+      )}
+
+      <section className="settings-general-section">
+        <h3 className="settings-general-heading">{t("common.language")}</h3>
+        <div role="radiogroup" aria-label={t("common.language")} className="settings-language-options">
+          {supportedLocales.map((plugin) => {
+            const selected = locale === plugin.id;
+            return (
+              <button
+                key={plugin.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setLocale(plugin.id as typeof locale)}
+                className="settings-language-option"
+              >
+                <span className="settings-language-radio">
+                  {selected && <span className="settings-language-radio-dot" />}
+                </span>
+                <span className="settings-language-label">{plugin.label}</span>
+                <span className="settings-language-code">{plugin.id}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {logoutOffered && webAuthEnabled && (
+        <section className="settings-general-section">
+          <ConfigButton variant="secondary" disabled={loggingOut} onClick={() => void logOut()}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            </svg>
+            {loggingOut ? t("auth.loggingOut") : t("auth.logOut")}
+          </ConfigButton>
+          {logoutError && <p role="alert" className="settings-general-error">{logoutError}</p>}
+        </section>
+      )}
+    </div>
+  );
+}
+
+export function SettingsPanel({
+  cwd,
+  displayCwd,
+  sessionId,
+  initialSection,
+  onClose,
+  onSessionReloaded,
+  quoteSelectionEnabled,
+  onQuoteSelectionChange,
+  projectTrust,
+  onProjectTrustChanged,
+}: Props) {
+  const { t } = useI18n();
+  const [section, setSection] = useState<SettingsSection>(initialSection);
+  const [mountedSections, setMountedSections] = useState<ReadonlySet<SettingsSection>>(
+    () => new Set([section]),
+  );
+  // Which sections need a project is decided once, in lib/settings-navigation.ts.
+  // The sections and their words come from the one map, so a tab and a link that opens a section cannot disagree.
+  const sections: { id: SettingsSection; label: string; requiresProject: boolean }[] = SETTINGS_SECTION_VALUES
+    .map((id) => ({ id, label: t(SETTINGS_SECTION_LABEL_KEYS[id]), requiresProject: settingsSectionRequiresProject(id) }));
+  const sectionRequiresProject = settingsSectionRequiresProject(section);
+
+  useEffect(() => setLastSettingsSection(initialSection), [initialSection]);
+
+  // Bubble phase, unless something nearer handled the key. The trust dialog,
+  // which opens above Settings, takes Escape in the capture phase and stops it,
+  // so one Escape closes that dialog and leaves Settings open.
+  useEffect(() => listenForPanelEscape(document, onClose), [onClose]);
+
+  // Focus moves into Settings as it opens and back to what had it once it closes. Left
+  // on the chat composer (a bare /mcp opens Settings from there), Escape would reach the
+  // composer first and stop a running agent, which also kept Settings open. A layout
+  // effect, so the opener is read before a section focuses its own search box.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => focusModalPanel(document, dialogRef.current, {
+    restoreTextEntry: !window.matchMedia?.("(pointer: coarse)").matches,
+  }), []);
+
+  useEffect(() => {
+    if (cwd || !sectionRequiresProject) return;
+    setSection("general");
+    setMountedSections((current) => new Set(current).add("general"));
+    setLastSettingsSection("general");
+  }, [cwd, sectionRequiresProject]);
+
+  const activateSection = (nextSection: SettingsSection) => {
+    setMountedSections((current) => new Set(current).add(nextSection));
+    setSection(nextSection);
+    setLastSettingsSection(nextSection);
+  };
+
+  const sectionHost = (id: SettingsSection, content: ReactNode) => mountedSections.has(id) ? (
+    <div
+      key={id}
+      hidden={section !== id}
+      className="settings-section-host"
+    >
+      {content}
+    </div>
+  ) : null;
+
+  return (
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("settings.title")}
+      tabIndex={-1}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      className="settings-dialog-backdrop"
+    >
+      <div className="settings-dialog-surface">
+        <div className="settings-dialog-header">
+          <strong className="settings-dialog-title">{t("settings.title")}</strong>
+          <select
+            aria-label={t("settings.title")}
+            value={section}
+            onChange={(event) => activateSection(event.target.value as SettingsSection)}
+            className="settings-mobile-section-picker"
+          >
+            {sections.map((item) => (
+              <option key={item.id} value={item.id} disabled={item.requiresProject && !cwd}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <nav aria-label={t("settings.title")} className="settings-section-tabs">
+            {sections.map((item) => {
+              const selected = section === item.id;
+              const disabled = item.requiresProject && !cwd;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="settings-section-tab"
+                  disabled={disabled}
+                  title={disabled ? t("settings.projectRequired") : item.label}
+                  aria-current={selected ? "page" : undefined}
+                  onClick={() => activateSection(item.id)}
+                >
+                  <SettingsSectionIcon section={item.id} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+          <button type="button" onClick={onClose} title={t("i18n.close")} aria-label={t("i18n.close")} className="config-close-button settings-dialog-close">×</button>
+        </div>
+
+        <main className="settings-dialog-main">
+          {sectionHost("general", <GeneralSettings sessionId={sessionId} onSessionReloaded={onSessionReloaded} quoteSelectionEnabled={quoteSelectionEnabled} onQuoteSelectionChange={onQuoteSelectionChange} />)}
+          {sectionHost("models", <ModelsConfig embedded cwd={cwd} onClose={onClose} />)}
+          {/* Visited sections stay mounted, so the ones whose answer depends on trust take the page's
+              status and load again in place when trusting from Settings › MCP changes it. */}
+          {/* The builtin Skills panel needs no project of its own: it browses the harness library and reads the
+              selected execution workspace's installed skills. The conversation it was opened from is named so a
+              successful installation asks only it to reload. */}
+          {/* The Skills panel names the execution host's own root from its workspace listing, so it needs no display path. */}
+          {sectionHost("skills", <SkillsConfig embedded key={cwd} cwd={cwd} sessionId={sessionId} trust={projectTrust} onClose={onClose} />)}
+          {cwd && sectionHost("agents", <AgentsConfig embedded key={cwd} cwd={cwd} displayCwd={displayCwd} sessionId={sessionId} trust={projectTrust} onClose={onClose} onReloaded={onSessionReloaded} />)}
+          {/* No project needed: the installed set and the global default belong to the backend, and the
+              conversation this was opened from adds that conversation's own selection. An extension whose own
+              settings surface is another section links to it rather than being given an editor here. */}
+          {sectionHost("extensions", <ExtensionsConfig embedded key={sessionId ?? ""} sessionId={sessionId} onClose={onClose} onOpenSection={activateSection} />)}
+          {/* No project needed: the global mcp.json is listed alone, and a project adds its group. */}
+          {/* No trust control: the folder's decision lives on the Web host that owns it, and this Web origin
+              only reads it (GET /api/project-trust), so the panel names where it is recorded rather than offering
+              a dialog whose write this deployment does not serve. */}
+          {sectionHost("mcp", <McpConfig embedded key={cwd ?? ""} cwd={cwd} displayCwd={displayCwd} trust={projectTrust} onProjectTrustChanged={onProjectTrustChanged} onClose={onClose} />)}
+        </main>
+      </div>
+    </div>
+  );
+}

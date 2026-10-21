@@ -1,0 +1,51 @@
+:root {
+  --border: #d4d4d8;
+  --bg: #ffffff;
+  --bg-panel: #fafafa;
+  --bg-subtle: #f4f4f5;
+  --text: #18181b;
+  --text-muted: #52525b;
+  --text-dim: #a1a1aa;
+  --tool-bg: #f4f4f5;
+  --font-mono: ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  height: 100%;
+}
+
+.stage {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.content {
+  width: 100%;
+}
+
+.user {
+  overflow: hidden;
+  font: 600 14px/20px system-ui, sans-serif;
+}
+
+.answer,
+.stream {
+  overflow: hidden;
+  font: 14px/20px system-ui, sans-serif;
+  color: #52525b;
+}

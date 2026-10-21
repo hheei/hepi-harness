@@ -1,0 +1,1262 @@
+[
+  {
+    "file": "adapters/durable-api.test.mjs",
+    "calls": 18,
+    "names": [
+      "the catch-all API route forwards PUT, which the models-config save uses",
+      "the reload command reaches the backend reload endpoint and returns the committed result",
+      "a failed reload rejects with the backend error so the UI notifies and keeps the adopted state",
+      "models-config is proxied to the backend, never read from this host's agent directory",
+      "a conversation without a selected model reports none instead of a fabricated default",
+      "the session catalog reports a folder's own path beside the routing path it is addressed by",
+      "the canonical skills toggle is proxied to the backend's installation capability",
+      "the resync marker is forwarded as its own browser event",
+      "recovery asks the conversation for one submission by its request id, and passes both answers through",
+      "the skills toggle reduces each path to the directory the host is addressed by",
+      "a capability this Web origin cannot serve is answered as unavailable, not as a control that refuses",
+      "an update check is a request the user makes, not one the list makes",
+      "the window the backend publishes is forwarded, not synthesized",
+      "a page read is translated onto the backend entry-id page route",
+      "the three per-entry read blocks are forwarded, and an image keeps its bytes and its media type",
+      "the history token reaches the view cache, which is keyed on it",
+      "the stream's own oversize refusal reaches the browser instead of being dropped"
+    ]
+  },
+  {
+    "file": "adapters/durable-lifecycle.test.mjs",
+    "calls": 20,
+    "names": [
+      "the HTTP conversation read carries the answer identity, the run inputs, the projection identity and the revision",
+      "the stream's state frame carries the same lifecycle payload as the HTTP read",
+      "a lifecycle frame is forwarded as itself, carrying the answer identity a completion notice is keyed by",
+      "an unselected model remains absent through conversation and agent-state reads",
+      "the real state stream preserves a ${resources.status} resource summary",
+      "a first complete HTTP projection hydrates, and stream acquisition then selects the identity for its generation",
+      "within one identity a newer revision wins and an older one is ignored",
+      "an HTTP answer carrying another identity after stream acquisition keeps the accepted view and asks for a fresh acquisition",
+      "a delayed old read that lands after a fresh stream cannot overwrite it",
+      "a read cancelled by a new acquisition cannot be stamped as current when it completes",
+      "reattachment preserves the good view and never reverts readiness to loading",
+      "a lifecycle frame received after acquisition settles the turn without a snapshot's revision deciding it",
+      "a read that fails with no prior projection is unread, and one after a good projection keeps the view",
+      "an advancing frame is folded into the complete projection the browser consumes, and never re-states the window",
+      "a frame the stream cannot continue is answered with a fresh bounded read and the backend's own resync marker",
+      "an advancing frame's own scalars replace the held ones, so a transient the backend dropped is dropped",
+      "an absent outstanding set is not read as a settlement: the held submissions are kept",
+      "the window boundary is a position in the native order, so a compaction summary is not kept by its newer id",
+      "a boundary this stream does not hold asks for a fresh read instead of fabricating an empty window"
+    ]
+  },
+  {
+    "file": "adapters/extensions.test.mjs",
+    "calls": 4,
+    "names": [
+      "the extensions surface reaches the backend's own route and answers what it answered",
+      "a global default change is one request carrying the whole selection",
+      "a per-conversation override reaches that conversation's own route with the selection the surface sent",
+      "a refused selection keeps the backend's status, code and reason instead of reporting success"
+    ]
+  },
+  {
+    "file": "adapters/files-transfer.test.mjs",
+    "calls": 10,
+    "names": [
+      "a listing is cached for the tree, and an upload makes the next one fresh",
+      "an upload becomes one byte request per file, and the answer is the shape the copied UI reads",
+      "a name that already exists is refused before anything is uploaded",
+      "the pre-flight check asks the host about the names the browser listed",
+      "a name that is not one file's own name never reaches the host",
+      "a batch that wrote a file and then met a conflict still drops the tree's cached listing",
+      "an upload past the batch bound is refused with the bound's own reason, mid-body",
+      "a binary preview is streamed as bytes, with the browser's own range passed on",
+      "a download streams the file itself, past what a text preview would have served",
+      "a host refusal keeps its own status and reason"
+    ]
+  },
+  {
+    "file": "adapters/host-cwd-ownership.test.mjs",
+    "calls": 8,
+    "names": [
+      "a folder of another gateway is refused, and this Web origin's MCP host is never asked about it",
+      "the same absolute path on two hosts is two different folders",
+      "a gateway this origin names that reaches its folders through SSH profiles serves no local folder",
+      "a local gateway whose execution targets could not be read is refused, not assumed local",
+      "a workspace whose host named no root is refused rather than sent as a routing address",
+      "an origin that names no local host refuses instead of guessing, and its global configuration still reads",
+      "a retained binding stays marked when the host that owns it cannot answer",
+      "remote worktrees and the cwd check still address the folder's own host"
+    ]
+  },
+  {
+    "file": "adapters/mcp-surface.test.mjs",
+    "calls": 9,
+    "names": [
+      "the listing the panel shows is the host's own configuration, with the folder's trust",
+      "a deployment with no host service answers the named limit, and a malformed request is still refused as one",
+      "an add is read here and written by the host, which answers the listing after it",
+      "a switch, an exposure and a removal change the host's configuration and never a config",
+      "a test reports the host's masked result, and the listing carries it afterwards",
+      "a sign-in carries the host's own flow, and a refused paste keeps its reason",
+      "GET /api/project-trust is the folder's decision plus what its own file declares",
+      "a project's other folder and its checkout reach the host as themselves, and replacing the project's default does not move them",
+      "the catch-all route sends MCP to the Web host surface and never to the durable backend"
+    ]
+  },
+  {
+    "file": "adapters/project-removal.test.mjs",
+    "calls": 8,
+    "names": [
+      "a project removal reaches the backend's DELETE without claiming this origin's own host",
+      "a refused removal keeps the backend's own status and reason",
+      "the workspace list passes a retained binding through with its marker",
+      "home and use-default-directory never answer with a retained folder",
+      "unlinking a folder reaches the backend's folder route without claiming this origin's own host",
+      "removing the default folder sends the replacement in the same call",
+      "a refused unlink keeps the backend's own status, code and reason",
+      "a conversation bound to a retained folder stays listed, marked, and keeps its display root"
+    ]
+  },
+  {
+    "file": "adapters/recall-and-session-list.test.mjs",
+    "calls": 10,
+    "names": [
+      "listing sessions asks for each conversation's state no times: one catalogue read is the whole answer",
+      "the running poll asks for each conversation's state no times either",
+      "a conversation a task created reaches the sidebar as a subagent's, so its completion is not the user's to hear",
+      "the running poll reports the same list version as the session list, so an unchanged poll reloads nothing",
+      "the session list carries when each conversation's newest run ended",
+      "recalling the queue reaches the backend operation that withdraws queued input",
+      "the sidebar state is one backend document, and both its read and its write go there",
+      "the session list and the running poll carry the sidebar's own revision",
+      "a refused recall fails loudly instead of reporting an empty queue as success"
+    ]
+  },
+  {
+    "file": "adapters/remote-project-removal.test.mjs",
+    "calls": 1,
+    "names": [
+      "a Project of another configured gateway is removed and unlinked from this Web origin"
+    ]
+  },
+  {
+    "file": "adapters/session-auto-name.test.mjs",
+    "calls": 2,
+    "names": [
+      "the browser's auto-name request reaches the backend's own naming route",
+      "a refused auto-name keeps the backend's status and reason instead of reporting a name"
+    ]
+  },
+  {
+    "file": "adapters/session-delete.test.mjs",
+    "calls": 3,
+    "names": [
+      "a removal reaches the backend's own conversation DELETE and passes its answer through",
+      "a refused removal keeps the backend's status and reason instead of reporting success",
+      "a removal changes the list version, so another window's poll re-reads the list and sees it gone"
+    ]
+  },
+  {
+    "file": "adapters/session-fork.test.mjs",
+    "calls": 6,
+    "names": [
+      "a fork reaches the backend's own conversation fork and answers the new identity with the list's own row",
+      "a refused fork keeps the backend's status and reason instead of a second vocabulary",
+      "the catalogue reports a fork from the backend's own record and leaves a non-fork without a relation",
+      "a fork changes the list version, so another window's poll re-reads the list and sees the copy",
+      "the transcript's fork command reaches the same backend operation and answers the new session id",
+      "a refused transcript fork fails the caller instead of reporting a cancelled fork"
+    ]
+  },
+  {
+    "file": "adapters/session-rename.test.mjs",
+    "calls": 4,
+    "names": [
+      "the session list carries each conversation's hepi title as the row's own name",
+      "a rename reaches the backend's own rename route with the name the sidebar sent",
+      "a refused rename keeps the backend's status and reason instead of reporting success",
+      "a rename of an unknown session reports the backend's not-found reason"
+    ]
+  },
+  {
+    "file": "adapters/session-search.test.mjs",
+    "calls": 3,
+    "names": [
+      "a search reaches the backend's own bounded scan and answers the results as the session list would show them",
+      "a refused query keeps the backend's status and code instead of being shown as no results",
+      "the search is a read of the backend's catalogue, never a per-conversation fan-out"
+    ]
+  },
+  {
+    "file": "adapters/stream-heartbeat.test.mjs",
+    "calls": 3,
+    "names": [
+      "the conversation proxy forwards an origin comment frame and never injects one",
+      "the conversation proxy writes no comment frame when the origin writes none",
+      "the terminal proxy passes a comment frame through byte-for-byte"
+    ]
+  },
+  {
+    "file": "adapters/terminal.test.mjs",
+    "calls": 3,
+    "names": [
+      "a reconnecting browser's own cursor reaches the backend",
+      "a first attach sends no cursor, so the host answers with what it retained",
+      "a cursor the client names as a query travels beside the routing cwd"
+    ]
+  },
+  {
+    "file": "adapters/worktree-picker.test.mjs",
+    "calls": 6,
+    "names": [
+      "the worktree list is the host's own answer, addressed by the workspace the cwd names",
+      "the checkout the cwd is in is addressed by the workspace the cwd names, even with no project recorded",
+      "a cwd that names no workspace has no worktree list and asks the host nothing",
+      "creating a worktree keeps the copied request shape and answers the workspace it was recorded as",
+      "a dirty removal keeps upstream's 409 with its dirty marker, and a host limit keeps its own code",
+      "a removal that succeeded answers upstream's own success shape"
+    ]
+  },
+  {
+    "file": "lib/ansi.test.mjs",
+    "calls": 3,
+    "names": [
+      "strips ANSI escape sequences",
+      "normalizes boxed custom panel lines while preserving ANSI codes",
+      "removes pi-tui cursor markers from custom panel output"
+    ]
+  },
+  {
+    "file": "lib/app-update.test.mjs",
+    "calls": 3,
+    "names": [
+      "detects newer stable Pi Web versions",
+      "does not report equal, older, or unsupported versions as updates",
+      "builds a release-notes URL only for stable versions"
+    ]
+  },
+  {
+    "file": "lib/apply-patch.test.mjs",
+    "calls": 8,
+    "names": [
+      "extractApplyPatchPaths lists every file operation in order, deduped",
+      "getApplyPatchInputText prefers the structured input field",
+      "parseApplyPatchInput handles add, delete, and update with move in one call",
+      "parseApplyPatchInput tolerates truncated streaming input and rejects non-patches",
+      "applyPatchPreviewToFiles converts the extension result preview with real line numbers",
+      "applyPatchPreviewToFiles keeps move targets and rejects malformed previews",
+      "applyPatchResultHasFailures reads the extension's returned failure list",
+      "getApplyPatchAppliedFiles returns landed paths or null when absent"
+    ]
+  },
+  {
+    "file": "lib/atomic-file.test.mjs",
+    "calls": 2,
+    "names": [
+      "atomically replaces a file with restrictive permissions",
+      "keeps the destination and removes the temporary file when replacement fails"
+    ]
+  },
+  {
+    "file": "lib/auth-throttle.test.mjs",
+    "calls": 7,
+    "names": [
+      "allows attempts until the first failure",
+      "doubles the delay on each failure and caps at the maximum",
+      "reports the remaining block time and lifts it when it expires",
+      "forgets failures once they are older than the reset window",
+      "success clears the counter and the block",
+      "Retry-After rounds up to whole seconds and is at least one",
+      "shares one global state across module instances"
+    ]
+  },
+  {
+    "file": "lib/bash-output.test.mjs",
+    "calls": 3,
+    "names": [
+      "accepts only pi bash logs directly inside the configured temp directory",
+      "reads small output and rejects oversized inline output before buffering it",
+      "rejects symbolic links when opening bash output"
+    ]
+  },
+  {
+    "file": "lib/bounded-form-data.test.mjs",
+    "calls": 6,
+    "names": [
+      "rejects a declared oversized request before reading its body",
+      "stops a chunked request once its body exceeds the limit",
+      "hands on every file in the order it arrived, with the name the browser sent",
+      "a body inside the limit is read whole, one file at a time",
+      "a caller that refuses a part ends the request, and no later part is taken",
+      "a body with no file parts is read and hands nothing on"
+    ]
+  },
+  {
+    "file": "lib/browser-notifications.test.mjs",
+    "calls": 7,
+    "names": [
+      "uses a service worker notification when a registration is available",
+      "falls back to a page notification and wires its click handler",
+      "silently skips notification when neither delivery mechanism works",
+      "shows notifications when the page is hidden",
+      "shows notifications when the visible page is unfocused",
+      "skips notifications only when the visible page is focused",
+      "claims only blocking extension requests and deduplicates their ids"
+    ]
+  },
+  {
+    "file": "lib/compaction-summary.test.mjs",
+    "calls": 3,
+    "names": [
+      "separates pi file metadata tags from the visible compaction summary",
+      "leaves normal summaries unchanged",
+      "keeps file-like tags that are part of the summary body"
+    ]
+  },
+  {
+    "file": "lib/custom-ui-terminal.test.mjs",
+    "calls": 2,
+    "names": [
+      "headless custom UI exposes stable terminal dimensions",
+      "headless custom UI supports plugin rendering and render requests"
+    ]
+  },
+  {
+    "file": "lib/default-cwd.test.mjs",
+    "calls": 2,
+    "names": [
+      "stamps the local calendar date, not the UTC one",
+      "places the dated folder under ~/pi-cwd"
+    ]
+  },
+  {
+    "file": "lib/default-preferences.test.mjs",
+    "calls": 5,
+    "names": [
+      "writes the saved default model without touching the thinking default",
+      "writes the saved default thinking level without touching the model default",
+      "refuses to write when the global settings file could not be loaded",
+      "reports project keys that would hide the edited global default",
+      "accepts only pi thinking levels"
+    ]
+  },
+  {
+    "file": "lib/deferred-provider-models.test.mjs",
+    "calls": 3,
+    "names": [
+      "a runtime whose extension deferred its provider still lists the models seen earlier",
+      "a provider the runtime registered but cannot use is not added back",
+      "a deferred model is found only while this runtime lacks its provider"
+    ]
+  },
+  {
+    "file": "lib/directory-browser.test.mjs",
+    "calls": 6,
+    "names": [
+      "lists directories and directory symlinks without returning files",
+      "expands home-relative paths and rejects missing directories",
+      "builds every Windows drive-letter candidate",
+      "finds parent directories across POSIX and Windows paths",
+      "creates one direct child directory and returns its resolved path",
+      "new directory names cannot escape the current directory"
+    ]
+  },
+  {
+    "file": "lib/display-path.test.mjs",
+    "calls": 5,
+    "names": [
+      "shows a macOS or Linux home folder as ~",
+      "shows a path inside the root relative to it",
+      "a path addressed under a routing root is shown as the folder it is",
+      "a location with no folder known is left as it is",
+      "a sibling folder that shares the root's prefix is not inside it"
+    ]
+  },
+  {
+    "file": "lib/exact-system-prompt.test.mjs",
+    "calls": 2,
+    "names": [
+      "forces the exact prompt for each run through before_agent_start",
+      "leaves the prompt alone when no exact prompt is configured"
+    ]
+  },
+  {
+    "file": "lib/extension-dialog-fit.test.mjs",
+    "calls": 4,
+    "names": [
+      "leaves a dialog alone when nothing in it scrolls sideways",
+      "ignores the one pixel sub-pixel rounding leaves behind",
+      "grows by the widest overflow, rounded up to the next step",
+      "measuring again at the fitted width finds nothing left to grow"
+    ]
+  },
+  {
+    "file": "lib/extension-ui-queue.test.mjs",
+    "calls": 8,
+    "names": [
+      "keeps concurrent requests in arrival order instead of letting the newest replace the oldest",
+      "answering the head shows the next request, and closing a waiting one removes only that id",
+      "a reconnect replay of a queued dialog neither duplicates nor reorders it",
+      "closing an id that is not queued leaves the queue untouched",
+      "Stop clears every queued request through its own close event",
+      "a custom panel's re-render replaces it in place, and a second panel waits behind the first",
+      "upserting the entry already queued keeps the queue's identity",
+      "a reconnect drops requests the server closed while the stream was down, keeping the rest in place"
+    ]
+  },
+  {
+    "file": "lib/extension-widgets.test.mjs",
+    "calls": 2,
+    "names": [
+      "updates competing widgets without changing their order",
+      "appends new widgets and removes cleared widgets"
+    ]
+  },
+  {
+    "file": "lib/file-access.test.mjs",
+    "calls": 2,
+    "names": [
+      "rejects an existing path that escapes an allowed root through a symlink",
+      "rejects a `..` that climbs out beside a link's target"
+    ]
+  },
+  {
+    "file": "lib/file-dirent.test.mjs",
+    "calls": 3,
+    "names": [
+      "uses Dirent types for regular files and directories",
+      "falls back to stat when the Dirent type is unknown",
+      "follows directory symlinks and skips dangling symlinks"
+    ]
+  },
+  {
+    "file": "lib/file-fuzzy.test.mjs",
+    "calls": 2,
+    "names": [
+      "builds closed file mentions and quotes paths containing spaces",
+      "builds line-scoped file mentions"
+    ]
+  },
+  {
+    "file": "lib/file-links.test.mjs",
+    "calls": 13,
+    "names": [
+      "opens local files for plain, Command, and Ctrl left clicks",
+      "leaves secondary modified and non-left clicks to the browser",
+      "resolves absolute markdown file links and strips line suffixes",
+      "resolves absolute file links outside cwd",
+      "resolves relative markdown file links against cwd",
+      "does not let relative links escape cwd",
+      "resolves preview links from the file directory within the project root",
+      "does not treat app or external URLs as file links",
+      "decodes file URL paths once after parsing URL delimiters",
+      "resolves Windows file URLs without a synthetic leading slash",
+      "resolves UNC file URLs and backslash UNC paths",
+      "reads the PDF page fragment from markdown links",
+      "ignores fragments that are not a PDF page selector"
+    ]
+  },
+  {
+    "file": "lib/file-paths.test.mjs",
+    "calls": 5,
+    "names": [
+      "encodeFilePathForApi keeps a UNC root inside the first segment",
+      "encodeFilePathForApi encodes drive and POSIX paths per segment",
+      "getFileName and getFileDirectory handle UNC paths",
+      "joinFilePath preserves the UNC root",
+      "getRelativeFilePath strips a UNC cwd prefix"
+    ]
+  },
+  {
+    "file": "lib/file-tree-visibility.test.mjs",
+    "calls": 13,
+    "names": [
+      "a Git work tree shows tracked directories the name list would hide",
+      "a Git work tree hides what the repository ignores, whatever its name",
+      "a Git work tree shows untracked entries it does not ignore",
+      "an ignored directory holding a tracked file is shown with only its tracked entries",
+      ".git and .DS_Store are hidden in a work tree even when nothing else is",
+      "a directory outside any work tree falls back to the name list",
+      "a directory the repository ignores falls back to the name list instead of listing empty",
+      "a nested repository answers for its own entries",
+      "names are passed to git as literal paths",
+      "an ignored name is not un-ignored by a tracked name its glob characters match",
+      "listing a directory does not run the repository's fsmonitor hook",
+      "a missing git falls back to the name list",
+      "the fallback name list matches names and generated suffixes"
+    ]
+  },
+  {
+    "file": "lib/file-types.test.mjs",
+    "calls": 3,
+    "names": [
+      "detects image, audio, and document preview paths",
+      "detects video preview paths and treats webm as video",
+      "extracts extensions from mixed path styles"
+    ]
+  },
+  {
+    "file": "lib/file-upload-client.test.mjs",
+    "calls": 2,
+    "names": [
+      "a chat drop attaches images, uploads other files, and leaves folders out",
+      "mentions follow the drop order and only name files now in the working directory"
+    ]
+  },
+  {
+    "file": "lib/file-upload.test.mjs",
+    "calls": 4,
+    "names": [
+      "validates upload names without accepting paths or duplicates",
+      "finds conflicts and prevents replacing directories",
+      "prevents replacing symbolic links",
+      "parses only supported conflict strategies"
+    ]
+  },
+  {
+    "file": "lib/file-viewer-state.test.mjs",
+    "calls": 2,
+    "names": [
+      "a restored display mode wins over a stale open hint",
+      "the open hint is used only before viewer state has been saved"
+    ]
+  },
+  {
+    "file": "lib/font-preferences.test.mjs",
+    "calls": 5,
+    "names": [
+      "font preferences preserve editable whitespace and bound malformed storage",
+      "font weights default to Regular, accept 100-600 and reject heavier or invalid storage",
+      "font names support lists, Chinese, optional quotes, and explicit generic families",
+      "names are CSS string data, not variables, keywords, declarations or downloads",
+      "custom fonts retain the original stacks and empty input removes only the override"
+    ]
+  },
+  {
+    "file": "lib/frontmatter.test.mjs",
+    "calls": 5,
+    "names": [
+      "accepts the same common fence variants as remark-frontmatter",
+      "removes an empty or malformed fenced block from the returned body",
+      "leaves documents without a leading frontmatter block untouched",
+      "does not recurse forever through YAML aliases",
+      "uses scalar titles and leaves structured titles for the metadata rows"
+    ]
+  },
+  {
+    "file": "lib/gfm-autolink-email-loader.test.mjs",
+    "calls": 5,
+    "names": [
+      "leaves no lookbehind outside a string in the installed package",
+      "builds the upstream regex where lookbehind is supported",
+      "falls back to the 2.0.0 regex where lookbehind is not supported",
+      "fails the build when the upstream regex changes"
+    ]
+  },
+  {
+    "file": "lib/git-changes.test.mjs",
+    "calls": 2,
+    "names": [
+      "parses null-delimited Git status entries including renames",
+      "classifies Git status for explorer badges"
+    ]
+  },
+  {
+    "file": "lib/http-dispatcher.test.mjs",
+    "calls": 1,
+    "names": [
+      "configures HTTP_PROXY, HTTPS_PROXY, and NO_PROXY for global fetch"
+    ]
+  },
+  {
+    "file": "lib/i18n/format.test.mjs",
+    "calls": 6,
+    "names": [
+      "interpolates string and numeric parameters",
+      "falls back to English and returns the key when both are missing",
+      "formats relative time using the selected locale",
+      "shows a clock time today and a relative day for earlier updates",
+      "formats compact sidebar times in every locale",
+      "compact sidebar times accept ISO strings and tolerate odd input"
+    ]
+  },
+  {
+    "file": "lib/i18n/registry.test.mjs",
+    "calls": 3,
+    "names": [
+      "uses the first supported browser language and falls back to English",
+      "returns only registered locales",
+      "built-in locale packages have the complete English key and required placeholder sets"
+    ]
+  },
+  {
+    "file": "lib/image-attachments.test.mjs",
+    "calls": 3,
+    "names": [
+      "calculates padded base64 byte lengths and rejects invalid data",
+      "selects image files and reports every refused one instead of dropping it silently",
+      "rejects invalid, oversized, and too many image attachments"
+    ]
+  },
+  {
+    "file": "lib/json-response.test.mjs",
+    "calls": 3,
+    "names": [
+      "does not gzip a large JSON response when the client disables gzip",
+      "does not gzip when the gzip quality value is invalid",
+      "leaves small JSON responses uncompressed"
+    ]
+  },
+  {
+    "file": "lib/jsonc.test.mjs",
+    "calls": 6,
+    "names": [
+      "drops line comments, block comments and trailing commas",
+      "leaves comment and comma lookalikes inside strings alone",
+      "a block comment separates tokens instead of joining them",
+      "an unterminated block comment and other broken JSON still throw",
+      "a byte-order mark is accepted",
+      "returns pi's result for every input pi's own stripper accepts"
+    ]
+  },
+  {
+    "file": "lib/key-serializer.test.mjs",
+    "calls": 2,
+    "names": [
+      "tasks for one key run one after another, a failed one included; other keys run alongside",
+      "a second copy of the module shares the chains under the same symbol"
+    ]
+  },
+  {
+    "file": "lib/linked-directory.test.mjs",
+    "calls": 9,
+    "names": [
+      "reports the target of a directory link that leaves the allowed roots",
+      "annotates only the listed directories that lead outside the roots",
+      "never resolves an entry that is a directory by its own type",
+      "approves the target of a link that sits directly inside the roots",
+      "refuses a link whose target is not the one the operator was shown",
+      "refuses a link reached through another link that was never allowed",
+      "refuses a `..` path that the filesystem would resolve through a link",
+      "refuses paths outside the roots, plain directories, file links and dangling links",
+      "flags a link whose target contains the project"
+    ]
+  },
+  {
+    "file": "lib/login-destination.test.mjs",
+    "calls": 3,
+    "names": [
+      "returns to the local page that sent the browser to the login page",
+      "falls back to the app root without a usable destination",
+      "rejects paths the URL parser resolves to another host"
+    ]
+  },
+  {
+    "file": "lib/markdown-list-continuation.test.mjs",
+    "calls": 10,
+    "names": [
+      "continues ordered lists with the next number and the same delimiter",
+      "continues Chinese enumerations with or without a following space",
+      "continues bullet and task lists",
+      "keeps nested indentation and only reads the caret's line",
+      "moves text after the caret into the new item",
+      "an empty item ends the list instead of adding another marker",
+      "leaves ordinary lines and non-list syntax to the native newline",
+      "does not continue when the caret is inside the marker or before it",
+      "does not continue list-looking lines inside fenced code",
+      "leaves selections to the native newline"
+    ]
+  },
+  {
+    "file": "lib/markdown.test.mjs",
+    "calls": 29,
+    "names": [
+      "splits a single-line block into three lines",
+      "preserves the indent of the surrounding list item",
+      "moves a glued opening delimiter to its own line",
+      "moves a glued closing delimiter to its own line",
+      "re-indents lazy content lines of an indented bare-fence block",
+      "re-indents partially indented content lines",
+      "does not use a sibling list item's formula as a closing fence",
+      "does not scan a bare fence past a sibling list item",
+      "leaves a top-level block with detached delimiters untouched",
+      "leaves content inside fenced code blocks untouched",
+      "leaves inline math and plain prose untouched",
+      "does not treat a glued opener with mid-line $$ as a block",
+      "normalizes single-line brackets",
+      "keeps content indented when nested in a list item",
+      "normalizes multi-line brackets without double-indenting",
+      "normalizes model-emitted bracket-only formula lines",
+      "leaves ambiguous bracket-only Markdown untouched",
+      "rewrites escaped backticks inside inline code",
+      "converts \\\\( … \\\\) unless the opening delimiter is escaped",
+      "matches the lookbehind escaped-inline-code rewrite",
+      "matches the lookbehind \\\\( … \\\\) rewrite",
+      "splits the literal at the first CJK punctuation and fixes the url",
+      "keeps the url prefix for www. and mailto: literals",
+      "strips a trailing CJK full stop",
+      "leaves genuine CJK paths alone (ideographs are not boundaries)",
+      "leaves query strings and ASCII punctuation handling untouched",
+      "does not touch an explicit [text](url) link whose text equals its url",
+      "ignores a literal that starts with punctuation, and one with no position",
+      "splits links nested inside other blocks"
+    ]
+  },
+  {
+    "file": "lib/message-display.test.mjs",
+    "calls": 12,
+    "names": [
+      "bounds thinking previews to the first nonblank line without splitting Unicode characters",
+      "splits trailing final answer blocks from process blocks",
+      "keeps pre-tool text in process blocks",
+      "does not expose text before a trailing tool call as final answer",
+      "drops empty thinking blocks after completion",
+      "keeps empty thinking while streaming",
+      "keeps deferred historical thinking placeholders",
+      "returns completed provider errors even when the message has no content",
+      "falls back when a provider error has no message",
+      "treats compaction summaries as turn anchors",
+      "treats a background subagent completion as a turn anchor",
+      "isAssistantTruncated is true only for a finished stopReason length"
+    ]
+  },
+  {
+    "file": "lib/new-session-context.test.mjs",
+    "calls": 9,
+    "names": [
+      "the context follows the composer's cwd while the sidebar's report lags",
+      "the bar's own move is right from the first frame, before the sidebar reports it",
+      "the project list has the current project once",
+      "a folder a Project removal retained is never a target, even when it is the one being looked at",
+      "the sidebar's groups come first, then projects only its sessions know",
+      "a project is named and described by the folder it is, not by its routing root",
+      "project names get their parent folder only when two of them collide",
+      "the current worktree is the reported one, else main",
+      "contexts that show the same have the same key"
+    ]
+  },
+  {
+    "file": "lib/next-config-esm.test.mjs",
+    "calls": 1,
+    "names": [
+      "resolves config paths without CommonJS globals"
+    ]
+  },
+  {
+    "file": "lib/next-config.test.mjs",
+    "calls": 2,
+    "names": [
+      "roots Next.js tracing and Turbopack at the workspace that holds the linked next package",
+      "raises the proxy body buffer above the upload route's 100 MB request cap"
+    ]
+  },
+  {
+    "file": "lib/normalize.test.mjs",
+    "calls": 2,
+    "names": [
+      "keeps SDK scratch input only for an in-flight snapshot",
+      "removes a client raw buffer when normalizing a completed message"
+    ]
+  },
+  {
+    "file": "lib/open-in-file-manager.test.mjs",
+    "calls": 5,
+    "names": [
+      "maps each platform to its file manager command",
+      "reports platforms without a file manager command",
+      "treats loopback host headers as local",
+      "treats LAN, public, and missing hosts as remote",
+      "refuses to launch on platforms without a file manager"
+    ]
+  },
+  {
+    "file": "lib/panel-layout.test.mjs",
+    "calls": 4,
+    "names": [
+      "clamps panel widths to finite bounds",
+      "keeps the responsive right panel default within useful limits",
+      "reserves chat space while split panels are visible",
+      "does not rewrite desktop widths while the file panel is in overlay mode"
+    ]
+  },
+  {
+    "file": "lib/patch.test.mjs",
+    "calls": 5,
+    "names": [
+      "parses paired changes into split diff rows",
+      "pads one-sided additions and removes timestamp suffixes from file paths",
+      "treats in-hunk lines that look like file headers as content",
+      "parses multiple files, resuming header detection after each hunk",
+      "returns null for text without diff lines"
+    ]
+  },
+  {
+    "file": "lib/paths.test.mjs",
+    "calls": 6,
+    "names": [
+      "toNativePath converts git's POSIX output to native separators",
+      "samePath ignores separator style and Windows case",
+      "toSlashPath normalizes to forward slashes",
+      "isWindowsAbsolutePath recognizes drive and UNC paths",
+      "filePathFromApiSegments restores Windows drive roots",
+      "filePathFromApiSegments restores UNC roots"
+    ]
+  },
+  {
+    "file": "lib/pi-sdk-internals.test.mjs",
+    "calls": 9,
+    "names": [
+      "loads every MCP internal from the SDK pi-web runs",
+      "loads the internals once per process",
+      "the SDK builds stdio transports from the StdioTransport class it exposes",
+      "config, validation and value helpers keep the shapes pi-web relies on",
+      "a project's mcp.json is read only once the project is trusted, and replaces global entries",
+      "refuses to load while PI_PACKAGE_DIR points the SDK elsewhere",
+      "refuses to load when pi-web resolves another copy of the SDK",
+      "refuses to load when pi-web cannot resolve the SDK at all"
+    ]
+  },
+  {
+    "file": "lib/powershell-settings.test.mjs",
+    "calls": 6,
+    "names": [
+      "PowerShell is opt-in on Windows and never selected on other platforms",
+      "the setting preserves unrelated config and switches defaultTools both ways",
+      "enabling PowerShell adds it when a custom defaultTools list has no shell",
+      "defaultTools entries resolve like pi's +name / -name modifiers",
+      "the PowerShell switch reads and rewrites a modifier-only defaultTools list",
+      "invalid defaultTools are rejected without overwriting the settings file"
+    ]
+  },
+  {
+    "file": "lib/project-command-env.test.mjs",
+    "calls": 13,
+    "names": [
+      "sanitizes host variables using platform casing rules",
+      "agent bash removes host variables while preserving SDK and user environment",
+      "agent bash reads current shell settings for every execution",
+      "direct bash removes host variables and allows explicit project values",
+      "direct bash preserves execution controls and streaming callbacks",
+      "Stop releases a command whose output a surviving process keeps open",
+      "Stop keeps pi's own abort result when the process tree dies in time",
+      "Stop ends the bash tool while an escaped descendant keeps writing",
+      "a timeout releases a command whose output a surviving process keeps open",
+      "a command that finishes before its timeout keeps its result",
+      "a timeout ends the bash tool while an escaped descendant keeps writing",
+      "direct bash updates the platform PATH key",
+      "a user extension keeps priority over the Pi Web fallback bash tool"
+    ]
+  },
+  {
+    "file": "lib/project-groups.test.mjs",
+    "calls": 4,
+    "names": [
+      "Windows path variants form one recent project using the newest display path",
+      "a recent project shows its folder while keeping the routing root an API call carries",
+      "a folder a Project removal retained is not a recent project",
+      "running and unread counts aggregate under the stable project identity"
+    ]
+  },
+  {
+    "file": "lib/project-identity.test.mjs",
+    "calls": 3,
+    "names": [
+      "Windows project identity ignores full-path casing and separator style",
+      "Windows project identity handles UNC casing and separators",
+      "project identity preserves case on case-sensitive platforms"
+    ]
+  },
+  {
+    "file": "lib/project-removal.test.mjs",
+    "calls": 7,
+    "names": [
+      "the folder list names each folder, its own path, and what its removal takes with it",
+      "a project's last folder needs no replacement: its removal removes the project",
+      "an unlink addresses the folder inside its project's own path, and carries the chosen replacement",
+      "removing a project addresses the project alone",
+      "the backend's own answer is what the project list becomes",
+      "a removed project leaves the list without disturbing the others",
+      "a refusal reads as the reason the backend gave, and never as a silent success"
+    ]
+  },
+  {
+    "file": "lib/project-routing.test.mjs",
+    "calls": 9,
+    "names": [
+      "every folder of a project resolves to one group whose root is the default folder",
+      "a project with no folders has no group, and a missing default falls back to the first folder",
+      "a project in a home folder shows that folder, never the id it is addressed by",
+      "groups are keyed by project, so two projects never merge and one project never splits",
+      "a retained default folder is reported on the group, so no picker can offer it",
+      "a browser path is a workspace only when it names one",
+      "the unbound cwd is the adapter sentinel, not a directory",
+      "a root the host reported resolves to its own workspace, and nothing else does",
+      "a conversation with no execution workspace is not a recent project"
+    ]
+  },
+  {
+    "file": "lib/project-tree.summary.test.mjs",
+    "calls": 2,
+    "names": [
+      "summary tree keeps navigation fields and bounded previews only",
+      "summary tree serializes small even for deep trees"
+    ]
+  },
+  {
+    "file": "lib/project-tree.test.mjs",
+    "calls": 8,
+    "names": [
+      "attaches the first branch message preview to the contracted representative",
+      "does not copy thinking or tool payloads from a compressed assistant label source",
+      "carries previews through non-message roots in multi-root trees",
+      "normalizes and bounds preview text and labels image-only messages",
+      "does not copy unknown message roles into previews",
+      "carries previews through the depth-limit flattening path",
+      "linear sessions still project to root + leaf only",
+      "does not preview transcript system messages"
+    ]
+  },
+  {
+    "file": "lib/prompt-recovery.test.mjs",
+    "calls": 2,
+    "names": [
+      "builds stable keys for matching optimistic text messages",
+      "includes attached images in optimistic message keys"
+    ]
+  },
+  {
+    "file": "lib/quoted-selection.test.mjs",
+    "calls": 1,
+    "names": [
+      "selected message text becomes a markdown quote"
+    ]
+  },
+  {
+    "file": "lib/regular-file.test.mjs",
+    "calls": 1,
+    "names": [
+      "a regular file is read whole, a missing one is undefined, and anything else throws without blocking"
+    ]
+  },
+  {
+    "file": "lib/request-security.test.mjs",
+    "calls": 13,
+    "names": [
+      "allows same-origin and non-browser API requests",
+      "allows LAN same-origin requests when Next.js uses an internal localhost URL",
+      "allows IPv6 and an explicitly configured hostname",
+      "rejects cross-origin browser API requests",
+      "does not globally trust opaque iframe or alternate loopback origins",
+      "allows only user-initiated session export document navigations from a PWA",
+      "rejects an origin that does not match the external request host",
+      "rejects DNS rebinding even when browser headers say same-origin",
+      "rejects missing, malformed, and unconfigured Host headers",
+      "recognizes JSON request content types",
+      "allows a proxy that reports the scheme out-of-band and rewrites Origin",
+      "still rejects a foreign origin when a proxy is in front",
+      "does not relax the scheme without same-origin proxy evidence"
+    ]
+  },
+  {
+    "file": "lib/response-usage-visibility.test.mjs",
+    "calls": 4,
+    "names": [
+      "shows response usage until the browser stores otherwise",
+      "persists the preference and notifies subscribers on change",
+      "shows response usage when storage is unavailable",
+      "returns the visible default when window is unavailable (SSR)"
+    ]
+  },
+  {
+    "file": "lib/search-tree.test.mjs",
+    "calls": 6,
+    "names": [
+      "groups flat paths into directories with files at the root level",
+      "builds arbitrarily deep nesting",
+      "sorts directories before files and alphabetically within each level",
+      "deduplicates repeated paths",
+      "returns an empty tree for empty input",
+      "treats a lone segment as a root file, not a directory"
+    ]
+  },
+  {
+    "file": "lib/settings-navigation.test.mjs",
+    "calls": 6,
+    "names": [
+      "restores the last settings section and falls back without a project",
+      "keeps project settings selections isolated by cwd",
+      "shares the models selection globally",
+      "restores Settings › MCP without a project, since it lists the global file alone",
+      "keeps the MCP selection per project and once more for no project",
+      "ignores malformed and unavailable browser storage"
+    ]
+  },
+  {
+    "file": "lib/shell-words.test.mjs",
+    "calls": 9,
+    "names": [
+      "splits on whitespace and removes quotes the way a POSIX shell does",
+      "joins lines continued with a backslash, a caret (cmd) or a backtick (PowerShell)",
+      "skips comments and blank lines but refuses a second command",
+      "refuses what needs a shell: operators, substitutions, special parameters",
+      "quoted operators and substitutions are plain text",
+      "returns variables as their own parts instead of expanding them",
+      "keeps the backslashes of Windows paths",
+      "reads `NAME=value` assignments only when the name and `=` are unquoted",
+      "formats words so that splitting them again gives the same words"
+    ]
+  },
+  {
+    "file": "lib/sidebar-actions.test.mjs",
+    "calls": 6,
+    "names": [
+      "a group row offers pin, rename, fork, unread, archive and delete",
+      "a running family cannot be archived yet, but can be forked",
+      "an archived row offers unarchive, pin (which restores it), rename, fork and delete",
+      "a transient session offers nothing that needs its file",
+      "shortcuts are unique within a menu",
+      "a refused fork names the reason in the user's language, anything else shows the error"
+    ]
+  },
+  {
+    "file": "lib/sidebar-prefs.test.mjs",
+    "calls": 8,
+    "names": [
+      "defaults to the sessions tab, open pins and no explicit group choices",
+      "saves and restores the sidebar tab",
+      "saves and restores the pinned section state",
+      "group choices round-trip and drop malformed entries",
+      "group choices keep the 300 most recently inserted keys",
+      "the keys of the old sessions/explorer split are dropped, and nothing else",
+      "falls back to defaults when browser storage is unavailable",
+      "falls back when accessing browser storage throws"
+    ]
+  },
+  {
+    "file": "lib/skill-inventory.test.mjs",
+    "calls": 17,
+    "names": [
+      "names the execution host and account, and says so when the host could not be resolved",
+      "names the session's conversation only for the workspace that conversation runs on",
+      "finds the session's own workspace from its cwd and falls back to the first configured one",
+      "a workspace a Project removal retained is no execution target",
+      "reports each search source's own state, and never folds an empty source into a failure",
+      "keeps a catalog's hits usable when some rows were dropped, and names each miss by reason",
+      "matches an installation by its directory name at the chosen scope",
+      "offers an update only when the recorded provenance names an exact repository version",
+      "an installation is annotated by its directory, not by the skill document's display name",
+      "requires a confirmation for anything but an unchanged installation",
+      "shows the recorded version, falling back to the pinned revision",
+      "an installation reports publication and adoption as two facts, and invents no reload without a conversation",
+      "an update reports the retained backup and the separate reload outcome",
+      "only an installation with recorded GitHub provenance offers a revision check",
+      "a check reports the revision it compared, and claims nothing when nothing was compared",
+      "a toggle body's SKILL.md paths reduce to the directories the host is addressed by",
+      "a group toggle's answer is read per directory, and a refused one is named rather than hidden"
+    ]
+  },
+  {
+    "file": "lib/slash-display.test.mjs",
+    "calls": 7,
+    "names": [
+      "restores a complete SDK skill expansion with arguments",
+      "restores a complete SDK skill expansion without arguments",
+      "restores multiline arguments",
+      "uses the final closing tag when the skill body contains an example",
+      "does not collapse incomplete or lookalike user text",
+      "collapse keeps session auto-naming free of skill XML",
+      "plain first messages pass through unchanged for naming"
+    ]
+  },
+  {
+    "file": "lib/stacked-dialog.test.mjs",
+    "calls": 19,
+    "names": [
+      "with nothing above it, Escape closes Settings and leaves a running agent alone",
+      "with Settings closed, an Escape nothing handled still stops the running agent",
+      "Escape handled nearer (a menu inside Settings) does not close Settings",
+      "while the trust dialog is open above Settings, Escape closes only the dialog",
+      "the order the listeners were added in does not matter: the dialog's runs in the capture phase",
+      "an Escape that cancels an IME composition closes nothing, the dialog included",
+      "an Escape that cancels an IME composition in a Settings text box leaves Settings open",
+      "Safari's composition Escape (keyCode 229) closes nothing above Settings either",
+      "a busy dialog can ignore Escape, which still never reaches Settings",
+      "focus moves into the dialog when it opens and back to the opener when it closes",
+      "an opener that left the page meanwhile is not focused again",
+      "listeners are registered in the phases the stacking relies on, and removed by their cleanup",
+      "focus that fell to the page goes to the given element; focus anywhere else stays",
+      "after a change, focus goes back to the control it was started from, or to the fallback",
+      "a modal panel takes focus from the composer as it opens, and hands it back as it closes",
+      "focus that fell to the page as the panel closed goes back to the opener too",
+      "Escape on the panel, not on the composer, closes Settings and leaves a running agent alone",
+      "on a coarse pointer the composer is not focused again, which would raise the keyboard",
+      "focus already inside the panel stays, and focus the user moved elsewhere is not taken back"
+    ]
+  },
+  {
+    "file": "lib/tab-session.test.mjs",
+    "calls": 13,
+    "names": [
+      "returns null when this tab remembers nothing",
+      "set then get round-trips the remembered session",
+      "replaces the previous session of the same tab",
+      "remembers a new-session composer for this tab",
+      "reads a legacy bare session id",
+      "ignores an empty stored value",
+      "no-ops for an empty session id",
+      "no-ops for an empty new-session cwd",
+      "clears the remembered session only when the id matches",
+      "does not clear a remembered new-session composer",
+      "falls back to null / no-ops when browser storage is unavailable",
+      "uses window.sessionStorage by default",
+      "falls back when window.access to sessionStorage throws"
+    ]
+  },
+  {
+    "file": "lib/terminal-fan-in.test.mjs",
+    "calls": 7,
+    "names": [
+      "every mounted tab shares one stream, and the stream names each tab with its routing cwd",
+      "a reconnect names the cursor each tab holds, so a dropped stream continues instead of resetting",
+      "a released tab's stream delivers nothing, and the last tab to leave closes the page's stream",
+      "a cursor belongs to the widget that read it: the same one continues, a new one refills",
+      "a stream the host refuses is reported as a failure and not retried",
+      "closing the stream ends it and opens nothing again",
+      "the stream path names a tab's cursor only when it has one"
+    ]
+  },
+  {
+    "file": "lib/terminal-input.test.mjs",
+    "calls": 3,
+    "names": [
+      "maps navigation and editing keys to terminal sequences",
+      "maps legacy control and alt keys used by pi-tui",
+      "leaves printable text to the text input and wraps pasted text"
+    ]
+  },
+  {
+    "file": "lib/text-preview.test.mjs",
+    "calls": 2,
+    "names": [
+      "reads large text in contiguous UTF-8 chunks",
+      "invalid UTF-8 cannot stall pagination"
+    ]
+  },
+  {
+    "file": "lib/theme.test.mjs",
+    "calls": 1,
+    "names": [
+      "first paint restores every palette and falls back to the system for invalid or blocked storage"
+    ]
+  },
+  {
+    "file": "lib/thinking-expansion-preference.test.mjs",
+    "calls": 3,
+    "names": [
+      "defaults to collapsed when no preference is stored",
+      "persists the preference and notifies listeners on change",
+      "returns false when window is unavailable (SSR)"
+    ]
+  },
+  {
+    "file": "lib/thinking-level-mid-run.integration.test.mjs",
+    "calls": 1,
+    "names": [
+      "a thinking level set mid-run applies from the next model request"
+    ]
+  },
+  {
+    "file": "lib/tool-call-expansion.test.mjs",
+    "calls": 2,
+    "names": [
+      "remembers expanded tool calls across remounts by toolCallId",
+      "ignores tool calls without an id"
+    ]
+  },
+  {
+    "file": "lib/tool-execution-progress.test.mjs",
+    "calls": 3,
+    "names": [
+      "uses the latest non-empty text line from a partial tool result",
+      "ignores partial tool results without displayable text",
+      "bounds long progress lines while preserving the latest text"
+    ]
+  },
+  {
+    "file": "lib/tool-preset-preference.test.mjs",
+    "calls": 4,
+    "names": [
+      "defaults missing or invalid preferences to the configured preset",
+      "round-trips every supported tool preset",
+      "falls back safely when browser storage is unavailable",
+      "falls back when accessing window.localStorage throws"
+    ]
+  },
+  {
+    "file": "lib/tool-presets.test.mjs",
+    "calls": 6,
+    "names": [
+      "maps every tool preset to its built-in tools",
+      "recognizes presets while ignoring active custom tools",
+      "returns fresh tool arrays that callers can safely modify",
+      "recognizes PowerShell as the shell in standard presets",
+      "the configured preset stands for \\",
+      "an active tool set never maps back to the configured preset"
+    ]
+  },
+  {
+    "file": "lib/tps.test.mjs",
+    "calls": 7,
+    "names": [
+      "a steady rate reads steady even when the window starts late",
+      "a head start does not inflate the first reading",
+      "a rate change is followed instead of averaged away",
+      "hides the reading until the samples can support it",
+      "hides the reading rather than report a negative or zero rate",
+      "samples older than the window are dropped",
+      "the window is bounded even if samples arrive faster than the tick"
+    ]
+  },
+  {
+    "file": "lib/workspace-memory.test.mjs",
+    "calls": 12,
+    "names": [
+      "returns null for an unknown workspace",
+      "set then get round-trips the remembered session",
+      "workspaces are remembered independently",
+      "clearLastOpen removes only the named workspace",
+      "clearing the last entry removes the storage key entirely",
+      "ignores a corrupt stored map",
+      "ignores a stored map of the wrong shape",
+      "recovers from an array-shaped stored map",
+      "ignores an empty or non-string session id",
+      "falls back to null / no-ops when browser storage is unavailable",
+      "falls back when browser storage access throws",
+      "workspaceKeyOf prefers projectKey, then projectRoot, then cwd"
+    ]
+  },
+  {
+    "file": "lib/worktree.test.mjs",
+    "calls": 4,
+    "names": [
+      "main and linked worktrees share one canonical project root",
+      "recognizes submodule and dirty-worktree removal errors as forceable",
+      "forced worktree removal passes Git's force flag",
+      "worktree removal accepts a path that runs through a link"
+    ]
+  },
+  {
+    "file": "public/sw.test.mjs",
+    "calls": 10,
+    "names": [
+      "push always shows a notification, even when a window is visible",
+      "push ignores malformed payloads",
+      "notification click focuses an existing client at the session URL",
+      "notification click navigates an existing client to the session",
+      "notification click opens a window and rejects cross-origin targets",
+      "a stalled navigation falls back to offline.html",
+      "a stalled static asset request is bounded as well",
+      "a cache miss responds before the cache write finishes",
+      "a response that arrives in time is not cut off mid-stream"
+    ]
+  }
+]

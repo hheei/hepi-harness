@@ -1,0 +1,67 @@
+# Container topology for the durable backend (docs/container-deployment.md).
+#
+# One service, because only one role is a container: the Web origin is the client ingress — a Node process serving the
+# Vite build and answering /api on the same listener — released and run as a systemd user unit beside the backend
+# (docs/client-runtime-release.md). Its Next container, `hepi-web`, was retired with the ingress cutover; there is no
+# Web image to build, pull or health-check here.
+#
+# Default network is `host`: the backend's execution host is reached over an SSH reverse forward that listens on the
+# host's loopback (docs/deployment.md), which a bridge container cannot reach. With `network_mode: host` the backend
+# still binds only 127.0.0.1 (HEPI_BIND_HOST), so the published surface is exactly the loopback the tunnel uses.
+#
+# `docker compose -f deploy/compose.yaml -f deploy/compose.split.yaml up -d` switches the backend to the composed
+# default network with a loopback-published port; read the "Split profile" section of docs/container-deployment.md
+# first — the reverse SSH forward then has to listen on an address the backend container can reach.
+#
+# Build context is the repository root, so the root lockfile and every workspace manifest are in the build. To run
+# published images instead of building, set HEPI_BACKEND_IMAGE to the GHCR tag and use `docker compose pull` +
+# `up -d --no-build`; see docs/container-deployment.md "Published images".
+#
+# The host port is HEPI_BACKEND_PORT everywhere (host network included), so a busy default port is an environment
+# change, not a file edit.
+name: hepi
+
+services:
+  backend:
+    image: ${HEPI_BACKEND_IMAGE:-hepi-backend:local}
+    build:
+      context: ..
+      dockerfile: deploy/docker/backend.Dockerfile
+    network_mode: host
+    # Provider/workspace variables live in deploy/.env (optional: a deployment that defines its providers in
+    # models.json needs none of them). The compose-level mapping below carries the runtime secrets that the image must
+    # never contain.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HEPI_BIND_HOST: 127.0.0.1
+      PORT: "${HEPI_BACKEND_PORT:-8787}"
+      HEPI_AUTH_TOKEN: ${HEPI_AUTH_TOKEN:?set HEPI_AUTH_TOKEN in deploy/.env}
+      HEPI_DB: ${HEPI_DB:-/var/lib/hepi/hepi.sqlite}
+      HEPI_SKILL_REPOSITORY: ${HEPI_SKILL_REPOSITORY:-/var/lib/hepi/skill-repository.sqlite}
+      HEPI_WORKSPACE_ID: ${HEPI_WORKSPACE_ID:-}
+      HEPI_GATEWAY_ID: ${HEPI_GATEWAY_ID:-workstation}
+      HEPI_GATEWAY_URL: ${HEPI_GATEWAY_URL:-}
+      HEPI_GATEWAY_TOKEN: ${HEPI_GATEWAY_TOKEN:-}
+      # Provider selection is runtime configuration, never a build argument. An empty HEPI_PROVIDER registers no
+      # environment-owned provider, so the deployment states no default model; a provider id must arrive with its model,
+      # or startup fails by design (docs/providers.md).
+      HEPI_CONFIG_SOURCE: ${HEPI_CONFIG_SOURCE:-}
+      PI_CODING_AGENT_DIR: ${PI_CODING_AGENT_DIR:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - hepi-state:/var/lib/hepi
+    restart: unless-stopped
+    # Readiness, not liveness: this is the authenticated model-catalog route, so it only answers once the harness,
+    # the SQLite store and the model registry are up. An unauthenticated request answers 401.
+    healthcheck:
+      # Reads PORT, so overriding the port does not leave the probe knocking on the default one.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/models',{headers:{authorization:'Bearer '+process.env.HEPI_AUTH_TOKEN}}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  hepi-state:

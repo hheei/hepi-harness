@@ -1,0 +1,65 @@
+/* Fixture-local theme tokens, copied from apps/web/app/globals.css so the real
+   MessageView footer renders on a real light/dark surface. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --text-dim: #5e6673;
+  --border: #e0e0e0;
+  --font-mono: ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1a1a1a;
+  --text: #e8e8e8;
+  --text-dim: #a4a4a4;
+  --border: #454545;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/20px system-ui, sans-serif;
+}
+
+#root {
+  height: 100%;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Tailwind provides this in the app; the fixture has no Tailwind build. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.chat {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--bg);
+}

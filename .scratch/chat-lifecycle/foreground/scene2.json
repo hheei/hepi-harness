@@ -1,0 +1,2764 @@
+{
+ "heldRead": {
+  "frames": [
+   {
+    "t": 54,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 62,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 202,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 203,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 217,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 230,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 248,
+    "loading": true,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 266,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nmagpie/deepseek-v4.1-flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\ndeepseek-v4.1-flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 280,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 296,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 313,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 330,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 346,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 363,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 380,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 396,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 413,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 430,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 446,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 463,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 480,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 496,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 513,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 530,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 546,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 563,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 580,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 596,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 613,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 630,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 646,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 663,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 680,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 696,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 713,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 730,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 746,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 763,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 780,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 796,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 813,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 830,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 846,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 863,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 880,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 896,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 913,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 930,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 946,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 963,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 980,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 996,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1013,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1029,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1046,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1063,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1080,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1096,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1113,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1130,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1146,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1163,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1180,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1196,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1213,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1230,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1246,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1263,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1280,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1296,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1313,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1330,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1346,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1363,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1380,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1396,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1413,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1430,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1446,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1463,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1480,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1496,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1513,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1530,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1546,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1563,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1580,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1596,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1613,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1629,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1647,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1663,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1680,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1696,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1713,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1730,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   }
+  ],
+  "audio": [],
+  "sse": [
+   {
+    "t": 249,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"15\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 249,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"27\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"FOREGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869138914,\"responseId\":\"chatcmpl-clf\",\"rawStopReason\":\"stop\",\"durationMs\":1513}],\"entryIds\":[\"23\",\"27\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "http": [
+   {
+    "t": 211,
+    "path": "/api/projects",
+    "doneAt": 221,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 223,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/sessions?summary=1",
+    "doneAt": 228,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/open-in-explorer",
+    "doneAt": 221,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/agent/running",
+    "doneAt": 224,
+    "status": 200
+   },
+   {
+    "t": 214,
+    "path": "/api/home",
+    "doneAt": 227,
+    "status": 200
+   },
+   {
+    "t": 224,
+    "path": "/api/sessions",
+    "doneAt": 230,
+    "status": 200
+   },
+   {
+    "t": 236,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 266,
+    "status": 501
+   },
+   {
+    "t": 237,
+    "path": "/api/files/workspace/local?type=list",
+    "doneAt": 250,
+    "status": 502
+   },
+   {
+    "t": 237,
+    "path": "/api/git/status?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 265,
+    "status": 502
+   },
+   {
+    "t": 238,
+    "path": "/api/sessions/15?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "doneAt": null,
+    "status": null
+   },
+   {
+    "t": 238,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 249,
+    "status": 200
+   },
+   {
+    "t": 239,
+    "path": "/api/project-trust?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 266,
+    "status": 503
+   },
+   {
+    "t": 978,
+    "path": "/api/sessions?force=1",
+    "doneAt": 987,
+    "status": 200
+   }
+  ],
+  "loading": false,
+  "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+  "bodyText": "Sessions\nFiles\nNew\nworkspace\n7\ntest\nNew Project…\nOpen another project…\nModels\nSkills\nSettings\nFull history\nGenerate title\nSystem\nTools\n5\n3\n\ntest\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact\nNo file open"
+ },
+ "released": {
+  "frames": [
+   {
+    "t": 54,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 62,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 202,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 203,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 217,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 230,
+    "loading": false,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 248,
+    "loading": true,
+    "chatMounted": false,
+    "chatText": "",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 266,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nmagpie/deepseek-v4.1-flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\ndeepseek-v4.1-flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 280,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 296,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 313,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 330,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 346,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 363,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 380,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 396,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 413,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 430,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 446,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 463,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 480,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 496,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 513,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 530,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 546,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 563,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 580,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 596,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 613,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 630,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 646,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 663,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 680,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 696,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 713,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 730,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 746,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 763,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 780,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 796,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 813,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 830,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 846,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 863,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 880,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 896,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 913,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 930,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 946,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 963,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 980,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 996,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1013,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1029,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1046,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1063,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1080,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1096,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1113,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1130,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1146,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1163,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1180,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1196,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1213,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1230,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1246,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1263,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1280,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1296,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1313,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1330,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1346,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1363,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1380,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1396,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1413,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1430,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1446,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1463,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1480,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1496,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1513,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1530,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1546,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1563,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1580,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1596,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1613,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1629,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1647,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1663,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1680,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1696,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1713,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1730,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\nconfigured\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1747,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1763,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1780,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1796,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1813,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1830,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1846,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1863,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1880,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1896,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1913,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1929,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1946,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1963,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1980,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 1996,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2013,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2030,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2046,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2063,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2080,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2096,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2113,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2130,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2146,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2163,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2179,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2196,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2213,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2230,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2246,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2263,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2279,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2296,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2313,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2330,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2346,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2363,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2380,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2396,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2413,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2430,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2446,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2463,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2479,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2496,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2513,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2530,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2546,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2563,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2579,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2596,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2613,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2630,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2646,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2663,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2680,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2696,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2713,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2729,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2746,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2763,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2779,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2796,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2813,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2829,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2846,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2863,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2880,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2896,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2913,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2929,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2946,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2963,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2979,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 2996,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3013,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3029,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3046,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3063,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3079,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3096,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3113,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3130,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3146,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3163,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3180,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3196,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3213,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   },
+   {
+    "t": 3229,
+    "loading": false,
+    "chatMounted": true,
+    "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+    "pending": 0,
+    "audio": 0,
+    "notice": ""
+   }
+  ],
+  "audio": [],
+  "sse": [
+   {
+    "t": 249,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"connected\",\"sessionId\":\"15\",\"isStreaming\":false,\"pendingExtensionUiIds\":[]}"
+   },
+   {
+    "t": 249,
+    "url": "/api/agent/15/events",
+    "data": "{\"type\":\"durable_state\",\"sessionId\":\"15\",\"projectionId\":\"7260d837-8b5a-45ea-8461-7cdfd3a9a851\",\"revision\":7,\"run\":null,\"submissions\":[],\"filePath\":\"\",\"totalActiveMs\":0,\"tree\":[],\"leafId\":\"27\",\"toolNames\":[\"read\",\"write\",\"edit\",\"bash\"],\"context\":{\"messages\":[{\"role\":\"user\",\"content\":\"test\",\"timestamp\":1791869138888},{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"FOREGROUND ANSWER\"}],\"api\":\"openai-completions\",\"provider\":\"magpie\",\"model\":\"deepseek-v4.1-flash\",\"usage\":{\"input\":5,\"output\":3,\"cacheRead\":0,\"cacheWrite\":0,\"reasoning\":0,\"totalTokens\":8,\"cost\":{\"input\":0,\"output\":0,\"cacheRead\":0,\"cacheWrite\":0,\"total\":0}},\"stopReason\":\"stop\",\"timestamp\":1791869138914,\"responseId\":\"chatcmpl-clf\",\"rawStopReason\":\"stop\",\"durationMs\":1513}],\"entryIds\":[\"23\",\"27\"],\"oldestEntryId\":\"23\",\"hasMore\":false,\"thinkingLevel\":\"off\",\"model\":{\"provider\":\"magpie\",\"modelId\":\"deepseek-v4.1-flash\"}},\"failure\":null,\"busy\":false,\"partial\":\"\",\"liveMessage\":null,\"liveTools\":[],\"queuedMessages\":{\"steering\":[],\"followUp\":[]},\"resources\":{\"status\":\"loaded\",\"skills\":0,\"prompts\":0,\"loadedAtMs\":1791869138886,\"pending\":false},\"extensions\":[\"coding-tools\",\"workspace-resources\"]}"
+   }
+  ],
+  "http": [
+   {
+    "t": 211,
+    "path": "/api/projects",
+    "doneAt": 221,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/sessions/ui-state",
+    "doneAt": 223,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/sessions?summary=1",
+    "doneAt": 228,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/open-in-explorer",
+    "doneAt": 221,
+    "status": 200
+   },
+   {
+    "t": 213,
+    "path": "/api/agent/running",
+    "doneAt": 224,
+    "status": 200
+   },
+   {
+    "t": 214,
+    "path": "/api/home",
+    "doneAt": 227,
+    "status": 200
+   },
+   {
+    "t": 224,
+    "path": "/api/sessions",
+    "doneAt": 230,
+    "status": 200
+   },
+   {
+    "t": 236,
+    "path": "/api/worktrees?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 266,
+    "status": 501
+   },
+   {
+    "t": 237,
+    "path": "/api/files/workspace/local?type=list",
+    "doneAt": 250,
+    "status": 502
+   },
+   {
+    "t": 237,
+    "path": "/api/git/status?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 265,
+    "status": 502
+   },
+   {
+    "t": 238,
+    "path": "/api/sessions/15?deferThinking=1&deferMedia=1&tree=summary&force=1",
+    "doneAt": 1741,
+    "status": 200
+   },
+   {
+    "t": 238,
+    "path": "/api/models?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 249,
+    "status": 200
+   },
+   {
+    "t": 239,
+    "path": "/api/project-trust?cwd=%2Fworkspace%2Flocal",
+    "doneAt": 266,
+    "status": 503
+   },
+   {
+    "t": 978,
+    "path": "/api/sessions?force=1",
+    "doneAt": 987,
+    "status": 200
+   },
+   {
+    "t": 1741,
+    "path": "/api/sessions/15/state",
+    "doneAt": 1745,
+    "status": 200
+   },
+   {
+    "t": 2730,
+    "path": "/api/agent/running",
+    "doneAt": 2737,
+    "status": 200
+   }
+  ],
+  "loading": false,
+  "chatText": "test\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact",
+  "bodyText": "Sessions\nFiles\nNew\nworkspace\n7\ntest\nNew Project…\nOpen another project…\nModels\nSkills\nSettings\nFull history\nGenerate title\nSystem\nTools\n5\n3\n\ntest\n\nCopy\nEdit from here\nNew session\n01:25 PM\nDeepSeek V4.1 Flash\n\nFOREGROUND ANSWER\n\nInput tokens:\n5\nOutput tokens:\n3\nCopy\n01:25 PM\nSend\nDeepSeek V4.1 Flash\noff\ndefault\nCompact\nNo file open"
+ }
+}

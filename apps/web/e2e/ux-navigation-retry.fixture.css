@@ -1,0 +1,7 @@
+/* Just enough of the workbench's layout for a transcript to scroll inside the page.
+   The production stylesheet is Tailwind-compiled by each host's own build; this fixture bundles with esbuild, so the
+   two utilities the settlement actually depends on are stated here rather than pulled in through `@hepi/ui`. */
+html, body, #root { height: 100%; margin: 0; }
+body { font: 14px/1.4 system-ui, sans-serif; }
+#root { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+[data-chat-scroll] { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }

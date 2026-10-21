@@ -1,0 +1,40 @@
+{
+  "name": "@hepi/client",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Hepi local/SSH execution gateway CLI with a configuration and connectivity diagnostic.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "hepi-client": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke:pack": "node scripts/smoke-pack.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/chord": "1.3.0",
+    "@earendil-works/pi-ai": "1.3.0",
+    "@earendil-works/pi-durable": "1.3.0",
+    "ignore": "7.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "esbuild": "0.27.0",
+    "typescript": "5.9.3"
+  }
+}
