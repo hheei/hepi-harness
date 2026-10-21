@@ -72,7 +72,7 @@ Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
 ### Checks
 
 - `pnpm verify:changed`：changed-typecheck / changed-test / web-unit / check-docs 全 pass，exit 0；log `.dev/verify/2026-10-21T09-51-19-122-verify-changed`（dirty `7cc775e4`）。
-- Focused browser：`ux-workbench-selection.ts`、`ux-workbench-scope.ts`、`ux-sidebar-ingress.ts`、`ux-raw-history-sidebar-focus.ts` 全 PASS。
+- Focused browser（`7d6bd29c`，exit 0，log `.dev/verify/2026-10-21T17-58-48-browser-selection`）：`ux-workbench-selection.ts`、`ux-workbench-scope.ts`、`ux-sidebar-ingress.ts`、`ux-raw-history-sidebar-focus.ts` 全 PASS。
 - 負向驗證：移除 `WorkbenchSelectionProvider` 時 `ux-raw-history-sidebar-focus.ts` 逾時失敗，證明 browser scene 真的守住 context 接線。
 
 ### 已解 findings
@@ -82,6 +82,7 @@ Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
 - 同 project 的 workspace identity hydration 誤判為換 workspace → `adoptWorkspaceIdentity` 同步更新對話 `projectKey`。
 - 同資料夾 New 誤把 park 併回新 composer → 僅在真的換資料夾時 rekey park。
 - browser driver 曾假設 request 帶 method 前綴，兩個 no-read 斷言因此恆真 → 已修正並由實際輸出驗證。
+- `ux-workbench-selection.ts` 印出 PASS 卻不結束（fixture server 未關）→ 每次跑都被 timeout 殺掉、exit code 是 timeout 的 → 收在 `finally` 關 server 並 `process.exit`，現 exit 0 / 5.4s。
 
 ### 剩餘限制
 

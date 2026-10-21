@@ -225,11 +225,16 @@ try {
     await context.close();
     await browser.close();
   }
+  exitCode = failures.length === 0 ? 0 : 1;
 } catch (error) {
   check(false, "the driver threw: " + (error instanceof Error ? error.message : String(error)).split("\n")[0]);
+} finally {
+  // The fixture's own server is this process's last handle: left open, a passing run would look like a hang to whatever
+  // invoked it, and its exit code would be the timeout's rather than the checks'.
+  server.closeAllConnections();
+  await new Promise((resolveClose) => server.close(resolveClose));
 }
 
 console.log("== result: " + (failures.length === 0 ? "PASS" : failures.length + " FAILED CHECK(S)"));
 if (failures.length > 0) for (const failure of failures) console.log("   - " + failure);
-exitCode = failures.length === 0 ? 0 : 1;
-process.exitCode = exitCode;
+process.exit(exitCode);
