@@ -16,7 +16,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
-| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | in-progress；agent-230 發現 7 項 material regressions，worker 修正中 |
+| 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | 修正已整合並驗證；agent-230 複審中，worker 文件收尾 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
 | 檔案 preview 呈現模組 | agent-224 | `.dev/worktrees/ui-previews` | resolved／integrated；獨立 review 無 actionable findings，native save 留票 12 |
@@ -51,6 +51,9 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 - Coordinator 執行 `graphify update .` exit 0；15,434 nodes／31,097 edges／679 communities，raw log `.dev/verify/ui-architecture-refactor/wave1-graph.log`。只更新 code graph，不將 docs semantic graph 當作已刷新。
 - 票 03 worktree `.dev/worktrees/ui-lifetime` 已從 `96c2348e` 準備，分支 `impl/ui-conversation-lifetime`，offline frozen install exit 0；待 01 review 完成再啟動實作。
 - agent-230 review：Standards 無 material findings；Spec 7 項 material regressions。完整 disposition 見 [review notes](review-notes.md#ticket-01-review-corrections)。01 已重新開啟並交回 agent-221；03 暫緩。以上 checks 通過不表示已涵蓋這些行為，仍綁定原 tested revision。review reproductions 原始 logs 已保存至 `.dev/verify/ui-architecture-refactor/ticket01-selection-review.log`、`ticket01-draft-disposal-review.log`。
+- 修正鏈 `28ade187`／`229bb29c`／`1179fdcb` 已整合為 `23bb765e`／`16dbd4f4`／`6d4a0342`。包含 lifecycle 不刪草稿、source-identity promotion、workspace choice retirement、catalogue-only remembered restore、accepted-project presentation cleanup、same-conversation attachment 保持與 raw-panel dismissal 保持；agent-230 正針對原 7 findings 複審，不擴大理論範圍。
+- 整合 revision `6d4a0342`，dirty 僅既有 durable-ledger scratch：changed checks 全 pass（UI 403／App 26／web-unit 14），report `.dev/verify/ui-selection-corrected-integrated/verify.json`；selection 與 navigation-retry browser commands exit 0，raw logs `.dev/verify/ui-architecture-refactor/corrected-selection.log`、`corrected-navigation.log`。Worker 原始 logs 已複製 `.dev/verify/2026-10-21T10-39-48-555-verify-changed/`、`.dev/verify/2026-10-21T18-39-16-browser-regressions/`。
+- Coordinator graph update exit 0，log `.dev/verify/ui-architecture-refactor/selection-corrected-graph.log`；03 worktree 已 fast-forward 至 `6d4a0342`，複審關閉 findings 後可啟動，不等待 01 文件收尾。
 
 ### Native 驗收準備
 
