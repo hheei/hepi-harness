@@ -7,7 +7,7 @@ descriptor a client reads first, one conversation a real caller reads, submits t
 and the stop/continue, queue, fork, delegation and relation operations that act on it — with the lost-answer rule they
 share ([below](#conversation-control-queue-fork-and-relations)). All are implemented and tested, and since 2026-10-18
 this listener **is** the deployed Web entry on the workstation: `hepi-ingress.service` serves the tailnet origin that
-the Next container used to bind, from `release-1873d24` (see [the cutover record](1873d24-deployment.md) and
+the Next container used to bind, from `release-1873d24` (see [the cutover record](records/1873d24-deployment.md) and
 [client-runtime release](client-runtime-release.md)). The Backend's own port and the execution gateway's loopback
 listener are unchanged binds, and the ingress serves no `/v1` route on the client origin.
 

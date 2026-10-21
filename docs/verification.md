@@ -1223,7 +1223,7 @@ not carry the guard. The current deployment does: `39c168d` contains `9e5af9d`, 
 `hepi-web:39c168d` carries the guard string that `hepi-web:edef2c0` lacks. The guard, the driver and the
 `test:nav-flicker` script are byte-identical between `c122f0b` and `39c168d`, so the driver evidence below carries
 over to the deployed artifact; no fresh paid model turn was taken for this deployment, and no live model turn is
-claimed. See [the 39c168d record](39c168d-deployment.md).
+claimed. See [the 39c168d record](records/39c168d-deployment.md).
 Browser proof on `c122f0b` (source-identical to the deployed `39c168d`), `pnpm --filter @hepi/web test:nav-flicker`
 with `exit=0`: `/tmp/final-run1.log` and `/tmp/final-run2.log`, each ending `UX nav flicker checks PASSED` over eight
 checks, against the build in `/tmp/final-build.log`.
@@ -3200,7 +3200,7 @@ all resolving): `.dev/verify/merge-client-app-12/broken-merged.txt` diffs empty 
 `.dev/verify/merge-client-app-8/broken-base-80608d6.txt`. Recorded, not repaired by this merge.
 
 **Deployed SHA vs integrated SHA, kept distinct.** The live artifacts remain the `1873d24` set recorded in
-[the cutover record](1873d24-deployment.md) — `release-1873d24/ingress.mjs`, `hepi-backend:1873d24-workstation`,
+[the cutover record](records/1873d24-deployment.md) — `release-1873d24/ingress.mjs`, `hepi-backend:1873d24-workstation`,
 `release-1873d24`. This batch produced a **new integrated revision `bbd0d59` that is not deployed**: no service was
 rebuilt, restarted or cut over here, no build ran on `remote-host`, nothing was pushed, and the acceptance worktree owned by
 worker 36 (`.dev/worktrees/client-app-16-acceptance`, `4ffcbf0`) was left untouched. Deploying `bbd0d59` requires the
@@ -3410,7 +3410,7 @@ the branch tree, which did not contain provider 02's 6 relay cases: at `283caa0`
 number 438 derives from. Corrected in ticket 03 and its spec/README status lines rather than left to be re-derived.
 
 **Boundary.** No deploy, no service restart, no build on `remote-host`, no push (`local/integration-client-app` stays at
-`a39dc80`). The live artifacts remain the `1873d24` set in [the cutover record](1873d24-deployment.md): the deployed
+`a39dc80`). The live artifacts remain the `1873d24` set in [the cutover record](records/1873d24-deployment.md): the deployed
 revision and this integrated revision `7807c46` stay distinct. Worker 30's reconciliation of the SSH approved-scope-7 vs
 delivered-3 numbering happens on its own next branch; this merge touches no future ticket file. **MCP ticket 02 is not a
 merge candidate in this lane** — its branch tips (`impl/mcp-conversation-02` and `impl/mcp-conversation-03`, both `ebf26df`)

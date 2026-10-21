@@ -193,7 +193,7 @@ Native runtime inside the deployed images:
 
 Raw logs: `.dev/deploy-0628888e5a85/` (inspect, plan, gate, build, verify, backup, switch, smoke) and
 `.dev/verify/p1/2026-10-12T21-31-p1-fixture-merge.log`; the SSH fixture's own records are in
-[verification](verification.md#shared-ssh-fixture-teardown-the-leaked-localhost-sshd-processes).
+[verification](../verification.md#shared-ssh-fixture-teardown-the-leaked-localhost-sshd-processes).
 
 ## Guide versions left current
 

@@ -468,7 +468,7 @@ one program with a request loop or is split. Nothing else is open.
 - Tests at `b9b28dd`: `packages/gateway/test/{resource-snapshot,ssh-filesystem,ssh-resources,ssh-workspaces,sshd-fixture,ssh,file-transfer-sshd}.test.ts`
   and the fixtures `ssh-transport.ts` / `sshd-fixture.ts` (real `sshd` in a bwrap pid-namespace sandbox; the
   `pythonSshRunner` fixture runs the real helper under a controlled local transport).
-- Docs: `docs/migration-status.md` (`b9b28dd`, lines 57-60), `docs/cb4494b-deployment.md`,
+- Docs: `docs/migration-status.md` (`b9b28dd`, lines 57-60), `docs/records/cb4494b-deployment.md`,
   `docs/local-tailscale-deployment.md`, `docs/ssh-interruption-verification.md`, `docs/local-integration.md`,
   ADR 0002, ADR 0005.
 - Measurements: `.dev/worktrees/chat-lifecycle-integration/.scratch/perf-a/` (evidence.md + logs + scripts),

@@ -14,7 +14,7 @@ The cutover below **was executed on the workstation on 2026-10-18** at source `1
 `hepi-backend:ad225f8-workstation` (`sha256:e7281d46…44c2`, amd64) and the gateway bundle was the same release; all three units
 were active and the deployed directory verified against its own `SHA256SUMS` (177 entries, exit 0, read-only). Evidence —
 artifacts, image ids, backups, gates, the window's step exits and the read-only smoke — is in
-[the 1873d24 deployment record](1873d24-deployment.md) for that earlier window and in the deployment record for the later one
+[the 1873d24 deployment record](records/1873d24-deployment.md) for that earlier window and in the deployment record for the later one
 (`.dev/deploy/login-layout/result.json` in the integration worktree). Ticket 16's journeys ran on that release's exact bytes:
 [the concrete closeout](../.scratch/client-app/issues/16-integration-and-direct-cutover.md#concrete-closeout-on-the-live-release-2026-10-19--ad225f8).
 **What the deployment runs now is not read from this guide:** the release id, image tag, bundle and env file are the

@@ -56,7 +56,7 @@ Dated records below describe their own revision and host; they do not establish 
 | Ship a revision through the existing topology | [Routine deployment](deployment-runbook.md#routine-deployment-default) |
 | Install gateway CLI | [Client README](../packages/client/README.md) |
 | Inspect workstation / Oracle test setup | [workstation](local-tailscale-deployment.md), [Oracle](oracle-tailscale-deployment.md) |
-| See dated deployment evidence | [2026-10-14 runtime inspection](../.scratch/development-audit/fixes-deploy-probe.md), [1873d24 cutover record](1873d24-deployment.md), [cb4494b record](cb4494b-deployment.md), [workspace-removal record](f603a48-workspace-removal.md), [workstation](local-tailscale-deployment.md), [Oracle](oracle-tailscale-deployment.md) |
+| See dated deployment evidence | [Deployment records](records/README.md) (dated per-record index), [2026-10-14 runtime inspection](../.scratch/development-audit/fixes-deploy-probe.md), [workstation](local-tailscale-deployment.md), [Oracle](oracle-tailscale-deployment.md) |
 | Publish the client and packaged artifacts | [Releases](releases.md) |
 | Verify installed artifacts | [Distribution smoke](distribution-smoke.md) |
 
@@ -101,7 +101,7 @@ Dated design/research records; use [Architecture](architecture.md) and [Client i
 - [Surface design notes](notes/README.md): [subtree control](notes/subtree-control-web-ux.md).
 
 The shared workbench, ingress client identity, device credentials and conversation read/submit/SSE/request-id recovery
-are implemented. The [2026-10-18 cutover](1873d24-deployment.md) made the Web origin the ingress; ticket 17 retired
+are implemented. The [2026-10-18 cutover](records/1873d24-deployment.md) made the Web origin the ingress; ticket 17 retired
 Next, BFF adapters, next.config.ts, the hepi-web image and Compose web service. Native journeys beyond the evidenced
 desktop target and named capability limits remain open. This private project uses fresh-state direct cutovers;
 old-user upgrades, historical-data migration, compatibility and rollback rehearsals are outside its scope.
@@ -113,9 +113,9 @@ Records bind to their date/revision. Verify current dependencies, service docume
 | Evidence | Records |
 | --- | --- |
 | Upstream versions and licenses | [Upstream sources](upstream-sources.md); vendor snapshots/notices retain attribution |
-| Web-origin and Backend moves | [Ingress cutover](1873d24-deployment.md) (2026-10-18), [Backend local migration](backend-local-migration-2026-10-16.md) (2026-10-16) |
-| Earlier cutovers, newest first | [cb4494b](cb4494b-deployment.md), [f603a48](f603a48-deployment.md), [0628888e5a85](0628888e5a85-deployment.md), [96297fe](96297fe-deployment.md), [19d7cda](19d7cda-deployment.md), [78078de](78078de-deployment.md), [39c168d](39c168d-deployment.md), [edef2c0](edef2c0-split-deployment.md) |
-| Workspace removal | [2026-10-13 record](f603a48-workspace-removal.md): configured default workspace and six sessions removed |
+| Web-origin and Backend moves | [Ingress cutover](records/1873d24-deployment.md) (2026-10-18), [Backend local migration](backend-local-migration-2026-10-16.md) (2026-10-16) |
+| Earlier cutovers, newest first | [cb4494b](records/cb4494b-deployment.md), [f603a48](records/f603a48-deployment.md), [0628888e5a85](records/0628888e5a85-deployment.md), [96297fe](records/96297fe-deployment.md), [19d7cda](records/19d7cda-deployment.md), [78078de](records/78078de-deployment.md), [39c168d](records/39c168d-deployment.md), [edef2c0](records/edef2c0-split-deployment.md) |
+| Workspace removal | [2026-10-13 record](records/f603a48-workspace-removal.md): configured default workspace and six sessions removed |
 | Execution resources | [Validation](execution-resources-validation.md), [real-model smoke](execution-resources-real-model-smoke.md) |
 | Coding, SSH and split deployment | [Coding verification](real-model-coding-verification.md), [SSH interruptions](ssh-interruption-verification.md), [initial split verification](split-deployment-verification.md) |
 | Submission stall | [Measured diagnosis](../.scratch/submit-stall/diagnosis.md), [integrated record](../.scratch/submit-stall/spec.md#integrated-record) |

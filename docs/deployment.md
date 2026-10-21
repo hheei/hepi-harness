@@ -5,7 +5,7 @@ workstation, and the origin is the **client ingress** — one Node process servi
 container. The ingress forwards `/api` to the backend at loopback `18787`; the backend reaches the gateway directly at
 loopback `28788`. All three run source `1873d24` (`hepi-ingress.service` + `release-1873d24`,
 `hepi-backend:1873d24-workstation` amd64, `release-1873d24` bundle); the old Web unit is stopped and disabled. Only compatibility
-access from the remote Web/API uses an SSH forward. [The 1873d24 cutover record](1873d24-deployment.md),
+access from the remote Web/API uses an SSH forward. [The 1873d24 cutover record](records/1873d24-deployment.md),
 [migration and rollback](backend-local-migration-2026-10-16.md), [local units](local-tailscale-deployment.md#current-local-backend)
 and [runbook](deployment-runbook.md) describe current operations.
 
@@ -15,7 +15,7 @@ The split-specific commands below describe the earlier remote-backend arrangemen
 
 Minimal split across three roles: **oracle durable server** (single SQLite writer, agent loop, model access), **local Web origin** (the client ingress: static page plus `/api` proxy, no agent loop), **local gateway** (execution + workbench, loopback only). Oracle host here is the durable server; the workstation runs UI and gateway. The plan below is generic; the executed reference deployment at the end records what was actually run on real hosts, including the local gateway and UI and the live tunnel. **Last recorded state:** the executed
 reference deployment below is dated 2026-10-09; the test topology as last recorded is
-[the cb4494b record](cb4494b-deployment.md) (2026-10-13), with [the workspace-removal record](f603a48-workspace-removal.md) for the same date's removal of the configured default workspace and its six sessions; inspect the hosts
+[the cb4494b record](records/cb4494b-deployment.md) (2026-10-13), with [the workspace-removal record](records/f603a48-workspace-removal.md) for the same date's removal of the configured default workspace and its six sessions; inspect the hosts
 ([runbook](deployment-runbook.md)) rather than reading a guide as live status. [Container deployment](container-deployment.md)
 is the containerized form of the same two roles, and [the deployment runbook](deployment-runbook.md) is the sequence
 that moves a revision onto them.
@@ -27,7 +27,7 @@ Read docs/architecture.md (ownership), docs/local-integration.md (gateway bounds
 - The Web origin talks only to the backend, and the browser only to that origin: file, preview and diff reads reach the
 gateway through the backend's authenticated `/api/workbench`, never from the browser. The one exception is MCP, whose
 host service is the gateway on the Web origin's own host ([MCP on the Web host](mcp-on-the-web-host.md)).
-- Workspace identity is a logical ID; the backend resolves it to `HEPI_GATEWAY_URL` + `HEPI_GATEWAY_TOKEN`, the gateway resolves it to physical roots (docs/architecture.md). Backend and gateway must agree on `HEPI_WORKSPACE_ID` and `HEPI_GATEWAY_ID`; a deployment may configure **no** workspace id (the backend then serves only recorded project folders), which is what the current test deployment does ([workspace-removal record](f603a48-workspace-removal.md)).
+- Workspace identity is a logical ID; the backend resolves it to `HEPI_GATEWAY_URL` + `HEPI_GATEWAY_TOKEN`, the gateway resolves it to physical roots (docs/architecture.md). Backend and gateway must agree on `HEPI_WORKSPACE_ID` and `HEPI_GATEWAY_ID`; a deployment may configure **no** workspace id (the backend then serves only recorded project folders), which is what the current test deployment does ([workspace-removal record](records/f603a48-workspace-removal.md)).
 
 ## Topology
 
@@ -61,7 +61,7 @@ ssh -f -N -R 127.0.0.1:18788:127.0.0.1:28788 remote-host
   contract: the live test deployment currently uses `127.0.0.1:18793` and carries the forward over the runtime
   host's own `sshd` on port `2222` rather than over Tailscale SSH, because Tailscale SSH acknowledges a
   remote-forward request without binding it, and a session killed while holding a forward leaks that port until
-  it is released. See [the 96297fe record](96297fe-deployment.md), *Post-reboot tunnel recovery*, and its
+  it is released. See [the 96297fe record](records/96297fe-deployment.md), *Post-reboot tunnel recovery*, and its
   *Old-port reclamation* section: those ports are free again, and the extra `sshd` listener the forward needs is
   a tailnet-only one on that host.
 - Both endpoints stay plain HTTP inside the tunnel. That is the private link; do not bind the backend or gateway to a routable interface, and add HTTPS or a private overlay before any non-loopback exposure.
@@ -227,7 +227,7 @@ The plan above is not evidence of a deployment; only the executed reference depl
 
 This section records one dated run of the plan above. It is not the current state of either host: the deployment has
 since moved to `df24b7c`, then `51492c4`, then the merged `edef2c0` tip, and the login token was rotated. For what
-is running now see [the edef2c0 split deployment](edef2c0-split-deployment.md) plus
+is running now see [the edef2c0 split deployment](records/edef2c0-split-deployment.md) plus
 [workstation](local-tailscale-deployment.md) and [Oracle](oracle-tailscale-deployment.md), which carry the current units and
 images. Read the numbers below as that run's evidence, not as a description of the live hosts.
 

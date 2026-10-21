@@ -19,7 +19,7 @@ disabled.
 
 **Dated snapshots of the revisions, not a current claim.** 2026-10-18: all three roles on source `1873d24` — image
 `hepi-backend:1873d24-workstation` (amd64), client bundle `release-1873d24`, ingress running that release's `ingress.mjs`
-under the pinned `/usr/bin/node` ([the 1873d24 cutover](1873d24-deployment.md); earlier,
+under the pinned `/usr/bin/node` ([the 1873d24 cutover](records/1873d24-deployment.md); earlier,
 [the 56ff08f migration](backend-local-migration-2026-10-16.md)). 2026-10-20, by read-only inspection: the ingress served
 `release-3d15c86` from its own `web/` directory and `hepi-backend.service` ran `hepi-backend:2c28d1c-workstation`. Each
 snapshot supersedes the ids in the one before it; neither is asserted as the tip.
@@ -59,8 +59,8 @@ upgrade sections below are historical evidence, not steps to repeat on every dep
 | Web UI (local, for the browser) | `http://<client-host-tailnet-ip>:30141` | bound to the tailnet address only; `127.0.0.1:30141` is deliberately not served |
 | Gateway (execution host) | `http://127.0.0.1:28788` | loopback only; the backend reaches it through the tunnel |
 | Backend, from this machine | `http://127.0.0.1:18787` | SSH local forward to `remote-host:127.0.0.1:8787` |
-| Gateway, from the backend host | `remote-host:127.0.0.1:18793` | OpenSSH remote forward to `workstation:127.0.0.1:28788`, carried by the runtime host's `sshd` on port `2222`. Moved off `18788` and off Tailscale SSH on 2026-10-12: Tailscale SSH accepts a remote forward and never carries it, and the port a dropped session held cannot be reclaimed without restarting `tailscaled` (see the [96297fe record](96297fe-deployment.md)) |
-| Workspace root served by the gateway | `/home/<client-user>/.local/share/hepi/workspace` | gateway id `workstation`. Since 2026-10-13 this deployment configures **no** workspace id: the root is served only under the gateway's own boot-seed id, no conversation binds it, and the execution targets are the recorded project folders ([the workspace-removal record](f603a48-workspace-removal.md)) |
+| Gateway, from the backend host | `remote-host:127.0.0.1:18793` | OpenSSH remote forward to `workstation:127.0.0.1:28788`, carried by the runtime host's `sshd` on port `2222`. Moved off `18788` and off Tailscale SSH on 2026-10-12: Tailscale SSH accepts a remote forward and never carries it, and the port a dropped session held cannot be reclaimed without restarting `tailscaled` (see the [96297fe record](records/96297fe-deployment.md)) |
+| Workspace root served by the gateway | `/home/<client-user>/.local/share/hepi/workspace` | gateway id `workstation`. Since 2026-10-13 this deployment configures **no** workspace id: the root is served only under the gateway's own boot-seed id, no conversation binds it, and the execution targets are the recorded project folders ([the workspace-removal record](records/f603a48-workspace-removal.md)) |
 | Call journal | `/home/<client-user>/.local/share/hepi/state/calls.sqlite` | the pre-existing ledger, preserved |
 | Installed client — **historical, split-era layout** | `/home/<client-user>/.local/share/hepi/client/release-<id>` | a released client bundle installed from the packed tarball; its `release-<id>` suffix is current, the id is not (see *Current local backend*) |
 | Web image — **historical** | `hepi-web:<id>@sha256:…` | split-era only. No `hepi-web` image is built, published or run any more; the Web origin is the client ingress, a release directory plus a systemd unit |
@@ -191,15 +191,15 @@ workstation and the Web origin became the client ingress ([current local backend
 
 | Revision | Date | Local halves that moved | Full record |
 | --- | --- | --- | --- |
-| `51492c4` | — | gateway bundle `release-51492c4` (adds `/v1/workspaces`), Web image `hepi-web:51492c4`, `web.env` gains `HEPI_WEB_LOCAL_GATEWAY_ID` | no separate record; described in [19d7cda](19d7cda-deployment.md) as the rollback target |
-| `edef2c0` | — | Web image only; the `cleanup-session-filter.conf` drop-in was removed | [record](edef2c0-split-deployment.md) |
-| `39c168d` | — | Web image only (home-flicker guard); gateway byte-identical | [record](39c168d-deployment.md) |
-| `78078de` | 2026-10-11 | Web image only; gateway byte-identical and not restarted | [record](78078de-deployment.md) |
-| `19d7cda` | — | both halves: bundle `release-19d7cda`, image `hepi-web:19d7cda`; `web.env` gains `HEPI_WEB_GATEWAY_URL`/`_TOKEN` | [record](19d7cda-deployment.md) |
-| `96297fe` | 2026-10-12 | Web image only; the reverse forward moved to OpenSSH on the runtime host's port `2222` and the backend's `HEPI_GATEWAY_URL` became `18793` | [record](96297fe-deployment.md) |
-| `0628888e5a85` | 2026-10-12 | both halves: bundle `release-0628888e5a85`, image `hepi-web:0628888e5a85` | [record](0628888e5a85-deployment.md) |
-| `f603a48` | 2026-10-13 | Web image only; gateway untouched, no workspace re-registration needed | [record](f603a48-deployment.md) |
-| `cb4494b` | 2026-10-13 | both halves plus the backend: bundle `release-cb4494b`, image `hepi-web:cb4494b` | [record](cb4494b-deployment.md) |
+| `51492c4` | — | gateway bundle `release-51492c4` (adds `/v1/workspaces`), Web image `hepi-web:51492c4`, `web.env` gains `HEPI_WEB_LOCAL_GATEWAY_ID` | no separate record; described in [19d7cda](records/19d7cda-deployment.md) as the rollback target |
+| `edef2c0` | — | Web image only; the `cleanup-session-filter.conf` drop-in was removed | [record](records/edef2c0-split-deployment.md) |
+| `39c168d` | — | Web image only (home-flicker guard); gateway byte-identical | [record](records/39c168d-deployment.md) |
+| `78078de` | 2026-10-11 | Web image only; gateway byte-identical and not restarted | [record](records/78078de-deployment.md) |
+| `19d7cda` | — | both halves: bundle `release-19d7cda`, image `hepi-web:19d7cda`; `web.env` gains `HEPI_WEB_GATEWAY_URL`/`_TOKEN` | [record](records/19d7cda-deployment.md) |
+| `96297fe` | 2026-10-12 | Web image only; the reverse forward moved to OpenSSH on the runtime host's port `2222` and the backend's `HEPI_GATEWAY_URL` became `18793` | [record](records/96297fe-deployment.md) |
+| `0628888e5a85` | 2026-10-12 | both halves: bundle `release-0628888e5a85`, image `hepi-web:0628888e5a85` | [record](records/0628888e5a85-deployment.md) |
+| `f603a48` | 2026-10-13 | Web image only; gateway untouched, no workspace re-registration needed | [record](records/f603a48-deployment.md) |
+| `cb4494b` | 2026-10-13 | both halves plus the backend: bundle `release-cb4494b`, image `hepi-web:cb4494b` | [record](records/cb4494b-deployment.md) |
 
 What the table keeps in one place: a step either moved the Web image, the gateway bundle, or both, and each record says
 which — a Web-only step retagged one unit line and restarted one service, while a gateway step also re-registered the
@@ -212,7 +212,7 @@ made the gateway rollback a re-pin; the `hepi-web` images and their units are hi
 backend environment at the operator's request; no replacement default was configured, so only the four recorded project
 folders were served (see [Projects](projects.md) for what replaced that notion). The gateway was restarted and the
 folders re-registered through the existing path. Backups, the six tombstone removals and the residual limits are in
-[the workspace-removal record](f603a48-workspace-removal.md).
+[the workspace-removal record](records/f603a48-workspace-removal.md).
 
 ## What was deliberately not changed
 

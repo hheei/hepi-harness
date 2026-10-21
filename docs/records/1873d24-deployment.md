@@ -127,7 +127,7 @@ loopback before the switch. Neither touched the deployment's databases.
 
 - **Open pages must be refreshed once.** A browser showing the old Next build keeps running that JavaScript until it
   is reloaded; the pre-switch build held a composer draft only in memory, so unsent text or an attached image must be
-  copied by hand before that page's first refresh ([runbook](deployment-runbook.md#existing-open-pages-at-a-web-contract-switch)).
+  copied by hand before that page's first refresh ([runbook](../deployment-runbook.md#existing-open-pages-at-a-web-contract-switch)).
   A pending submission is looked up by its `requestId`, not resent.
 - **Rolling the application back is a re-pin, not a data restore.** Restore the three `*.service.before` units,
   `systemctl --user daemon-reload`, `systemctl --user stop hepi-ingress.service && systemctl --user disable hepi-ingress.service`,

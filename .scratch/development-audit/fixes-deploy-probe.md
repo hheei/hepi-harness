@@ -99,6 +99,6 @@ that could not find a client) — no process was restarted, nothing was installe
   host itself.
 - The probe still exits 3 on a genuine failure (ssh unreachable, a read that exits non-zero, a missing marker for a
   named release is a warning). Only the false failure is removed.
-- Dated records that mention the old limit (`docs/0628888e5a85-deployment.md`, `docs/96297fe-deployment.md`,
+- Dated records that mention the old limit (`docs/records/0628888e5a85-deployment.md`, `docs/records/96297fe-deployment.md`,
   `docs/verification.md`) are historical for their own revisions and were left as written; the owning guide
   (`docs/deployment-runbook.md`) now states the fixed behaviour.

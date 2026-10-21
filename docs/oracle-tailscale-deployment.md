@@ -17,19 +17,19 @@ in this file (see docs/README.md).
 backend's environment also stopped configuring a workspace: `HEPI_WORKSPACE_ID` was removed from `env/backend.env`
 (mode 0600 preserved, every other key unchanged) and the six sessions that had been bound to that workspace were
 removed through the existing tombstone route, so this host now serves only the four recorded project folders. See
-[the workspace-removal record](f603a48-workspace-removal.md). The backend was
+[the workspace-removal record](records/f603a48-workspace-removal.md). The backend was
 last moved to `cb4494b`, which **does** change the backend runtime (one lifecycle payload on both transports, the
 submission projection's `answerId`, and the resource loader's new one-request discovery), so the image was genuinely
 rebuilt for arm64, transferred as a tarball, digest-verified and the container recreated once — not a retag. That
 increment also changes the gateway on the client host, and the loader **requires** the gateway's new
 `resourceSnapshot` method, so the two roles had to move together. See
-[the cb4494b deployment record](cb4494b-deployment.md); the earlier steps are
-[the f603a48 deployment record](f603a48-deployment.md),
-[the 0628888e5a85 deployment record](0628888e5a85-deployment.md),
-[the 96297fe deployment record](96297fe-deployment.md),
-[the 19d7cda deployment record](19d7cda-deployment.md),
-[the 78078de deployment record](78078de-deployment.md), [the 39c168d deployment record](39c168d-deployment.md) and
-[the edef2c0 split deployment](edef2c0-split-deployment.md). The Web container deliberately stays on `df24b7c`,
+[the cb4494b deployment record](records/cb4494b-deployment.md); the earlier steps are
+[the f603a48 deployment record](records/f603a48-deployment.md),
+[the 0628888e5a85 deployment record](records/0628888e5a85-deployment.md),
+[the 96297fe deployment record](records/96297fe-deployment.md),
+[the 19d7cda deployment record](records/19d7cda-deployment.md),
+[the 78078de deployment record](records/78078de-deployment.md), [the 39c168d deployment record](records/39c168d-deployment.md) and
+[the edef2c0 split deployment](records/edef2c0-split-deployment.md). The Web container deliberately stays on `df24b7c`,
 because the Web UI is the local half's; the `96297fe` compose run left it running untouched (the `19d7cda` run had
 recreated it at that same image, because the compose project's config-file path moved), and no Web image was
 deployed here.

@@ -15,7 +15,7 @@ HEPI_INGRESS_ORIGIN=http://127.0.0.1:8790 pnpm --filter @hepi/web dev   # page o
 `apps/web/vite.config.ts` proxies `/api` to `HEPI_INGRESS_ORIGIN` (default `http://127.0.0.1:8790`) so a cookie session
 behaves in development as it does in production. A page with no ingress behind that proxy has no API: every route it
 needs belongs to the ingress, and the ingress is what a deployment switches
-([the 1873d24 cutover record](../../docs/1873d24-deployment.md)).
+([the 1873d24 cutover record](../../docs/records/1873d24-deployment.md)).
 
 ## What this package owns, and what it does not
 

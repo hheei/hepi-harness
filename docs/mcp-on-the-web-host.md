@@ -60,7 +60,7 @@ naming the co-located gateway at `http://127.0.0.1:28788` with that gateway's ex
 Settings › MCP is served there and reads that host's own `mcp.json`; the earlier `HEPI_WEB_GATEWAY_*` trio in
 `web.env` was the same three values for the retired Next entry. An origin that sets none answers the named limit,
 which is the documented behaviour for a host that runs no MCP service.
-[The 19d7cda deployment record](19d7cda-deployment.md) carries that dated evidence, and
+[The 19d7cda deployment record](records/19d7cda-deployment.md) carries that dated evidence, and
 [the four materials](client-ingress.md#the-four-materials) states which credential each process holds.
 
 ## Files the host owns

@@ -4,7 +4,7 @@ Default path for routine deployments, plus a full runbook for installation and s
 Per-host commands stay in [Oracle](oracle-tailscale-deployment.md), [workstation](local-tailscale-deployment.md) and
 [container deployment](container-deployment.md).
 
-**Current test topology (2026-10-18): backend, gateway and the primary Web origin run on the workstation, and that origin is the client ingress.** Backend listens on local loopback `18787`, reaches gateway directly on `28788`, and runs an amd64 image. The remote backend is stopped; remote Web/API use a compatibility forward. [Current units/state](local-tailscale-deployment.md#current-local-backend), [the 1873d24 cutover record](1873d24-deployment.md), [migration/rollback evidence](backend-local-migration-2026-10-16.md).
+**Current test topology (2026-10-18): backend, gateway and the primary Web origin run on the workstation, and that origin is the client ingress.** Backend listens on local loopback `18787`, reaches gateway directly on `28788`, and runs an amd64 image. The remote backend is stopped; remote Web/API use a compatibility forward. [Current units/state](local-tailscale-deployment.md#current-local-backend), [the 1873d24 cutover record](records/1873d24-deployment.md), [migration/rollback evidence](backend-local-migration-2026-10-16.md).
 
 Build on the workstation or CI. The remote host remains runtime-only: no builds, installs or compilers there. Match artifacts to actual target architecture. Split-specific commands below apply when deliberately selecting that topology.
 
@@ -46,7 +46,7 @@ build and the Backend image, named by the commit — built on the build host wit
 [client-runtime release](client-runtime-release.md). This path replaces the Next Web image rather than running beside it,
 so the unit that binds the Web origin's port is stopped **and disabled** before the ingress takes it — otherwise a boot
 or logout could raise a second Web origin beside it — and nothing keeps a second Web service warm. The workstation's
-Web origin has been an ingress since 2026-10-18 ([the 1873d24 record](1873d24-deployment.md)); a later Web-origin
+Web origin has been an ingress since 2026-10-18 ([the 1873d24 record](records/1873d24-deployment.md)); a later Web-origin
 revision follows the same release-and-unit path against `hepi-ingress.service`, and the Backend and gateway move with it
 when the release carries them.
 
@@ -285,7 +285,7 @@ no model calls: a smoke test must not change the state it is measuring.
 ## 8. Record the evidence
 
 Write a dated, revision-scoped record under `docs/` (`<commit>-deployment.md`), as
-[the 39c168d record](39c168d-deployment.md) and [the edef2c0 record](edef2c0-split-deployment.md) do. It holds the
+[the 39c168d record](records/39c168d-deployment.md) and [the edef2c0 record](records/edef2c0-split-deployment.md) do. It holds the
 commit, the artifact tags, ids and digests, what was and was not restarted, the backup path and its verified counts,
 the smoke results, and the guide version it left current. Update the *current state* line in [docs/README.md](README.md),
 [workstation](local-tailscale-deployment.md) and [Oracle](oracle-tailscale-deployment.md) when the deployment actually

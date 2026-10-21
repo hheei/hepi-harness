@@ -277,7 +277,7 @@ and `/etc/ssh/sshd_config` sit together (mode 600) in the cycle's backup directo
 - `deploy:inspect --probe` reads `SOURCE_COMMIT` at the runtime **root** in this range, where the marker actually
   lives in `releases/<id>/SOURCE_COMMIT`; the probe exits 3 on that read. **Fixed after this record** on
   `impl/deploy-probe-layout`: the probe now resolves `<id>` from the running backend image's tag and reads the
-  marker from the release directory (see [runbook](deployment-runbook.md), stage 1). The marker read is proven by the
+  marker from the release directory (see [runbook](../deployment-runbook.md), stage 1). The marker read is proven by the
   probe's own fixture: against a real host the probe still exits 3 earlier, at `containerDetail`, because one
   running container without a `HEALTHCHECK` fails the whole `docker inspect` call — a pre-existing limit recorded
   in the runbook rather than fixed here.
@@ -285,7 +285,7 @@ and `/etc/ssh/sshd_config` sit together (mode 600) in the cycle's backup directo
   runs on the same assertion (`fresh: the sent turn never left the screen before its answer`), on a single
   transient sample of the fresh turn. Pre-existing and unchanged by this range. **Fixed after this revision**: the
   sample was a real frame, not a sampling artifact — the empty-new gate unmounted the transcript for it. See
-  [verification](verification.md#new-session-navigation-testnav-new-session-and-auto-name-testsession-auto-name).
+  [verification](../verification.md#new-session-navigation-testnav-new-session-and-auto-name-testsession-auto-name).
 - The Web unit suite carries **22 pre-existing failures** (23 names, including
   `components/SessionSidebar.file-search.test.mjs` and `components/SettingsPanel.test.mjs`), an identical set
   before and after this range.

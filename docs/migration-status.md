@@ -40,7 +40,7 @@ successful decoding and exact original bytes; no product image capability change
   `packages/gateway/src/files-surface.ts`, with its rules (routing parse, MIME/preview table, `@` index scorer, upload
   conflict strategies, name validation) in `packages/protocol/src/files.ts` — served by the **client ingress** for a
   Web page's cookie or an App's device bearer, and served on the ingress over the same Backend calls. Since
-  2026-10-18 the workstation's Web origin **is** the client ingress ([the 1873d24 record](1873d24-deployment.md));
+  2026-10-18 the workstation's Web origin **is** the client ingress ([the 1873d24 record](records/1873d24-deployment.md));
   client-app ticket 17 then deleted the Next presentation layer and its remaining `apps/web` adapters. The multipart body
   is read by `packages/gateway/src/multipart.ts` over the public `busboy` 1.6.0; the old `next/dist/compiled/busboy`
   import, the Next file/git/upload helpers and the duplicate routing parser are gone. Bounds: one file's
@@ -86,7 +86,7 @@ successful decoding and exact original bytes; no product image capability change
   [the Word document preview](workbench.md#the-word-document-preview) and
   [Workbench](workbench.md#the-file-surface-is-one-implementation).
 - Executed split deployment: Oracle ARM64 durable backend, local gateway and production React UI through loopback SSH forwards. Five real DeepSeek tool results, 3/3 fixture tests, local proof file, UI login/reload and backend restart persistence passed; see docs/deployment.md.
-- Browser file payload capability deployed and smoke-tested at `0628888e5a85`: the gateway's `POST /v1/files/upload`, `POST /v1/files/upload-check` and `GET /v1/files/bytes` routes, the backend's relay at the same three paths, and the Web explorer and viewer above them. Read-only checks covered auth, ranges, traversal, unknown workspaces and both workspaces the deployment serves; the mutating half was exercised only against a disposable fixture gateway, never a user directory. See [the 0628888e5a85 record](0628888e5a85-deployment.md).
+- Browser file payload capability deployed and smoke-tested at `0628888e5a85`: the gateway's `POST /v1/files/upload`, `POST /v1/files/upload-check` and `GET /v1/files/bytes` routes, the backend's relay at the same three paths, and the Web explorer and viewer above them. Read-only checks covered auth, ranges, traversal, unknown workspaces and both workspaces the deployment serves; the mutating half was exercised only against a disposable fixture gateway, never a user directory. See [the 0628888e5a85 record](records/0628888e5a85-deployment.md).
 - Dependency-complete critical upstream baselines rerun; see docs/upstream-sources.md for passes and environment failures.
 
 ## Idle-stream keepalive and the page's connection budget (delivered; perf tickets 01 and 02)
@@ -599,7 +599,7 @@ nothing, and a definition-restricted child reporting only its own tools while a 
 
 All fourteen tickets of [the UX follow-up effort](../.scratch/ux-follow-up/spec.md) are implemented, verified and
 merged on `integration/ux-follow-up`, with the two material code-review findings fixed, and the tip is deployed to the
-split test topology ([39c168d record](39c168d-deployment.md)).
+split test topology ([39c168d record](records/39c168d-deployment.md)).
 
 Delivered: a terminal tab that fails to connect closes instead of trapping the session; the visible-turn navigation
 highlight follows the turns actually on screen; DeepSeek image capability metadata is stated under the configured
@@ -769,7 +769,7 @@ compatibility bridge for the old in-memory store is implemented or planned.
 ## Client ingress and device credentials (ticket 02)
 
 The client ingress, its Web session and the Backend-owned device credentials are implemented and tested over real HTTP,
-and as of 2026-10-18 the ingress **is** the deployed Web entry on the workstation ([the 1873d24 record](1873d24-deployment.md)),
+and as of 2026-10-18 the ingress **is** the deployed Web entry on the workstation ([the 1873d24 record](records/1873d24-deployment.md)),
 started as its own unit from a client-runtime release. The Backend's own port and the execution gateway's loopback
 listener keep the binds they always had, and nothing in a package default starts the ingress: it runs because the
 deployment states it. Starting it by hand remains an explicit operator act
@@ -839,7 +839,7 @@ allocation figure; no number in this entry is a performance claim. When this ent
 ran the Next presentation layer (`deploy/compose.yaml`'s `web` service), so this adapter had to forward the two native routes
 the shared workbench now asks — `/api/host/directories` and `/api/sidebar-state` — under their own names and contribute only
 the gateway id `HEPI_WEB_LOCAL_GATEWAY_ID` names. The workstation's Web origin moved to the client ingress on 2026-10-18
-([the 1873d24 record](1873d24-deployment.md)), which forwards those same `/api` routes to the Backend instead of answering
+([the 1873d24 record](records/1873d24-deployment.md)), which forwards those same `/api` routes to the Backend instead of answering
 them from `apps/web`; those Next handlers were deleted by client-app ticket 17. `next build` was already broken at that
 revision for a pre-existing reason outside this ticket (`c0579bd` moved `gfm-autolink-email-loader.cjs` to
 `packages/ui/src/lib/` while `apps/web/next.config.ts` still named `apps/web/lib/`), so the Next-based e2e journeys could
@@ -897,7 +897,7 @@ Operations, the three outcomes and the ownership split are in
 [Client ingress](client-ingress.md#conversation-control-queue-fork-and-relations); the evidence is in
 [verification](verification.md#conversation-control-queue-fork-and-relations-ticket-10). Not delivered by this ticket:
 the React surfaces that call these operations (ticket 05 owns the shared UI) and the deployed entry (ticket 16, since
-delivered — [the 1873d24 record](1873d24-deployment.md)). The old
+delivered — [the 1873d24 record](records/1873d24-deployment.md)). The old
 The Next adapter's own `/api/agent/:id` command path and `/api/sessions/:id` routes existed at this ticket's revision and
 were retired with the rest of that layer by client-app ticket 17; this ticket added the client seam that replaced them
 and did not modify them. Ticket 05 has since moved the

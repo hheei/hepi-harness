@@ -85,8 +85,8 @@ backup.
 
 The grouping was never Project metadata: `projects.sqlite` held 4 projects, 4 folders and 0 retained bindings, and no
 project or folder named the workspace id `integration`. It came from the deployment's own environment, and it was
-removed there — the owning guides are [the local split guide](local-tailscale-deployment.md) (client host) and
-[the runtime guide](oracle-tailscale-deployment.md) (runtime host).
+removed there — the owning guides are [the local split guide](../local-tailscale-deployment.md) (client host) and
+[the runtime guide](../oracle-tailscale-deployment.md) (runtime host).
 
 | Process | File | Change | Kept |
 | --- | --- | --- | --- |
@@ -204,4 +204,4 @@ that gap is now the only blocker recorded for this area.
 - `docs/oracle-tailscale-deployment.md` — the backend environment description and the last-recorded state.
 - `docs/deployment.md` — the last-recorded-state pointer.
 - `docs/README.md` — the current-deployment paragraph.
-- `docs/f603a48-deployment.md` — the "NOT REMOVED" section now points here as superseded.
+- `docs/records/f603a48-deployment.md` — the "NOT REMOVED" section now points here as superseded.

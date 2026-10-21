@@ -20,7 +20,7 @@ acceptance slices were merged as `84b7039058b1d44aebbb416411d167a51a37f503` (sou
 [the merge record](../../../docs/verification.md#client-app-integration-ticket-16-acceptance-batch--credential-sandbox-and-native-readiness-2026-10-19)). Separately, the **Web-origin
 cutover ran on 2026-10-18 at `1873d24`** (`hepi-ingress.service` now holds the tailnet Web origin, `hepi-web.service` is
 stopped and disabled, and the Backend image and gateway bundle moved to the same revision, with read-only smoke
-evidence: [the cutover record](../../../docs/1873d24-deployment.md)). That cutover was not performed by this ticket, but it
+evidence: [the cutover record](../../../docs/records/1873d24-deployment.md)). That cutover was not performed by this ticket, but it
 closes the deployment-evidence gap below and the「旧服务停止」half of the last acceptance box. That revision was superseded
 on 2026-10-19 by `ad225f8`, and the journeys **were** then driven on that release's exact bytes; see
 [Concrete closeout on the live release](#concrete-closeout-on-the-live-release-2026-10-19--ad225f8).
@@ -54,7 +54,7 @@ fallback, cache policy, `/api` distinction, login, device bearer, revocation, in
 durability — at `0746d7a`, `f50df75` and `94526e2`, not at a later revision. **The cutover happened on 2026-10-18** at a
 revision built later than all three: the Web origin is `release-1873d24/ingress.mjs`, the deployed Backend is
 `hepi-backend:1873d24-workstation` and the gateway bundle is `release-1873d24`, so the live artifact is now described by
-[this record](../../../docs/1873d24-deployment.md) rather than by `release-1062840`. **Android/mobile is withdrawn as a
+[this record](../../../docs/records/1873d24-deployment.md) rather than by `release-1062840`. **Android/mobile is withdrawn as a
 delivery gate by the user's decision of 2026-10-19**: no Android artifact is built, none will be, and the historical fact is
 recorded as what it is — this host has no Android SDK (`~/Android/Sdk` exists but has no `platforms` and no `build-tools`),
 no `adb`, no `sdkmanager`, no device and no emulator, no provisioning was attempted unattended, and 09's bearer path has no
@@ -116,7 +116,7 @@ Web/App 的目标能力在新入口通过验收，停止旧服务并直接使用
       撤销延迟 131 ms（间隔 400 ms 是契约）。帧处理与 React commit 此前记为「未测」，现由 driver 从页面自身读取。
       仍未满足本条的部分，且是用户 2026-10-19 明确决定的：native 只有 **debug** 产物（不做昂贵 release 优化），所以不产出
       release 性能结论；固定设备/窗口/帧负载/文件大小的矩阵是本机的代表值，不是 production 基准。
-- [x] 新入口已核验，旧服务停止，操作指南记录实际部署 revision 与运行结果 — [the 1873d24 record](../../../docs/1873d24-deployment.md) plus the [live release closeout](#concrete-closeout-on-the-live-release-2026-10-19--ad225f8) (2026-10-19). 本轮切换操作（部署 `release-ad225f8` 的那次窗口）不是本票执行的：本票未启动、停止、重启或写入任何服务，只读并校验了线上目录。浏览器登录 journey 与滚动回放**已在部署 origin 上跑过**（1280×800 与 390×844，登入 200、表单消失、滚动与滚轮可用）。
+- [x] 新入口已核验，旧服务停止，操作指南记录实际部署 revision 与运行结果 — [the 1873d24 record](../../../docs/records/1873d24-deployment.md) plus the [live release closeout](#concrete-closeout-on-the-live-release-2026-10-19--ad225f8) (2026-10-19). 本轮切换操作（部署 `release-ad225f8` 的那次窗口）不是本票执行的：本票未启动、停止、重启或写入任何服务，只读并校验了线上目录。浏览器登录 journey 与滚动回放**已在部署 origin 上跑过**（1280×800 与 390×844，登入 200、表单消失、滚动与滚轮可用）。
 
 ## Concrete closeout on the live release (2026-10-19 — `ad225f8`)
 
@@ -184,7 +184,7 @@ not silently re-pointed at the ingress. `packages/ui/src/components/DurableLogin
 Packaging slice evidence: [client-runtime release](../../../docs/client-runtime-release.md#evidence-what-was-measured-on-this-branch)
 and [verification](../../../docs/verification.md#client-runtime-release-and-rust-build-cost-ticket-16-packaging-slice).
 Source, build and platform evidence exist; **deployment evidence now exists too**, from the 2026-10-18 cutover
-([the 1873d24 record](../../../docs/1873d24-deployment.md)): pinned `SOURCE_COMMIT`, artifact hashes, `SHA256SUMS`
+([the 1873d24 record](../../../docs/records/1873d24-deployment.md)): pinned `SOURCE_COMMIT`, artifact hashes, `SHA256SUMS`
 (175 entries), verified online backups taken before the window, per-step exit codes, and a 30-check read-only smoke
 re-run live an hour and a half later with conversation continuity and database integrity confirmed. **The browser and native
 journeys are no longer the missing half:** they now run on the published immutable release and, on the deployed origin, as
