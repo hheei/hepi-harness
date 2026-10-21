@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { GatewayRpcServer, LocalGateway, WorkspaceRegistry, WorkspaceServer } from "@hepi/gateway";
-import { createProjectRegistry, type ProjectRegistry } from "./project-registry.ts";
+import { createProjectRegistry, WEB_HOST_REQUIRED, type ProjectRegistry } from "./project-registry.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 
 const GATEWAY = "workstation";
@@ -197,16 +197,54 @@ test("without a ProjectStore the configured workspaces still resolve, prepare an
     assert.equal((await registry.ensureBinding("legacy"))?.id, "legacy");
     assert.deepEqual(registry.projects(), []);
     assert.deepEqual(registry.retained(), []);
-    assert.equal(registry.canRecord(), false);
-    // A project operation without a store answers its current unavailable outcome instead of writing anything.
-    assert.equal(registry.setDefault("project-1", "folder-1"), undefined);
-    assert.equal(registry.unlink("project-1", "folder-1"), undefined);
-    assert.equal(registry.remove("project-1"), undefined);
+    // A project workflow without a store records nothing: a creation on a configured host answers the unavailable
+    // outcome every project route already gave, and a mutation of a Project answers that no such Project is recorded —
+    // there are none. Neither answer reached a host to find that out.
+    assert.deepEqual(await registry.create({ name: "n", folders: [{ root: "/tmp", isDefault: true }] }, GATEWAY), { ok: false, status: 500, error: "project storage is not configured" });
+    const noProject = { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
+    assert.deepEqual(registry.setDefault("project-1", "folder-1", GATEWAY), noProject);
+    assert.deepEqual(registry.unlink("project-1", "folder-1", undefined, GATEWAY), noProject);
+    assert.deepEqual(registry.remove("project-1", GATEWAY), noProject);
     assert.equal(registry.addFolder("project-1", { id: "folder-1", workspaceId: "workspace-1", root: "/tmp" }, "2026-10-21T00:00:00.000Z"), undefined);
-    assert.equal(registry.create({ id: "p", name: "n", hostId: GATEWAY, defaultFolderId: "f", folders: [{ id: "f", workspaceId: "w", root: "/tmp" }], createdAt: "2026-10-21T00:00:00.000Z" }), undefined);
     assert.equal(registry.revision(), 0);
+    assert.deepEqual(host.registry.ids(), []);
   } finally {
     await host.close();
+  }
+});
+
+test("a refused or failed Project workflow records nothing and leaves the revision alone", async () => {
+  const app = await fixture();
+  const host = await startGateway();
+  const registry = createProjectRegistry({ workspaces: [CONFIGURED], gateways: [host.connection], projects: app.store });
+  try {
+    // An origin that names no host, or one this deployment does not configure, cannot become a guessed host.
+    assert.deepEqual(await registry.create({ name: "Nope", folders: [{ root: app.directories[0]!, isDefault: true }] }, undefined), { ok: false, code: "configuration_required", status: 409, error: WEB_HOST_REQUIRED });
+    assert.deepEqual(await registry.create({ name: "Nope", folders: [{ root: app.directories[0]!, isDefault: true }] }, "somewhere-else"), { ok: false, code: "configuration_required", status: 409, error: "the Web UI server named gateway somewhere-else, which this deployment does not configure" });
+    // A profile this host does not serve is refused before any folder is registered.
+    assert.deepEqual(await registry.create({ name: "Nope", profileId: "absent", folders: [{ root: app.directories[0]!, isDefault: true }] }, GATEWAY), { ok: false, code: "unknown_profile", status: 400, error: "gateway workstation does not serve a profile named absent" });
+    // A root the host does not accept fails the whole request: nothing is recorded and nothing is published. The
+    // registration the host already accepted for the first folder is not falsely undone — there is no unregister —
+    // and it is not a Project folder either, because no Project row names it.
+    const missing = join(app.base, "not-there");
+    const refused = await registry.create({ name: "Missing", folders: [{ root: app.directories[0]!, isDefault: false }, { root: missing, isDefault: true }] }, GATEWAY);
+    assert.deepEqual(refused, { ok: false, code: "invalid_root", status: 400, error: "the folder was not accepted on the Web host: invalid_root" });
+    assert.deepEqual(registry.projects(), []);
+    assert.deepEqual(registry.targets().map(binding => binding.id), ["legacy"]);
+    assert.equal(registry.revision(), 0);
+
+    // A Project's metadata operations act on the host the Project records, which a named host may only confirm.
+    const made = await registry.create({ name: "Repo", folders: [{ root: app.directories[0]!, isDefault: true }] }, GATEWAY);
+    assert.ok(made.ok);
+    const project = made.value;
+    assert.deepEqual(registry.setDefault(project.id, project.folders[0]!.id, CONFIGURED.id), { ok: false, code: "wrong_host", status: 409, error: "this project's folders are on gateway workstation, which this Web origin does not serve" });
+    assert.equal(registry.revision(), 1);
+    // A checkout removal is the same metadata operation, named with no host because the Project states its own.
+    assert.deepEqual(registry.unlink("no-such-project", "no-such-folder", undefined, undefined), { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" });
+    assert.equal(registry.revision(), 1);
+  } finally {
+    await host.close();
+    await app.close();
   }
 });
 
@@ -222,32 +260,37 @@ test("the publication revision advances once per accepted mutation and never for
     registry.targets();
     assert.equal(registry.revision(), 0);
 
-    const created = registry.create({
-      id: "project-1", name: "Repo", hostId: GATEWAY, defaultFolderId: "folder-1",
-      folders: [{ id: "folder-1", workspaceId: "workspace-1", root: app.directories[0]! }, { id: "folder-2", workspaceId: "workspace-2", root: app.directories[1]! }],
-      createdAt: "2026-10-21T00:00:00.000Z",
-    })!;
+    const made = await registry.create({ name: "Repo", folders: [{ root: app.directories[0]!, isDefault: true }, { root: app.directories[1]!, isDefault: false }] }, GATEWAY);
+    assert.ok(made.ok, JSON.stringify(made));
+    const created = made.value;
     assert.equal(registry.revision(), 1);
     assert.deepEqual(registry.projects().map(project => project.id), [created.id]);
+    // The host accepted both roots before anything was recorded, and each folder carries its own opaque workspace id.
+    assert.deepEqual([...host.registry.ids()].sort(), created.folders.map(folder => folder.workspaceId).sort());
+    assert.deepEqual(created.folders.map(folder => folder.root).sort(), [app.directories[0], app.directories[1]].sort());
 
-    assert.equal(registry.setDefault(created.id, "folder-2")?.ok, true);
+    const second = created.folders.find(folder => folder.id !== created.defaultFolderId)!;
+    assert.equal(registry.setDefault(created.id, second.id, GATEWAY).ok, true);
     assert.equal(registry.revision(), 2);
+    assert.equal(registry.setDefault(created.id, second.id, GATEWAY).ok, true);
+    assert.equal(registry.revision(), 2, "keeping the same default publishes no metadata change");
     // A refusal changes neither the snapshot nor the revision.
-    assert.equal(registry.setDefault(created.id, "folder-9")?.ok, false);
+    assert.deepEqual(registry.setDefault(created.id, "folder-9", GATEWAY), { ok: false, code: "unknown_folder", status: 400, error: "that folder does not belong to this project" });
     assert.equal(registry.revision(), 2);
 
     const added = registry.addFolder(created.id, { id: "folder-3", workspaceId: "workspace-3", root: app.directories[2]! }, "2026-10-21T00:00:02.000Z");
     assert.ok(added?.ok);
     assert.equal(registry.revision(), 3);
 
-    const unlinked = registry.unlink(created.id, "folder-1")!;
-    assert.ok(unlinked.ok);
+    const originalDefault = created.folders.find(folder => folder.id === created.defaultFolderId)!;
+    const unlinked = registry.unlink(created.id, originalDefault.id, undefined, GATEWAY);
+    assert.ok(unlinked.ok, JSON.stringify(unlinked));
     assert.equal(registry.revision(), 4);
     // The unlinked folder is retained from here on, and it is still not a target.
-    assert.equal(registry.resolve("workspace-1")?.kind, "retained");
-    assert.equal(registry.isTarget("workspace-1"), false);
+    assert.equal(registry.resolve(originalDefault.workspaceId)?.kind, "retained");
+    assert.equal(registry.isTarget(originalDefault.workspaceId), false);
 
-    assert.equal(registry.remove(created.id)?.ok, true);
+    assert.equal(registry.remove(created.id, GATEWAY).ok, true);
     assert.equal(registry.revision(), 5);
     assert.deepEqual(registry.projects(), []);
   } finally {

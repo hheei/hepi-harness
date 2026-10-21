@@ -345,6 +345,7 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 | 客户端 API | Backend `server.ts` + UI `lib/*-api.ts` | `*.http.test.ts` |
 | 本机能力 | gateway capability + ingress surface 或 Backend relay | `host-*.test.ts`、boundary test |
 | gateway 传输族 framing(文件 payload、终端流) | `packages/gateway/src/transport/{file-payload,terminal}.ts`;入口只保留路由识别、凭证校验与未知路由 | `file-transfer`、`terminal`、`terminal-stream-budget` 套件,以及同目录的纯解析测试 |
+| gateway 传输族 framing(其余 JSON 面)与生命周期 | `packages/gateway/src/transport/{execution,mcp,providers,control}.ts`;执行帧流与中止、MCP 断连取消、provider 登录存活于请求、控制面缺失能力命名 | `execution`、`mcp`、`provider-login`、`control` 套件、`transport/routes.test.ts` 路由纯测试,以及 `transport-lifetimes.test.ts` |
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |
 | 面板/交互 | UI `components` + `lib` | `pnpm test:web:unit`、对应 e2e |

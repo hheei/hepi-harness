@@ -1,7 +1,32 @@
-import { GatewayHostClient } from "@hepi/gateway";
+import { randomUUID } from "node:crypto";
+import { GatewayHostClient, HostTransportError, type EnvironmentBinding } from "@hepi/gateway";
+import type { WorkspaceRequest } from "@hepi/protocol/gateway";
 import { catalogueWorkspace, type CatalogueBinding, type CatalogueWorkspace } from "./catalogue-binding.ts";
 import type { DefaultFolderChange, FolderAddition, FolderUnlink, NewProject, NewProjectFolder, ProjectFolder, ProjectRecord, ProjectRemoval, ProjectStore, RetainedBinding } from "./project-store.ts";
-import type { EnvironmentBinding } from "@hepi/gateway";
+
+/**
+ * What a project mutation answers: the committed metadata, or the reason nothing was recorded. A refusal carries its own
+ * code, status and sentence, because those are properties of the workflow — a host that cannot be reached, a Project on
+ * another host, a default folder that needs a replacement — and not of the transport the request happened to arrive on.
+ * An HTTP route states the answer it is given instead of translating it.
+ */
+export type ProjectMutation<Value> = { readonly ok: true; readonly value: Value } | { readonly ok: false; readonly code?: string; readonly status: number; readonly error: string };
+
+/** What a caller asks the registry to record, as it decoded it: the name and folders a request named. */
+export type NewProjectRequest = {
+	readonly name: string;
+	readonly folders: readonly { readonly root: string; readonly isDefault: boolean }[];
+	/** The one configured profile of that host its folders are on, when the host is an SSH gateway. */
+	readonly profileId?: string;
+};
+
+/**
+ * A Web origin names the gateway that serves its own execution host, and a request that names none cannot be turned
+ * into a guessed host: two Web origins can be pointed at one backend, and the backend's own account is unrelated to
+ * either. The message is stated once, here, because the workflow that records a Project and the route that browses a
+ * host give the same refusal for the same omission.
+ */
+export const WEB_HOST_REQUIRED = "no Web host gateway is named: the Web UI server sends the configured gateway id it serves (HEPI_WEB_LOCAL_GATEWAY_ID) on every host-scoped request";
 
 /** One configured gateway: where a host is reached, and the credential this deployment reaches it with. */
 export type GatewayConnection = { readonly gatewayId: string; readonly gatewayOrigin: string; readonly gatewayToken: string };
@@ -40,11 +65,14 @@ export type ProjectRegistryOptions = {
  * - **Execution preparation** — {@link ProjectRegistry.registerAll} and {@link ProjectRegistry.ensureBinding}. Both
  *   re-assert a recorded root on its own host, which is the only thing ever replayed; an execution or a write whose
  *   outcome was unknown is never repeated.
- * - **Mutation** — {@link ProjectRegistry.create}, {@link ProjectRegistry.addFolder},
- *   {@link ProjectRegistry.setDefault}, {@link ProjectRegistry.unlink}, {@link ProjectRegistry.remove}. Each owns the
- *   store write, the live snapshot and the publication revision, so no caller edits an array or increments a counter.
- *   The caller still validates and registers a root on its host **before** recording it (host I/O does not belong in a
- *   store transaction); a failed store write leaves the snapshot and the revision untouched.
+ * - **Mutation** — {@link ProjectRegistry.create}, {@link ProjectRegistry.setDefault},
+ *   {@link ProjectRegistry.unlink}, {@link ProjectRegistry.remove} are the four workflows a project route performs, and
+ *   {@link ProjectRegistry.addFolder} is the one a checkout records. Each owns the host identity the operation acts on,
+ *   the registration of a root on that host **before** anything is recorded (host I/O does not belong in a store
+ *   transaction), the store write, the live snapshot and the publication revision. A caller decodes a request, names
+ *   the host its Web origin serves and encodes the answer; it never looks a Project up to splice it, re-resolves the
+ *   host, edits an array or increments a counter. A refusal, a failed store write and a read leave the snapshot and the
+ *   revision untouched.
  *
  * The live snapshot is this process's own view of the durable rows, refreshed by the mutations above and never read
  * back from the store on a lookup. {@link ProjectRegistry.revision} is process-local and opaque: it is published on the
@@ -76,8 +104,6 @@ export type ProjectRegistry = {
 	isTarget(workspaceId: string | undefined): boolean;
 	/** The publication revision: once per accepted mutation, never for a read or a refusal. */
 	revision(): number;
-	/** Whether this deployment can record Project metadata at all: the preflight a mutation route asks before host I/O. */
-	canRecord(): boolean;
 	/** The configured gateway a host id names, and every configured gateway. No host I/O. */
 	connection(gatewayId: string): GatewayConnection | undefined;
 	connections(): readonly GatewayConnection[];
@@ -88,19 +114,30 @@ export type ProjectRegistry = {
 	/** Re-assert one recorded folder's root on its Project's host, for a caller that already holds the folder. */
 	ensureFolder(project: ProjectRecord, folder: ProjectFolder): Promise<void>;
 	/**
-	 * The five recorded mutations. Each owns the store write, the live snapshot and the publication revision, and each
-	 * answers `undefined` when this deployment records no Projects — the unavailable outcome every caller already
-	 * reports, never a silent success.
+	 * The four Project workflows. Each takes the host id the calling Web origin named (`hostId`), resolves the host the
+	 * operation belongs to, performs the host work it needs, records the outcome and publishes it; each answers a
+	 * refusal, with its own status, instead of a half-applied change. A deployment that records no Projects answers
+	 * "project storage is not configured".
+	 *
+	 * - `create` registers every folder on the named host first, so nothing is recorded unless the host accepted it.
+	 * - `setDefault`, `unlink` and `remove` act on the host the **Project records**, which the request may only confirm.
+	 *   They are metadata-only: no directory is created, changed or deleted, and no host registration is undone.
 	 */
-	create(project: NewProject): ProjectRecord | undefined;
+	create(request: NewProjectRequest, hostId: string | undefined): Promise<ProjectMutation<ProjectRecord>>;
+	setDefault(projectId: string, folderId: string, hostId: string | undefined): ProjectMutation<ProjectRecord>;
+	unlink(projectId: string, folderId: string, replacementDefaultId: string | undefined, hostId: string | undefined): ProjectMutation<{ readonly project: ProjectRecord | null; readonly removedFolderId: string }>;
+	remove(projectId: string, hostId: string | undefined): ProjectMutation<ProjectRecord>;
+	/**
+	 * One more folder of a Project — a git checkout hepi created for it — recorded after its root was accepted on the
+	 * host. It answers `undefined` when this deployment records no Projects, the unavailable outcome its caller reports.
+	 */
 	addFolder(projectId: string, folder: NewProjectFolder, createdAt: string): FolderAddition | undefined;
-	setDefault(projectId: string, folderId: string): DefaultFolderChange | undefined;
-	unlink(projectId: string, folderId: string, replacementDefaultId?: string): FolderUnlink | undefined;
-	remove(projectId: string): ProjectRemoval | undefined;
 };
 
 export function createProjectRegistry(options: ProjectRegistryOptions): ProjectRegistry {
 	const store = options.projects;
+	/** The one answer a deployment that records no Projects gives a mutation: its existing unavailable outcome. */
+	const notRecorded: ProjectMutation<never> = { ok: false, status: 500, error: "project storage is not configured" };
 	const workspaces = options.workspaces ?? [];
 	const gateways = new Map((options.gateways ?? []).map(connection => [connection.gatewayId, connection]));
 	// The live metadata: the store's rows as this process last accepted them. A mutation replaces its own entry, so a
@@ -139,6 +176,37 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 		const connection = gateways.get(record.hostId);
 		if (connection !== undefined) await register(connection, record.workspaceId, record.root, record.profileId);
 	};
+	/**
+	 * One request to a gateway's workspace surface, with the answer the workflow needs: a success, the host's own
+	 * refusal (which keeps its code) or a transport failure classified by whether a repetition is safe. A registration
+	 * may have run when its answer was lost, so it is reported as an unknown outcome instead of an offline host.
+	 */
+	const hostCall = async (connection: GatewayConnection, request: WorkspaceRequest): Promise<{ readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly code: string; readonly status: number }> => {
+		try {
+			const result = await new GatewayHostClient({ gatewayOrigin: connection.gatewayOrigin, gatewayToken: connection.gatewayToken }).control.workspaces(request);
+			return result.ok ? { ok: true, value: result.value } : { ok: false, code: result.code, status: result.code === "workspace_conflict" ? 409 : 400 };
+		} catch (error) {
+			const code = error instanceof HostTransportError ? error.code : "gateway_offline";
+			const mutating = request.operation === "register";
+			if (code === "outcome_unknown" || (mutating && (code === "timeout" || code === "aborted"))) return { ok: false, code: "outcome_unknown", status: 503 };
+			if (code === "gateway_offline" || code === "timeout" || code === "aborted") return { ok: false, code: "gateway_offline", status: 503 };
+			return { ok: false, code: "gateway_error", status: 502 };
+		}
+	};
+	/**
+	 * The host a recorded Project's metadata operations act on: the one the Project itself names, which the request may
+	 * only confirm. A Project's folders live on one host, recorded when it was created, and that is the identity the
+	 * operation belongs to — the calling Web origin's own host mapping says which computer it serves, not which host
+	 * every Project it can see is on.
+	 */
+	const projectHost = (project: ProjectRecord, named: string | undefined): { readonly ok: true; readonly connection: GatewayConnection } | { readonly ok: false; readonly code: "wrong_host" | "configuration_required"; readonly status: number; readonly error: string } => {
+		if (named !== undefined && named !== project.hostId) return { ok: false, code: "wrong_host", status: 409, error: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve" };
+		const connection = gateways.get(project.hostId);
+		return connection === undefined
+			? { ok: false, code: "configuration_required", status: 409, error: "the gateway " + project.hostId + " this project's folders are on is not configured" }
+			: { ok: true, connection };
+	};
+	const projectOf = (projectId: string): ProjectRecord | undefined => projects.find(candidate => candidate.id === projectId);
 	/** The Project and folder a workspace id is, over every folder of every Project — never only a Project's default. */
 	const folderOf = (workspaceId: string): { readonly project: ProjectRecord; readonly folder: ProjectFolder } | undefined => {
 		for (const project of projects) {
@@ -184,7 +252,6 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 		bindings: () => [...targets(), ...retained.flatMap(record => { const binding = retainedBinding(record); return binding === undefined ? [] : [binding]; })],
 		isTarget: (workspaceId) => workspaceId !== undefined && (configured.has(workspaceId) || folderOf(workspaceId) !== undefined),
 		revision: () => revision,
-		canRecord: () => store !== undefined,
 		connection: (gatewayId) => gateways.get(gatewayId),
 		connections: () => [...gateways.values()],
 		registerAll: async () => {
@@ -207,12 +274,50 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			return transportOf(resolved);
 		},
 		ensureFolder: registerFolder,
-		create: (project) => {
-			if (store === undefined) return undefined;
-			const created = store.create(project);
+		create: async (request, hostId) => {
+			// The host a Web origin named is resolved before anything else, exactly as this route always did: an origin
+			// that named no host, or one this deployment does not configure, cannot be turned into a guessed one.
+			if (hostId === undefined) return { ok: false, code: "configuration_required", status: 409, error: WEB_HOST_REQUIRED };
+			const connection = gateways.get(hostId);
+			if (connection === undefined) return { ok: false, code: "configuration_required", status: 409, error: "the Web UI server named gateway " + hostId + ", which this deployment does not configure" };
+			if (store === undefined) return notRecorded;
+			// A remote Project names the one profile its folders are on, validated against what that gateway actually
+			// serves: a Project can never be recorded against a profile the host does not have.
+			if (request.profileId !== undefined) {
+				const available = await hostCall(connection, { operation: "profiles" });
+				if (!available.ok) return { ok: false, code: available.code, status: available.code === "gateway_offline" ? 503 : 502, error: "the host's execution targets could not be read: " + available.code };
+				if (!(available.value as readonly { id: string }[]).some(profile => profile.id === request.profileId)) return { ok: false, code: "unknown_profile", status: 400, error: "gateway " + connection.gatewayId + " does not serve a profile named " + request.profileId };
+			}
+			const name = request.name.trim();
+			if (name === "" || name.length > 120) return { ok: false, code: "invalid_request", status: 400, error: "a project name of 1 to 120 characters is required" };
+			if (request.folders.length === 0) return { ok: false, code: "invalid_request", status: 400, error: "at least one folder on the Web host is required" };
+			const requested = request.folders.map(folder => ({ root: folder.root.trim(), isDefault: folder.isDefault }));
+			if (requested.some(folder => folder.root === "")) return { ok: false, code: "invalid_request", status: 400, error: "a folder on the Web host is required" };
+			if (requested.filter(folder => folder.isDefault).length !== 1) return { ok: false, code: "invalid_request", status: 400, error: "exactly one folder must be the default" };
+			if (new Set(requested.map(folder => folder.root)).size !== requested.length) return { ok: false, code: "invalid_request", status: 400, error: "the same folder cannot be added twice" };
+			// Each folder's workspace id is opaque and unrelated to its path: a later default change picks another
+			// workspace instead of moving one that existing conversations are already bound to. The ids are minted before
+			// the roots are registered so a folder keeps its id across the whole request, and no Project is recorded until
+			// every folder has been accepted by the host.
+			const candidates = requested.map(folder => ({ id: randomUUID(), workspaceId: randomUUID(), root: folder.root, isDefault: folder.isDefault }));
+			const folders: NewProjectFolder[] = [];
+			for (const candidate of candidates) {
+				const registered = await hostCall(connection, { operation: "register", workspaceId: candidate.workspaceId, root: candidate.root, ...(request.profileId === undefined ? {} : { profileId: request.profileId }) });
+				if (!registered.ok) return { ok: false, code: registered.code, status: registered.status, error: "the folder was not accepted on the Web host: " + registered.code };
+				folders.push({ id: candidate.id, workspaceId: candidate.workspaceId, root: (registered.value as { root: string }).root });
+			}
+			const created = store.create({
+				id: randomUUID(),
+				name,
+				hostId: connection.gatewayId,
+				...(request.profileId === undefined ? {} : { profileId: request.profileId }),
+				defaultFolderId: candidates.find(candidate => candidate.isDefault)!.id,
+				folders,
+				createdAt: new Date().toISOString(),
+			});
 			projects = [...projects, created];
 			accept();
-			return created;
+			return { ok: true, value: created };
 		},
 		addFolder: (projectId, folder, createdAt) => {
 			if (store === undefined) return undefined;
@@ -222,31 +327,56 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			accept();
 			return added;
 		},
-		setDefault: (projectId, folderId) => {
-			if (store === undefined) return undefined;
+		setDefault: (projectId, folderId, hostId) => {
+			const project = projectOf(projectId);
+			if (project === undefined) return { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
+			if (store === undefined) return notRecorded;
+			const host = projectHost(project, hostId);
+			if (!host.ok) return host;
+			if (folderId === "") return { ok: false, code: "invalid_request", status: 400, error: "a folder of this project is required" };
 			const changed = store.setDefault(projectId, folderId);
-			if (!changed.ok) return changed;
+			if (!changed.ok) return changed.code === "unknown_project"
+				? { ok: false, code: changed.code, status: 404, error: "no project with that id is recorded" }
+				: { ok: false, code: changed.code, status: 400, error: "that folder does not belong to this project" };
 			replace(changed.project, projectId);
-			accept();
-			return changed;
+			if (project.defaultFolderId !== changed.project.defaultFolderId) accept();
+			return { ok: true, value: changed.project };
 		},
-		unlink: (projectId, folderId, replacementDefaultId) => {
-			if (store === undefined) return undefined;
+		unlink: (projectId, folderId, replacementDefaultId, hostId) => {
+			const project = projectOf(projectId);
+			if (project === undefined) return { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
+			if (store === undefined) return notRecorded;
+			const host = projectHost(project, hostId);
+			if (!host.ok) return host;
 			const unlinked = store.unlink(projectId, folderId, replacementDefaultId);
-			if (!unlinked.ok) return unlinked;
+			if (!unlinked.ok) {
+				if (unlinked.code === "unknown_project") return { ok: false, code: unlinked.code, status: 404, error: "no project with that id is recorded" };
+				if (unlinked.code === "unknown_folder") return { ok: false, code: unlinked.code, status: 400, error: "that folder is not another folder of this project" };
+				if (unlinked.code === "unexpected_replacement") return { ok: false, code: unlinked.code, status: 400, error: "only the default folder's removal names a replacement default" };
+				return { ok: false, code: unlinked.code, status: 400, error: "removing this project's default folder requires another folder of this project as the replacement default" };
+			}
+			// The folder that left is gone from the live snapshot, the replacement it named is the default, the Project
+			// itself is gone when its last folder was, the folder's binding is retained from here on and the revision moved
+			// once — so a conversation that already holds the folder re-registers and resolves it like any retained record.
 			replace(unlinked.project, projectId);
 			retained = [...retained, unlinked.retained];
 			accept();
-			return unlinked;
+			return { ok: true, value: { project: unlinked.project, removedFolderId: unlinked.removedFolderId } };
 		},
-		remove: (projectId) => {
-			if (store === undefined) return undefined;
+		remove: (projectId, hostId) => {
+			const project = projectOf(projectId);
+			if (project === undefined) return { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
+			if (store === undefined) return notRecorded;
+			const host = projectHost(project, hostId);
+			if (!host.ok) return host;
 			const removed = store.remove(projectId);
-			if (!removed.ok) return removed;
+			if (!removed.ok) return { ok: false, code: removed.code, status: 404, error: "no project with that id is recorded" };
+			// This process keeps serving the removed folders from here on: the retained records are what the next
+			// conversation request re-registers and what the workspace list answers their display root from.
 			replace(null, projectId);
 			retained = [...retained, ...removed.retained];
 			accept();
-			return removed;
+			return { ok: true, value: removed.project };
 		},
 	};
 }

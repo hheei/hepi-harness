@@ -80,6 +80,17 @@ export type LedgerOutcome =
 	| { readonly ok: true; readonly exitCode: number; readonly spillPath?: string; readonly truncated?: true; readonly spillUnsupported?: true }
 	| { readonly ok: false; readonly code: ExecuteFailureCode; readonly message?: string; readonly spillPath?: string };
 
+/**
+ * Whether a body states a call at all: the fields every gateway reads before its ledger is asked, and nothing more.
+ *
+ * The rest of a request — whether the workspace, the cwd or the command are this gateway's to serve — is the gateway's
+ * own validation, so this predicate is the wire's shape and stays the protocol's, beside the frames it arrives in.
+ */
+export function validExecuteRequest(value: unknown): value is ExecuteRequest {
+	const r = value as ExecuteRequest;
+	return !!r && typeof r === "object" && typeof r.gatewayId === "string" && typeof r.workspaceId === "string" && typeof r.callId === "string" && !!r.callId.trim() && Array.isArray(r.command) && r.command.length > 0 && r.command.every((c) => typeof c === "string" && !c.includes("\0")) && (r.cwd === undefined || typeof r.cwd === "string") && (r.timeoutMs === undefined || (Number.isFinite(r.timeoutMs) && r.timeoutMs >= 0));
+}
+
 /** One frame of the streaming execute protocol: newline-delimited JSON, output frames then exactly one result frame. */
 export type ExecuteFrame =
 	| { readonly type: "output"; readonly stream: "stdout" | "stderr"; readonly text: string; readonly skipped?: ShellOutputSkip }

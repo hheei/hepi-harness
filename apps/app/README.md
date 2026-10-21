@@ -184,10 +184,12 @@ the artifact.
 `verify-artifacts.mjs` is only the entry point: it resolves `--artifact-dir`/`--log-dir` (the default is the newest
 `.dev/artifacts/<label>` this checkout built), calls `runArtifactVerification({ artifactDir, logDir })` from
 [`scripts/verify-artifacts.operation.mjs`](scripts/verify-artifacts.operation.mjs), prints `{ logDir, passed, failed }`
-and owns the process exit. Everything the run does — artifact inspection, the packaged journey, the private display,
-credential store, fixture listeners and packaged process groups it acquires and releases — lives in that operation, so
-importing it starts nothing and a caller gets the completed report back only after teardown. Adding an assertion means
-adding a step to that journey; the report's fields, assertion names and exit semantics are unchanged.
+and owns the process exit. The operation owns artifact inspection and journey assertions. Its private
+[`scripts/packaged-run.mjs`](scripts/packaged-run.mjs) owns the display, isolated credential store, fixture listeners,
+packaged process groups and temporary install roots. It releases every acquired resource before the operation returns,
+including after a failed journey; `runCleanup.completed` records the result. Importing either module starts nothing.
+Adding an assertion means adding a step to the operation; CLI flags, existing report fields, assertion names and exit
+semantics stay unchanged.
 
 **The package goes through a real `dpkg` transaction, and it is still not a system install.** `dpkg --install` needs
 euid 0, which this host does not grant. It does grant unprivileged user namespaces
