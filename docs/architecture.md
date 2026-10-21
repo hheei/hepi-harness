@@ -336,11 +336,16 @@ reload, and the release that gives the reader back. It performs no ordering of i
 socket: the pure fold decides what an answer means, and `packages/ui/src/hooks/useAgentSession.ts` renders that decision
 and performs what the fold requests. A reload of the conversation on screen is therefore a read and a re-acquire, not a
 new attachment — the chat keeps its tree, its stream and the reader's place, and the shell no longer states a mount key
-for it. That operation has one owner: Settings › General states that the tools configuration changed and asks this
-conversation's registered reload, which performs the Backend's route, the read and the notice — a caller that also asked
-the route itself would reload twice — and the notice claims only what the read established, so a failed re-read is
-reported as a failure. Every read is also fenced by the **connection** it was asked through, not only by the conversation
-id: a switch replaces the client and its API, so an answer — a window, a `not_found` or a failure — that arrives after
+for it. That operation has one owner — the hook's `reloadResources`, which the `/reload` command and the registered
+reload Settings › General calls are both that one function, so the two cannot report different outcomes for the same
+facts. Settings states that the tools configuration changed, awaits the answer, and does not ask the route itself; a
+caller that also did would reload twice. What the notice claims is what the **read** established, and a read is a typed
+outcome rather than a nullable one (`ConversationReadOutcome`): `accepted`, `refused` (the fold called the window older),
+`missing` (`not_found`), `failed` (with the `ReadFailure` kind the surface offers recovery for), `cancelled` and
+`superseded` (another connection or conversation is on screen). A route that rejects is answered inside that operation
+as a `failed` outcome — it establishes nothing, so no read is asked for a change that never happened, and the rejection
+cannot escape into a caller that awaited it. Every read is also fenced by the **connection** it was asked through, not
+only by the conversation id: a switch replaces the client and its API, so an answer — a window, a `not_found` or a failure — that arrives after
 the switch is refused rather than published onto the new connection's surface. The hook does not infer a
 submission's fate: the overlay ends at the turn's own committed entry, the answer interest survives that commitment,
 and a run's outcome is the runtime's live terminal fact carrying its answer identity. A notice is keyed by that answer,

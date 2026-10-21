@@ -178,8 +178,10 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 (forced 读不共用)、唯一准入路径(立即 send、steer、follow-up)、by-id lookup、Backend 自身 reload 与释放。它不做
 排序、不持 timer/retry queue/socket;折叠决定答案含义,`hooks/useAgentSession.ts` 呈现并执行 fold 请求。同对话 reload
 是读取与重新取得资源,不是新 attachment:聊天保留其树、其 stream 与读者位置,Shell 不再为此提供 mount key。
-该操作只有一个 owner:Settings › General 只声明配置已变并调用对话注册的 reload,由后者执行 Backend 路由、读取与通知;
-通知只声称读取已确立的事实,读取失败即报失败。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
+该操作只有一个 owner(`reloadResources`):Settings › General 只声明配置已变、await 该注册的 reload,不自行发请求;
+`/reload` 命令调用同一函数。通知只声称**读取**已确立的事实,而读取结果是带类型的 `ConversationReadOutcome`
+(`accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded`),不是可空值;路由本身被拒绝时
+由该操作报为 `failed`,既不会向 await 的调用方抛出未处理 rejection,也不会为一个没发生的变更再发读取。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
 可有同一 id):切换后到达的 window、`not_found` 或 failure 一律拒绝,不写到新 connection 的 surface。
 已被接受的 readout(accepted window、其前方的 older prefix、该 window 的 pagination claim)由
 `lib/conversation-readout.ts` 在同一个接受步骤发布:prefix 依共享 `decidePrefix` 与 readout 已持有的上一个 window

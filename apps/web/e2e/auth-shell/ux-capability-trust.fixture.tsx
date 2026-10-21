@@ -150,7 +150,7 @@ function Fixture() {
         sessionId={null}
         initialSection="general"
         onClose={() => undefined}
-        onSessionReloaded={() => undefined}
+        onSessionReloaded={async () => {}}
         quoteSelectionEnabled={false}
         onQuoteSelectionChange={() => undefined}
         projectTrust={{ requiresTrust: true, trusted: false, decision: null, inherited: false }}

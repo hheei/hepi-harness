@@ -54,7 +54,14 @@ interface Props {
   sessionId: string | null;
   initialSection: SettingsSection;
   onClose: () => void;
-  onSessionReloaded: () => void;
+  /**
+   * Reload the open conversation after a setting that changes its runtime resources.
+   *
+   * The returned promise is awaited, so a reload that fails is a failure this panel states rather than an unhandled
+   * rejection: the operation owns the route, the read and its own notice, and this panel only adds the one it can
+   * attribute to the setting the reader just changed.
+   */
+  onSessionReloaded: () => Promise<void>;
   quoteSelectionEnabled: boolean;
   onQuoteSelectionChange: (enabled: boolean) => void;
   /** The page's trust status for `cwd`; Settings › MCP reloads when it changes. */
@@ -165,8 +172,10 @@ function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, 
       setShellSettings(data);
       if (sessionId) {
         // The reload is the chat's own operation: it asks the Backend's route, re-reads the conversation and states what
-        // happened. Asking here as well would send the same reload twice, so this surface only announces the change.
-        onSessionReloaded();
+        // happened. Asking here as well would send the same reload twice, so this surface only announces the change —
+        // and it waits for the answer, because a reload that failed is a result this panel has to report rather than a
+        // promise nobody holds.
+        await onSessionReloaded();
       }
     } catch (cause) {
       setShellError(cause instanceof Error ? cause.message : String(cause));

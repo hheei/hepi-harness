@@ -89,6 +89,8 @@ await new Promise<void>((resolveListen, rejectListen) => {
 const origin = "http://127.0.0.1:" + port;
 
 const COMPOSER = "textarea[placeholder*=\"Message\"]";
+/** The one conversation this scene is about: the address opens it, and both connections hold the same id. */
+const CONVERSATION = "shell-conv";
 
 /** The Backend routes this page answered, as `METHOD path`. */
 async function routes(page: Page): Promise<string[]> {
@@ -140,6 +142,12 @@ try {
       if (chat) (chat as HTMLElement).dataset.shellMarker = "survived";
     });
     const reloadsBeforeSwitch = await page.evaluate(() => (window.__lifetimeShell?.requests ?? []).filter((request) => request.path.endsWith("/reload")).length);
+    // Which connection holds the conversation's stream before the switch. The shell joined it through the first
+    // connection's client, so that is the source a frame has to travel through to reach the chat right now.
+    const streamsBefore = await page.evaluate(() => window.__lifetimeShell?.openStreams ?? []);
+    check(JSON.stringify(streamsBefore) === JSON.stringify(["first:" + CONVERSATION]),
+      "the first connection holds this conversation's stream: " + JSON.stringify(streamsBefore));
+
     await page.evaluate(() => window.__lifetimeShell?.replaceConnection(true));
     // The shell is still the same tree — the marker is the evidence — and the conversation is read again through the new
     // connection, because a conversation id in another connection is another conversation.
@@ -149,6 +157,41 @@ try {
       "a connection that keeps its scope does not remount the shell: the same tree is still on screen");
     check(await page.evaluate(() => (window.__lifetimeShell?.requests ?? []).filter((request) => request.path.endsWith("/reload")).length) === reloadsBeforeSwitch,
       "and the switch is not a reload: nothing asked the Backend's reload route for it");
+
+    // The registry itself, not a count of it. The replaced connection's source is released, and the new connection's
+    // source for the same conversation is what the shell now holds — the two facts the production registry replacement
+    // is made of. A registry that survived the switch would leave the first source open and never open the second, so
+    // these two assertions fail if the guard in AppShell is disabled.
+    await page.waitForFunction(() => (window.__lifetimeShell?.openStreams ?? []).includes("replaced:" + "shell-conv"), undefined, { timeout: 20000 });
+    const streamsAfter = await page.evaluate(() => window.__lifetimeShell?.openStreams ?? []);
+    const everyStream = await page.evaluate(() => window.__lifetimeShell?.streams ?? []);
+    check(JSON.stringify(streamsAfter) === JSON.stringify(["replaced:" + CONVERSATION]),
+      "the replaced connection's watch was released and the new connection holds the same conversation: " + JSON.stringify(streamsAfter));
+    check(everyStream.includes("first:" + CONVERSATION + ":closed"),
+      "the outgoing source was closed, not merely forgotten: " + JSON.stringify(everyStream));
+
+    // And the new source is the one the chat is actually reading, proven by delivering a frame through it. The frame
+    // states a window the production chat has never seen; the only way its text reaches the transcript is the shell
+    // having subscribed this connection's source to this surface.
+    await page.evaluate(() => window.__lifetimeShell?.emitOn("replaced", "shell-conv", {
+      type: "frame", sessionId: "shell-conv", event: "state",
+      data: {
+        protocol: "hepi.v1", revision: 7, conversationId: "shell-conv", projectionId: "P-shell-conv",
+        historyRevision: "rev-1", historyHead: "h-1", hasMore: false, oldestEntryId: null,
+        run: null, busy: false,
+        entries: [{
+          id: "e7", role: "assistant", text: "a frame from the replacement connection",
+          message: { role: "assistant", content: [{ type: "text", text: "a frame from the replacement connection" }] },
+        }],
+        partial: "", toolNames: [], extensions: [], liveTools: [],
+        settings: { model: null, thinkingLevel: "off" },
+        queuedMessages: { steering: [], followUp: [] }, queuedItems: [],
+        control: { state: "allowed", revision: 0 }, failure: null, submissions: [],
+      },
+    }));
+    await page.waitForFunction(() => document.body.textContent?.includes("a frame from the replacement connection") === true, undefined, { timeout: 20000 });
+    check(await page.evaluate(() => document.body.textContent?.includes("a frame from the replacement connection") === true),
+      "and the replacement connection's own stream delivers frames into the chat");
     check(pageErrors.length === 0, "no page error occurred across the switch" + (pageErrors.length === 0 ? "" : ": " + pageErrors.join(" | ")));
 
     // --- 3. A different scope remounts the tree, and the shell is whole again. ------------------------------------

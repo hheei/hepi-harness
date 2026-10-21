@@ -31,8 +31,14 @@ declare global {
   interface Window {
     __lifetimeShell?: {
       requests: ShellRequest[];
-      /** Deliver one event on a conversation's stream, as the Backend states it. */
+      /** Deliver one event on every connection's stream for a conversation, as the Backend states it. */
       emit(conversationId: string, event: unknown): void;
+      /** Deliver one event on **one** connection's stream, so which connection the shell reads is what the page proves. */
+      emitOn(owner: string, conversationId: string, event: unknown): void;
+      /** Every stream the page holds open, named by the connection that owns it. */
+      readonly openStreams: string[];
+      /** Every stream a connection opened, with the state it is in now. */
+      readonly streams: string[];
       /**
        * Replace the connection under the mounted shell.
        *
@@ -133,13 +139,30 @@ const connectionFetch: typeof fetch = async (input, init) => {
   return answer(parsed.pathname, parsed.searchParams, typeof init?.body === "string" ? init.body : null, init?.method);
 };
 
-/** One connection's stream, as the connection's own client opens it. */
-const sources = new Map<string, { onmessage: ((event: MessageEvent<string>) => void) | null; readyState: number }>();
+/**
+ * Every stream a connection's client opened, named by the connection that owns it.
+ *
+ * The owner is in the key because the whole question a switch asks is *which* connection holds the stream: the same
+ * conversation id is on both, and a map keyed by the id alone could not tell a replaced source from the one that
+ * replaced it. A source that was closed stays here with its state, so "the outgoing one closed" is a fact this page can
+ * read rather than an inference from a count.
+ */
+type ShellSource = {
+  readonly owner: string;
+  readonly conversationId: string;
+  readyState: number;
+  onmessage: ((event: MessageEvent<string>) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  close(): void;
+};
+const sources = new Map<string, ShellSource>();
 const createSource = (owner: string) => (conversationId: string) => {
-  const source = {
+  const source: ShellSource = {
+    owner,
+    conversationId,
     readyState: 1,
-    onmessage: null as ((event: MessageEvent<string>) => void) | null,
-    onerror: null as ((event: Event) => void) | null,
+    onmessage: null,
+    onerror: null,
     close() { source.readyState = 2; },
   };
   sources.set(owner + ":" + conversationId, source);
@@ -211,11 +234,27 @@ window.__lifetimeShell = {
   requests,
   emit(conversationId, event) {
     // Every connection's source for this conversation hears it: the id is the same on both, and a frame is a frame.
-    for (const [key, source] of sources) {
-      if (key.endsWith(":" + conversationId)) source.onmessage?.({ data: JSON.stringify(event) } as MessageEvent<string>);
+    for (const source of sources.values()) {
+      if (source.conversationId === conversationId) source.onmessage?.({ data: JSON.stringify(event) } as MessageEvent<string>);
     }
   },
+  emitOn(owner, conversationId, event) {
+    // One connection's source only. A frame delivered this way reaches the shell **through that connection**, so what
+    // the page renders afterwards is evidence about which connection the shell is actually reading.
+    const source = sources.get(owner + ":" + conversationId);
+    if (source === undefined) throw new Error("no stream was opened by " + owner + " for " + conversationId);
+    if (source.readyState !== 1) throw new Error(owner + "'s stream for " + conversationId + " is closed");
+    source.onmessage?.({ data: JSON.stringify(event) } as MessageEvent<string>);
+  },
   replaceConnection(sameScope) { replaceConnection(sameScope); },
+  /** Every stream the page holds open, named by the connection that owns it: "owner:conversationId". */
+  get openStreams() {
+    return [...sources.values()].filter((source) => source.readyState === 1).map((source) => source.owner + ":" + source.conversationId);
+  },
+  /** Every stream a connection opened, with the state it is in now. */
+  get streams() {
+    return [...sources.values()].map((source) => source.owner + ":" + source.conversationId + (source.readyState === 1 ? ":open" : ":closed"));
+  },
   get scope() { return "stated-by-the-page"; },
 };
 

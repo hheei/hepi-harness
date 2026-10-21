@@ -410,7 +410,7 @@ function Fixture() {
           sessionId={null}
           initialSection="general"
           onClose={noop}
-          onSessionReloaded={noop}
+          onSessionReloaded={async () => {}}
           quoteSelectionEnabled={false}
           onQuoteSelectionChange={noop}
           projectTrust={null}

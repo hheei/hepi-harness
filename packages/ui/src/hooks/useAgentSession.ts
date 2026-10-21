@@ -159,6 +159,42 @@ type AgentStateResponse = {
   control?: ControlState;
 };
 
+/**
+ * What one conversation read established, stated as the fact rather than as an absence.
+ *
+ * A read has five ways to end and only one of them is "the conversation said something". The other four are not
+ * interchangeable: a read the surface itself superseded says nothing and must claim nothing, a window the fold refused
+ * is an older statement of the same conversation, a `not_found` is the Backend saying the row is gone, and a failure
+ * carries the kind a surface offers recovery for. Reporting them all as `null` made every caller guess which one it got,
+ * and a caller that guessed wrong stated a success over a failure.
+ */
+type ConversationReadOutcome =
+  /** The read answered and the surface is showing it. `agentState` is the composer state when the caller asked for it. */
+  | { readonly status: "accepted"; readonly agentState: { running: boolean; state: AgentStateResponse } | null }
+  /** This answer belongs to a connection or a conversation the surface no longer shows: it says nothing, and claims none. */
+  | { readonly status: "superseded" }
+  /** The fold called this window older than the one on screen: the same conversation, a statement it already superseded. */
+  | { readonly status: "refused" }
+  /** The Backend answered `not_found`: the conversation row is gone, so no retry can bring it back. */
+  | { readonly status: "missing" }
+  /** The read did not answer, as the kind the surface offers recovery for. */
+  | { readonly status: "failed"; readonly failure: ReadFailure }
+  /** The caller aborted the read. Not a state to report. */
+  | { readonly status: "cancelled" };
+
+/**
+ * What one resource reload established, as the operation that performed it states it.
+ *
+ * `reloaded` is the only outcome that claims the route's own answer, because only then did the read accept the
+ * conversation the route changed. `failed` carries the sentence the notice already stated, so a command line can repeat
+ * it without deciding a second time what happened. `superseded` is the operation having nothing to say: another
+ * connection, or a newer window, is what the surface shows.
+ */
+type ReloadOutcome =
+  | { readonly status: "reloaded"; readonly message: string }
+  | { readonly status: "failed"; readonly message: string }
+  | { readonly status: "superseded" };
+
 export interface QueuedMessages {
   steering: string[];
   followUp: string[];
@@ -924,7 +960,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * the stream's state frame does, stamped with the acquisition it began under. The tree, stats and settings the
    * projection does not carry are applied beside it; readiness is never gated on this read.
    */
-  const loadSession = useCallback(async (sid: string, includeState = false, options?: { force?: boolean; acquisition?: Acquisition }) => {
+  const loadSession = useCallback(async (sid: string, includeState = false, options?: { force?: boolean; acquisition?: Acquisition }): Promise<ConversationReadOutcome> => {
     const acquisition = options?.acquisition ?? beginRead();
     try {
       // The conversation's own read, through this surface's conversation session: the Backend's
@@ -936,7 +972,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // The connection this read belongs to. A switch that landed while it was in flight makes every answer below one
       // from a client the surface no longer shows — including the `null` a not_found answers with — so each is checked
       // before it publishes, not once before the first of them.
-      if (!fromCurrentConnection(conversation)) return null;
+      if (!fromCurrentConnection(conversation)) return { status: "superseded" };
       if (snapshot === null) {
         // The Backend's own `not_found`: the row is gone, so the view is — and a Retry cannot bring it back. The
         // surface says so instead of drawing an empty conversation that looks like a conversation with no messages.
@@ -945,13 +981,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setError(null);
         setReadFailure({ kind: "missing" });
         deleteSessionViewSnapshot(scope, sid);
-        return null;
+        return { status: "missing" };
       }
       // The read answers the **native** snapshot, and the browser's one projection turns it into the shape the surface
       // renders. The lifecycle statement below is built from that same projected payload, so the transcript on screen
       // and the transcript the fold orders are one object rather than two mappings of one frame.
       const d = projectSession(snapshot);
-      if (sessionIdRef.current !== sid) return null;
+      if (sessionIdRef.current !== sid) return { status: "superseded" };
       // The read is one statement about one conversation, so it goes through the one receiver: the fold decides first,
       // and its own decision is what the beside-view facts below obey — the read's window and the facts that travel with
       // it may not be published when the other is refused. The shared facts themselves (the transcript payload, the head
@@ -993,9 +1029,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // What is *not* folded in is the case where this answer was refused: a read the fold called older describes a
       // window the surface has already replaced, so its composer fields are not this conversation's current ones and a
       // fresh read is the honest answer. That is the same reason a resync takes one.
-      if (!includeState) return null;
+      if (!includeState) return accepted ? { status: "accepted", agentState: null } : { status: "refused" };
       if (accepted && d.projectionId !== undefined) {
-        return applyReadAgentState(snapshot, sid);
+        const agentState = applyReadAgentState(snapshot, sid);
+        return agentState === null ? { status: "refused" } : { status: "accepted", agentState };
       }
 
       try {
@@ -1004,9 +1041,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         const usageRequestId = ++contextUsageRequestIdRef.current;
         const acceptedStamp = captureAcceptedStamp();
         const stateSnapshot = await conversation.read(sid);
-        if (!fromCurrentConnection(conversation)) return null;
+        if (!fromCurrentConnection(conversation)) return { status: "superseded" };
         if (stateSnapshot === null) throw new Error("This conversation no longer exists.");
-        if (sessionIdRef.current !== sid) return null;
+        if (sessionIdRef.current !== sid) return { status: "superseded" };
 
         // The state read answers the conversation's own native snapshot too, so its composer-state fields are projected
         // by the browser from that same payload: the running flag this read acts on and the fields the writer publishes
@@ -1024,24 +1061,24 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         // What the caller may act on is the accepted answer, not the answer it happened to receive: an answer the
         // fence refused describes a conversation the surface no longer shows, and acting on it — resuming a run's phase,
         // adopting its run flags — would put the older turn back on screen through the caller.
-        return stateAccepted ? agentState : null;
+        return stateAccepted ? { status: "accepted", agentState } : { status: "refused" };
       } catch (e) {
         console.error("Failed to load agent state:", e);
-        return null;
+        return { status: "failed", failure: classifyReadFailure(e) };
       }
     } catch (e) {
       // A read that failed is a state the projection can report — unread when there is no prior projection, the kept
       // view when there is — instead of an endless spinner or a fabricated outcome. One whose connection was replaced
       // while it was in flight reports nothing at all: its failure describes a client the surface no longer shows.
-      if (!fromCurrentConnection(conversation)) return null;
+      if (!fromCurrentConnection(conversation)) return { status: "superseded" };
       const failure = classifyReadFailure(e);
       // A read the caller itself aborted is not a failure to report: it is the surface's own intent about an answer it
       // no longer wants, and folding it would put a transport issue over a conversation the reader just moved away from.
-      if (failure.kind === "cancelled") return "cancelled";
+      if (failure.kind === "cancelled") return { status: "cancelled" };
       setError(String(e));
       setReadFailure(failure);
       fold(unavailableStatement(acquisition, failure.detail ?? failure.kind).input);
-      return "error";
+      return { status: "failed", failure };
     }
   }, [applyAgentState, applyReadAgentState, beginRead, captureAcceptedStamp, conversation, fold, fromCurrentConnection, receive]);
 
@@ -1880,6 +1917,76 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [client, identity, isNew, newSessionCwd, session?.cwd]);
 
+  /**
+   * The one reload this conversation has, whichever surface asked for it.
+   *
+   * Settings › General and the `/reload` command are the same operation: ask the Backend's own resource route, read the
+   * conversation that picks the change up, and state what the **read** established. Having one owner is what makes the
+   * two agree — a surface that reloaded and then asked this would ask twice, and a second implementation would be free
+   * to report a different outcome for the same facts.
+   *
+   * The route's own rejection is answered here rather than left to a caller: a POST that never answered established
+   * nothing, so it is a failure this operation reports like any other. Nothing is thrown out of this function, because
+   * every caller is a surface that has already finished its own work by the time it asks.
+   */
+  const reloadResources = useCallback(async (sid: string): Promise<ReloadOutcome> => {
+    let reloaded: { resources?: { pending?: boolean; skills?: number; prompts?: number } };
+    try {
+      reloaded = await conversation.reload(sid);
+    } catch (e) {
+      // A route that did not answer says nothing about the conversation, so the failure is the whole statement.
+      const message = `Reload failed: ${e instanceof Error ? e.message : String(e)}`;
+      addNotice({ type: "error", message });
+      return { status: "failed", message };
+    }
+    // The read is what this operation claims: the route only changed the runtime's resources.
+    const read = await loadSession(sid, true, { force: true });
+    switch (read.status) {
+      case "superseded":
+        // Another connection or another conversation is on screen: this one's reload is no longer a fact about what the
+        // surface shows, so it claims nothing rather than stating an outcome for a conversation nobody is looking at.
+        return { status: "superseded" };
+      case "refused":
+        // The fold called this window older than the one it holds. The surface already states the newer window, and a
+        // notice here would contradict the transcript beside it.
+        return { status: "superseded" };
+      case "cancelled": {
+        const message = "Reloaded resources; the conversation could not be re-read";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "missing": {
+        const message = "Reloaded resources; this conversation no longer exists";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "failed": {
+        // Which failure it was is the read's own classification, so the sentence names the right recovery: a row that is
+        // gone, a Backend that refused the read, and one that never answered are three different states.
+        const message = read.failure.kind === "missing"
+          ? "Reloaded resources; this conversation no longer exists"
+          : read.failure.kind === "refused"
+            ? "Reloaded resources; the conversation could not be re-read"
+            : "Reloaded resources; the conversation could not be reached";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "accepted": {
+        const resources = reloaded.resources;
+        if (resources?.pending) {
+          const message = "Reloaded resources; the new catalog applies to the next run";
+          addNotice({ message });
+          return { status: "reloaded", message };
+        }
+        const message = resources
+          ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
+          : "Reloaded session resources";
+        addNotice({ message, type: "success" });
+        return { status: "reloaded", message };
+      }
+    }
+  }, [addNotice, conversation, loadSession]);
+
   const handleBuiltinSlashCommand = useCallback(async (text: string): Promise<BuiltinSlashCommandResult> => {
     if (!text.startsWith("/")) return { handled: false };
     const match = text.match(/^\/([^\s]+)(?:\s+([\s\S]*))?$/);
@@ -1903,26 +2010,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       switch (commandName) {
         case "reload": {
           if (!sid) return complete({ handled: true, error: "No active session to reload" });
-          // A failed Reload throws here, so the shared error notice reports it and the conversation keeps the prefix
-          // and catalog it had. A Reload during an active run is deferred by the backend; say so, because the change
-          // then applies to the next run rather than to the one in flight.
-          const reloaded = await conversation.reload(sid);
-          await Promise.all([
-            loadSession(sid, true),
-            loadTools(sid),
-            loadSlashCommands(),
-            loadModels(),
-          ]);
-          const resources = reloaded?.resources;
-          if (resources?.pending) {
-            return complete({ handled: true, message: "Reloaded resources; the new catalog applies to the next run" });
-          }
-          return complete({
-            handled: true,
-            message: resources
-              ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
-              : "Reloaded session resources",
-          });
+          // The same operation Settings › General asks for, so the command and the panel cannot disagree about what a
+          // reload established: one owner asks the route, performs the read and states the outcome. This surface only
+          // adds the catalogue the command line also shows; a reload that failed says so and nothing here claims it.
+          const outcome = await reloadResources(sid);
+          if (outcome.status === "failed") return complete({ handled: true, error: outcome.message });
+          if (outcome.status === "superseded") return { handled: true };
+          await Promise.all([loadTools(sid), loadSlashCommands(), loadModels()]);
+          return complete({ handled: true, message: outcome.message });
         }
 
         case "mcp": {
@@ -1945,7 +2040,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     } catch (e) {
       return complete({ handled: true, error: e instanceof Error ? e.message : String(e) });
     }
-  }, [addNotice, conversation, ensureNewSession, loadModels, loadSession, loadSlashCommands, loadTools, promoteNewSession, onOpenSettings, slashCommandsForMcp]);
+  }, [addNotice, conversation, ensureNewSession, loadModels, loadSlashCommands, loadTools, promoteNewSession, onOpenSettings, reloadResources, slashCommandsForMcp]);
 
   // Let AgentSession.prompt decide atomically whether to queue against the
   // current run or start a new turn if it settled while the request was in
@@ -2242,20 +2337,21 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // its own reason to ask — and it is asked under this mount's own acquisition, because a read that begins after a
       // recovery would fence the recovery's answers as older callbacks.
       if (hasUnfinishedWork(stepRef.current.view)) fold({ kind: "recover", acquisition });
-      loadSession(session.id, true, { force: true, acquisition }).then((loadedAgentState) => {
-        const agentState = loadedAgentState as { running: boolean; state?: AgentStateResponse } | null;
-        if (agentState?.running) {
+      loadSession(session.id, true, { force: true, acquisition }).then((read) => {
+        // Only an accepted read states composer state: every other outcome is the fold's or the transport's own statement
+        // about the conversation, and a mount resuming a run from one of those would act on an answer the surface refused.
+        if (read.status !== "accepted" || read.agentState === null) return;
+        const agentState = read.agentState;
+        if (agentState.running) {
           loadTools(session.id);
-          if (agentState.state?.isStreaming || agentState.state?.isPromptRunning) {
+          if (agentState.state.isStreaming || agentState.state.isPromptRunning) {
             setAgentPhase(agentState.state.isStreaming ? { kind: "waiting_model" } : { kind: "running_command" });
             dispatch({ type: "resume" });
           }
         }
-        if (agentState?.state) {
-          if (agentState.state.systemPrompt !== undefined) setSystemPrompt(agentState.state.systemPrompt ?? null);
-          if (agentState.state.extensionStatuses !== undefined) setExtensionStatuses(agentState.state.extensionStatuses ?? []);
-          if (agentState.state.extensionWidgets !== undefined) setExtensionWidgets(agentState.state.extensionWidgets ?? []);
-        }
+        if (agentState.state.systemPrompt !== undefined) setSystemPrompt(agentState.state.systemPrompt ?? null);
+        if (agentState.state.extensionStatuses !== undefined) setExtensionStatuses(agentState.state.extensionStatuses ?? []);
+        if (agentState.state.extensionWidgets !== undefined) setExtensionWidgets(agentState.state.extensionWidgets ?? []);
       });
     }
     return () => {
@@ -2333,39 +2429,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * superseded, publishes nothing here: the surface has moved on and claims nothing either.
    */
   const onConversationReloadChange = opts.onConversationReloadChange;
-  const reloadFailureKind = readFailure?.kind ?? null;
   const reloadConversation = useCallback(async () => {
     const sid = sessionIdRef.current;
     if (sid === null) return;
-    // The Backend's own reload route, asked by this operation alone, before the read that picks up what it changed.
-    const reloaded = await conversation.reload(sid);
-    const outcome = await loadSession(sid, true, { force: true });
-    // No usable answer — a read that failed, or one whose answer was superseded — means the reload route's answer is
-    // the only thing this operation established, and that is not a statement about the conversation. The read has
-    // already published its own failure to the surface; this states which one it was, so the notice does not claim a
-    // success the read contradicts.
-    if (outcome === null || outcome === "error" || outcome === "cancelled") {
-      const missing = reloadFailureKind === "missing";
-      addNotice({
-        message: missing
-          ? "Reloaded resources; this conversation no longer exists"
-          : "Reloaded resources; the conversation could not be re-read",
-        type: "error",
-      });
-      return;
-    }
-    const resources = reloaded?.resources;
-    if (resources?.pending) {
-      addNotice({ message: "Reloaded resources; the new catalog applies to the next run" });
-      return;
-    }
-    addNotice({
-      message: resources
-        ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
-        : "Reloaded session resources",
-      type: "success",
-    });
-  }, [addNotice, conversation, loadSession, reloadFailureKind]);
+    // The same operation the command line asks for. A failure is reported inside it, so the surface that asked here
+    // does not have to know how a reload can fail — and a rejection cannot escape into a caller that awaited it.
+    await reloadResources(sid);
+  }, [reloadResources]);
   useEffect(() => {
     onConversationReloadChange?.(reloadConversation);
     return () => onConversationReloadChange?.(null);

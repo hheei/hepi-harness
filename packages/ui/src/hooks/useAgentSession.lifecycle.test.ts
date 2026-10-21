@@ -1287,14 +1287,16 @@ test("an explicit reload is one operation on the conversation, not a new attachm
  */
 test("a reload reports what the read after it established, and a read that failed is not a success", async (t) => {
   cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
-  for (const answer of ["accepted", "missing", "failure"] as const) {
-    // The reload route always answers, so what differs between the cases is the read that follows it: a window, the
-    // Backend's own not_found, and a transport failure.
+  // The reload route always answers, so what differs between the cases is the read that follows it: a window, the
+  // Backend's own not_found, a read the Backend refused, and one that never answered. The last two are both failures but
+  // not the same failure, which is exactly why a bare null could not state them.
+  for (const answer of ["accepted", "missing", "refused", "failure"] as const) {
     const h = harness(t, (url, init) => {
       if (url === "/api/conversations/conv/reload") return respond({ resources: { skills: 3, prompts: 2 } });
       if (!url.endsWith("/state")) return normal(url, init);
       if (answer === "accepted") return respond(nativeFrame({ revision: 9, text: "the reloaded conversation" }));
       if (answer === "missing") return respond({ error: "not_found" }, 404);
+      if (answer === "refused") return respond({ error: "the projection is unreadable" }, 422);
       throw new TypeError("Failed to fetch");
     });
     const reloads: ((() => Promise<void>) | null)[] = [];
@@ -1316,11 +1318,84 @@ test("a reload reports what the read after it established, and a read that faile
       assert.deepEqual(texts(m.out.messages), ["the reloaded conversation"], answer + ": and the read's window is on screen");
     } else {
       assert.equal(notice.type, "error", answer + ": a read that could not answer is not a success");
-      assert.match(notice.message, /could not be re-read|no longer exists/, answer + ": " + notice.message);
+      // Which failure it was is the read's own classification, so the sentence names the right one: a row the Backend
+      // says is gone, a read the Backend refused and one that never answered are three states with three next steps.
+      const expected = answer === "missing" ? /no longer exists/ : answer === "refused" ? /could not be re-read/ : /could not be reached/;
+      assert.match(notice.message, expected, answer + ": " + notice.message);
       assert.ok(!/3 skills/.test(notice.message), answer + ": the numbers of a read that never happened are not claimed");
     }
     m.unmount();
   }
+});
+
+/**
+ * A reload route that rejects is a failure the operation states, not a rejection its caller has to catch.
+ *
+ * Settings › General awaits the reload it triggers, and the `/reload` command is a surface that has already finished its
+ * own work by then. Neither can catch what this operation throws at them — one would show an unhandled rejection and the
+ * other a generic command failure — so the route's own rejection is answered where the operation is, as the same kind of
+ * statement a read that failed produces. Nothing is claimed about the conversation: the route that never answered said
+ * nothing about it, and the resources it would have named are not named.
+ */
+test("a reload route that rejects is reported, and no read is asked for what it never changed", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const h = harness(t, (url, init) => {
+    if (url === "/api/conversations/conv/reload") return respond({ error: "the runtime is restarting" }, 503);
+    return normal(url, init);
+  });
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+  // The caller awaits the operation exactly as Settings does. It must settle rather than reject: an unhandled rejection
+  // is the bug this covers, and it would surface here as a thrown call rather than as a notice.
+  await reload();
+  await h.pump(m);
+  const notice = plain(m.out.notices).at(-1);
+  assert.ok(notice, "a rejected reload states what happened");
+  assert.equal(notice.type, "error", "a route that never answered is not a success");
+  assert.match(notice.message, /Reload failed/, "the sentence is the route's failure: " + notice.message);
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore,
+    "and no read was asked for a change that never happened");
+  m.unmount();
+});
+
+/**
+ * A reload that lands after the connection was replaced claims nothing about the surface that replaced it.
+ *
+ * The route and the read belong to one connection and one conversation. A switch while they were in flight makes both
+ * of them facts about a client nothing shows, so the operation must not state an outcome — a notice here would be the
+ * replaced connection's answer dressed as the current one's.
+ */
+test("a reload whose read answers after a connection switch states nothing", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const stale = deferredRead();
+  let reads = 0;
+  const h = harness(t, (url, init) => {
+    if (url === "/api/conversations/conv/reload") return respond({ resources: { skills: 4, prompts: 1 } });
+    if (!url.endsWith("/state")) return normal(url, init);
+    return ++reads === 1 ? stale.promise : respond(nativeFrame({ text: "the new connection" }));
+  });
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  // The reload is asked, and its read is the one still in flight when the connection is replaced underneath it.
+  const pending = reload();
+  await h.pump(m);
+  m.switchConnection(h.anotherConnection(t));
+  await h.pump(m);
+  const noticesBefore = plain(m.out.notices).length;
+  stale.release(nativeFrame({ revision: 9, text: "the replaced connection's answer" }));
+  await pending;
+  await h.pump(m);
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "the replaced connection's reload states nothing: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.deepEqual(texts(m.out.messages), ["the new connection"], "and the new connection's own read is what is on screen");
+  m.unmount();
 });
 
 /**

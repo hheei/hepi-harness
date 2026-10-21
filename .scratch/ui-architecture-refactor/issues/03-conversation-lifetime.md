@@ -108,9 +108,12 @@ fold 請求。
 | dispose／setup-cleanup | `conversation-session.test.ts`「disposing releases the reader…」 | pass |
 | connection 切换重建 registry | browser `test:conversation-lifetime` 第 6 段（`first:conv-a` → `switched:conv-a`，tree 存活，旧 answer 不重播） | pass |
 | 切换后旧读成功／`null`／失败皆不发布 | lifecycle「a read that answers after a connection switch…」(三 outcome) | pass |
-| reload 只一个 POST、notice 依读取结果 | lifecycle「a reload reports what the read after it established…」(accepted/missing/failure) | pass |
+| reload 只一个 POST、notice 依读取结果 | lifecycle「a reload reports what the read after it established…」(accepted/missing/refused/failure) | pass |
+| reload 路由自身被拒绝 | lifecycle「a reload route that rejects is reported, and no read is asked for what it never changed」（503 → `failed`、0 次 state read、不抛出） | pass |
+| reload 期间換 connection | lifecycle「a reload whose read answers after a connection switch states nothing」（`superseded`、无 notice、新 connection window 留存） | pass |
 | production shell：reload 只一次 | browser `test:conversation-lifetime-shell` 第 1 段（Settings › General 一次 toggle → 1 POST reload + 1 state read） | pass |
-| production shell：同 scope 換 connection 不 remount 且重建 registry | browser `test:conversation-lifetime-shell` 第 2 段（DOM marker 存活、無 reload） | pass |
+| production shell：同 scope 換 connection 不 remount | browser `test:conversation-lifetime-shell` 第 2 段（DOM marker 存活、無 reload） | pass |
+| production shell：registry 真的被替换 | browser 第 2 段：`openStreams` 由 `["first:shell-conv"]` 變為 `["replaced:shell-conv"]`，`first` source 為 `closed`，且經 `emitOn("replaced", …)` 送出的 window 出現在 transcript | pass |
 | production shell：換 scope 才是 remount | browser `test:conversation-lifetime-shell` 第 3 段（marker 消失、shell 重建） | pass |
 | admission 單一路徑 | `conversation-session.test.ts`「one admission path…」 | pass |
 | 舊 read 不跨 connection | lifecycle「disposing the connection retires its shared model read…」、`conversation-session.test.ts` 讀共用案例 | pass |
@@ -124,11 +127,31 @@ fold 請求。
 | 1 | `completionDeliveryRef` initialized once; AppShell survives connection switch → old registry keeps old client watches | Registry now lives in state, keyed by the `connection` object; a switch closes the outgoing registry (releases its watches) and builds the next over the new client. Suppression ref still read at call time. **Scope note:** the workbench keys the tree by `connection.scope`, so a scope change already remounts — a remount is what made the ref look correct. The finding's real window is a connection replaced **without** a scope change, which the production-shell scene 2 drives; scene 6 of the ChatWindow fixture drives the same rule below the shell. |
 | 2 | `useAgentSession` read paths lacked a connection fence; same conversation id let a replaced API's success/`null`/error publish | `fromCurrentConnection(readThrough)` compares the identity of the connection-owned object (conversation session **or** connection API). Applied after **every** awaited read — snapshot, `null`, failure — in `loadSession`, the agent-state read, `loadContext` and `loadTools`. The mount/load effect now keys on `conversation`, so a switch re-reads the conversation it is now showing. Test covers all three outcomes after a switch. |
 | 3 | SettingsPanel awaited `api.reload` and then the registered callback reloaded again → two POSTs | SettingsPanel only calls `onSessionReloaded()`; `reloadConversation` owns the route, the read and the notice. The slash-command `/reload` path also moved to `conversation.reload` so there is one owner of that route. Test asserts exactly one reload POST. |
-| 4 | `reloadConversation` ignored the read status; success notice after a failed read | The notice is decided by the read's outcome: `null`/`"error"`/`"cancelled"` produce an error notice (missing vs. not re-readable), never the resource counts. Test covers accepted, missing and transport failure. |
+| 4 | `reloadConversation` ignored the read status; success notice after a failed read | The notice is decided by the read's outcome, never the resource counts. Superseded by finding 6 below, which replaced the nullable outcome this row described. |
 
-### 剩餘限制
+### Review disposition (agent-263, 3 material findings)
 
-- 01 的 `WorkbenchSelection.reloadAttachment` 與其測試仍存在但已無 caller；刪除屬 selection owner。
-- AppShell 的 lifetime／presentation sections 由 coordinator 在 worktrees 間合併；本票只改 ChatWindow key 與
-  Settings reload 接線。
-- 未觀察到的 run 仍不補完成音（ADR 0007 既有契約），本票未改。
+| # | Finding | Resolution |
+| --- | --- | --- |
+| 5 (P1) | `/reload` ignored `loadSession`'s outcome → success notice after a 404 or a read failure | Both reload surfaces are one function now (`reloadResources`), so the command cannot report an outcome Settings would not. The command returns `{ error }` for a `failed` outcome and stays silent for `superseded`, and it only adds the command line's catalogue after a reload that was actually accepted. |
+| 6 (P2) | `null` conflated a stale answer with a missing conversation, and the closure's `reloadFailureKind` mislabelled `missing` | `loadSession` returns `ConversationReadOutcome` — `accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded` — so the caller reads the fact instead of guessing from an absence. The closure over `readFailure` is gone; the notice names the read's own `ReadFailure.kind`, which is why a 422 now says "could not be re-read" and a transport failure "could not be reached". |
+| 7 (P1) | `SettingsPanel`'s `onSessionReloaded` was fire-and-forget, so a rejected reload POST was unhandled and unnotified | The prop is `() => Promise<void>` and General `await`s it inside its own `try`, so a rejection is a stated failure rather than an unhandled one. The operation itself answers the route's rejection as a `failed` outcome, so no caller has to catch it and no read follows a change that never happened. |
+
+### Review disposition (agent-264, validation gap)
+
+| # | Finding | Resolution |
+| --- | --- | --- |
+| 8 | `ux-conversation-lifetime-shell.ts` claimed production registry replacement but asserted only DOM, read and reload counts; disabling the guard in `AppShell` still passed | The scene now asserts the registry itself: the first connection holds the conversation's stream, after the switch only the replacement's source is open, the outgoing source is recorded `closed`, and a frame delivered through **only** the replacement's source (`emitOn`) reaches the transcript. The guard was disabled to confirm the scene fails on the mutant (it times out at the `openStreams` assertion). |
+
+### 修正狀態
+
+Clean revision `f7886fe8`, base `e3c278c0`: changed verification passed; report `.dev/verify/2026-10-21T13-49-44-265-verify-changed/verify.json`. Browser reruns passed: `pnpm --dir apps/web test:conversation-lifetime` (14 assertions), `pnpm --dir apps/web test:conversation-lifetime-shell` (8 assertions), both exit 0. Raw browser logs: `.dev/verify/ui-conversation-lifetime-03/`.
+
+agent-263 的三项 reload findings 与 agent-264 的 validation gap 已在本轮修正：`loadSession` 返回带类型的
+`ConversationReadOutcome`（`accepted`／`refused`／`missing`／`failed`+`ReadFailure`／`cancelled`／`superseded`），
+`reloadResources` 是 `/reload` 与 Settings › General 共用的唯一 owner，Settings 的 `onSessionReloaded` 改为
+`() => Promise<void>` 并在自身 `try` 内 `await`，路由拒绝由 owner 报为 `failed`（不发后续读取、不向调用方抛出）。
+新增 public-seam 失败回归：路由 503、读取 missing／refused／failure、reload 期间换 connection。production shell
+scene 现断言 registry 本身（`openStreams` 从 `first:shell-conv` 变为 `replaced:shell-conv`、旧 source `closed`、
+经 `emitOn("replaced", …)` 的 frame 进入 transcript）；关闭 AppShell 的替换 guard 后该 scene 失败，确认断言有效。
+Ticket 保持 in-progress，等待 coordinator 集成与验收。未观察到的 run 仍不补完成音（ADR 0007 既有契约），本票未改。

@@ -1257,11 +1257,16 @@ UI I/O — the stream reader it joined through the shell's one source per conver
 admission path, the by-id lookup and the explicit reload — and is the caller that performs what the fold requests. That
 value is bound to one connection and one conversation identity, so its reader and its reads are released together; the
 chat's mount identity is the conversation it shows, which is why a reload of the same conversation re-reads instead of
-rebuilding the surface. The reload is one owner's operation: the surface that asks for it (Settings › General) states
-the change and the conversation performs the Backend's route, the read and the notice, and what the notice claims is
-what the read established. A read is fenced by the **connection** it was asked through — not only by the conversation id,
-because two connections can hold the same id — so an answer that arrives after a switch is refused whether it is a
-window, a `not_found` or a failure. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
+rebuilding the surface. The reload is one owner's operation, and the `/reload` command asks the same function Settings ›
+General does: Settings states the change, awaits the answer and performs nothing itself, and the operation performs the
+Backend's route, the read and the notice. What the notice claims is what the **read** established, which is a typed
+outcome rather than a nullable one: `accepted`, `refused` (an older window the fold rejected), `missing` (the Backend's
+`not_found`), `failed` (carrying the read's own `ReadFailure` kind), `cancelled`, and `superseded` (another connection or
+conversation is on screen, so there is nothing to claim). A route that rejects is reported as a `failed` outcome by the
+operation, so a caller that awaits it cannot receive an unhandled rejection and no read is asked for a change that never
+happened. A read is fenced by the **connection** it was asked through — not only by the conversation id, because two
+connections can hold the same id — so an answer that arrives after a switch is refused whether it is a window, a
+`not_found` or a failure. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
 from a mirror beside it, so a refused frame cannot move them; the separate `/state` agent-state query is an
 independent read with its own ordering and refines that transcript without being gated on a window's acceptance. That
 read is stamped, when it begins, with the accepted statement it describes — the attachment's identity **and** its
