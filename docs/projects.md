@@ -153,6 +153,7 @@ requests keep their existing confinement.
   remembered pick open something. A deployment's configured workspace is reached like any other project — by being
   picked, or through `POST /api/default-cwd` when the user asks for the default directory — and never by landing on
   the page, which is what made a deployment come up titled by its own configured workspace.
+- **One registry owns resolution, registration and publication.** `apps/server/src/project-registry.ts` composes the configured workspaces, the optional ProjectStore, the configured gateway connections and the live metadata a conversation resolves through. It states the one precedence order (configured, then retained, then Project folder), answers the catalogue row's workspace facts, re-asserts a recorded root on its own host — at boot through `registerAll`, before a request through `ensureBinding` — and owns `projectsRevision`, which advances once per accepted mutation and never for a read, a refusal or a failed store write. Routes decode a request, ask the registry and encode the answer; they no longer splice a project list, assemble a binding twice or increment a revision. A deployment without a ProjectStore still resolves, prepares and lists its configured workspaces, and every project mutation answers its existing unavailable outcome. The store's schema and transactions are unchanged: the registry borrows the store's lifetime and never closes it.
 - **The catalogue states the binding, so a list is one read.** Every catalogue row carries its workspace's facts —
   `gatewayId`, the root the deployment recorded for it (`workspace.root`), whether a removal retained it
   (`workspace.retained`), and the Project it is a folder of (`workspace.project`: id, name, the default folder's
@@ -184,6 +185,13 @@ requests keep their existing confinement.
 
 ## Verification
 
+- `apps/server/src/project-registry.test.ts` — the registry as its own interface, over a real gateway and a real
+  temp SQLite store: configured-then-retained-then-Project precedence with a non-default folder resolving to its own
+  root and its group's display root, resolution and reads reaching no host, targets excluding retained ids while the
+  listing still states them, `ensureBinding` registering a Project folder and a retained root on its own host,
+  `registerAll` replaying every folder of a project, a deployment with no ProjectStore still resolving and preparing
+  its configured workspaces while every mutation answers its unavailable outcome, and the publication revision moving
+  once per accepted mutation and never for a read or a refusal.
 - `packages/gateway/test/workspaces.test.ts` — registry validation and idempotence, host browsing, and the RPC that
   makes one registration visible to execution, files and workbench at once.
 - `apps/server/test/project.test.ts` — project creation (one folder and several), a project removal whose directory and file are byte-identical afterwards with its bound conversation still running a workspace tool and its retained id refused as a new target, a retained root re-registered after the gateway alone restarts, a removal of a project with several folders retaining every one of them, one folder unlinked from a project with its default unchanged and the unlinked folder still executing for its bound conversation while refused as a new target, the default folder's removal refused without a replacement and accepted with one, the last folder's removal taking the project with it and its retained record re-registering the root after a gateway restart, tool execution in the chosen folder,
