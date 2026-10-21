@@ -5517,3 +5517,10 @@ days; they were left alone.
 **Not claimed.** No release-profile artifact was built or verified, no `remote-host` build or run happened, and no
 system `dpkg` install was made — the transaction ran in a private user namespace over a root this run removed. The debug
 artifact is functional evidence only, not a release measurement.
+
+**The run at the committed revision `0aab74e9` differs only where it must.** The verifier binds
+`provenance-names-the-built-revision` to `git rev-parse HEAD`, and the artifact was built from `5ec7ffe6`, so running the
+committed tree against it reports `5ec7ffe62a2a… (HEAD 0aab74e9c…)` and 53/54 with that one failure
+(`.dev/verify/nv01/postcommit.log`). The other 53 assertion outcomes and the report's key set are identical to the run
+above, which is the point of the assertion: a run against an artifact built from another revision is a different run, and
+it says so rather than passing. The passing runs are the two revision-matched ones.
