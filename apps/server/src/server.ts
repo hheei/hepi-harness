@@ -7,7 +7,7 @@ import { getApiProvider } from "@earendil-works/pi-ai/compat";
 import { type AgentChange, type Conversation, type ConversationId, type ConversationView, type EntryId, type EntryRecord, type Harness, type LiveState, type AgentState, type InboxState, type ToolSlot, type TaskInspection, type Cursor, type ModelRef, AgentDoc, InboxDoc, defineDoc, ConversationBusy, watchEvents, type Extension } from "@earendil-works/pi-durable";
 import { GatewayHostClient, gatewayEnvironment, HostTransportError, type EnvironmentBinding, type ExecutionHostEnv } from "@hepi/gateway";
 import { DEFAULT_HOST_HEADER, HEARTBEAT_FRAME, HEARTBEAT_INTERVAL_MS, parseSessionUiStateRequest, projectSubmission, textUrl, toolResultImageUrl, validateCommand, MAX_SESSION_UI_REQUEST_BYTES, MAX_SUBMISSION_BODY_BYTES, MAX_TOOL_RESULT_IMAGE_BYTES, PROTOCOL_VERSION, TOOL_RESULT_IMAGE_MIMES, type ProtocolCommand, type ServerDelta as ServerDeltaOf, type ServerFailure as ServerFailureOf, type ServerEntry as ServerEntryOf, type ServerFrame as ServerFrameOf, type ServerSnapshot as ServerSnapshotOf, type SessionUiStateRefusalReason, type ConversationProvenance, type ConversationRelations, type ResolvedReference, type SubmissionProjection, type SubmitImage } from "@hepi/protocol";
-import type { McpToolList, WorkbenchOperation, WorktreeListing, WorktreeRequest as WorktreeHostRequest, WorkspaceRequest as HostRequest } from "@hepi/protocol/gateway";
+import type { McpToolList, WorkbenchOperation, WorkspaceRequest as HostRequest } from "@hepi/protocol/gateway";
 import { readSidebarState, writeSidebarState } from "./sidebar-state.ts";
 import { submitConversationInput } from "./conversation-input.ts";
 import { buildTitleTranscript, generateSessionTitle, MAX_TITLE_LENGTH } from "./session-title.ts";
@@ -50,7 +50,7 @@ type SubtreeProjectedOutcome = SubtreeChildOutcome & { readonly session?: Catalo
 type SubtreeProjectedResult = Omit<SubtreeControlResult, "outcomes"> & { readonly outcomes: readonly SubtreeProjectedOutcome[] };
 import { advanceCatalogueStats, advanceHistoryFacts, appendedEntries, catalogueStats, continuationIndex, deferHistoryMessage, FRAME_LIMIT_BYTES, historyFacts, oversizeFrame, scopeFromFacts, tokenFromFacts, VISIBLE_WINDOW, WindowProjector, type CatalogueStats, type HeldWindow, type HistoryFacts, type ProjectedWindow, type WindowItem } from "./history-window.ts";
 import { createProjectRegistry, WEB_HOST_REQUIRED, type GatewayConnection, type ProjectMutation } from "./project-registry.ts";
-import type { ProjectFolder, ProjectRecord, ProjectStore } from "./project-store.ts";
+import type { ProjectRecord, ProjectStore } from "./project-store.ts";
 import type { DeviceCredentials } from "./device-credentials.ts";
 
 /**
@@ -179,7 +179,6 @@ const folderUnlinkPath = /^\/api\/projects\/([^/]+)\/folders\/([^/]+)$/;
  * drift from it silently. The aliases keep the names this file already used for them.
  */
 type HostAnswer = { ok: true; value: unknown } | { ok: false; code: string; status: number };
-type WorktreeHostAnswer = { ok: true; value: unknown } | { ok: false; code: string; message?: string };
 
 /**
  * What a host call that produced no domain answer means to a browser-facing route. The transport already decided: a
@@ -929,48 +928,6 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       return { ok: false, code: failure.code, status: failure.status };
     }
   };
-  /**
-   * One request to a gateway's worktree surface. The host owns the git work — which checkouts a registered root has,
-   * one created on a branch, one removed — and its refusal keeps its own name, so a dirty checkout, a host limit and an
-   * unreachable transport stay three different answers. A create or a remove whose answer never arrived is an unknown
-   * outcome rather than an offline host, because the checkout may exist on the host either way.
-   */
-  const hostWorktreeRequest = async (binding: { gatewayOrigin: string; gatewayToken: string }, body: WorktreeHostRequest): Promise<WorktreeHostAnswer> => {
-    try {
-      const result = await clientOf(binding).control.worktrees(body);
-      if (result.ok) return { ok: true, value: result.value };
-      return { ok: false, code: result.code, ...(result.message === undefined ? {} : { message: result.message }) };
-    } catch (error) {
-      const failure = hostTransportAnswer(error, body.operation !== "list");
-      return { ok: false, code: failure.code, ...(failure.message === undefined ? {} : { message: failure.message }) };
-    }
-  };
-  /**
-   * One checkout of a root as a folder of the Project that owns the root: hepi mints the workspace id, the host
-   * canonicalizes and registers the root, and the record is written only after the host accepted it. This is what
-   * makes a worktree a conversation target — a conversation binds a workspace id, and a root hepi holds no record of
-   * is a root no conversation can run in. The record is the same project folder a folder chosen in the dialog is, so
-   * nothing else about the project has to learn about worktrees.
-   */
-  const folderForCheckout = async (project: ProjectRecord, root: string): Promise<ProjectFolder | undefined> => {
-    // A checkout this project already records is that folder: the record is keyed by root, so a worktree seen twice —
-    // or one registered by an earlier list — is one folder with one workspace id, never two.
-    const existing = project.folders.find(folder => folder.root === root);
-    if (existing !== undefined) { await registry.ensureFolder(project, existing); return existing; }
-    const workspaceId = randomUUID();
-    const binding = registry.bindingOfFolder(project, { id: randomUUID(), workspaceId, root, createdAt: new Date().toISOString() });
-    if (binding === undefined) return undefined;
-    const registered = await hostRequest(binding, { operation: "register", workspaceId, root, ...(project.profileId === undefined ? {} : { profileId: project.profileId }) });
-    if (!registered.ok) return undefined;
-    const added = registry.addFolder(project.id, { id: randomUUID(), workspaceId, root: (registered.value as { root: string }).root }, new Date().toISOString());
-    if (added === undefined || !added.ok) return undefined;
-    return added.project.folders.find(folder => folder.workspaceId === workspaceId);
-  };
-  /**
-   * The status a worktree refusal is answered with. A dirty checkout keeps upstream's own 409 with its `dirty` marker,
-   * because that is what makes the browser ask for an explicit force instead of discarding uncommitted work.
-   */
-  const worktreeFailureStatus = (code: string): number => code === "dirty" ? 409 : code === "not_supported" ? 501 : code === "unreachable" || code === "outcome_unknown" || code === "gateway_offline" ? 503 : code === "unknown_workspace" ? 404 : 400;
   /** The execution targets one configured gateway offers. A gateway with no remote profiles answers with an empty list. */
   const hostProfiles = async (connection: GatewayConnection): Promise<{ ok: true; value: unknown } | { ok: false; code: string }> => {
     const listed = await hostRequest(connection, { operation: "profiles" });
@@ -1987,92 +1944,16 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       if (!removed.ok) { json(response, removed.status, { ...(removed.code === undefined ? {} : { code: removed.code }), error: removed.error }); return; }
       json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(removed.value) }); return;
     }
-    // A project's checkouts, and the two mutations of them, on the execution host that holds the project's folders.
-    // The host owns the git work — which checkouts a registered root has, one created on a branch, one removed, and
-    // git's own refusal of a dirty checkout — and this route adds the two hepi-owned facts the browser needs:
-    //
-    // - a created checkout is recorded as a folder of the project, because a conversation binds a workspace id and a
-    //   root hepi holds no record of is a root no conversation can run in. The host canonicalizes and registers the
-    //   root first; the record is written only after the host accepted it.
-    // - a removed checkout's folder record goes with it, in the same request, and its binding is retained, so a
-    //   conversation already bound to that checkout keeps running while the checkout is no longer a target.
-    //
-    // The request names a workspace id, exactly as the host's own `/v1/worktrees` surface does, and every refusal
-    // keeps its own name: `dirty` for git's refusal of uncommitted work, `not_supported` for a host that cannot
-    // serve the capability, `unreachable`/`outcome_unknown` for a transport failure, and the project's own
-    // `default_folder`/`last_folder` when a checkout cannot leave the project's folder list.
     if (request.method === "POST" && url.pathname === "/api/worktrees") {
       const body = await readBody(request) as { workspaceId?: unknown; operation?: unknown; branch?: unknown; path?: unknown; force?: unknown } | undefined;
       const workspaceId = typeof body?.workspaceId === "string" ? body.workspaceId : "";
       const operation = typeof body?.operation === "string" ? body.operation : "";
-      const binding = await ensureBinding(workspaceId === "" ? undefined : workspaceId);
-      if (binding === undefined) { json(response, 404, { ok: false, code: "unknown_workspace", message: "this deployment serves no such workspace" }); return; }
-      const resolved = registry.resolve(workspaceId === "" ? undefined : workspaceId);
-      // The folder a checkout is recorded as: the project's own list is the only place a target for a new conversation
-      // can come from, so a workspace that belongs to no project has no checkout to offer and says so.
-      const projectOf = (): ProjectRecord | undefined => resolved?.kind === "project" ? resolved.project : undefined;
-      const forward = (result: { ok: true; value: unknown } | { ok: false; code: string; message?: string }, status = 200): void => {
-        if (result.ok) { json(response, 200, { ok: true, value: result.value }); return; }
-        json(response, worktreeFailureStatus(result.code), { ok: false, code: result.code, error: result.message ?? result.code, ...(result.code === "dirty" ? { dirty: true } : {}) });
-      };
-      if (operation === "list") {
-        const listed = await hostWorktreeRequest(binding, { operation: "list", workspaceId });
-        if (!listed.ok) { forward(listed); return; }
-        const listing = listed.value as WorktreeListing;
-        // Each checkout is addressed by the folder the project records for its root: a checkout hepi holds no record
-        // of is listed truthfully and is simply not a target, which is what the browser shows.
-        const project = projectOf();
-        const worktrees = listing.worktrees.map(entry => {
-          const folder = project?.folders.find(candidate => candidate.root === entry.path);
-          return { path: entry.path, branch: entry.branch, isMain: entry.isMain, ...(folder === undefined ? {} : { workspaceId: folder.workspaceId }) };
-        });
-        json(response, 200, { ok: true, value: { isGit: listing.isGit, isTopLevel: listing.isTopLevel, currentWorktreePath: listing.currentWorktreePath, worktrees } });
-        return;
-      }
-      if (operation === "create") {
-        const project = projectOf();
-        if (project === undefined) { json(response, 400, { ok: false, code: "not_a_project_folder", error: "this folder is not a Project folder, so a worktree of it cannot be a conversation target" }); return; }
-        const branch = typeof body?.branch === "string" ? body.branch : "";
-        const created = await hostWorktreeRequest(binding, { operation: "create", workspaceId, branch });
-        if (!created.ok) { forward(created); return; }
-        const made = created.value as { path: string; branch: string };
-        const folder = await folderForCheckout(project, made.path);
-        if (folder === undefined) {
-          // The checkout exists on the host but hepi could not record it, so nothing may claim it is a target. The
-          // host's own root is what was registered, and the browser is told exactly that.
-          json(response, 502, { ok: false, code: "not_recorded", error: "the checkout was created on the host but this deployment could not record it as a target: " + made.path });
-          return;
-        }
-        json(response, 200, { ok: true, value: { path: made.path, branch: made.branch, workspaceId: folder.workspaceId } });
-        return;
-      }
-      if (operation === "remove") {
-        const path = typeof body?.path === "string" ? body.path : "";
-        if (path === "") { json(response, 400, { ok: false, code: "invalid_request", error: "a worktree path is required" }); return; }
-        const project = projectOf();
-        const folder = project?.folders.find(candidate => candidate.root === path);
-        // The project always keeps a default, so its default checkout is not removable here: naming a replacement is
-        // ticket 08's own rule, and refusing before git touches anything keeps the project's folder list and the
-        // host's checkouts from disagreeing about which checkout a conversation may still run in.
-        if (project !== undefined && folder !== undefined && project.defaultFolderId === folder.id) {
-          json(response, 409, { ok: false, code: "default_folder", error: "this checkout is this Project's default folder; name another folder the default first" });
-          return;
-        }
-        const removed = await hostWorktreeRequest(binding, { operation: "remove", workspaceId, path, force: body?.force === true });
-        if (!removed.ok) { forward(removed); return; }
-        if (project !== undefined && folder !== undefined) {
-          // The record that made the checkout a target is dropped by the one unlink operation the folder route also uses,
-          // so a checkout removal and a folder unlink keep the same retained binding in the same transaction.
-          // The Project names its own host, so the unlink is named with no host and the recorded one is what it acts on.
-          const dropped = registry.unlink(project.id, folder.id, undefined, undefined);
-          if (dropped === undefined || !dropped.ok) { json(response, 502, { ok: false, code: "not_recorded", error: "the checkout was removed on the host but this deployment could not drop its folder record" }); return; }
-          // The default folder is refused above, so the project survives; the registry already applied both outcomes to
-          // its snapshot and retained the folder's binding, exactly as the folder route's unlink does.
-        }
-        json(response, 200, { ok: true, value: removed.value });
-        return;
-      }
-      json(response, 400, { ok: false, code: "invalid_request", error: "unknown worktree operation" });
+      const result = operation === "list" ? await registry.listCheckouts(workspaceId)
+        : operation === "create" ? await registry.createCheckout(workspaceId, typeof body?.branch === "string" ? body.branch : "")
+        : operation === "remove" ? await registry.removeCheckout(workspaceId, typeof body?.path === "string" ? body.path : "", body?.force === true)
+        : { ok: false as const, status: 400, code: "invalid_request", error: "unknown worktree operation" };
+      if (result.ok) json(response, 200, { ok: true, value: result.value });
+      else { const { status, ...body } = result; json(response, status, body); }
       return;
     }
     if (request.method === "POST" && url.pathname === "/api/workbench") {

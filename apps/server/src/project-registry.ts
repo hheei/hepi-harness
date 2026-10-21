@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { GatewayHostClient, HostTransportError, type EnvironmentBinding } from "@hepi/gateway";
-import type { WorkspaceRequest } from "@hepi/protocol/gateway";
+import type { WorkspaceRequest, WorktreeRequest, WorktreeListing } from "@hepi/protocol/gateway";
 import { catalogueWorkspace, type CatalogueBinding, type CatalogueWorkspace } from "./catalogue-binding.ts";
-import type { DefaultFolderChange, FolderAddition, FolderUnlink, NewProject, NewProjectFolder, ProjectFolder, ProjectRecord, ProjectRemoval, ProjectStore, RetainedBinding } from "./project-store.ts";
+import type { NewProjectFolder, ProjectFolder, ProjectRecord, ProjectStore, RetainedBinding } from "./project-store.ts";
 
 /**
  * What a project mutation answers: the committed metadata, or the reason nothing was recorded. A refusal carries its own
@@ -11,6 +11,9 @@ import type { DefaultFolderChange, FolderAddition, FolderUnlink, NewProject, New
  * An HTTP route states the answer it is given instead of translating it.
  */
 export type ProjectMutation<Value> = { readonly ok: true; readonly value: Value } | { readonly ok: false; readonly code?: string; readonly status: number; readonly error: string };
+
+export type CheckoutResult<Value> = { readonly ok: true; readonly value: Value } | { readonly ok: false; readonly code: string; readonly status: number; readonly error: string; readonly dirty?: true };
+export type CheckoutListing = Omit<WorktreeListing, "worktrees"> & { readonly worktrees: readonly (WorktreeListing["worktrees"][number] & { readonly workspaceId?: string })[] };
 
 /** What a caller asks the registry to record, as it decoded it: the name and folders a request named. */
 export type NewProjectRequest = {
@@ -67,7 +70,7 @@ export type ProjectRegistryOptions = {
  *   outcome was unknown is never repeated.
  * - **Mutation** — {@link ProjectRegistry.create}, {@link ProjectRegistry.setDefault},
  *   {@link ProjectRegistry.unlink}, {@link ProjectRegistry.remove} are the four workflows a project route performs, and
- *   {@link ProjectRegistry.addFolder} is the one a checkout records. Each owns the host identity the operation acts on,
+ *   the checkout workflows own host creation/removal through metadata publication. Each owns the host identity the operation acts on,
  *   the registration of a root on that host **before** anything is recorded (host I/O does not belong in a store
  *   transaction), the store write, the live snapshot and the publication revision. A caller decodes a request, names
  *   the host its Web origin serves and encodes the answer; it never looks a Project up to splice it, re-resolves the
@@ -127,11 +130,12 @@ export type ProjectRegistry = {
 	setDefault(projectId: string, folderId: string, hostId: string | undefined): ProjectMutation<ProjectRecord>;
 	unlink(projectId: string, folderId: string, replacementDefaultId: string | undefined, hostId: string | undefined): ProjectMutation<{ readonly project: ProjectRecord | null; readonly removedFolderId: string }>;
 	remove(projectId: string, hostId: string | undefined): ProjectMutation<ProjectRecord>;
-	/**
-	 * One more folder of a Project — a git checkout hepi created for it — recorded after its root was accepted on the
-	 * host. It answers `undefined` when this deployment records no Projects, the unavailable outcome its caller reports.
-	 */
-	addFolder(projectId: string, folder: NewProjectFolder, createdAt: string): FolderAddition | undefined;
+	/** Host checkouts joined with recorded targets; reads never publish a metadata revision. */
+	listCheckouts(workspaceId: string): Promise<CheckoutResult<CheckoutListing>>;
+	/** Host creation, registration and metadata publication; partial host success answers not_recorded. */
+	createCheckout(workspaceId: string, branch: string): Promise<CheckoutResult<{ readonly path: string; readonly branch: string; readonly workspaceId: string }>>;
+	/** Default-folder preflight, host removal, then metadata unlink and retained publication. */
+	removeCheckout(workspaceId: string, path: string, force: boolean): Promise<CheckoutResult<unknown>>;
 };
 
 export function createProjectRegistry(options: ProjectRegistryOptions): ProjectRegistry {
@@ -241,7 +245,44 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 		else projects = projects.map((candidate, position) => position === index ? project : candidate);
 	};
 	const accept = (): void => { revision += 1; };
-	return {
+	const checkoutFailure = (code: string, error = code): CheckoutResult<never> => ({
+		ok: false, code, error,
+		status: code === "dirty" || code === "default_folder" ? 409 : code === "not_recorded" ? 502 : code === "not_supported" ? 501 : code === "unreachable" || code === "outcome_unknown" || code === "gateway_offline" ? 503 : code === "unknown_workspace" ? 404 : 400,
+		...(code === "dirty" ? { dirty: true as const } : {}),
+	});
+	const checkoutCall = async (binding: EnvironmentBinding, request: WorktreeRequest): Promise<CheckoutResult<unknown>> => {
+		try {
+			const result = await new GatewayHostClient(binding).control.worktrees(request);
+			return result.ok ? { ok: true, value: result.value } : checkoutFailure(result.code, result.message);
+		} catch (error) {
+			if (!(error instanceof HostTransportError)) return checkoutFailure("gateway_offline");
+			if (error.code === "outcome_unknown" || (request.operation !== "list" && (error.code === "timeout" || error.code === "aborted"))) return checkoutFailure("outcome_unknown");
+			if (error.code === "gateway_offline" || error.code === "timeout" || error.code === "aborted") return checkoutFailure("gateway_offline");
+			return checkoutFailure("gateway_error", error.status === undefined ? undefined : "the execution host answered " + error.status);
+		}
+	};
+	const checkoutProject = (workspaceId: string): ProjectRecord | undefined => {
+		const resolved = resolve(workspaceId);
+		return resolved?.kind === "project" ? resolved.project : undefined;
+	};
+	const folderForCheckout = async (projectId: string, root: string): Promise<ProjectFolder | undefined> => {
+		const project = projectOf(projectId);
+		if (project === undefined || store === undefined) return undefined;
+		const existing = project.folders.find(folder => folder.root === root);
+		if (existing !== undefined) { await registerFolder(project, existing); return existing; }
+		const connection = gateways.get(project.hostId);
+		if (connection === undefined) return undefined;
+		const workspaceId = randomUUID();
+		const registered = await hostCall(connection, { operation: "register", workspaceId, root, ...(project.profileId === undefined ? {} : { profileId: project.profileId }) });
+		if (!registered.ok) return undefined;
+		const before = projectOf(projectId);
+		const added = store.addFolder(projectId, { id: randomUUID(), workspaceId, root: (registered.value as { root: string }).root }, new Date().toISOString());
+		if (!added.ok) return undefined;
+		replace(added.project, projectId);
+		if (before?.folders.length !== added.project.folders.length) accept();
+		return added.project.folders.find(folder => folder.root === (registered.value as { root: string }).root);
+	};
+	const registry: ProjectRegistry = {
 		resolve,
 		catalogueOf: (workspaceId) => { const resolved = resolve(workspaceId); return resolved === undefined ? undefined : catalogueWorkspace(resolved); },
 		bindingOf: (workspaceId) => { const resolved = resolve(workspaceId); return resolved === undefined ? undefined : transportOf(resolved); },
@@ -319,14 +360,6 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			accept();
 			return { ok: true, value: created };
 		},
-		addFolder: (projectId, folder, createdAt) => {
-			if (store === undefined) return undefined;
-			const added = store.addFolder(projectId, folder, createdAt);
-			if (!added.ok) return added;
-			replace(added.project, projectId);
-			accept();
-			return added;
-		},
 		setDefault: (projectId, folderId, hostId) => {
 			const project = projectOf(projectId);
 			if (project === undefined) return { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
@@ -363,6 +396,49 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			accept();
 			return { ok: true, value: { project: unlinked.project, removedFolderId: unlinked.removedFolderId } };
 		},
+		listCheckouts: async (workspaceId) => {
+			const binding = await registry.ensureBinding(workspaceId === "" ? undefined : workspaceId);
+			if (binding === undefined) return checkoutFailure("unknown_workspace", "this deployment serves no such workspace");
+			const listed = await checkoutCall(binding, { operation: "list", workspaceId });
+			if (!listed.ok) return listed;
+			const listing = listed.value as WorktreeListing;
+			const project = checkoutProject(workspaceId);
+			return { ok: true, value: { ...listing, worktrees: listing.worktrees.map(entry => {
+				const folder = project?.folders.find(candidate => candidate.root === entry.path);
+				return { ...entry, ...(folder === undefined ? {} : { workspaceId: folder.workspaceId }) };
+			}) } };
+		},
+		createCheckout: async (workspaceId, branch) => {
+			const binding = await registry.ensureBinding(workspaceId === "" ? undefined : workspaceId);
+			if (binding === undefined) return checkoutFailure("unknown_workspace", "this deployment serves no such workspace");
+			const project = checkoutProject(workspaceId);
+			if (project === undefined) return checkoutFailure("not_a_project_folder", "this folder is not a Project folder, so a worktree of it cannot be a conversation target");
+			const created = await checkoutCall(binding, { operation: "create", workspaceId, branch });
+			if (!created.ok) return created;
+			const made = created.value as { path: string; branch: string };
+			let folder: ProjectFolder | undefined;
+			try { folder = await folderForCheckout(project.id, made.path); } catch { /* Host creation succeeded; metadata did not. */ }
+			if (folder === undefined) return checkoutFailure("not_recorded", "the checkout was created on the host but this deployment could not record it as a target: " + made.path);
+			return { ok: true, value: { path: made.path, branch: made.branch, workspaceId: folder.workspaceId } };
+		},
+		removeCheckout: async (workspaceId, path, force) => {
+			const binding = await registry.ensureBinding(workspaceId === "" ? undefined : workspaceId);
+			if (binding === undefined) return checkoutFailure("unknown_workspace", "this deployment serves no such workspace");
+			if (path === "") return checkoutFailure("invalid_request", "a worktree path is required");
+			const project = checkoutProject(workspaceId);
+			const folder = project?.folders.find(candidate => candidate.root === path);
+			if (project !== undefined && folder !== undefined && project.defaultFolderId === folder.id) return checkoutFailure("default_folder", "this checkout is this Project's default folder; name another folder the default first");
+			const removed = await checkoutCall(binding, { operation: "remove", workspaceId, path, force });
+			if (!removed.ok) return removed;
+			if (project !== undefined && folder !== undefined) {
+				try {
+					const dropped = registry.unlink(project.id, folder.id, undefined, undefined);
+					if (dropped.ok) return removed;
+				} catch { /* Host removal succeeded; metadata did not. */ }
+				return checkoutFailure("not_recorded", "the checkout was removed on the host but this deployment could not drop its folder record");
+			}
+			return removed;
+		},
 		remove: (projectId, hostId) => {
 			const project = projectOf(projectId);
 			if (project === undefined) return { ok: false, code: "unknown_project", status: 404, error: "no project with that id is recorded" };
@@ -379,4 +455,5 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			return { ok: true, value: removed.project };
 		},
 	};
+	return registry;
 }

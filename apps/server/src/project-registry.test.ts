@@ -11,14 +11,15 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { GatewayRpcServer, LocalGateway, WorkspaceRegistry, WorkspaceServer } from "@hepi/gateway";
+import { GatewayRpcServer, GatewayWorktrees, LocalGateway, WorkspaceRegistry, WorkspaceServer } from "@hepi/gateway";
+import { createFakeGitHost, type FakeGitHost } from "../test/fake-git-host.ts";
 import { createProjectRegistry, WEB_HOST_REQUIRED, type ProjectRegistry } from "./project-registry.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 
 const GATEWAY = "workstation";
 
 /** One real gateway on this machine, serving only the workspace surface these cases need. */
-async function startGateway() {
+async function startGateway(host?: FakeGitHost) {
   const registry = new WorkspaceRegistry([]);
   const identity = { user: "operator", home: "/tmp" };
   const server = new GatewayRpcServer(
@@ -27,6 +28,7 @@ async function startGateway() {
     undefined,
     undefined,
     new WorkspaceServer(registry, { identity }),
+    host === undefined ? undefined : new GatewayWorktrees(registry, host.git),
   );
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
@@ -205,7 +207,7 @@ test("without a ProjectStore the configured workspaces still resolve, prepare an
     assert.deepEqual(registry.setDefault("project-1", "folder-1", GATEWAY), noProject);
     assert.deepEqual(registry.unlink("project-1", "folder-1", undefined, GATEWAY), noProject);
     assert.deepEqual(registry.remove("project-1", GATEWAY), noProject);
-    assert.equal(registry.addFolder("project-1", { id: "folder-1", workspaceId: "workspace-1", root: "/tmp" }, "2026-10-21T00:00:00.000Z"), undefined);
+    assert.deepEqual(await registry.createCheckout("legacy", "feature"), { ok: false, code: "not_a_project_folder", status: 400, error: "this folder is not a Project folder, so a worktree of it cannot be a conversation target" });
     assert.equal(registry.revision(), 0);
     assert.deepEqual(host.registry.ids(), []);
   } finally {
@@ -278,23 +280,72 @@ test("the publication revision advances once per accepted mutation and never for
     assert.deepEqual(registry.setDefault(created.id, "folder-9", GATEWAY), { ok: false, code: "unknown_folder", status: 400, error: "that folder does not belong to this project" });
     assert.equal(registry.revision(), 2);
 
-    const added = registry.addFolder(created.id, { id: "folder-3", workspaceId: "workspace-3", root: app.directories[2]! }, "2026-10-21T00:00:02.000Z");
-    assert.ok(added?.ok);
-    assert.equal(registry.revision(), 3);
-
     const originalDefault = created.folders.find(folder => folder.id === created.defaultFolderId)!;
     const unlinked = registry.unlink(created.id, originalDefault.id, undefined, GATEWAY);
     assert.ok(unlinked.ok, JSON.stringify(unlinked));
-    assert.equal(registry.revision(), 4);
+    assert.equal(registry.revision(), 3);
     // The unlinked folder is retained from here on, and it is still not a target.
     assert.equal(registry.resolve(originalDefault.workspaceId)?.kind, "retained");
     assert.equal(registry.isTarget(originalDefault.workspaceId), false);
 
     assert.equal(registry.remove(created.id, GATEWAY).ok, true);
-    assert.equal(registry.revision(), 5);
+    assert.equal(registry.revision(), 4);
     assert.deepEqual(registry.projects(), []);
   } finally {
     await host.close();
     await app.close();
   }
 });
+
+for (const phase of ["create", "remove"] as const) {
+  test(`a host checkout ${phase} followed by failed persistence reports partial success without publishing metadata`, async () => {
+    const app = await fixture();
+    const git = createFakeGitHost();
+    git.initRepository(app.directories[0]!, "main");
+    const host = await startGateway(git);
+    let failWrite = false;
+    const failingStore: ProjectStore = {
+      ...app.store,
+      addFolder: (...args) => { if (failWrite && phase === "create") throw new Error("storage unavailable"); return app.store.addFolder(...args); },
+      unlink: (...args) => { if (failWrite && phase === "remove") throw new Error("storage unavailable"); return app.store.unlink(...args); },
+    };
+    const registry = createProjectRegistry({ projects: failingStore, gateways: [host.connection] });
+    try {
+      const project = await registry.create({ name: "Repo", folders: [{ root: app.directories[0]!, isDefault: true }] }, GATEWAY);
+      assert.ok(project.ok);
+      const workspaceId = project.value.folders[0]!.workspaceId;
+      failWrite = phase === "create";
+      const created = await registry.createCheckout(workspaceId, "feature");
+      if (phase === "create") {
+        assert.equal(created.ok, false);
+        if (created.ok) assert.fail("metadata write was expected to fail");
+        assert.equal(created.code, "not_recorded");
+        assert.equal(registry.revision(), 1);
+        assert.equal(registry.projects()[0]!.folders.length, 1);
+        assert.equal(app.store.list()[0]!.folders.length, 1);
+        const listed = await registry.listCheckouts(workspaceId);
+        assert.ok(listed.ok);
+        const orphan = listed.value.worktrees.find(entry => entry.branch === "feature");
+        assert.ok(orphan, "host creation is reported truthfully");
+        assert.equal(orphan.workspaceId, undefined);
+      } else {
+        assert.ok(created.ok);
+        assert.equal(registry.revision(), 2);
+        failWrite = true;
+        const removed = await registry.removeCheckout(workspaceId, created.value.path, true);
+        assert.equal(removed.ok, false);
+        if (removed.ok) assert.fail("metadata write was expected to fail");
+        assert.equal(removed.code, "not_recorded");
+        assert.equal(registry.revision(), 2);
+        assert.equal(registry.projects()[0]!.folders.length, 2);
+        assert.equal(app.store.list()[0]!.folders.length, 2);
+        const listed = await registry.listCheckouts(workspaceId);
+        assert.ok(listed.ok);
+        assert.equal(listed.value.worktrees.some(entry => entry.path === created.value.path), false, "host removal is not claimed to have rolled back");
+      }
+    } finally {
+      await host.close();
+      await app.close();
+    }
+  });
+}
