@@ -432,6 +432,18 @@ payload status is therefore a change to one family and its contract checks, not 
 request; the families borrow the capability instances and dispose of nothing themselves, because the composition owner
 still closes terminals, provider logins, MCP, files, HTTP connections, the gateway and the listener in that order.
 
+Four more families sit beside those two, each owning the framing and lifetime rules nothing else shares.
+`src/transport/execution.ts` owns the call stream (one NDJSON output frame per chunk then exactly one result frame, the
+1 MiB pending-frame budget, and the rule that a caller who stops listening does *not* stop its call) and the abort route
+that is the only thing which does. `src/transport/mcp.ts` owns the MCP operation's own lifetime: a response that closes
+before it is written aborts the signal the service was handed, and a host serving no MCP answers `mcp_unavailable`.
+`src/transport/providers.ts` owns the opposite rule for the neighbouring route — a sign-in is the host's work, so no
+socket's close reaches it, while the credential listing beside it completes within its request. `src/transport/control.ts`
+owns the remaining JSON surfaces (workspaces, worktrees, workbench, the file RPC, installations): which absent capability
+answers which named limit, the workbench's caller-disconnect abort with its 409 refusal, and the serialization of a
+capability's own error as its code and message. The entry keeps route recognition, the one credential check, the unknown
+route and the outer safe failure, so an unknown path is a 404 whether or not a caller held the token.
+
 Local and SSH are mutually exclusive modes of that one composition. An SSH gateway seeds its registry from its profile
 under the `remote-<profile>` id the protocol already addresses — a configured id that names anything else is refused
 by both entries with the same wording rather than silently ignored — and serves no MCP, which belongs to the Web host's
