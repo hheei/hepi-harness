@@ -31,7 +31,8 @@ Logs below are relative to `.dev/verify/nonui-filesystem-01/` and
 | `pnpm typecheck` | 0 | `typecheck.log`; workspace and root tooling projects |
 | `pnpm --filter @hepi/client build` | 0 | `client-build.log`; the helper program is in `dist/cli.js` (712,636 bytes, 43 chunks), and the entry file carries `Kael Zhang` and `node-ignore 7.0.5 port` |
 | `HEPI_REQUIRE_SSH_SMOKE=1 pnpm --filter @hepi/client smoke:pack` | 0 | `client-smoke-pack.log`: 6 checks — packed tarball installed outside the checkout, help/version/doctor, local gateway, and a real localhost sshd serving account, read, command and worktree create/remove through `remote-loopback` |
-| `pnpm verify:changed --quiet` | 0 | `verify.json` in the run directory: `changed-typecheck` and `changed-test` (362 tests, 362 pass) and `web-unit` (14 pass) and `check-docs` all exit 0, `sha 5ec7ffe6…`, `dirty: true` for this slice's files |
+| `pnpm verify:changed --quiet` | 0 | `verify.json` in the run directory: `changed-typecheck`, `changed-test` (362 tests, 362 pass), `web-unit` (14 pass) and `check-docs` all exit 0, `sha 5ec7ffe6…`, `dirty: true` for this slice's files |
+| `pnpm verify:changed --quiet --base=5ec7ffe6` | 0 | `verify-changed-committed.log` and the run directory's `verify.json`: the same four steps exit 0 on the committed slice, `sha bcc02f26…`, `dirty: false` |
 
 The build and pack ran on the workstation. `python3` 3.13.13 is the interpreter the local fixture and the helper's own
 syntax check use; the helper's runtime requirement is unchanged (Python 3 on the execution host).
