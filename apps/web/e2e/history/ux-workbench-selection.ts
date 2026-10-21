@@ -264,6 +264,18 @@ try {
     await deep.locator("[data-raw-entry='gone']").waitFor({ timeout: 20000 });
     check(await deep.locator("[data-raw-focus='gone']").count() === 1, "and it is positioned on that entry");
 
+    // Closing it is the reader's own decision: the position stands, and a panel they dismissed does not come back on its
+    // own. Another conversation clears the position, so nothing carries over either.
+    await deep.getByRole("button", { name: "Full history" }).evaluate((node) => (node as HTMLElement).click());
+    await deep.waitForTimeout(600);
+    check(await deep.locator("[data-raw-history]").count() === 0, "closing the panel keeps it closed: the standing position is not a new request");
+    await deep.waitForTimeout(600);
+    check(await deep.locator("[data-raw-history]").count() === 0, "and it stays closed while the position is unchanged");
+    await deep.goto(origin + "/?session=two", { waitUntil: "domcontentloaded" });
+    await deep.locator(COMPOSER).waitFor({ timeout: 30000 });
+    await deep.waitForTimeout(800);
+    check(await deep.locator("[data-raw-history]").count() === 0, "another conversation does not reopen a panel for the previous one's entry");
+
     const unanswered = await doomed.evaluate(() => window.__uxSelectionFixture?.failures ?? []);
     check(unanswered.length === 0, "the fixture answered every route the removal asked: " + JSON.stringify(unanswered.slice(0, 5)));
     const errored = failures.filter(message => message.startsWith("page error:"));

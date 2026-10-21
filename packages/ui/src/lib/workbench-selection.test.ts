@@ -77,13 +77,14 @@ function workbench(overrides: Partial<WorkbenchSelectionDeps> & {
         opened.push(sessionId);
         return overrides.open ? await overrides.open(sessionId) : row(sessionId, "/repo");
       },
-      list: async () => ({ sessions: catalogue }),
     },
     validateCwd: overrides.validate ?? (async (path) => ({ cwd: path, projectKey: path, projectRoot: path, displayRoot: path })),
     navigate: (next) => { navigations.push(next); search = next; },
     query: () => new URLSearchParams(search),
     ...(overrides.onLanded === undefined ? {} : { onLanded: overrides.onLanded }),
   });
+  // The catalogue is what the sidebar delivered, which is the only source a restore reads.
+  if (overrides.catalogue !== undefined) selection.setCatalogue(overrides.catalogue);
   return { selection, drafts, tab, local, navigations, opened, currentSearch: () => search };
 }
 
@@ -470,4 +471,56 @@ test("re-picking the conversation on screen keeps its attachment and still appli
   w.selection.selectConversation(row("conv", "/repo"), { entryId: "e9", rawHistory: true });
   assert.equal(state(w.selection).attachment, attachment, "still no remount");
   assert.deepEqual(state(w.selection).rawHistoryFocus, { sessionId: "conv", entryId: "e9" }, "but the target is applied");
+});
+
+test("a workspace chosen while the first frame is still validating leaves no pending restore", async () => {
+  // The reader picks a folder before the URL's own cwd finished validating. The validation is retired with the read it
+  // belonged to, so the page states the workspace they chose rather than a spinner for a request nobody is waiting on.
+  let releaseValidate: ((answer: { cwd: string; projectKey: string }) => void) | null = null;
+  const w = workbench({
+    search: "?cwd=%2Fslow",
+    validate: async () => await new Promise((resolve) => { releaseValidate = resolve; }),
+  });
+  w.selection.start();
+  assert.equal(state(w.selection).initialCwd.status, "validating");
+  w.selection.selectWorkspace({ cwd: "/picked", projectKey: "/picked", projectRoot: "/picked" });
+  assert.equal(state(w.selection).initialCwd.status, "ready", "the retired validation states nothing pending");
+  assert.equal(state(w.selection).restoring, false);
+  assert.equal(state(w.selection).composer?.cwd, "/picked");
+  releaseValidate!({ cwd: "/slow", projectKey: "/slow" });
+  await settle();
+  assert.equal(state(w.selection).composer?.cwd, "/picked", "and its late answer does not take the choice back");
+  assert.equal(state(w.selection).initialCwd.status, "ready");
+});
+
+test("a remembered conversation comes only from the catalogue the sidebar delivered", () => {
+  // N5's second review finding: a restore must not read a listing of its own — and a catalogue that has not arrived yet
+  // is not evidence the conversation is gone, so the memory stands and the reader keeps the composer they were given.
+  const w = workbench({ search: "" });
+  w.selection.start();
+  w.selection.selectConversation(row("b-conv", "/b"));
+  // A workspace whose memory names a conversation, but whose catalogue this page has not received.
+  const unseen = workbench({ search: "" });
+  unseen.selection.start();
+  unseen.local.values.set("pi-web:last-open-by-workspace", JSON.stringify({ "/b": "b-conv" }));
+  unseen.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  assert.equal(state(unseen.selection).composer?.cwd, "/b", "the choice is a working composer, not a pending restore");
+  assert.equal(state(unseen.selection).conversation, null);
+  assert.equal(unseen.opened.length, 0, "and nothing is read to guess at it");
+  assert.equal(unseen.local.values.get("pi-web:last-open-by-workspace"), JSON.stringify({ "/b": "b-conv" }),
+    "the memory is not cleared on a catalogue that has not arrived");
+
+  // Once the listing arrives and still names it, the row is restored.
+  unseen.selection.setCatalogue([row("b-conv", "/b")]);
+  unseen.selection.selectWorkspace({ cwd: "/a", projectKey: "/a", projectRoot: "/a" });
+  unseen.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  assert.equal(state(unseen.selection).conversation?.id, "b-conv", "a delivered catalogue restores the remembered conversation");
+
+  // A delivered listing that no longer carries the row clears the memory instead of retrying it forever.
+  const gone = workbench({ search: "", catalogue: [row("other", "/b")] });
+  gone.selection.start();
+  gone.local.values.set("pi-web:last-open-by-workspace", JSON.stringify({ "/b": "b-conv" }));
+  gone.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  assert.equal(state(gone.selection).composer?.cwd, "/b");
+  assert.equal(gone.local.values.get("pi-web:last-open-by-workspace") ?? null, null, "a listing without the row is the answer that forgets it");
 });

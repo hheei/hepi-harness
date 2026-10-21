@@ -137,7 +137,7 @@ const noop = () => undefined;
 /** The one selection the sidebar reads: this fixture opens no conversation and remembers nothing. */
 const selection = createWorkbenchSelection({
   drafts: connection.drafts,
-  conversation: { open: async () => { throw new Error("the fixture opens no conversation"); }, list: async () => ({ sessions: [] }) },
+  conversation: { open: async () => { throw new Error("the fixture opens no conversation"); } },
   validateCwd: async (path) => ({ cwd: path }),
   navigate: () => undefined,
   query: () => new URLSearchParams(),

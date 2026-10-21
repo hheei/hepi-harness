@@ -109,7 +109,6 @@ export function AppShell() {
     drafts: connection.drafts,
     conversation: {
       open: async (sessionId) => await connection.api.open(sessionId) as unknown as SessionInfo,
-      list: async () => ({ sessions: (await connection.api.list()).sessions as SessionInfo[] }),
     },
     validateCwd: async (path) => {
       const answer = await connection.client.request("/api/cwd/validate", {
@@ -537,7 +536,14 @@ export function AppShell() {
 
   // A navigation that only the raw-history surface can show opens it. The position is the selection's — it states which
   // entry the request named — while the panel being on screen is this shell's own presentation.
+  //
+  // Opening follows a *new* request, not the standing one: closing the panel is the reader's own decision and the
+  // position stays where the request put it, so an effect keyed on the value would reopen a panel they just dismissed.
+  // Another conversation clears the position entirely, which is what keeps it from carrying over.
+  const rawHistoryRequestRef = useRef<typeof rawHistoryFocus>(null);
   useEffect(() => {
+    if (rawHistoryFocus === rawHistoryRequestRef.current) return;
+    rawHistoryRequestRef.current = rawHistoryFocus;
     if (rawHistoryFocus !== null) setActiveTopPanel("history");
   }, [rawHistoryFocus]);
 

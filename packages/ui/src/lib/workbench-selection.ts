@@ -165,10 +165,14 @@ export interface StartComposerOptions {
 export interface WorkbenchSelectionDeps {
   /** This connection's drafts. Every park, carry and promote below is an operation on them. */
   readonly drafts: DraftStore;
-  /** The connection's conversation read: by id, and the catalogue a workspace restore prefers over a fresh one. */
+  /**
+   * The connection's conversation read, by id.
+   *
+   * There is no listing here: a workspace restore resolves its remembered row from the catalogue the sidebar delivers
+   * (`setCatalogue`), so a restore cannot race that listing with a second one of its own.
+   */
   readonly conversation: {
     open(sessionId: string): Promise<SessionInfo>;
-    list(): Promise<{ sessions: SessionInfo[] }>;
   };
   /** Validate a cwd the URL named, the way the sidebar's folder picker does. */
   readonly validateCwd: (path: string) => Promise<{ cwd: string; projectKey?: string | null; projectRoot?: string | null; displayRoot?: string | null }>;
@@ -311,6 +315,8 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
   let state = emptyState();
   let generation = 0;
   let catalogue: readonly SessionInfo[] = [];
+  /** Whether any listing has arrived: an empty one is an answer, an absent one is not. */
+  let catalogueDelivered = false;
   const listeners = new Set<() => void>();
 
   const emit = (next: Partial<WorkbenchSelectionState>) => {
@@ -464,26 +470,29 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
     deps.onLanded?.("composer", { keepSidebarOpen: options.keepSidebarOpen === true });
   };
 
-  /** The conversation the workspace memory has for a key, read from the catalogue or from one list read. */
-  const rememberedConversation = async (projectKey: string): Promise<SessionInfo | null> => {
+  /**
+   * The conversation the workspace memory has for a key, from the catalogue the sidebar already listed.
+   *
+   * It deliberately does not read again: a second list would race the sidebar's own and could answer with rows for a
+   * workspace the reader is no longer in. A catalogue that has not been delivered yet is not an answer either — the
+   * destination keeps the composer this choice already gave it, and the memory is left standing for the next visit
+   * rather than being cleared on ignorance.
+   */
+  const rememberedRow = (projectKey: string): SessionInfo | null => {
     const sessionId = getLastOpenSession(projectKey);
     if (sessionId === null) return null;
-    const fromCatalogue = catalogue.find((session) => session.id === sessionId);
-    if (fromCatalogue) return workspaceKeyOf(fromCatalogue) === projectKey ? fromCatalogue : null;
-    try {
-      const listed = await deps.conversation.list();
-      catalogue = listed.sessions;
-      const found = listed.sessions.find((session) => session.id === sessionId);
-      if (found === undefined || workspaceKeyOf(found) !== projectKey) {
-        // The list answered and the remembered session is not in this workspace: it is gone from the memory, not retried
-        // forever. A refused read keeps the memory for the next visit.
-        clearLastOpen(projectKey);
-        return null;
-      }
-      return found;
-    } catch {
+    const found = catalogue.find((session) => session.id === sessionId);
+    if (found === undefined) {
+      // A listing that answered without the remembered row means it is gone from this workspace: the memory is not
+      // retried forever. A listing that has not arrived says nothing about it.
+      if (catalogueDelivered) clearLastOpen(projectKey);
       return null;
     }
+    if (workspaceKeyOf(found) !== projectKey) {
+      clearLastOpen(projectKey);
+      return null;
+    }
+    return found;
   };
 
   const adoptWorkspaceIdentity = (target: WorkspaceTarget) => {
@@ -611,9 +620,12 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
     const projectKey = target.projectKey ?? target.projectRoot ?? state.projectKey ?? target.cwd;
     const sameProject = state.projectKey !== null && state.projectKey === projectKey;
     // A choice is newer news than any read still in flight: the open the reader asked for a moment ago must not land on
-    // top of the workspace they just picked. Only the reads are retired — what is on screen keeps its attachment.
+    // top of the workspace they just picked, and a first-frame validation it replaced must not leave the page stating a
+    // pending restore nothing is going to answer. Only the reads are retired — what is on screen keeps its attachment.
     generation += 1;
-    if (state.restoring || state.openFailure !== null) emit({ restoring: false, openRetrying: false, openFailure: null });
+    if (state.restoring || state.openFailure !== null || state.initialCwd.status === "validating") {
+      emit({ restoring: false, openRetrying: false, openFailure: null, initialCwd: { requested: null, status: "ready", error: null } });
+    }
     // The workspace in effect moves either way; what it costs depends on what was in it.
     if (state.conversation !== null) {
       const conversationKey = workspaceKeyOf(state.conversation);
@@ -643,15 +655,15 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
       adoptComposer(target);
       return;
     }
-    // Another project's workspace: the composer of that folder first, and — when the workspace's own memory names a
-    // conversation — that conversation instead, which is what an explicit return to a workspace restores. A bare route
-    // invents nothing: this is the reader's choice, and only a choice restores what the workspace was last showing.
+    // Another project's workspace: the composer of that folder, and — when the workspace's own memory names a
+    // conversation the catalogue still lists — that conversation instead, which is what an explicit return to a
+    // workspace restores. The composer is the answer either way, so a catalogue that names nothing leaves the reader in
+    // a working composer rather than in a pending restore. A bare route invents nothing: only a choice restores.
     adoptComposer(target);
-    const token = generation;
-    void rememberedConversation(projectKey).then((remembered) => {
-      if (remembered === null || token !== generation || state.projectKey !== projectKey) return;
-      adoptConversation(remembered, {}, { projectKey });
-    });
+    const remembered = rememberedRow(projectKey);
+    // `adoptComposer` is synchronous and has just accepted this workspace, so the row is applied to the choice that is
+    // on screen — not to one the reader has replaced in the meantime.
+    if (remembered !== null && state.projectKey === projectKey) adoptConversation(remembered, {}, { projectKey });
   };
 
   const acceptPromotion = (session: SessionInfo, sourceDraftKey?: string | null) => {
@@ -694,6 +706,7 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
     start,
     setCatalogue(sessions: readonly SessionInfo[]): void {
       catalogue = sessions;
+      catalogueDelivered = true;
     },
     setWorkspaceContext(context: NewSessionContext | null): void {
       // The move is done once the listing holds the folder it named: from then on it is the listing's own word.
