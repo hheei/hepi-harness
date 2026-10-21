@@ -1,8 +1,8 @@
 # 對話 I/O 與 view attachment
 
 Type: implementation
-Status: planned
-Blocked by: [工作台選擇與草稿](01-workbench-selection.md), [Accepted conversation readout](02-conversation-readout.md)
+Status: in-progress
+Blocked by: [Accepted conversation readout](02-conversation-readout.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R3、R1 的 promotion、R2
 Acceptance: [行為矩陣](../acceptance.md) — C1、C3–C5、N8、N10
@@ -16,6 +16,8 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C3–C5、N8、N10
 導航：先在工作區以 `~/.local/bin/graphify query "completion-delivery.ts" --budget 1000` 定位並確認 source。圖位於主工作區 `graphify-out/graph.json`；其他 worktree 依倉庫規則指向主圖。新發現問題另作窄查詢，子工作不並發 rebuild graph。
 
 ## 工作
+
+01 的 lifecycle draft retention、source-identity promotion 與 attachment 契約已經獨立複審確認，可從整合 revision `6d4a0342` 開始本票。01 尚餘 workspace restore／park 與 cross-project raw panel 修正；本票保留 selection API，不改 selection owner 或 project cleanup/raw-panel effects。最終整合／驗收仍等待 01 完成；AppShell 的 lifetime 與 presentation sections 由 coordinator 在 worktrees 間合併。
 
 1. 將對話 acquisition、read/reload、submit/recover、訂閱及 dispose 集中到 UI 對話工作階段介面，注入既有 ConversationApi／connection。純 fold 繼續只決策。
 2. 定義 connection+conversation 與 fresh composer 的 identity／promotion；前景 view attach/detach 不決定 durable 執行生死。
