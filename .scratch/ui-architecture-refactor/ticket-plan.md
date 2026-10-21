@@ -36,7 +36,7 @@ flowchart LR
   E --> F[模型工作流]
   C --> F
   C --> H[Definitions]
-  I[訊息 views] --> K
+  I[訊息 views]
   C --> K[Shell 組裝]
   F --> K
   H --> K

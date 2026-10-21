@@ -54,6 +54,10 @@ agent-225 只讀準備對話 I/O 的接線與 native 驗收前提，不修改依
 
 ### Native 驗收準備
 
+### 並行調整
+
+使用者提出串行等待問題後，確認 09 的現有 MessageView props 可保持不變，無需先完成 03／04。09 的啟動依賴已移除；04 與 12 仍驗證 transcript／streaming／展開位置整合。worker agent-232 在 `.dev/worktrees/ui-message-views`（`impl/ui-message-views`，base `8182fafc`）獨立實作，僅擁有 MessageView／message leaves／直接 tests／09 ticket／developer guide；不修改 01、03 的 Shell、selection、draft、runtime。06／08 的 scout 建議仍須確認 target／cache 接線邊界，尚未派工或宣稱完成。
+
 
 在 `daa355e` 的工作站環境，`command -v cargo rustc Xvfb xdpyinfo xdotool xwd ffmpeg dbus-daemon gnome-keyring-daemon gdbus` 及 `ls -l .dev/cargo-target/debug/hepi-app` 均 exit 0；raw log：`.dev/verify/ui-architecture-refactor/environment.log`。共用 debug binary 存在，但未將它當作本次 source 的建置證據。最終整合後需依既有 artifact build script 重新嵌入 App UI 並標記修訂，再跑普通 native journey。
 
