@@ -5574,10 +5574,19 @@ offers one Retry, which is one more read of `/api/models` and no part of a mutat
 
 | Check | Command | Revision | Exit | Result |
 | --- | --- | --- | --- | --- |
-| Selector over the changed packages and their dependents | `pnpm verify:changed --base=b3ab7871` | `a5687489` (clean tree) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/ui` **465 pass / 0 fail**, `@hepi/app` green), `web-unit` 0 (14 pass), `check-docs` 0 (465 files, 0 broken links) — `.dev/verify/2026-10-21T19-06-11-174-verify-changed/verify.json` |
+| Selector over the changed packages and their dependents | `pnpm verify:changed --base=b3ab7871` | `a5687489` (clean tree) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/ui` **464 pass / 0 fail**, `@hepi/app` green), `web-unit` 0 (14 pass), `check-docs` 0 (465 files, 0 broken links) — `.dev/verify/2026-10-21T19-06-11-174-verify-changed/verify.json` |
 | The settings panels' own browser seam, with the workflow's observations | `pnpm --filter @hepi/web test:panel-ingress` | `a5687489` (clean tree) | 0 | **77 checks, all ok** — `.dev/verify/ticket06/panel-ingress-committed.log`. A stored credential re-read the mounted reader's catalog with Settings still open; a refused key write claimed no change; an applied `models.json` save re-read it; a save the runtime could not apply added no catalog read and re-read the file instead; an accepted `enabledModels` write re-read it; a removal re-read it |
 | The provider acceptance journey, with Settings kept open | `pnpm --filter @hepi/web test:provider-acceptance` | `a5687489` (clean tree) | 0 | **70 checks, 0 failures** — `.dev/verify/ticket06/provider-acceptance-committed.log`. A stored key re-read the catalog behind the still-open dialog (1 → 2 reads of `/api/models`); no conversation-settings write followed the change; the composer offered the newly authenticated model; the removal re-read it again (2 → 3); closing an unedited Settings made no read at all |
 | The rule is load-bearing, not incidental | `test:panel-ingress`, mutated tree | `a5687489` + mutation (`dirty: true`) | 1 | Removing the reader loop in `invalidateModelCatalog()` fails `test:panel-ingress` with `the fixture threw: page.waitForFunction: Timeout 30000ms exceeded`. Calling the rule on a saved-but-not-applied save fails the same driver with `FAIL a save that was not applied claimed an applied catalog change (4 → 5)`. Both mutations were reverted before the runs recorded above |
+
+Correction at `8a64b0e2`: each catalog reader now owns a sequence claim. Superseded success and failure responses
+cannot replace current state, and superseded retry loops stop before another attempt. The lifecycle regression releases
+old responses last and checks the retry schedule. Independent correction review found no remaining material finding;
+its focused lifecycle run passed 40/40. The historical table above describes the earlier revision.
+
+Merged source `07943df4`: `pnpm verify:changed --base=62c2c588` exit 0 (UI 465/465, App 29/29,
+Web unit 14/14, selected typechecks). Report and raw step logs:
+`.dev/verify/2026-10-21T19-21-04-372-verify-changed/verify.json`. Graph update also exited 0.
 
 **Not claimed.** No deployment was restarted or inspected, no App-host journey ran, and nothing was built or run on
 `remote-host`. The unit cases in `packages/ui/src/lib/models-cache.test.ts` and
