@@ -108,6 +108,13 @@ export interface WorkbenchSelectionState {
   /** The entry the raw-history surface positions on, when the transcript cannot carry it. */
   readonly rawHistoryFocus: { sessionId: string; entryId: string } | null;
   /**
+   * How many times the accepted project identity changed, which is what a presentation owned by the shell follows.
+   *
+   * It is not the same fact as `projectKey`: resolving which project the folder in use belongs to states the key without
+   * changing it, and a transition that fired there would close the reader's file tabs for a hydration.
+   */
+  readonly projectTransition: number;
+  /**
    * The project and worktrees the sidebar lists for the current workspace, and the projects a picker may offer.
    *
    * It is the sidebar's reading of the workspace registry, published here because the bar above a fresh composer shows
@@ -216,6 +223,7 @@ function emptyState(): WorkbenchSelectionState {
     rawHistoryFocus: null,
     workspace: null,
     move: null,
+    projectTransition: 0,
     attachment: 0,
   };
 }
@@ -259,8 +267,13 @@ export interface WorkbenchSelection {
    * memories and the same-project checks are stated in.
    */
   acceptWorkspaceIdentity(target: WorkspaceTarget): void;
-  /** A fresh composer's first submission was confirmed: the conversation it became is the selection now. */
-  acceptPromotion(session: SessionInfo): void;
+  /**
+   * A fresh composer's first submission was confirmed: the conversation it became is the selection now.
+   *
+   * `sourceDraftKey` is the composer that submitted. A confirmation for a composer the reader has already left is not
+   * this selection's news: accepting it would replace whatever they are writing now with a conversation they left.
+   */
+  acceptPromotion(session: SessionInfo, sourceDraftKey?: string | null): void;
   /** A conversation was forked: the copy is what the reader is shown. */
   conversationForked(session: SessionInfo): void;
   /** A conversation is gone. Only the one on screen is left; everything else keeps its place and its draft. */
@@ -303,6 +316,18 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
   const emit = (next: Partial<WorkbenchSelectionState>) => {
     state = { ...state, ...next };
     for (const listener of listeners) listener();
+  };
+
+  /**
+   * A target the reader chose was accepted.
+   *
+   * Landing in another project is a transition the shell's presentation follows — the file tabs are keyed by absolute
+   * path, so the previous project's tabs cannot stay under a folder they do not belong to. Recording the transition here,
+   * from what was actually accepted, is what keeps that decision off the callers that only report an identity.
+   */
+  const accept = (next: Partial<WorkbenchSelectionState>, projectKey: string | null) => {
+    const changed = projectKey !== null && state.projectKey !== null && projectKey !== state.projectKey;
+    emit({ ...next, projectTransition: state.projectTransition + (changed ? 1 : 0) });
   };
 
   const navigateTo = (search: string) => {
@@ -357,7 +382,11 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
     generation += 1;
     const projectKey = extra.projectKey ?? workspaceKeyOf(session);
     const displayCwd = extra.displayCwd ?? session.projectDisplayRoot ?? null;
-    emit({
+    // Re-picking the conversation already on screen is not a new attachment: replacing the surface would remount the
+    // transcript and re-run its read for a pick the reader already made. The target the pick names is still applied — an
+    // entry, a block, a raw-history position — because that is what the pick asked for.
+    const sameConversation = state.conversation?.id === session.id;
+    accept({
       conversation: session,
       composer: null,
       cwd: session.cwd,
@@ -372,10 +401,10 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
       rawHistoryFocus: options.rawHistory === true && options.entryId !== undefined
         ? { sessionId: session.id, entryId: options.entryId }
         : null,
-      attachment: state.attachment + 1,
-    });
+      attachment: sameConversation ? state.attachment : state.attachment + 1,
+    }, projectKey);
     rememberConversation(session, projectKey);
-    navigateToConversation(session.id);
+    if (!sameConversation) navigateToConversation(session.id);
     deps.onLanded?.("conversation", { keepSidebarOpen: options.keepSidebarOpen === true });
   };
 
@@ -407,7 +436,7 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
     } else {
       deps.drafts.rekeyDraft(parkedComposerDraftKey(target.cwd), draftKey);
     }
-    emit({
+    accept({
       conversation: null,
       composer: { cwd: target.cwd, draftKey, displayCwd, projectKey },
       cwd: target.cwd,
@@ -429,7 +458,7 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
           ...(target.createdWorktree === undefined ? {} : { worktree: target.createdWorktree }),
         },
       attachment: state.attachment + 1,
-    });
+    }, projectKey);
     rememberComposer({ cwd: target.cwd, draftKey, displayCwd, projectKey });
     navigateToComposer(target.cwd);
     deps.onLanded?.("composer", { keepSidebarOpen: options.keepSidebarOpen === true });
@@ -581,6 +610,10 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
   const selectWorkspace = (target: WorkspaceTarget) => {
     const projectKey = target.projectKey ?? target.projectRoot ?? state.projectKey ?? target.cwd;
     const sameProject = state.projectKey !== null && state.projectKey === projectKey;
+    // A choice is newer news than any read still in flight: the open the reader asked for a moment ago must not land on
+    // top of the workspace they just picked. Only the reads are retired — what is on screen keeps its attachment.
+    generation += 1;
+    if (state.restoring || state.openFailure !== null) emit({ restoring: false, openRetrying: false, openFailure: null });
     // The workspace in effect moves either way; what it costs depends on what was in it.
     if (state.conversation !== null) {
       const conversationKey = workspaceKeyOf(state.conversation);
@@ -610,10 +643,22 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
       adoptComposer(target);
       return;
     }
+    // Another project's workspace: the composer of that folder first, and — when the workspace's own memory names a
+    // conversation — that conversation instead, which is what an explicit return to a workspace restores. A bare route
+    // invents nothing: this is the reader's choice, and only a choice restores what the workspace was last showing.
     adoptComposer(target);
+    const token = generation;
+    void rememberedConversation(projectKey).then((remembered) => {
+      if (remembered === null || token !== generation || state.projectKey !== projectKey) return;
+      adoptConversation(remembered, {}, { projectKey });
+    });
   };
 
-  const acceptPromotion = (session: SessionInfo) => {
+  const acceptPromotion = (session: SessionInfo, sourceDraftKey?: string | null) => {
+    // A confirmation names the composer that submitted. If the reader has since left it — another composer, a
+    // conversation, another workspace — this answer is about a target nobody is looking at, and accepting it would
+    // replace what they are writing now with a conversation they left. The draft the conversation owns stays untouched.
+    if (sourceDraftKey !== undefined && sourceDraftKey !== null && state.composer?.draftKey !== sourceDraftKey) return;
     // The fresh composer's draft was rekeyed to the conversation's own id at the confirmation point; what is left here
     // is to state that the composer became a conversation, without touching the draft that now belongs to it.
     adoptConversation(session, {}, { projectKey: state.projectKey });

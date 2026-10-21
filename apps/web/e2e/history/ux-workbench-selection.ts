@@ -216,6 +216,54 @@ try {
     await doomed.locator(COMPOSER).waitFor({ timeout: 30000 });
     check(await doomed.locator(COMPOSER).inputValue() === "", "and the composer it leaves is empty: the conversation's text was not carried into it");
 
+    // --- 8. A connection replacement is not a statement that the reader abandoned their text. ----------------------
+    // The reviewer's P1: the composer's own unmount cleanup deleted its draft, so switching profiles lost the unsent text
+    // and images of a fresh composer. Disposal is the selection's (it parks the draft), never a lifecycle cleanup's.
+    const switched = await openAt(context, origin + "/?cwd=%2Fsrv%2Ftwo");
+    await switched.locator(COMPOSER).waitFor({ timeout: 30000 });
+    await switched.locator(COMPOSER).fill("unsent across the profile switch");
+    await switched.waitForTimeout(500);
+    const switchedKey = await switched.evaluate((entry) => {
+      const raw = window.sessionStorage.getItem(entry);
+      return raw === null ? null : (JSON.parse(raw) as { draftKey?: string }).draftKey ?? null;
+    }, TAB_KEY);
+    check(switchedKey !== null, "the composer has its own key before the switch: " + switchedKey);
+    const storedBefore = await switched.evaluate(() => Object.entries(window.sessionStorage)
+      .filter(([name]) => name.startsWith("pi-web:composer-draft:value:"))
+      .map(([name, value]) => name + "=" + String(value)));
+    check(storedBefore.some((entry) => entry.includes("unsent across the profile switch")), "its text is stored before the switch");
+    await switched.evaluate(() => window.__uxSelectionFixture?.replaceConnection());
+    await switched.locator(COMPOSER).waitFor({ timeout: 30000 });
+    await switched.waitForTimeout(800);
+    const storedAfter = await switched.evaluate(() => Object.entries(window.sessionStorage)
+      .filter(([name]) => name.startsWith("pi-web:composer-draft:value:"))
+      .map(([name, value]) => name + "=" + String(value)));
+    check(storedAfter.some((entry) => entry.includes("unsent across the profile switch")),
+      "a connection replacement leaves the previous connection's unsent text stored: " + JSON.stringify(storedAfter.map((entry) => entry.slice(0, 90))));
+
+    // --- 9. A navigation only the raw-history surface can show opens it. -------------------------------------------
+    // The reviewer's P2: the shell set the raw position but never opened the panel, so the offer landed on nothing.
+    const deep = await openAt(context, origin + "/?session=one");
+    await deep.locator(COMPOSER).waitFor({ timeout: 30000 });
+    await deep.locator(".sidebar-search-toggle").first().click();
+    await deep.locator("#session-search-input").fill("carried away");
+    // The search results replace the tree while the query stands: one hit, in the conversation whose window does not
+    // carry the entry.
+    const hit = deep.locator("#session-sidebar button[aria-current]").filter({ hasText: "the one" }).first();
+    await hit.waitFor({ timeout: 20000 });
+    await hit.click();
+    // The transcript's window does not carry the entry, so the surface states the named outcome and offers the raw read.
+    const rawOffer = deep.getByRole("button", { name: "Open the raw history instead" });
+    await rawOffer.waitFor({ timeout: 20000 });
+    // The scene ships no stylesheet, so the phone drawer's backdrop — hidden by CSS in the product — sits over the page.
+    // The click is the button's own, dispatched on the element the shell rendered.
+    await rawOffer.evaluate((node) => (node as HTMLElement).click());
+    const panel = deep.locator("[data-raw-history]");
+    await panel.waitFor({ timeout: 20000 });
+    check(await panel.getAttribute("data-raw-history") === "one", "the raw-history panel is on screen for the entry it was asked to show");
+    await deep.locator("[data-raw-entry='gone']").waitFor({ timeout: 20000 });
+    check(await deep.locator("[data-raw-focus='gone']").count() === 1, "and it is positioned on that entry");
+
     const unanswered = await doomed.evaluate(() => window.__uxSelectionFixture?.failures ?? []);
     check(unanswered.length === 0, "the fixture answered every route the removal asked: " + JSON.stringify(unanswered.slice(0, 5)));
     const errored = failures.filter(message => message.startsWith("page error:"));
@@ -227,7 +275,7 @@ try {
   }
   exitCode = failures.length === 0 ? 0 : 1;
 } catch (error) {
-  check(false, "the driver threw: " + (error instanceof Error ? error.message : String(error)).split("\n")[0]);
+  check(false, "the driver threw: " + (error instanceof Error ? error.message : String(error)).split("\n").slice(0, 4).join(" | "));
 } finally {
   // The fixture's own server is this process's last handle: left open, a passing run would look like a hang to whatever
   // invoked it, and its exit code would be the timeout's rather than the checks'.

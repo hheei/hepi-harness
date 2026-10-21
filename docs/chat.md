@@ -536,16 +536,21 @@ The rules with user-visible consequences all live here:
 - **Identity hydration is not a switch.** When the sidebar resolves the project a row's cwd belongs to, the conversation
   stays open, no transcript remounts and no URL is rewritten. A move to another **checkout of the same project** keeps the
   conversation too; a move to another **project** replaces the workspace and starts a fresh composer there.
-- **A read the reader already left changes nothing.** An open that answers after the reader picked somewhere else
-  selects nothing, rewrites no URL and states no failure — the fence is the target the reader is on, not the request.
+- **A read the reader already left changes nothing.** An open that answers after the reader picked somewhere else —
+  including another checkout of the same project — selects nothing, rewrites no URL and states no failure. The fence is
+  the target the reader is on, not the request, and retiring a read is not a new attachment.
+- **A returning reader gets the workspace they left.** An explicit choice of another project restores the conversation
+  that workspace's memory names, resolved from the catalogue the sidebar already holds; a bare route invents nothing.
 - **Four draft operations stay four different things.** A carried composer takes its live draft to the new folder and
   leaves that folder's parked draft parked rather than merging into what the user is writing; New in a folder parks what
   was on screen and starts a separate identity; a promotion adopts the conversation the composer became and touches no
-  draft; deleting a conversation leaves only when it is the one on screen and keeps every draft.
+  draft — and only when it names the composer still on screen, so a submission the reader has left behind cannot replace
+  what they are writing now; deleting a conversation leaves only when it is the one on screen and keeps every draft.
 - **A failed open states its kind.** `missing` offers the way back, `unreachable` and `refused` offer a Retry that repeats
   the read and nothing else, and staying put is a complete answer: the failure belongs to the request, not the selection.
-- **A navigation target is applied once.** A plain re-selection resets no reading position; an explicit entry is carried
-  to the window, and an entry the window may not hold gives the raw-history surface its own position instead.
+- **A navigation target is applied once.** A plain re-selection resets no reading position and re-picks the conversation
+  already open without remounting it; an explicit entry is carried to the window, and an entry the window may not hold
+  gives the raw-history surface its own position and opens it.
 
 Three things stay outside it deliberately: a view's own imperatives (focus, an open menu, a measured panel) belong to the
 surface that shows them; the catalogue's listing and polling belong to the sidebar, which hands its rows to the store

@@ -535,6 +535,12 @@ export function AppShell() {
     if (rightPanelFullWidth) setActiveTopPanel(null);
   }, [rightPanelFullWidth]);
 
+  // A navigation that only the raw-history surface can show opens it. The position is the selection's — it states which
+  // entry the request named — while the panel being on screen is this shell's own presentation.
+  useEffect(() => {
+    if (rawHistoryFocus !== null) setActiveTopPanel("history");
+  }, [rawHistoryFocus]);
+
   const toggleTopPanel = useCallback((
     panel: "agents" | "delegate" | "system" | "tools" | "session" | "history",
     keepMobileToolbarOpen = false,
@@ -756,31 +762,31 @@ export function AppShell() {
    * The selection decides what it costs: a conversation of the same project stays open while the folder around it
    * moves; anything else is replaced by the destination's own restore.
    */
-  const handleSelectWorkspace = useCallback((target: WorkspaceTarget) => {
-    const previousProject = selection.getState().projectKey;
-    selection.selectWorkspace(target);
-    const nextProject = selection.getState().projectKey;
-    if (previousProject !== null && nextProject !== null && previousProject !== nextProject) {
-      // File tabs are keyed by absolute path, so tabs opened in the previous project must not linger. Same-project
-      // worktree switches keep them.
-      setFileTabs([]);
-      if (!activeFileTabId || activeFileTabId.startsWith("file:")) {
-        setActiveFileTabId(null);
-        setRightPanelOpen(false);
-      }
-      setActiveTopPanel(null);
-    }
-  }, [activeFileTabId, selection]);
-
   /**
-   * Identity, not a choice: the sidebar resolved which project the folder in effect belongs to.
+   * File tabs follow the accepted project, not the callers that move it.
    *
-   * It never moves the selection, never remounts the chat and never rewrites the URL; it only records the key the
-   * memories and the same-project checks are stated in.
+   * The sidebar, the bar and a keyboard shortcut all send the selection an intent, so a cleanup written beside one of
+   * them only covers that caller. It is stated here instead, from what the selection accepted: tabs are keyed by absolute
+   * path, so the previous project's must not linger under a folder they do not belong to, while a same-project worktree
+   * move keeps them and a resolved identity — the same project, learned rather than chosen — is not a transition at all.
    */
-  const handleWorkspaceIdentity = useCallback((target: WorkspaceTarget) => {
-    selection.acceptWorkspaceIdentity(target);
-  }, [selection]);
+  const projectTransition = selectionState.projectTransition;
+  const projectTransitionSeenRef = useRef(projectTransition);
+  const activeFileTabIdRef = useRef(activeFileTabId);
+  activeFileTabIdRef.current = activeFileTabId;
+  useEffect(() => {
+    // The page's own restore of its saved tabs is not a project change; only a later acceptance is.
+    if (projectTransition === projectTransitionSeenRef.current) return;
+    projectTransitionSeenRef.current = projectTransition;
+    setFileTabs([]);
+    // A terminal tab belongs to the page, not to a project, and stays; the file tab it replaced cannot.
+    const open = activeFileTabIdRef.current;
+    if (open === null || open.startsWith("file:")) {
+      setActiveFileTabId(null);
+      setRightPanelOpen(false);
+    }
+    setActiveTopPanel(null);
+  }, [projectTransition]);
 
   const handleNewSession = useCallback((target: WorkspaceTarget, options?: StartComposerOptions) => {
     if (options?.carry === true) setCarriedNewSessionChoices(newSessionChoicesRef.current);
@@ -855,9 +861,11 @@ export function AppShell() {
 
   // Called by ChatWindow when a new session gets its real id from pi: the fresh composer became this conversation, and
   // the promotion is the one place that handover happens.
-  const handleSessionCreated = useCallback((session: SessionInfo) => {
+  const handleSessionCreated = useCallback((session: SessionInfo, sourceDraftKey: string) => {
     setRefreshKey((k) => k + 1);
-    selection.acceptPromotion(session);
+    // The confirmation names the composer that submitted: a promotion the reader has already left by picking somewhere
+    // else must not replace what they are writing now.
+    selection.acceptPromotion(session, sourceDraftKey);
     hydrateSelectedSession(session.id);
   }, [hydrateSelectedSession, selection]);
 

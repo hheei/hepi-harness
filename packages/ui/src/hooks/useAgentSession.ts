@@ -2218,14 +2218,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
     return () => {
       sessionHookMountedRef.current = false;
-      const abandonedDraftKey = isNew ? newSessionDraftKey : null;
-      if (abandonedDraftKey) {
-        queueMicrotask(() => {
-          if (!sessionHookMountedRef.current && !newSessionPromotedRef.current) {
-            drafts.clearDraft(abandonedDraftKey);
-          }
-        });
-      }
+      // The composer's unsent text is not this cleanup's to delete. Leaving a fresh composer is a move the selection
+      // performs — it parks the draft under the folder's own key — and a connection replacement or an unmount is not a
+      // statement that the reader abandoned what they typed. Deleting here made both lose the text.
       // Persist the settled view of the outgoing session so switching back can
       // restore it instantly. Only when the cached window still covers every
       // entry the UI has loaded (paged-in history included).

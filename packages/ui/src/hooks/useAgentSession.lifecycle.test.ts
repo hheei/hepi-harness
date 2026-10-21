@@ -1219,3 +1219,24 @@ test("a page read that fails reports its failure instead of exhausting the navig
   m.unmount();
 });
 
+
+test("leaving a fresh composer unmounts it without deleting the text the reader typed", async (t) => {
+  // The review finding: a connection replacement or an unmount ran a cleanup that cleared the composer's own draft, so
+  // the unsent text and images of a fresh composer were gone from the store before anything could park or restore them.
+  // Disposal is the selection's — it parks the draft under the folder's own key — never a lifecycle cleanup's.
+  const fresh = harness(t, url => url === "/api/conversations" ? respond({ conversationId: "fresh" }) : normal(url));
+  const composer = fresh.mount({ session: null, newSessionCwd: "/tmp", newSessionDraftKey: "new:kept:/tmp" });
+  await fresh.pump(composer);
+  const key = "new:kept:/tmp";
+  composer.connection.drafts.setDraft(key, {
+    value: "unsent before the connection changed",
+    images: [{ data: "aW1n", mimeType: "image/png" }],
+  });
+  composer.unmount();
+  // The cleanup is a microtask when it exists at all: give it the tick it would have used.
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(composer.connection.drafts.getDraft(key)?.value, "unsent before the connection changed",
+    "the composer's text survives the unmount");
+  assert.equal(composer.connection.drafts.getDraft(key)?.images.length, 1, "and so does its attached image");
+});

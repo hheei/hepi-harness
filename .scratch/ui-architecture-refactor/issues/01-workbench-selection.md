@@ -84,8 +84,26 @@ Status: resolved（2026-10-21，revision `7cc775e4` + 本票工作樹變更）
 - browser driver 曾假設 request 帶 method 前綴，兩個 no-read 斷言因此恆真 → 已修正並由實際輸出驗證。
 - `ux-workbench-selection.ts` 印出 PASS 卻不結束（fixture server 未關）→ 每次跑都被 timeout 殺掉、exit code 是 timeout 的 → 收在 `finally` 關 server 並 `process.exit`，現 exit 0 / 5.4s。
 
+### 審查回歸修正（reopen，`73b94db2` 之上）
+
+七項 material regression 全在擁有者邊界修正，未加 caller guard：
+
+| 發現 | 擁有者 | 修正 |
+| --- | --- | --- |
+| P1 換 connection／unmount 清掉 fresh composer 草稿 | `useAgentSession` 生命週期 cleanup | 移除 abandoned-key `clearDraft` microtask；處置屬 selection intent（park／promotion／delete），不刪文字 |
+| P1 遲到的 promotion 覆蓋 B | `acceptPromotion` 契約 | 傳入 source composer identity（hook 本來就發 `sourceDraftKey`），只接受與當前 composer 相符者 |
+| P2 same-project worktree 選擇不撤 pending open | `selectWorkspace` | 每次明確選擇都 retire in-flight reads（generation），不動 attachment；identity hydration 不 retire |
+| P2 跨 project 一律 composer、`rememberedConversation` 無 caller | `selectWorkspace` | 先放 composer（與 HEAD 同序），再由 workspace memory／catalogue 還原對話，同一 generation fence；裸路由不變 |
+| P2 file tabs 只在死掉的 `handleSelectWorkspace` 清 | 已接受的 project transition | 新增 `projectTransition`（僅 `adoptConversation`／`adoptComposer` 換 project 時 +1），AppShell 由它清 file tabs；identity hydration 排除；刪除無 caller 的 handler |
+| P2 重選同一對話 attachment +1 重掛 | `adoptConversation` | 同 id 保留 attachment、cwd、URL，仍套用 entry／block／raw target |
+| P2 raw reference 只設焦點不開面板 | shell presentation | `rawHistoryFocus` 變為非 null 時開 `history` 面板（同 HEAD） |
+
+新增證據：`workbench-selection.test.ts` 5 案（遲到 promotion、明確選擇撤 pending open、返回 workspace 還原記憶對話、project transition 判定、重選保留 attachment）；`useAgentSession.lifecycle.test.ts` 1 案（unmount 不刪 fresh composer 草稿，已用移除修正反向確認會失敗）；browser scene 兩步（換 connection 後前一個 connection 的未送文字仍在；search hit 失敗 → 「Open the raw history instead」→ 面板開啟且定位到該 entry，已用移除面板修正反向確認會失敗）。
+
+Checks：`pnpm verify:changed` exit 0（`.dev/verify/2026-10-21T10-29-55-311-verify-changed`）；browser `ux-workbench-selection`、`ux-workbench-scope`、`ux-sidebar-ingress`、`ux-raw-history-sidebar-focus`、`ux-navigation-retry` 全 exit 0（`.dev/verify/2026-10-21T18-30-16-browser-regressions`）。
+
 ### 剩餘限制
 
 - 只換 readout 的 owner；`useAgentSession` 的 conversation I/O 生命週期仍屬票 03。
-- workspace-wide 記憶（`pi-web:last-open-by-workspace`）仍在明確工作區切換時才還原對話，裸路由不 invent restore（與 HEAD 一致）。
+- workspace-wide 記憶（`pi-web:last-open-by-workspace`）在明確工作區切換時還原對話（含跨 project），裸路由不 invent restore（與 HEAD 一致）。
 - `docs/migration-status` 未新增能力限制：本票沒有移除任何能力。

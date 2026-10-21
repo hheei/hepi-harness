@@ -367,3 +367,107 @@ test("a navigation target is applied once, and the raw-history surface keeps its
   w.selection.selectConversation(row("conv", "/repo"), { entryId: "dropped", rawHistory: true });
   assert.deepEqual(state(w.selection).rawHistoryFocus, { sessionId: "conv", entryId: "dropped" });
 });
+
+test("a late promotion for a composer the reader left replaces nothing", async () => {
+  // N8's review finding: submit in composer A, then pick or type in B while A's admission is still pending. The answer
+  // names A, so accepting it would put the reader in A's conversation and take B's draft off the screen.
+  const w = workbench({ search: "", catalogue: [row("a-conv", "/repo")] });
+  w.selection.start();
+  w.selection.startComposer({ cwd: "/repo", projectKey: "/repo" });
+  const first = state(w.selection).composer!.draftKey;
+  // The reader moves to a second composer of the same folder and types in it.
+  w.selection.startComposer({ cwd: "/repo", projectKey: "/repo" });
+  const second = state(w.selection).composer!.draftKey;
+  w.drafts.setDraft(second, { value: "what I am writing now", images: [] });
+  const attachment = state(w.selection).attachment;
+
+  w.selection.acceptPromotion(row("a-conv", "/repo"), first);
+  assert.equal(state(w.selection).composer?.draftKey, second, "the composer the reader is in stays");
+  assert.equal(state(w.selection).conversation, null, "and the abandoned submission does not become the selection");
+  assert.equal(state(w.selection).attachment, attachment, "nothing was replaced on screen");
+  assert.equal(w.drafts.getDraft(second)?.value, "what I am writing now", "B's draft is untouched");
+
+  // The confirmation for the composer that is actually on screen is accepted.
+  w.selection.acceptPromotion(row("b-conv", "/repo"), second);
+  assert.equal(state(w.selection).conversation?.id, "b-conv");
+});
+
+test("an explicit workspace choice retires a pending open, and a same-project pick does not move the chat", async () => {
+  // N3's review finding: an open of /b is in flight, the reader picks another checkout of the same project. The older
+  // answer must not land on the workspace they chose.
+  let releaseB: ((session: SessionInfo) => void) | null = null;
+  const w = workbench({
+    search: "",
+    open: async () => await new Promise<SessionInfo>((resolve) => { releaseB = resolve; }),
+  });
+  w.selection.start();
+  const pending = w.selection.openConversation("b");
+  w.selection.selectConversation(row("a", "/a"), {});
+  const attachment = state(w.selection).attachment;
+  w.selection.selectWorkspace({ cwd: "/a/worktree", projectKey: "/a", projectRoot: "/a" });
+  const navigations = [...w.navigations];
+  releaseB!(row("b", "/b"));
+  await pending;
+  await settle();
+  assert.equal(state(w.selection).conversation?.id, "a", "the workspace the reader picked is still what is on screen");
+  assert.equal(state(w.selection).cwd, "/a/worktree", "and it is the checkout they picked");
+  assert.deepEqual(w.navigations, navigations, "the stale answer rewrites no URL");
+  assert.equal(state(w.selection).openFailure, null, "and states no failure");
+  assert.equal(state(w.selection).attachment, attachment, "retiring the read is not a new attachment");
+});
+
+test("returning to a workspace restores the conversation its memory names, under the same fence", async () => {
+  // N5's review finding: an explicit return to another project restores what that workspace was last showing, from the
+  // catalogue it already has; a bare route still invents nothing.
+  const catalogue = [row("b-conv", "/b"), row("a-conv", "/a")];
+  const w = workbench({ search: "", catalogue });
+  w.selection.start();
+  w.selection.selectConversation(catalogue[0]!);
+  assert.equal(w.local.values.get("pi-web:last-open-by-workspace"), JSON.stringify({ "/b": "b-conv" }));
+  // Leave for another project, then come back to it.
+  w.selection.selectWorkspace({ cwd: "/a", projectKey: "/a", projectRoot: "/a" });
+  w.selection.setCatalogue(catalogue);
+  w.selection.selectWorkspace({ cwd: "/b", projectKey: "/b", projectRoot: "/b" });
+  await settle();
+  assert.equal(state(w.selection).conversation?.id, "b-conv", "the workspace's remembered conversation comes back");
+  assert.deepEqual(w.opened, [], "from the catalogue the sidebar delivered, not from a second read");
+
+  // A workspace whose memory names nothing keeps its fresh composer.
+  w.selection.selectWorkspace({ cwd: "/a", projectKey: "/a", projectRoot: "/a" });
+  await settle();
+  assert.equal(state(w.selection).composer?.cwd, "/a", "a workspace with no remembered conversation is its composer");
+});
+
+test("a same-project move is not a project transition, and another project is one", () => {
+  // The shell's file tabs follow the accepted project: a resolved identity and a worktree move keep them, another
+  // project's workspace does not.
+  const w = workbench({ search: "" });
+  w.selection.start();
+  w.selection.selectConversation(row("conv", "/repo/worktree-a"));
+  const settled = state(w.selection).projectTransition;
+
+  w.selection.acceptWorkspaceIdentity({ cwd: "/repo/worktree-a", projectKey: "/repo", projectRoot: "/repo" });
+  assert.equal(state(w.selection).projectTransition, settled, "learning which project the folder belongs to is not a transition");
+  w.selection.selectWorkspace({ cwd: "/repo/worktree-b", projectKey: "/repo", projectRoot: "/repo" });
+  assert.equal(state(w.selection).projectTransition, settled, "another checkout of the same project is not a transition either");
+
+  w.selection.selectWorkspace({ cwd: "/other", projectKey: "/other", projectRoot: "/other" });
+  assert.equal(state(w.selection).projectTransition, settled + 1, "another project is");
+});
+
+test("re-picking the conversation on screen keeps its attachment and still applies the target", () => {
+  // N10's review finding: a row click on the conversation already open must not remount the chat and re-run its read.
+  const w = workbench({ search: "" });
+  w.selection.start();
+  w.selection.selectConversation(row("conv", "/repo"));
+  const attachment = state(w.selection).attachment;
+  const navigations = [...w.navigations];
+  w.selection.selectConversation(row("conv", "/repo"));
+  assert.equal(state(w.selection).attachment, attachment, "the surface is the one already mounted");
+  assert.deepEqual(w.navigations, navigations, "and the URL already names it");
+
+  // A pick that names an entry is still that request.
+  w.selection.selectConversation(row("conv", "/repo"), { entryId: "e9", rawHistory: true });
+  assert.equal(state(w.selection).attachment, attachment, "still no remount");
+  assert.deepEqual(state(w.selection).rawHistoryFocus, { sessionId: "conv", entryId: "e9" }, "but the target is applied");
+});
