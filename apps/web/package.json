@@ -68,6 +68,7 @@
     "test:token-footer": "node e2e/chat/ux-token-footer.ts",
     "test:composer-interaction": "node e2e/chat/ux-composer-interaction.ts",
     "test:message-copy": "node e2e/chat/ux-message-copy.ts",
+    "test:quote-initial-prompt": "node e2e/chat/ux-quote-initial-prompt.ts",
     "test:conversation-lifetime": "node e2e/chat/ux-conversation-lifetime.ts",
     "test:conversation-lifetime-shell": "node e2e/chat/ux-conversation-lifetime-shell.ts",
     "test:upstream": "node --test ../../packages/ui/src/components/ChatInput.test.ts ../../packages/ui/src/components/MessageView.test.ts",

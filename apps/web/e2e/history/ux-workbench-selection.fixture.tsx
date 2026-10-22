@@ -145,6 +145,9 @@ function answer(path: string, params: URLSearchParams, body: string | null, meth
   if (path.startsWith("/api/worktrees")) return json({ worktrees: [], state: "ready" });
   if (path.startsWith("/api/files/")) return json({ entries: [], path: "/srv", parentPath: null });
   if (path.startsWith("/api/git/status")) return json({ branch: null, entries: [], ahead: 0, behind: 0 });
+  // The shell reads the open folder's trust through this connection for every target it shows, so a scene that opened a
+  // conversation asks this question too. A folder this page never configures needs no trust and records no decision.
+  if (path === "/api/project-trust") return json({ requiresTrust: false, trusted: false, decision: null, inherited: false });
   if (path.startsWith("/api/settings") || path.startsWith("/api/home") || path.startsWith("/api/default-cwd")) return json({});
   failures.push("unanswered " + path);
   return json({ error: "unanswered " + path, code: "not_found" }, 404);
