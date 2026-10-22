@@ -828,9 +828,8 @@ an owner that is another gateway, an SSH-profile host and any host result that p
 gateway it cannot reach) rather than a fabricated negative. `/api/workspaces` and `/api/hosts` keep their shapes and
 their catalogue callers.
 
-Still open: the ingress itself still composes the two listings, so this route has no product caller yet
-([ticket 02](../.scratch/ingress-binding/issues/02-ingress-migration.md)). Nothing is cached, no path is resolved and no
-filesystem is probed by the verdict.
+Still open: the ingress itself still composes the two listings, so this route has no product caller yet (ingress-binding
+ticket 02). Nothing is cached, no path is resolved and no filesystem is probed by the verdict.
 
 ## Client ingress conversation slice (ticket 03)
 
