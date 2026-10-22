@@ -295,8 +295,8 @@ test("real send dispatch recovers by request identity once without resend or com
   const sent = h.requests.find(r => r.method === "POST" && r.body?.type === "conversation.submit");
   assert.ok(sent, "actual hook dispatches a prompt");
   assert.equal(m.out.pendingSubmissions.length, 1);
-  assert.ok(m.out.handleAgentEventRef.current, "the hook states its event handle");
-  m.out.handleAgentEventRef.current({ type: "resync", sessionId: "conv" });
+  // The stream the surface joined is the public seam: a resync arrives through it exactly as the backend states one.
+  at(h.sources).emit({ type: "resync", sessionId: "conv" });
   await h.pump(m);
   const lookups = h.requests.filter(r => r.url.includes("/submissions?"));
   assert.equal(lookups.length, 1);
@@ -1219,6 +1219,33 @@ test("a page read that fails reports its failure instead of exhausting the navig
   m.unmount();
 });
 
+
+test("an explicit reload is one operation on the conversation, not a new attachment", async (t) => {
+  // Settings › General changes the runtime's tool configuration and asks the conversation to pick it up. That request
+  // reaches this surface as its own registered operation: the Backend's reload route, then this conversation's read.
+  // What it must not be is a remount — a new attachment would leave a new stream, a new projection and a reader who lost
+  // their place — so the stream this mount joined is asserted to be the only one it ever opened.
+  const h = harness(t, normal);
+  const reloads: ((() => Promise<void>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload for the surfaces outside the chat");
+  const sourcesBefore = h.sources.length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  await reload();
+  await h.pump(m);
+  const sent = h.requests.slice(-3);
+  assert.ok(sent.some(r => r.method === "POST" && r.url === "/api/conversations/conv/reload"), "the reload is the Backend's own route: " + JSON.stringify(sent.map(r => r.method + " " + r.url)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore + 1, "and exactly one read states it");
+  assert.equal(h.sources.length, sourcesBefore, "no new stream was opened: the same conversation is still the one on screen");
+  assert.ok(plain(m.out.notices).some(notice => notice.message.includes("Reloaded")), "the reload reports what it reloaded");
+
+  // Leaving is the cleanup of the registration, so a surface that asks after this conversation is gone does nothing.
+  m.unmount();
+  assert.equal(reloads.at(-1), null, "the registration is withdrawn with the surface");
+});
 
 test("leaving a fresh composer unmounts it without deleting the text the reader typed", async (t) => {
   // The review finding: a connection replacement or an unmount ran a cleanup that cleared the composer's own draft, so

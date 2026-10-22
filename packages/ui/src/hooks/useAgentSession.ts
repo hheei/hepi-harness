@@ -19,6 +19,7 @@ import {
   type SessionData,
 } from "../lib/durable-projection";
 import { createRequestId, isRefusal, operationFailure } from "../lib/conversation-api";
+import { ConversationSession, type StreamJoin } from "../lib/conversation-session";
 import { workspaceIdOfRoutingPath } from "@hepi/protocol/files";
 import {
   deleteSessionViewSnapshot,
@@ -222,7 +223,6 @@ export type BuiltinSlashCommandResult =
 
 export interface UseAgentSessionOptions {
   session: SessionInfo | null;
-  sessionRunning?: boolean;
   newSessionCwd: string | null;
   newSessionDraftKey: string | null;
   /**
@@ -252,6 +252,11 @@ export interface UseAgentSessionOptions {
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
   /** Registers an action that lazily starts the session and loads its prompt and tools. */
   onSystemInfoLoaderChange?: (loader: (() => Promise<void>) | null) => void;
+  /**
+   * Registers this conversation's explicit reload — the Backend's own resource reload followed by the read that states
+   * it — so a surface outside the chat (Settings) asks for one operation instead of remounting the conversation.
+   */
+  onConversationReloadChange?: (reload: (() => Promise<void>) | null) => void;
   /** Opens Settings on a section; a bare `/mcp` the built-in MCP extension owns opens Settings › MCP. */
   onOpenSettings?: (section: SettingsSection) => void;
   deferInitialScroll?: boolean;
@@ -399,6 +404,19 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   // The conversation API of this connection: the Backend's own `/api/conversations…` vocabulary, assembled with the
   // connection. A caller below reads the contract rather than the retired Next BFF's paths.
   const api = connection.api;
+  // The shell's one source per conversation, as the chat was handed it. A session joins it as a reader, so the
+  // conversation on screen and a background watch of the same conversation read one stream instead of two.
+  const subscribeAgentEvents = opts.subscribeAgentEvents;
+  /**
+   * This surface's conversation I/O: the stream reader it holds, its reads, its admissions, its lookups and its explicit
+   * reload, all bound to this connection and this conversation identity. It is assembled once per connection (and per
+   * source) because that is what its lifetime is; the React state the surface renders stays in this hook, and the fold
+   * that orders what the I/O answers stays pure.
+   */
+  const conversation = useMemo(
+    () => new ConversationSession({ api, ...(subscribeAgentEvents === undefined ? {} : { subscribe: subscribeAgentEvents }) }),
+    [api, subscribeAgentEvents],
+  );
   // This connection's composer drafts. The store is the connection's own, so a promotion, a rekey or a refused
   // submission's restore can only touch entries of the connection the composer is showing.
   const drafts = connection.drafts;
@@ -522,16 +540,15 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   // the revision a control request names. It is what the composer's Continue and its "stopping" state read (spec D08).
   const [control, setControl] = useState<ControlState>({ state: "allowed", revision: 0 });
 
-  // The subscription this surface holds, and the conversation it is on: a join for the same conversation is a no-op,
-  // and a join for another one leaves the first. It is dropped by an explicit leave — a join for another conversation or
-  // this surface going away — and never by a render, because a fresh composer acquires the stream of the conversation it
-  // creates while its session prop is still null: clearing the reference here would lose the only handle to it.
-  const eventSubscriptionRef = useRef<{ subscription: AgentEventSubscription<AgentMessage>; conversationId: string } | null>(null);
   const sessionIdRef = useRef<string | null>(session?.id ?? null);
   const sessionPropIdRef = useRef<string | null>(session?.id ?? null);
   // The visible refusal a `state_oversize` frame produced, held so a later state frame can clear exactly that
   // message and nothing else the surface may be showing.
   const oversizeRefusalRef = useRef<string | null>(null);
+  // The stream's listener is installed once per join, and what it does is read from this ref on every frame. A render
+  // therefore never resubscribes, and the handler below — which closes over this render's state writers — is the one a
+  // frame reaches. It is deliberately **not** part of what this hook returns: a view has no transport callback to
+  // overwrite, and a test drives the stream through the subscription seam instead of poking a handler.
   const handleAgentEventRef = useRef<((event: AgentEvent) => void) | null>(null);
   /** How one native state this stream holds becomes the surface's payload. Bound below, read by the join above. */
   const publishStreamStateRef = useRef<((conversationId: string, held: SessionState<AgentMessage>) => void) | null>(null);
@@ -572,8 +589,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const modelSwitchPendingRef = useRef(false);
   const draftKeyAliasesRef = useRef(new Map<string, string>());
   const sessionHookMountedRef = useRef(true);
-  // In-flight session reads, keyed by session id (or force:<id> for fresh reads).
-  const loadFlightsRef = useRef(new Map<string, Promise<unknown>>());
   // Latest settled view state, readable from the unmount cleanup without
   // re-subscribing it. Assigned every render like sessionPropIdRef below.
   const activeLeafIdRef = useRef<string | null>(null);
@@ -639,10 +654,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * the turn on screen and resolves it by request id — never by sending again.
    */
   const admit = useCallback(async (conversationId: string, requestId: string, text: string, images: readonly { type: "image"; data: string; mimeType: string }[] | undefined) => {
-    const sent = await api.control(conversationId).send(requestId, text, images?.length ? { images } : {});
-    if (sent.ok) return { submissionId: sent.value.submissionId };
-    throw operationFailure(sent);
-  }, [api]);
+    return await conversation.send(conversationId, {
+      requestId,
+      text,
+      ...(images === undefined || images.length === 0 ? {} : { images }),
+    });
+  }, [conversation]);
 
   /**
    * Apply one agent-state answer: the conversation's model and reasoning level, and its context usage.
@@ -888,18 +905,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * projection does not carry are applied beside it; readiness is never gated on this read.
    */
   const loadSession = useCallback(async (sid: string, includeState = false, options?: { force?: boolean; acquisition?: Acquisition }) => {
-    // Single-flight: concurrent reads for the same session (mount + stream settle + reconcile) share one request
-    // unless the caller forces a fresh read.
-    const flightKey = options?.force ? `force:${sid}` : sid;
-    const inflight = options?.force ? undefined : loadFlightsRef.current.get(flightKey);
-    if (inflight) return await inflight;
-  const flight = (async (): Promise<unknown> => {
     const acquisition = options?.acquisition ?? beginRead();
     try {
-      // The conversation's own read: the Backend's `/api/conversations/:id/state`, which is the same native snapshot
-      // this surface projects and the same payload the composer beside it is read from. `null` is the Backend's own
-      // `not_found`: the row is gone, so the view is.
-      const snapshot = await api.read(sid);
+      // The conversation's own read, through this surface's conversation session: the Backend's
+      // `/api/conversations/:id/state`, which is the same native snapshot this surface projects and the same payload
+      // the composer beside it is read from. `null` is the Backend's own `not_found`: the row is gone, so the view is.
+      // Concurrent reads of one conversation are one request at that owner, so a mount, a stream settle and a reconcile
+      // asking at the same moment do not race three answers; a forced read shares nothing.
+      const snapshot = await conversation.read(sid, options?.force === true ? { force: true } : {});
       if (snapshot === null) {
         // The Backend's own `not_found`: the row is gone, so the view is — and a Retry cannot bring it back. The
         // surface says so instead of drawing an empty conversation that looks like a conversation with no messages.
@@ -966,7 +979,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         // newer state read, or after a newer window that replaced what this one described, is not applied.
         const usageRequestId = ++contextUsageRequestIdRef.current;
         const acceptedStamp = captureAcceptedStamp();
-        const stateSnapshot = await api.read(sid);
+        const stateSnapshot = await conversation.read(sid);
         if (stateSnapshot === null) throw new Error("This conversation no longer exists.");
         if (sessionIdRef.current !== sid) return null;
 
@@ -1002,16 +1015,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setReadFailure(failure);
       fold(unavailableStatement(acquisition, failure.detail ?? failure.kind).input);
       return "error";
-    } finally {
-      // Nothing to release here: readiness is the projection's, so a read that never answers cannot hold the screen.
     }
-    })();
-    if (!options?.force) loadFlightsRef.current.set(flightKey, flight);
-    flight.finally(() => {
-      if (loadFlightsRef.current.get(flightKey) === flight) loadFlightsRef.current.delete(flightKey);
-    });
-    return await flight;
-  }, [applyAgentState, applyReadAgentState, beginRead, captureAcceptedStamp, fold, receive]);
+  }, [applyAgentState, applyReadAgentState, beginRead, captureAcceptedStamp, conversation, fold, receive]);
 
   /**
    * Read one page of older history. The route forwards the backend's own entries page, and the browser projects it —
@@ -1301,47 +1306,38 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   }, [requestSlashCommands]);
 
   /**
-   * Join this conversation's stream, through the shell's one connection per conversation. A join is idempotent: the
-   * subscription already held for this conversation is kept, so a reconnect is a deliberate act and not a side effect
-   * of rendering. The listener is read through a ref, so a new render does not resubscribe.
+   * Join this conversation's stream through the surface's one conversation session. A join is idempotent at that owner,
+   * so a reconnect is a deliberate act and not a side effect of rendering, and the session holds the reader's place —
+   * this hook holds only what the frames mean.
+   *
+   * The join hands this reader where the stream already is: a conversation a background watch kept for a run still in
+   * flight (or another reader of the same conversation) is already streaming, and the continuity is the state every
+   * frame after this continues from. A state bound to another conversation, or to none, cannot fold a single frame of
+   * this one, so it is bound to the conversation shown either way.
    */
-  const subscribeAgentEvents = opts.subscribeAgentEvents;
-  const openEvents = useCallback((sid: string) => {
-    if (subscribeAgentEvents === undefined) return;
-    const existing = eventSubscriptionRef.current;
-    if (existing !== null && existing.conversationId === sid) return;
-    existing?.subscription.release();
-    const subscription = subscribeAgentEvents(sid, (event) => handleAgentEventRef.current?.(event as AgentEvent));
-    eventSubscriptionRef.current = { conversationId: sid, subscription };
-    // The conversation's stream may already be open — the background watch that kept it for a run still in flight, or
-    // another reader of the same conversation — and it hands over where it is: the state every frame after this
-    // continues from. This surface's continuity is bound to the conversation it shows either way, because a state bound
-    // to another conversation, or to none, cannot fold a single frame of this one.
-    const joined = subscription.continuity();
-    streamHeldRef.current = joined ?? emptyStreamState(sid);
+  const joinEvents = useCallback((sid: string): StreamJoin => {
+    const join = conversation.join(sid, (event) => handleAgentEventRef.current?.(event as AgentEvent));
+    streamHeldRef.current = join.continuity ?? emptyStreamState(sid);
     // A stream already in flight is on screen at once, rather than after the read that would otherwise be the only
     // thing able to show it: the transcript and the live state are what this stream is holding right now.
-    if (joined !== null) publishStreamStateRef.current?.(sid, joined);
-  }, [subscribeAgentEvents]);
+    if (join.continuity !== null) publishStreamStateRef.current?.(sid, join.continuity);
+    return join;
+  }, [conversation]);
 
   /** Leave this conversation's stream. The conversation keeps it when the shell still has work to watch for. */
   const closeEvents = useCallback(() => {
-    eventSubscriptionRef.current?.subscription.release();
-    eventSubscriptionRef.current = null;
-  }, []);
+    conversation.release();
+  }, [conversation]);
 
   /** Drop and reopen this conversation's stream: a restarted backend is a new attachment, not a lost reader. */
   const reconnectEvents = useCallback((sid: string) => {
-    const held = eventSubscriptionRef.current;
-    if (held === null || held.conversationId !== sid) return;
-    held.subscription.reconnect();
-  }, []);
+    conversation.reconnect(sid);
+  }, [conversation]);
 
   const ensureEventsConnected = useCallback(async (sid: string) => {
-    openEvents(sid);
-    const held = eventSubscriptionRef.current;
-    if (held !== null && held.conversationId === sid) await held.subscription.ready();
-  }, [openEvents]);
+    const join = joinEvents(sid);
+    await join.ready();
+  }, [joinEvents]);
 
   const onProjectionChange = opts.onProjectionChange;
   // The conversation on screen keeps its stream for as long as it has work in flight, and the projection is what says
@@ -1366,11 +1362,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     // so without re-asserting it here a Strict Mode remount would leave the
     // selected session without its stream.
     sessionHookMountedRef.current = true;
-    openEvents(sid);
+    joinEvents(sid);
     return () => {
       if (sessionIdRef.current === sid) closeEvents();
     };
-  }, [closeEvents, openEvents, session?.id]);
+  }, [closeEvents, joinEvents, session?.id]);
 
   const addNotice = useCallback((notice: { id?: string; message: string; type?: NoticeType }) => {
     const message = notice.message.trim();
@@ -1430,14 +1426,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const lookupSubmission = useCallback(async (acquisition: Acquisition, sid: string, targetRequestId: string) => {
     let record: WireSubmission | null = null;
     try {
-      record = await api.submission(sid, targetRequestId) as WireSubmission | null;
+      record = await conversation.lookup(sid, targetRequestId) as WireSubmission | null;
     } catch {
       // Still unreachable: the turn stays unknown, which is the honest state, and a later reconnect retries the lookup.
       return;
     }
     if (sessionIdRef.current !== sid) return;
     fold({ kind: "lookup", conversationId: sid, acquisition, subject: { requestId: targetRequestId }, record });
-  }, [fold]);
+  }, [conversation, fold]);
 
   /** Every effect the fold requests is I/O this hook performs; it is bound here, after the I/O it needs exists. */
   useEffect(() => {
@@ -1950,9 +1946,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     try {
       // The images go to the wire as well as into the staged turn: a draft is admitted with the content the user made
       // it of, so what the surface shows queued and what the conversation eventually places are the same submission.
-      const queued = await api.control(sid).send(requestId, message, { queueOnly: true, whenBusy: behavior, ...(piImages === undefined || piImages.length === 0 ? {} : { images: piImages }) });
-      if (!queued.ok) throw operationFailure(queued);
-      if (queued.value.submissionId !== undefined) fold({ kind: "receipt", conversationId: sid, requestId, submissionId: queued.value.submissionId });
+      const queued = await conversation.send(sid, {
+        requestId,
+        text: message,
+        queueOnly: true,
+        whenBusy: behavior,
+        ...(piImages === undefined || piImages.length === 0 ? {} : { images: piImages }),
+      });
+      if (queued.submissionId !== undefined) fold({ kind: "receipt", conversationId: sid, requestId, submissionId: queued.submissionId });
     } catch (e) {
       console.error("Failed to submit streaming prompt:", e);
       // A transport failure after dispatch is ambiguous: the server may have accepted the queued prompt before the
@@ -2270,6 +2271,37 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     return () => onSystemInfoLoaderChange?.(null);
   }, [loadSystemInfo, onSystemInfoLoaderChange]);
 
+  /**
+   * This conversation's explicit reload, registered for the surfaces that ask for one without being the chat — Settings ›
+   * General reloads the runtime's resources, and what follows is this conversation's own read.
+   *
+   * It is one operation rather than a remount: the surface asking does not know a session key, a mount counter or an
+   * attachment, and nothing is rebuilt — the accepted window, the stream this surface holds and the reader's place in it
+   * all stay. A reload during a run is deferred by the Backend, and its answer says so.
+   */
+  const onConversationReloadChange = opts.onConversationReloadChange;
+  const reloadConversation = useCallback(async () => {
+    const sid = sessionIdRef.current;
+    if (sid === null) return;
+    const reloaded = await conversation.reload(sid);
+    await loadSession(sid, true);
+    const resources = reloaded?.resources;
+    if (resources?.pending) {
+      addNotice({ message: "Reloaded resources; the new catalog applies to the next run" });
+      return;
+    }
+    addNotice({
+      message: resources
+        ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
+        : "Reloaded session resources",
+      type: "success",
+    });
+  }, [addNotice, conversation, loadSession]);
+  useEffect(() => {
+    onConversationReloadChange?.(reloadConversation);
+    return () => onConversationReloadChange?.(null);
+  }, [onConversationReloadChange, reloadConversation]);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -2403,8 +2435,5 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     handleThinkingLevelChange, loadTools, loadSlashCommands, loadContext, landWindow,
     retryRead, dismissReadFailure,
     scrollToBottom, scrollUserMsgToTop, scrollToMessage,
-    dispatch, setForkingEntryId,
-    // Subscriptions
-    handleAgentEventRef,
   };
 }

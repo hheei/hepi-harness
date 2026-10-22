@@ -145,11 +145,18 @@ export function AppShell() {
   const initialCwdStatus = selectionState.initialCwd.status;
   const initialCwdError = selectionState.initialCwd.error;
   const initialSessionRestored = !selectionState.restoring;
-  // The attachment the chat is mounted for: a new conversation, a fork or a fresh composer. Identity hydration and a
-  // same-project worktree move leave it alone, which is what keeps a chat from remounting for either.
-  const sessionKey = selectionState.attachment;
   const newSessionCwd = composer?.cwd ?? null;
   const newSessionDraftKey = composer?.draftKey ?? null;
+  /**
+   * The chat's mount identity: the conversation it is showing, or the fresh composer it is showing.
+   *
+   * That is the whole rule, and it is the chat's own. A fork or a new conversation is a different identity and so a
+   * different surface; identity hydration, a same-project worktree move and — the case this replaced a shell counter for
+   * — a settings-driven reload of the **same** conversation are the same identity, so they re-render the chat rather
+   * than rebuilding it. A reload is a read and a re-acquire of the resources, which the chat performs itself; the shell
+   * no longer knows that a remount ever stood in for one.
+   */
+  const chatIdentity = selectedSession?.id ?? newSessionDraftKey ?? null;
   // Keep the system-theme subscription mounted for the lifetime of the app.
   useTheme();
   // Restore fonts even when Settings and the chat composer have not been opened.
@@ -478,6 +485,21 @@ export function AppShell() {
     systemInfoLoadIdRef.current += 1;
     systemInfoLoaderRef.current = loader;
     setSystemInfoLoading(false);
+  }, []);
+  /**
+   * The conversation's own reload, registered by the chat that owns it.
+   *
+   * Settings › General changes the runtime's tool configuration and then needs the conversation to pick it up. That is
+   * one operation on the conversation — the Backend's reload, the read that states it and the notice that reports it —
+   * so this holds the chat's own function instead of remounting the tree: a reload of the same conversation is not a new
+   * conversation, and a surface that rebuilt the chat for it lost the reader's place, its stream and its paging.
+   */
+  const conversationReloadRef = useRef<(() => Promise<void>) | null>(null);
+  const handleConversationReloadChange = useCallback((reload: (() => Promise<void>) | null) => {
+    conversationReloadRef.current = reload;
+  }, []);
+  const reloadConversation = useCallback(async () => {
+    await conversationReloadRef.current?.();
   }, []);
 
   // Session stats (tokens + cost) — populated by ChatWindow, displayed in top bar
@@ -2345,14 +2367,13 @@ export function AppShell() {
             />
           ) : showChat ? (
             <ChatWindow
-              key={sessionKey}
+              key={chatIdentity}
               session={selectedSession}
               searchTarget={searchTarget?.sessionId === selectedSession?.id ? searchTarget : null}
               onSearchTargetHandled={handleSearchTargetHandled}
               onReadFailureBack={leaveUnreadableSession}
               initialScrollPosition={selectedSession ? sessionScrollPositionsRef.current.get(selectedSession.id) ?? null : null}
               onScrollPositionChange={handleSessionScrollPositionChange}
-              sessionRunning={Boolean(selectedSession && runningSessionIds.has(selectedSession.id))}
               subscribeAgentEvents={subscribeAgentEvents}
               onProjectionChange={handleProjectionChange}
               onLiveSettlement={handleLiveSettlement}
@@ -2369,6 +2390,7 @@ export function AppShell() {
               onSystemPromptChange={handleSystemPromptChange}
               onSystemToolsChange={handleSystemToolsChange}
               onSystemInfoLoaderChange={handleSystemInfoLoaderChange}
+              onConversationReloadChange={handleConversationReloadChange}
               onSessionStatsChange={handleSessionStatsChange}
               onOpenSettings={openSettingsSection}
               onContextUsageChange={handleContextUsageChange}
@@ -2573,7 +2595,7 @@ export function AppShell() {
           setSettingsSection(null);
           setModelsRefreshKey((key) => key + 1);
         }}
-        onSessionReloaded={() => selection.reloadAttachment()}
+        onSessionReloaded={reloadConversation}
         projectTrust={projectTrust}
         onProjectTrustChanged={handleProjectTrustChanged}
       />

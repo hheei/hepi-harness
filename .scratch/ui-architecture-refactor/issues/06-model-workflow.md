@@ -1,7 +1,7 @@
 # 模型與 provider 工作流
 
 Type: implementation
-Status: planned
+Status: resolved — integrated 07943df4; final evidence e6a0ffd
 Blocked by: [對話 I/O 與 view attachment](03-conversation-lifetime.md), [Composer 互動與命令介面](05-composer-interaction.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R5、R6 模型部分
@@ -25,11 +25,11 @@ Acceptance: [行為矩陣](../acceptance.md) — R1–R3、C5 的模型更新部
 
 ## 驗收條件
 
-- [ ] Settings 開著也能在成功更新後重讀受影響的 model readout；不默改目前 session model。
-- [ ] 關閉未修改 Settings 不清 cache、不 fetch；失敗 mutation 不虛報 applied。
-- [ ] host-wide 變更覆蓋受影響 cwd；其他 connection/account 的讀者不串用。
-- [ ] 只用模型領域的更新介面，未增加全域 bus 或第二 cache 實作。
-- [ ] Shell、ChatWindow、對話 hook 不再有 modelsRefreshKey。
+- [x] Settings 開著也能在成功更新後重讀受影響的 model readout；不默改目前 session model。
+- [x] 關閉未修改 Settings 不清 cache、不 fetch；失敗 mutation 不虛報 applied。
+- [x] host-wide 變更覆蓋受影響 cwd；其他 connection/account 的讀者不串用。
+- [x] 只用模型領域的更新介面，未增加全域 bus 或第二 cache 實作。
+- [x] Shell、ChatWindow、對話 hook 不再有 modelsRefreshKey。
 
 ## 驗證與證據
 
@@ -49,4 +49,8 @@ models-cache/scoped cache、provider draft 既有案例；provider acceptance jo
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+Worker revision `a5687489`, clean, base `b3ab7871`; merged into architecture-consolidation. Model cache invalidation now notifies mounted readers, bounded read/retry shared across mount/change/manual Retry. Applied writes invalidate; applied:false reads saved file back without claiming adoption. Removed modelsRefreshKey and Settings-close invalidation.
+
+`pnpm verify:changed --base=b3ab7871` exit0, four steps pass; worker worktree `.dev/verify/2026-10-21T19-06-11-174-verify-changed/`. `pnpm --filter @hepi/web test:panel-ingress` exit0,77 checks; `test:provider-acceptance` exit0,70 checks. Logs `.dev/worktrees/ui-model-workflow/.dev/verify/ticket06/{panel-ingress-committed,provider-acceptance-committed}.log`. Worker mutation checks detect removed reader notification and erroneous unapplied-save invalidation; mutations reverted. Guides updated in same commit.
+
+Parent integration at62c2c588 passed, raw bash-29f2dc-6.log. Reviewer initially used reversed diff and retracted those findings. Sole material P2: old in-flight catalog result could overwrite refreshed state. Fixed8a64b0e2 with sequence fencing for success, error and retry; regression releases old responses last. Correction review: no remaining material issue, lifecycle40/40. Integrated07943df4; pnpm verify:changed --base=62c2c588 exit0, UI465/App29/Web14 and typecheck; report `.dev/worktrees/architecture-consolidation/.dev/verify/2026-10-21T19-21-04-372-verify-changed/verify.json`, raw bash-29f2dc-7.log. Worker clean8a64b0e2 final changed/browser77/provider70 checks all0; raw `.dev/worktrees/ui-model-workflow/.dev/verify/ticket06-final/`. Verification guide updated at e6a0ffd; docs check463 links0. No App-host journey or deployment performed; native acceptance remains separate.

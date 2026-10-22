@@ -64,7 +64,6 @@ interface Props {
   onSearchTargetHandled?: (target: { sessionId: string; entryId: string }) => void;
   initialScrollPosition?: ChatScrollPosition | null;
   onScrollPositionChange?: (sessionId: string, position: ChatScrollPosition) => void;
-  sessionRunning?: boolean;
   /** Join the conversation's event stream through the shell's one connection per conversation. */
   subscribeAgentEvents?: UseAgentSessionOptions["subscribeAgentEvents"];
   /** Hand this conversation's projection over, so leaving it keeps its stream. */
@@ -86,6 +85,8 @@ interface Props {
   onSystemPromptChange?: (prompt: string | null) => void;
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
   onSystemInfoLoaderChange?: (loader: (() => Promise<void>) | null) => void;
+  /** Registers this conversation's explicit reload for the surfaces that ask for one from outside the chat. */
+  onConversationReloadChange?: (reload: (() => Promise<void>) | null) => void;
   onSessionStatsChange?: (stats: SessionStatsInfo | null) => void;
   /** Opens Settings on a section: a bare `/mcp` that pi's built-in MCP extension owns opens Settings › MCP. */
   onOpenSettings?: (section: SettingsSection) => void;
@@ -303,15 +304,13 @@ function ProcessDetailsGroup({ messageCount, toolCallCount, expanded, reveal = f
   );
 }
 
-export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, sessionRunning, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
+export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const completionNotificationsEnabled = session?.relation?.kind !== "subagent";
 
-  // Wrap onAgentEnd to play the completion sound. This is more reliable than
-  // wrapping handleAgentEventRef because useAgentSession overwrites that ref
-  // on every render (it syncs the latest callback), which would blow away an
-  // externally-installed wrapper after the first re-render.
+  // The completion tone is a callback, not a transport handler: the session reports one answered turn through
+  // `onAgentEnd`, and the surface it is showing decides whether that is a sound for this reader.
   const playDoneSoundRef = useRef(playDoneSound);
   playDoneSoundRef.current = playDoneSound;
   const soundEnabledRef = useRef(soundEnabled);
@@ -353,10 +352,10 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     handleThinkingLevelChange, loadSlashCommands, scrollUserMsgToTop,
     loadContext, activeLeafId, scrollToBottom, scrollToMessage, landWindow,
   } = useAgentSession({
-    session, sessionRunning, newSessionCwd, newSessionDraftKey, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd: wrappedOnAgentEnd, onSessionCreated, onSessionForked,
+    session, newSessionCwd, newSessionDraftKey, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd: wrappedOnAgentEnd, onSessionCreated, onSessionForked,
     subscribeAgentEvents, onProjectionChange, onLiveSettlement,
     modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
-    onOpenSettings,
+    onConversationReloadChange, onOpenSettings,
     deferInitialScroll: Boolean(pendingScrollRestore),
   });
   const sessionBusy = agentRunning;

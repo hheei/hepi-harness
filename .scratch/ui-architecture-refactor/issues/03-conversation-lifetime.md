@@ -27,11 +27,11 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C3–C5、N8、N10
 
 ## 驗收條件
 
-- [ ] 同 conversation reload 不重建整棵 ChatWindow；Shell 不知道 mount-only 初始化規則。
+- [x] 同 conversation reload 不重建整棵 ChatWindow；Shell 不知道 mount-only 初始化規則。
 - [ ] 離開前景仍可完成背景興趣追蹤；每 answer group 至多一次通知，失敗／abort 不誤作成功。
 - [ ] 新 connection 不接收舊 read，dispose／React setup-cleanup 正確釋放 owned resources。
-- [ ] 未知提交只 lookup；promotion、queue、steer、follow-up 及失敗狀態保持。
-- [ ] view 對外介面不含可變 transport callback ref；不是全域 scheduler 或第二執行器。
+- [x] 未知提交只 lookup；promotion、queue、steer、follow-up 及失敗狀態保持。
+- [x] view 對外介面不含可變 transport callback ref；不是全域 scheduler 或第二執行器。
 
 ## 驗證與證據
 
@@ -47,8 +47,67 @@ Acceptance: [行為矩陣](../acceptance.md) — C1、C3–C5、N8、N10
 
 ## Review notes
 
-目前無實作 findings。新項目依 [review policy](../../../docs/agents/review-policy.md) 分類，跨票記錄見[評估記錄](../review-notes.md)；record 不形成 blocking edge。
+Integrated independent review found material connection replacement, stale read, duplicate reload, and reload-reporting issues. See `../review-notes.md#ticket-03-integration-review`; findings are delegated to agent-233 for owner-level correction. Ticket remains open.新項目依 [review policy](../../../docs/agents/review-policy.md) 分類，跨票記錄見[評估記錄](../review-notes.md)；record 不形成 blocking edge。
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+Revision：worker source baseline `3d3d1206`；changes integrated on `impl/ui-architecture-refactor` against `5ec7ffe6`. Integration review found material defects; correction is in progress.
+
+### 介面
+
+`packages/ui/src/lib/conversation-session.ts` — `ConversationSession`，一 connection＋一 conversation identity 的
+UI 對話 I/O：
+
+| 操作 | 責任 |
+| --- | --- |
+| `join(conversationId, listener)` | 經 shell 每對話一個 source join；同對話 idempotent，換對話釋放前一個；回傳 `{ continuity, ready }` |
+| `release()` / `reconnect(id)` / `isJoined(id)` | 交還 reader；只重連自己所在對話 |
+| `read(id, {force})` | single-flight；forced 讀不共用失敗中的 flight |
+| `send(id, attempt)` | 唯一准入路徑：立即 send／queueOnly steer／followUp 同一操作；refusal 拋出，未知結果不重送 |
+| `lookup(id, requestId)` | 只查 durable record |
+| `reload(id)` | Backend 自身 reload |
+| `dispose()` | 釋放 reader、忘記共用 flight（setup/cleanup replay 重新 join） |
+
+`useAgentSession` 以 `useMemo` 依 `api`＋`subscribeAgentEvents` 組裝一次；fold 仍是唯一決策者，hook 只呈現並執行
+fold 請求。
+
+### Changed paths
+
+- `packages/ui/src/lib/conversation-session.ts`（新）、`conversation-session.test.ts`（新）
+- `packages/ui/src/hooks/useAgentSession.ts`：join/read/send/lookup/reload 遷入 session；移除 `loadFlightsRef`、
+  `eventSubscriptionRef`；return 不再含 `handleAgentEventRef`、`dispatch`、`setForkingEntryId`；新增
+  `onConversationReloadChange`；移除未使用 `sessionRunning`。
+- `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts`：resync 改走公開 stream source；新增 explicit reload 案例。
+- `packages/ui/src/components/ChatWindow.tsx`：移除 `sessionRunning`、`handleAgentEventRef` 相關註解；接
+  `onConversationReloadChange`。
+- `packages/ui/src/components/AppShell.tsx`：`key={chatIdentity}`（conversation id 或 composer draft key）取代
+  `selectionState.attachment`；Settings reload 改呼叫 chat 註冊的 `reloadConversation`，不再 `reloadAttachment()`。
+- `apps/web/e2e/chat/ux-conversation-lifetime.{ts,fixture.tsx}`（新）、`apps/web/package.json`（`test:conversation-lifetime`）。
+- 文件：`docs/architecture.md`、`docs/chat.md`、`docs/developer-guide.md`。
+
+### 已刪路徑
+
+`sessionKey`／`selectionState.attachment` 的 mount 協定（`reloadAttachment` 已無呼叫者）、hook 的私有
+`eventSubscriptionRef` 與 `loadFlightsRef`、view-facing 可變 transport callback ref `handleAgentEventRef`、
+未使用 `sessionRunning` prop。`WorkbenchSelection.reloadAttachment` 已在 selection owner 中直接刪除，連同已無行為用途的替代測試；Settings 使用 conversation owner 的 reload。
+
+### Evidence
+
+| Scenario | Seam | Result |
+| --- | --- | --- |
+| C5 reload 不重建 | `useAgentSession.lifecycle.test.ts`「an explicit reload is one operation…」；browser `test:conversation-lifetime` 第 1 段（DOM marker 存活） | pass |
+| C3/N8 未知提交只 lookup | lifecycle「real send dispatch recovers by request identity…」；browser 第 2 段（1 POST、1 lookup、0 tone） | pass |
+| C4 背景興趣與單次通知 | `completion-delivery.test.ts`、`handover-continuity.test.ts`；browser 第 3–5 段（離屏 answer 一次、abort 不響、返回不重播） | pass |
+| dispose／setup-cleanup | `conversation-session.test.ts`「disposing releases the reader…」 | pass |
+| admission 單一路徑 | `conversation-session.test.ts`「one admission path…」 | pass |
+| 舊 read 不跨 connection | lifecycle「disposing the connection retires its shared model read…」、`conversation-session.test.ts` 讀共用案例 | pass |
+
+`pnpm verify:changed --base=5ec7ffe6 --quiet` exit 0; report `.dev/verify/2026-10-21T12-36-07-614-verify-changed/verify.json`. The current run exercised changed typecheck, App/UI tests, Web unit tests and docs on dirty integration tree.
+
+`node apps/web/e2e/chat/ux-conversation-lifetime.ts` exit 0; 11 assertions passed. `node scripts/check-entrypoints.mjs` reports 142 present, zero newly missing. `git diff --check` clean. These checks predate review fixes and do not cover production AppShell connection switching or Settings reload count; do not treat ticket as accepted.
+
+### 剩餘限制
+
+- P1 connection replacement leaks the old CompletionDelivery owner; stale same-id reads can publish after connection change. P1 Settings General performs duplicate resource reload; P2 follow-up read failure can still report success. Corrections and production-owner regression checks pending.
+- AppShell 的 lifetime/presentation section 已整合；既有 selection identity、draft 與 project-transition coverage 維持於 selection tests 及 browser scenes。
+- 未觀察到的 run 仍不補完成音（ADR 0007 既有契約），本票未改。
