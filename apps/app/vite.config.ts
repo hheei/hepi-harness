@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { thirdPartyNoticesPlugin } from "@hepi/ui/lib/third-party-notices";
+import { chunkGroups } from "@hepi/ui/lib/vite-chunk-groups";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -24,5 +25,7 @@ export default defineConfig({
     outDir: fileURLToPath(new URL("./dist", import.meta.url)),
     emptyOutDir: true,
     sourcemap: false,
+    // The same groups the Web build uses: both hosts bundle this one workbench, so they share one chunk policy.
+    rolldownOptions: { output: { codeSplitting: { groups: chunkGroups } } },
   },
 });

@@ -12,6 +12,7 @@
     "./hooks/*": "./src/hooks/*",
     "./lib/*": "./src/lib/*",
     "./lib/third-party-notices": "./src/lib/third-party-notices.ts",
+    "./lib/vite-chunk-groups": "./src/lib/vite-chunk-groups.ts",
     "./styles/*": "./src/styles/*"
   },
   "scripts": {

@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { thirdPartyNoticesPlugin } from "@hepi/ui/lib/third-party-notices";
+import { chunkGroups } from "@hepi/ui/lib/vite-chunk-groups";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -26,8 +27,10 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL("./dist", import.meta.url)),
     emptyOutDir: true,
-    // The workbench is one page: a chunk split here would only add a round trip before the first paint.
     sourcemap: false,
+    // Cache boundaries, not deferred loading: the groups cut the workbench into separately cacheable chunks. The App
+    // build declares the same groups from the same module.
+    rolldownOptions: { output: { codeSplitting: { groups: chunkGroups } } },
   },
   server: {
     // The dev server talks to the ingress on the deployment's own origin, so a cookie session behaves as it will in

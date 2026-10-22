@@ -106,6 +106,21 @@ App 壳从 OS 凭据库提供 `{profile, origin, token}` 到 `globalThis.__HEPI_
 **检查:** `pnpm --filter @hepi/ui test`、`pnpm test:web:unit`、`pnpm --filter @hepi/web typecheck`;
 浏览器场景见 `apps/web/e2e/workbench-files/ux-workbench-scope.ts`。
 
+### Build chunking
+
+Both hosts build this one tree, so they declare one chunk policy: `packages/ui/src/lib/vite-chunk-groups.ts`,
+imported by `apps/web/vite.config.ts` and `apps/app/vite.config.ts` as `build.rolldownOptions.output.codeSplitting`.
+The groups are cache boundaries, not deferred loading — every import they name is static and still fetched for the first
+paint; what they buy is that editing one surface leaves a reader's cached copy of the others valid. Only
+`MermaidBlock`'s `import("mermaid")` is demand-loaded, which is why mermaid is deliberately not captured by a group.
+
+Measured on the Web build (`pnpm --filter @hepi/web build`, 2026-10-22): the entry chunk went from 3,387.78 kB to
+31.81 kB, the 22 modulepreloaded startup chunks total **971 kB gzip** against **957 kB gzip** for the unsplit single
+chunk (+14 kB of chunk overhead), and every emitted chunk is under Vite's 500 kB warning except one:
+`@mermaid-js/parser` ships a single 1.3 MB generated grammar module (662.08 kB emitted), which no grouping can divide
+and which only the already-deferred mermaid path fetches. That residual is a known build limitation, not a regression,
+and the warning threshold stays at its default.
+
 ## The connection client
 
 `packages/ui/src/client.ts` 的 `createClient` 拥有一条连接的全部 I/O:SSE、read-block、执行侧资源 scope 与终止生命周期。
