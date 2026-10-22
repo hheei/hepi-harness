@@ -4,11 +4,10 @@ Ticket 07 selected file browsing, text preview, Git changed-file status and diff
 `packages/ui` is the one surface for both entries: the Web page and the desktop App reach the ingress, which forwards to
 the backend's authenticated `/api/workbench`, and the backend forwards to the configured gateway's authenticated
 `/v1/workbench`. Gateway credentials and workspace root paths never reach the browser, there is no browser filesystem
-access and there is no second agent runtime. (`apps/server` still serves its own **Diagnostic Pages** — `/diagnostics`
-for durable chat and `/workbench` for files; neither is a client entry. Both are static asset pairs under
-`apps/server/public/`: `diagnostics.html` with the `diagnostics.js` that `pnpm build:ui` bundles from
-`apps/server/src/browser-diagnostics.ts`, and `workbench.html` with `workbench.js`, which no build generates, so editing
-it is editing the served script.)
+access and there is no second agent runtime. The backend's own **Diagnostic Pages** — `/diagnostics` for durable chat
+and `/workbench` for files — are retired: their assets, the `diagnostics.js` bundle and the `build:ui` step that
+produced it are gone, so `apps/server` serves no page of its own and every route it answers is one admission guards. A
+deployment that needs to read a conversation or browse files does it through the Workbench above.
 
 The read-only workbench serves both kinds of gateway. `startGateway` mounts one `GatewayWorkbench` either way — over this machine's registry for a local gateway, and over the SSH registry for a remote profile — so the same `POST /v1/workbench` protocol, the same path rules and the same DTOs answer for an SSH-backed `/workspace/<id>`. Only the host differs: on an SSH gateway a preview is a bounded read through the `SshFilesystem` session the file routes already use, a listing walks the host's own directories through the same session, and the changed files and the diff run the same git argv through the `SshRunner` the worktree surface already uses. SSH auth and host-key material stay in the profile the gateway started with, so neither the backend nor the browser receives a credential or constructs a command. See [the SSH workbench](#the-ssh-workbench). No terminal state is added to durable conversation transcripts.
 

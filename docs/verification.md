@@ -88,7 +88,6 @@ Logs below are relative to `.dev/verify/session-resume-integration/`.
 | Command | Exit | Evidence |
 | --- | --- | --- |
 | `pnpm verify:changed --quiet --log-dir=.dev/verify/session-resume-integration/changed` | 0 | `changed/verify.json` and per-step raw logs: all six steps pass — workspace typechecks/tests, recursive Web unit tests, script tests, entrypoints and docs |
-| `pnpm --filter @hepi/server build:ui` | 0 | `diagnostics-build.log`; emits `public/diagnostics.js` |
 | `pnpm --filter @hepi/web build` | 0 | `web-build.log` |
 | `pnpm --filter @hepi/app build` | 0 | `app-build.log` |
 | `node apps/web/e2e/acceptance/ux-provider-connection-acceptance.mjs` | 0 | `provider-acceptance.log`; **64 checks, 0 failures**, real ingress/Backend/Gateway stack with a controlled provider and disposable account files |

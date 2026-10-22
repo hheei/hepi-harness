@@ -10,8 +10,8 @@
  * follows the module graph, not the directory.
  *
  * This script owns only orchestration and development defaults. It changes no
- * production path: `pnpm --filter @hepi/server start` still builds the
- * Diagnostic Page bundle and runs without a watcher.
+ * production path: `pnpm --filter @hepi/server start` runs the backend
+ * without a watcher and builds nothing.
  *
  * Usage: pnpm dev [--only=gateway,server,web] [--workspace=<dir>]
  */

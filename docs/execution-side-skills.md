@@ -113,15 +113,7 @@ unreachable or unreadable host produces an error, never a harness-local substitu
   hidden reload and a host change enters only through an explicit Reload. Version-1 documents (a single `state`) migrate
   to `adopted`. Persisted state is not a snapshot: an ordinary read still returns the current host file, and a skill
   command reads its body from the host when it runs.
-- **Retired kind mapping.** Ticket 01 committed skills alone under `hepi.workspace-skills` (version 1); the unified
-  loader reads `hepi.workspace-resources`, a different kind, so document migration cannot cross between them. That
-  document is declared once as a read-only typed shape (`LegacyWorkspaceSkillsDoc`) and reading it is a pure
-  `migrateLegacySkillsState` mapping: the committed prefix is carried over byte for byte, its skills become the whole
-  catalog and the host identity is retained, with no host read and no context or prompts (the retired kind had none). The
-  mapped result is the effective state, so a restored conversation replays exactly what it had adopted; the next run
-  persists it under the current kind, after which the retired document is no longer consulted. A failed retired result
-  is carried over unchanged and retried as before. Nothing writes the retired kind and no URI, tool or runtime path
-  reads it as a live resource source (ADR 0002).
+- **Retired records.** `hepi.workspace-skills` records are no longer read. Only `hepi.workspace-resources` restores adopted resource state; old records remain untouched in SQLite but do not restore a conversation's resource prefix.
 - **Explicit Reload.** `POST /api/conversations/:id/reload` discovers and parses a complete candidate, then commits it
   in one transaction that also reads run status: an idle conversation promotes it immediately, an active run keeps its
   adopted prefix and the candidate is promoted on the next run. `pi.live.run.inputs[0]` is stable across one run's
@@ -264,8 +256,7 @@ the worktree's own and the main repository's. Upstream loads only the worktree's
 - Prompt-template helpers: `substituteArgs` and `parseCommandArgs` live in `apps/server/src/prompt-templates.ts`,
   behavior-equivalent to that revision's `dist/core/prompt-templates.js`, because the package root re-exports neither
   and the `core/prompt-templates` subpath is not exported. The `pi-resource://` namespace, the `read_pi_resource`
-  tool, the harness-local `agentDir` loader and its module tests were removed in ticket 08; the retired
-  `hepi.workspace-skills` kind survives only as the read-only migration state described above.
+  tool and the harness-local `agentDir` loader and its module tests were removed in ticket 08.
 - Ignore matcher: `ignore@7.0.5` (MIT), the same package upstream `skills.js` and `package-manager.js` use.
 - Path/reference prompt formatting and `.agents/skills` shapes: PI-Desktop revision
   `ed54ce9774c41cefb5d0cdcdf922de7e6df22621` (LGPL-3.0). Snapshots and the exact mapping are in

@@ -92,7 +92,7 @@ ingress 没有配置本机 host service。需要**同时**给三个变量:`HEPI_
 | 报错 | 原因 | 处理 |
 | --- | --- | --- |
 | `HEPI_AUTH_TOKEN is required for non-loopback binding` | 绑了非 loopback 却没给 token | 给 token,或绑回 loopback |
-| `Unknown default model: <provider>/<model>` | 只给 `HEPI_MODEL` 的内建目录模式里,该模型不存在 | 修正模型,或改用 `HEPI_CONFIG_SOURCE=pi` / provider 配置 |
+| `HEPI_PROVIDER and HEPI_MODEL are required for provider configuration` | 設了 `HEPI_PROVIDER` 卻沒給 `HEPI_MODEL` | 補齊模型,或移除 provider 設定 |
 | `Set HEPI_INGRESS_MCP_GATEWAY_URL, ... together, or none of them` | ingress 的 MCP 三个变量只给了一部分 | 补齐或全部去掉 |
 | `HEPI_INGRESS_STATIC_DIR must name a directory, or be unset to serve no page` | 给了空字符串 | 给目录,或删掉这个变量 |
 

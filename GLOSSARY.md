@@ -91,8 +91,8 @@ _Avoid_: session record, session info, catalogue entry
 
 **Session Transport**:
 The client library (`@hepi/session`) a surface uses to read and submit one conversation: it folds the Backend's frames
-into the state one attachment holds and sends that conversation's input. The Web page and the Diagnostic Page each
-assemble it with their own source, and it holds nothing durable.
+into the state one attachment holds and sends that conversation's input. The Web page and the App each assemble it with
+their own source, and it holds nothing durable.
 _Avoid_: session store, session service, agent client
 
 **Unbound Conversation**:
@@ -185,11 +185,12 @@ The one React surface tree (`packages/ui`) that both a Web page and the desktop 
 makes it that host — history, ingress origin and credential — so no surface below knows which one it is in.
 _Avoid_: UI layer, front end package, Web app
 
-**Diagnostic Page**:
-The small HTML page the Backend serves itself — the conversation page at `/diagnostics` and the read-only workbench
-page at `/workbench` — so an operator can inspect one conversation or the workbench with a token they type in. It is a fallback for operating a deployment and not a client entry, not the Workbench
-surface tree, and not a second runtime.
-_Avoid_: admin UI, debug app, second front end
+**Retired Diagnostic Page**:
+The two HTML pages the Backend used to serve itself — `/diagnostics` and `/workbench` — for an operator to inspect one
+conversation or browse files with a token they typed in. Their assets, the `diagnostics.js` bundle and the `build:ui`
+step are removed, so the backend serves no page and every route it answers passes admission first. The name survives
+only in history; a surface that reads conversations or files is the Workbench.
+_Avoid_: admin UI, debug app, second front end, operator page
 
 **Web Session**:
 The identity a browser holds after exchanging the Web login material for the ingress's own HttpOnly cookie. It is same-origin, script-invisible, and ended by a logout that clears the same cookie.

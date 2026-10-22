@@ -57,27 +57,6 @@ export type LoadedResourceState = {
 /** What one conversation adopted from its execution host, or why the initial load failed. */
 export type WorkspaceResourceState = LoadedResourceState | { status: "failed"; error: string; loadedAtMs: number };
 
-/** One skill of the retired `hepi.workspace-skills` catalog, kept only to read an existing database. */
-export type LegacySkillCatalogEntry = {
-  name: string;
-  description: string;
-  location: string;
-  baseDir: string;
-  disableModelInvocation: boolean;
-  scope: ResourceRoot["scope"];
-};
-
-/** The retired `hepi.workspace-skills` value: a skills-only adopted result from before the unified loader. */
-export type LegacyWorkspaceSkillsState =
-  | { status: "loaded"; user: string; home: string; workspaceRoot: string; roots: string[]; skills: LegacySkillCatalogEntry[]; prefix: string; loadedAtMs: number }
-  | { status: "failed"; error: string; loadedAtMs: number };
-
-/**
- * The document kind ticket 01 committed. It exists only so a database written by that code can be read once and mapped;
- * nothing writes it, and no URI, tool or runtime path reads it as a live resource source (ADR 0002).
- */
-export const LegacyWorkspaceSkillsDoc = defineDoc<{ state?: LegacyWorkspaceSkillsState }>({ kind: "hepi.workspace-skills", version: 1, scope: "conversation", history: "latest", fork: "current", initial: () => ({}) });
-
 /**
  * Conversation-owned adopted resource result. `adopted` is the promoted baseline; a successful Reload while a run is
  * active commits its candidate here instead, waiting for the next run. `deferredForRun` is the run
@@ -100,27 +79,6 @@ export const WorkspaceResourcesDoc = defineDoc<WorkspaceResourcesDocValue>({
   // Version 1 stored the single committed result as `state`; that result was the adopted baseline.
   migrate: (value) => (value.state === undefined ? {} : { adopted: value.state as WorkspaceResourceState }),
 });
-
-/**
- * One-time mapping of a retired `hepi.workspace-skills` result to the current adopted shape. It is pure: the committed
- * prefix is carried over byte for byte, the skills become the whole catalog, the host identity is retained, and no host
- * read happens, so a restart replays exactly what the conversation had adopted. The retired document had no prompts and
- * no context files, so those stay empty until an explicit Reload discovers them. A failure is carried over unchanged.
- */
-export function migrateLegacySkillsState(legacy: LegacyWorkspaceSkillsState): WorkspaceResourceState {
-  if (legacy.status === "failed") return { status: "failed", error: legacy.error, loadedAtMs: legacy.loadedAtMs };
-  return {
-    status: "loaded",
-    user: legacy.user,
-    home: legacy.home,
-    workspaceRoot: legacy.workspaceRoot,
-    roots: legacy.roots,
-    contextFiles: [],
-    catalog: legacy.skills.map((skill) => ({ kind: "skill" as const, name: skill.name, description: skill.description, location: skill.location, baseDir: skill.baseDir, scope: skill.scope, disableModelInvocation: skill.disableModelInvocation })),
-    prefix: legacy.prefix,
-    loadedAtMs: legacy.loadedAtMs,
-  };
-}
 
 /** What a client needs to know about committed resource state; `pending` marks a reload waiting for the next run. */
 export type ResourceSummary =
@@ -448,20 +406,8 @@ export function createWorkspaceResources(options: WorkspaceResourcesOptions = {}
  */
 export async function readEffectiveResources(read: DocumentReader, conversationId: ConversationId, context: Context): Promise<WorkspaceResourceState | undefined> {
   const doc = await read.snapshot(WorkspaceResourcesDoc, conversationId, context);
-  if (doc !== undefined) {
-    const current = effectiveState(doc, await activeRunInput(read, conversationId, context));
-    if (current !== undefined) return current;
-  }
-  // A database written before the unified loader holds its skills-only result under the retired kind. Reading it is a
-  // pure mapping of what that conversation had already adopted, never a discovery, so a restart still replays the
-  // committed prefix and only an explicit Reload can introduce prompts, context or host changes.
-  return await readLegacyResources(read, conversationId, context);
-}
-
-/** The retired kind's committed result, mapped to the current shape. A read, not a write. */
-async function readLegacyResources(read: DocumentReader, conversationId: ConversationId, context: Context): Promise<WorkspaceResourceState | undefined> {
-  const legacy = (await read.snapshot(LegacyWorkspaceSkillsDoc, conversationId, context))?.state;
-  return legacy === undefined ? undefined : migrateLegacySkillsState(legacy);
+  if (doc === undefined) return undefined;
+  return effectiveState(doc, await activeRunInput(read, conversationId, context));
 }
 
 /** The result in effect for one document value and the active run's input ID. */
@@ -482,14 +428,7 @@ async function activeRunInput(read: DocumentReader, conversationId: Conversation
  */
 export async function ensureAdoptedResources(conversation: ConversationTx, read: DocumentReader, resources: WorkspaceResources, env: ExecutionHostEnv | undefined, context: Context): Promise<WorkspaceResourceState> {
   const existing = await readEffectiveResources(read, conversation.id, context);
-  if (existing?.status === "loaded") {
-    // One-time mapping: a result adopted under the retired kind is persisted under the current one, so the mapping is
-    // never repeated and the retired document is no longer consulted. No host read happens here.
-    if ((await read.snapshot(WorkspaceResourcesDoc, conversation.id, context)) === undefined) {
-      await conversation.commit(async (tx) => { (await tx.doc(WorkspaceResourcesDoc, conversation.id)).adopted = existing; }, context);
-    }
-    return existing;
-  }
+  if (existing?.status === "loaded") return existing;
   const state = await discoverOrFail(resources, env, context);
   await conversation.commit(async (tx) => { (await tx.doc(WorkspaceResourcesDoc, conversation.id)).adopted = state; }, context);
   if (state.status === "failed") throw new Error(state.error);
@@ -538,7 +477,7 @@ export async function resourceSummary(read: DocumentReader, conversationId: Conv
   // Deferred: committed while the run now active was active, so it applies to the next run. Once that run ends the
   // candidate is already the effective result, so it is no longer pending.
   const pending = doc?.candidate !== undefined && runInput !== undefined && doc.deferredForRun === runInput;
-  const effective = doc === undefined ? await readLegacyResources(read, conversationId, context) : effectiveState(doc, runInput) ?? await readLegacyResources(read, conversationId, context);
+  const effective = doc === undefined ? undefined : effectiveState(doc, runInput);
   if (effective?.status !== "loaded") return { status: "failed", error: effective?.error ?? "no resource loading result has been committed", pending };
   return { status: "loaded", skills: effective.catalog.filter((entry) => entry.kind === "skill").length, prompts: effective.catalog.filter((entry) => entry.kind === "prompt").length, loadedAtMs: effective.loadedAtMs, pending };
 }

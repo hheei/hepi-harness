@@ -55,15 +55,12 @@ const agentDir = piConfig?.agentDir ?? resolveAgentDir();
 const customProvider = piConfig ? undefined : customProviderFromEnv();
 const models = piConfig?.models ?? await openEnvModelRuntime({ agentDir, custom: customProvider?.provider });
 const modelConfig: ModelConfigTarget = { path: modelsConfigPath(agentDir), runtime: models };
-// The legacy HEPI_MODEL-only selection names a built-in OpenAI catalog model and is an operator instruction, so an
-// unknown one still fails startup. A configured provider's own model is validated by provider-config.ts.
-const legacyModel = piConfig === undefined && customProvider === undefined && process.env.HEPI_MODEL ? { provider: process.env.HEPI_PROVIDER ?? "openai", modelId: process.env.HEPI_MODEL } : undefined;
-if (legacyModel !== undefined && models.getModel(legacyModel.provider, legacyModel.modelId) === undefined) throw new Error("Unknown default model: " + legacyModel.provider + "/" + legacyModel.modelId);
 // Every mode names its default explicitly, including "none configured". A deployment that configured no model names no
 // default: new conversations start with none and settle natively as no_model until one is selected, rather than being
 // handed a scripted placeholder that would answer as if a model were configured. Models the file or the ambient
-// environment does offer are still listed and selectable.
-const defaultModel = piConfig ? piConfig.defaultModel ?? null : customProvider?.defaultModel ?? legacyModel ?? null;
+// environment does offer are still listed and selectable. A default is only ever the paired HEPI_PROVIDER/HEPI_MODEL
+// selection that provider-config.ts validated; HEPI_MODEL alone names no provider and therefore selects nothing.
+const defaultModel = piConfig ? piConfig.defaultModel ?? null : customProvider?.defaultModel ?? null;
 // Every execution-side resource — skills, prompts, context and system prompts — comes from the bound workspace's
 // execution host through one loader (ADR 0002). Project `.pi` prompts follow the same project-trust setting Pi uses.
 const { createWorkspaceResources } = await import("./workspace-resources.ts");

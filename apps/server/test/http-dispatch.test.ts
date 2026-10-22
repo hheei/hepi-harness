@@ -53,6 +53,19 @@ test("every domain owner is composed behind one admitted entry, which still answ
   assert.deepEqual(await empty.json(), { protocol: "hepi.v1", results: [], truncated: false });
 });
 
+test("the retired operator pages are gone, and nothing is served ahead of admission", async (t) => {
+  const origin = await start(t);
+  // The backend used to serve two operator pages of its own ahead of admission. They are retired with their assets and
+  // their build step, so the paths are no route at all rather than a page a caller can still reach — and no path is
+  // served without the credential admission asks for, which is now the first thing every request passes.
+  for (const path of ["/diagnostics", "/diagnostics.js", "/diagnostics.html", "/workbench", "/workbench.js", "/workbench.html"]) {
+    assert.equal((await fetch(origin + path)).status, 401, path + " without admission");
+    const answer = await call(origin, "GET", path);
+    assert.equal(answer.status, 404, path);
+    assert.equal((await answer.json() as { code?: string }).code, "not_found", path);
+  }
+});
+
 test("the project and checkout routes decode and the registry answers, including its own refusals", async (t) => {
   const origin = await start(t);
   // No ProjectStore is configured for this deployment: the registry answers every mutation with its own outcome, and the

@@ -1,16 +1,17 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { readFile } from "node:fs/promises";
 import { PROTOCOL_VERSION } from "@hepi/protocol";
 import type { DeviceCredentials } from "./device-credentials.ts";
 
 /**
- * The diagnostics surface: the two operator pages this process serves, the descriptor that states what this build is,
- * and the device-credential routes the client ingress admits callers with.
+ * The diagnostics surface: the descriptor that states what this build is, and the device-credential routes the client
+ * ingress admits callers with.
  *
- * None of it is conversation work. The pages are static files served before admission, the descriptor states the
- * identity a caller is connected to and the capabilities this build really has, and the credential routes are the one
- * place a device credential is listed, issued, revoked and checked. A capability a deployment did not configure is
- * absent from the descriptor rather than stated as false-by-hope, because a client acts on what is there.
+ * None of it is conversation work. The descriptor states the identity a caller is connected to and the capabilities
+ * this build really has, and the credential routes are the one place a device credential is listed, issued, revoked
+ * and checked. A capability a deployment did not configure is absent from the descriptor rather than stated as
+ * false-by-hope, because a client acts on what is there. There is no page here: the operator pages this module once
+ * served ahead of admission are retired with their assets and build step, so every route this backend answers is one
+ * admission guards.
  */
 
 /** The identity the ingress admitted, as it states it on every request it forwards. */
@@ -30,25 +31,6 @@ export type DiagnosticsHttpOptions = {
   /** Read a bounded JSON request body, or `undefined` when it is absent or malformed. */
   readonly readBody: (request: IncomingMessage, limitBytes?: number) => Promise<unknown>;
 };
-
-/**
- * The two operator pages, served **before** admission.
- *
- * They are the surface an operator opens to paste a token into, so requiring one to load them would be a lock with its
- * key inside. They are still this module's: they are what this build shows about itself, and the entry states only the
- * order — pages, then admission, then everything a client may read.
- */
-export function createDiagnosticsPages(): (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<boolean> {
-  return async (request, response, url) => {
-    const script = url.pathname.endsWith(".js");
-    const name = url.pathname === "/diagnostics" || url.pathname === "/diagnostics.js" ? "diagnostics"
-      : url.pathname === "/workbench" || url.pathname === "/workbench.js" ? "workbench"
-      : undefined;
-    if (request.method !== "GET" || name === undefined) return false;
-    const page = await readFile(new URL(script ? "../public/" + name + ".js" : "../public/" + name + ".html", import.meta.url));
-    response.writeHead(200, { "content-type": script ? "text/javascript; charset=utf-8" : "text/html; charset=utf-8" }); response.end(page); return true;
-  };
-}
 
 export function createDiagnosticsHttp(options: DiagnosticsHttpOptions): (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<boolean> {
   return async (request, response, url) => {

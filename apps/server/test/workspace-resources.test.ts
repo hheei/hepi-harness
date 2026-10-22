@@ -3,19 +3,15 @@ import { chmod, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
-import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import { createSyntheticSourceInfo, formatSkillsForPrompt } from "@earendil-works/pi-coding-agent";
 import { contentText, type AssistantMessage, type Message } from "@earendil-works/pi-ai";
-import type { ConversationId } from "@earendil-works/pi-durable";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall, type FauxResponseFactory, type FauxResponseStep } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
 import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
-import { openServerHarness } from "../src/harness.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { streamFolder, type HeldWindow } from "./stream-window.ts";
-import { migrateLegacySkillsState, createWorkspaceResources, LegacyWorkspaceSkillsDoc, visibleContextFiles, WorkspaceResourcesDoc, type LegacySkillCatalogEntry, type LegacyWorkspaceSkillsState, type ResourceSummary } from "../src/workspace-resources.ts";
+import { createWorkspaceResources, visibleContextFiles, WorkspaceResourcesDoc, type ResourceSummary } from "../src/workspace-resources.ts";
 import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
 
 /** Every message of one request, so a test can assert what the model was actually shown. */
@@ -806,99 +802,4 @@ test("restart replays the deferred candidate committed before the restart withou
   assert.match(seen, /Deferred skill/, "the committed candidate is replayed");
   assert.doesNotMatch(seen, /Post restart skill/, "restart does not rediscover the host");
   assert.deepEqual(await commands({ ...first, origin: restarted } as Fixture, id), ["ship", "skill:ancestor", "skill:deferred", "skill:deploy", "skill:global-notes", "summarize"]);
-});
-
-
-test("maps a retired skills-only result to the current adopted shape without reading the host", () => {
-  const skill: LegacySkillCatalogEntry = { name: "global-notes", description: "Take global notes", location: "/exec/.agents/skills/global-notes/SKILL.md", baseDir: "/exec/.agents/skills/global-notes", disableModelInvocation: true, scope: "global" };
-  const legacy: LegacyWorkspaceSkillsState = { status: "loaded", user: "operator", home: "/exec", workspaceRoot: "/exec/repo", roots: ["/exec/.agents/skills"], skills: [skill], prefix: "<resources>\nlegacy prefix\n</resources>", loadedAtMs: 7 };
-  const mapped = migrateLegacySkillsState(legacy);
-  assert.deepEqual(mapped, {
-    status: "loaded",
-    user: "operator",
-    home: "/exec",
-    workspaceRoot: "/exec/repo",
-    roots: ["/exec/.agents/skills"],
-    contextFiles: [],
-    catalog: [{ kind: "skill", name: "global-notes", description: "Take global notes", location: "/exec/.agents/skills/global-notes/SKILL.md", baseDir: "/exec/.agents/skills/global-notes", scope: "global", disableModelInvocation: true }],
-    prefix: "<resources>\nlegacy prefix\n</resources>",
-    loadedAtMs: 7,
-  });
-  // A failed retired result is carried over unchanged, so its conversation can still report and retry it.
-  assert.deepEqual(migrateLegacySkillsState({ status: "failed", error: "old failure", loadedAtMs: 9 }), { status: "failed", error: "old failure", loadedAtMs: 9 });
-  // The retired kind is read only for this mapping; it stays the ticket-01 document, never a live resource source.
-  assert.equal(LegacyWorkspaceSkillsDoc.definition.kind, "hepi.workspace-skills");
-  assert.equal(LegacyWorkspaceSkillsDoc.definition.version, 1);
-});
-
-test("a restart preserves a legacy adopted catalog until an explicit reload", { timeout: 20000 }, async (t) => {
-  const transcript: string[] = [];
-  const first = await fixture(t, transcript);
-  // A conversation created by the previous code: the current document does not exist, and its adopted result lives
-  // under the retired kind.
-  const id = await createConversation(first.origin, first.headers);
-  const legacySkill = (name: string, description: string, dir: string): LegacySkillCatalogEntry => ({ name, description, location: join(dir, "SKILL.md"), baseDir: dir, disableModelInvocation: false, scope: "global" });
-  const skills = [legacySkill("global-notes", "Take global notes", join(first.home, ".agents", "skills", "global-notes")), legacySkill("deploy", "Deploy the app", join(first.root, ".agents", "skills", "deploy"))];
-  const legacyPrefix = formatSkillsForPrompt(skills.map((skill) => ({ name: skill.name, description: skill.description, filePath: skill.location, baseDir: skill.baseDir, sourceInfo: createSyntheticSourceInfo(skill.location, { source: "local", scope: "user", baseDir: skill.baseDir }), disableModelInvocation: skill.disableModelInvocation })), "read");
-  const legacy: LegacyWorkspaceSkillsState = { status: "loaded", user: "operator", home: first.home, workspaceRoot: first.root, roots: [join(first.home, ".agents", "skills"), join(first.root, ".agents", "skills")], skills, prefix: legacyPrefix, loadedAtMs: 1234 };
-  // Stop the service, write the retired document through the durable harness itself, and disconnect the execution host.
-  for (const backend of first.opened) { backend.server.closeAllConnections(); await backend.close(); }
-  const writer = await openServerHarness(first.dbPath, SERVER_MODEL, first.models, undefined, { startPaused: true });
-  const conversation = await writer.harness.conversation(Number(id) as ConversationId, BACKGROUND_CONTEXT);
-  assert.ok(conversation !== undefined);
-  await conversation.commit(async (tx) => { (await tx.doc(LegacyWorkspaceSkillsDoc, Number(id) as ConversationId)).state = legacy; }, BACKGROUND_CONTEXT);
-  await writer.close();
-  // The host changes and is reconnected on a new address: only the mapping can explain a replayed old prefix.
-  await first.closeGateways();
-  await mkdir(join(first.home, ".agents", "skills", "brand-new"), { recursive: true });
-  await writeFile(join(first.home, ".agents", "skills", "brand-new", "SKILL.md"), "---\nname: brand-new\ndescription: Brand new skill\n---\nBrand new body.\n");
-  await writeFile(join(first.home, ".pi", "agent", "prompts", "brand-new.md"), "---\ndescription: Brand new prompt\n---\nBrand new prompt body.\n");
-  const rebound = await first.startGateway();
-  const restarted = await first.startBackend([rebound, { ...rebound, id: "second" }]);
-
-  transcript.length = 0;
-  first.responses.push(fauxAssistantMessage("replayed"));
-  await run(restarted, first.headers, id, "after restart");
-  const seen = transcript.join("\n");
-  assert.match(seen, /Take global notes/, "the retired prefix is replayed");
-  assert.match(seen, /Deploy the app/);
-  assert.doesNotMatch(seen, /Brand new skill/, "a restart is not a reload and does not rediscover the host");
-  // Commands come from the mapped catalog: the retired result had no prompts, so none are advertised yet.
-  assert.deepEqual(await commands({ ...first, origin: restarted } as Fixture, id), ["skill:deploy", "skill:global-notes"]);
-  const summary = await stateResources(restarted, first.headers, id);
-  assert.deepEqual(summary, { status: "loaded", skills: 2, prompts: 0, loadedAtMs: 1234, pending: false });
-  // The committed result is on the SSE snapshot too, so a reconnecting client sees the adopted catalog.
-  const events = await follow(restarted, first.headers, id);
-  t.after(events.close);
-  const baseline = await events.until((frame) => frame.event === "snapshot", "the baseline snapshot after the restart");
-  assert.match(JSON.stringify(baseline.data), /"resources":\{"status":"loaded","skills":2,"prompts":0/);
-
-  // The mapping is persisted under the current kind, so the next restart no longer needs the retired document.
-  for (const backend of first.opened) { backend.server.closeAllConnections(); await backend.close(); }
-  await first.closeGateways();
-  const offline = await first.startBackend([{ ...rebound, gatewayOrigin: "http://127.0.0.1:1" }, { ...rebound, id: "second", gatewayOrigin: "http://127.0.0.1:1" }]);
-  transcript.length = 0;
-  first.responses.push(fauxAssistantMessage("still replayed"));
-  await run(offline, first.headers, id, "offline restart");
-  assert.match(transcript.join("\n"), /Take global notes/, "the mapped result is replayed with the host unreachable");
-  assert.doesNotMatch(transcript.join("\n"), /Brand new skill/);
-
-  // Only an explicit Reload adopts the changed host, including the prompts the retired kind never had.
-  const reloaded = await reload(offline, first.headers, id);
-  assert.equal(reloaded.status, 500, "an unreachable host fails the reload without changing the adopted catalog");
-  assert.deepEqual(await stateResources(offline, first.headers, id), summary);
-  const fresh = await first.startGateway();
-  const reachable = await first.startBackend([fresh, { ...fresh, id: "second" }]);
-  const adopted = await reload(reachable, first.headers, id);
-  assert.equal(adopted.status, 200, JSON.stringify(adopted.body));
-  // The explicit Reload discovers the whole host, not just the one new skill: the prompts and the ancestor skill the
-  // retired kind could not carry are adopted now.
-  assert.deepEqual(await commands({ ...first, origin: reachable } as Fixture, id), ["brand-new", "ship", "skill:ancestor", "skill:brand-new", "skill:deploy", "skill:global-notes", "summarize"]);
-  const reloadedSummary = adopted.body.resources;
-  assert.ok(reloadedSummary?.status === "loaded");
-  assert.deepEqual({ ...reloadedSummary, loadedAtMs: 0 }, { status: "loaded", skills: 4, prompts: 3, loadedAtMs: 0, pending: false });
-  transcript.length = 0;
-  first.responses.push(fauxAssistantMessage("adopted"));
-  await run(reachable, first.headers, id, "after reload");
-  assert.match(transcript.join("\n"), /Brand new skill/, "the explicit reload adopts the changed host");
 });

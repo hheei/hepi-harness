@@ -58,7 +58,7 @@ Set all four variables on the backend process:
 
 Startup is strict so misconfiguration surfaces immediately, not as a failed request later:
 
-- A configured provider requires `HEPI_MODEL`. Missing/blank model, or endpoint/key settings without provider and model, fail startup instead of starting a backend that serves nothing. `HEPI_MODEL` alone retains the legacy OpenAI selection path.
+- A configured provider requires `HEPI_MODEL`. Missing/blank model, or endpoint/key settings without provider and model, fail startup instead of starting a backend that serves nothing. `HEPI_MODEL` alone is not a provider configuration: it selects no model and no default, because a model id without a provider names no endpoint (see [Default model](#default-model)).
 - `HEPI_PROVIDER=faux` is rejected: the offline scripted provider is a test fixture, not a custom endpoint.
 - `HEPI_PROVIDER_BASE_URL` must be an absolute `http`/`https` URL; a malformed or other-scheme value fails at startup.
 - Unknown provider id without `HEPI_PROVIDER_BASE_URL`: startup fails with "HEPI_PROVIDER_BASE_URL is required for provider <id>" instead of silently calling the wrong endpoint.
@@ -119,13 +119,15 @@ conversations keep the model they were created with.
 
 `HEPI_CONFIG_SOURCE=pi` changes which base layer is registered: the backend uses the `pi` agent directory's catalog and credential store instead of the environment-configured provider. In that mode an explicit `HEPI_PROVIDER`+`HEPI_MODEL` pair selects a model that must already exist in the `pi` registry, and `HEPI_PROVIDER_BASE_URL`/`HEPI_PROVIDER_API_KEY` are rejected rather than allowed to override that catalog. The `models.json` file layer and the editor's save path are the same in both modes. See docs/pi-config.md.
 
-In environment mode, `HEPI_MODEL` without `HEPI_PROVIDER`/base URL keeps the previous behavior: provider defaults to `openai`, the model must exist in the built-in OpenAI catalog, and an unknown one fails at startup. Pi mode rejects that half-set pair instead.
+Neither mode infers a provider from a model id. In environment mode `HEPI_MODEL` without `HEPI_PROVIDER`/base URL is not a default-model selection: no provider is registered from it, no default is stated, and the model id is never read as an OpenAI catalog id. Pi mode rejects that half-set pair as a startup error instead.
 
 ### Default model
 
-**Environment mode** (`HEPI_CONFIG_SOURCE` unset): `HEPI_PROVIDER`+`HEPI_MODEL`, or the legacy `HEPI_MODEL` alone,
-names the model new conversations start with. Without one there is **no implicit default**: the catalog still lists
-every model the file and the ambient environment make available, `GET /api/models` states `defaultModel: null`, and a
+**Environment mode** (`HEPI_CONFIG_SOURCE` unset): the paired `HEPI_PROVIDER`+`HEPI_MODEL` selection names the model new
+conversations start with. `HEPI_MODEL` alone is not a half-configured default: it names no provider, so it states no
+default and is never completed from a built-in catalog (`HEPI_PROVIDER` without `HEPI_MODEL` still fails startup, above).
+Without a pair there is **no implicit default**: the catalog still lists every model the file and the ambient
+environment make available, `GET /api/models` states `defaultModel: null`, and a
 conversation created before a model is selected settles its next request natively as `no_model`. No model is chosen on
 the operator's behalf and no conversation's stored reference is rewritten. The client then selects a model explicitly,
 which is the recovery path.

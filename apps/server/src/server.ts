@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { createDiagnosticsHttp, createDiagnosticsPages } from "./diagnostics-http.ts";
+import { createDiagnosticsHttp } from "./diagnostics-http.ts";
 import { createWorkspaceHttp } from "./workspace-http.ts";
 import { createSettingsHttp } from "./settings-http.ts";
 import { createConversationHistoryHttp } from "./conversation-history-http.ts";
@@ -725,11 +725,10 @@ export async function createBackendServer(options: Options): Promise<BackendServ
   /**
    * The HTTP domain owners, composed once and dispatched in this fixed order. Each is a concrete handler over the
    * operations it uses — never a registry and never a shared context — so a route change touches its owner and this
-   * wiring. Order is the entry's own: the pages and the descriptor before admission, the deployment's metadata and the
-   * relays next, then the project routes and the catalogue, and the conversation-scoped domains last, because they
-   * resolve a conversation identity first.
+   * wiring. Order is the entry's own: admission first, then the descriptor and the credential routes, the deployment's
+   * metadata and the relays, then the project routes and the catalogue, and the conversation-scoped domains last,
+   * because they resolve a conversation identity first.
    */
-  const pages = createDiagnosticsPages();
   const diagnostics = createDiagnosticsHttp({
     buildId: options.buildId,
     backendId: options.backendId ?? process.env.HEPI_BACKEND_ID ?? "hepi-backend",
@@ -817,8 +816,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
 
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? "/", "http://localhost");
-    // The operator pages answer before admission; everything below them is a client route that admission guards.
-    if (await pages(request, response, url)) return;
+    // Admission is the first thing every route passes: no path is served ahead of it.
     if (!authorized(request, options.authToken)) { json(response, 401, { error: "unauthorized" }); return; }
     // The diagnostics surface: the descriptor, the device credentials and the authority check the ingress asks. It is
     // composed here because it is what this build states about itself, and it answers nothing about a conversation.

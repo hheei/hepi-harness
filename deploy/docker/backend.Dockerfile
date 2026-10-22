@@ -22,12 +22,6 @@ COPY patches patches
 RUN --mount=type=cache,id=hepi-pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @hepi/server...
 
-# The backend serves its own Diagnostic Pages from apps/server/public; the `diagnostics.js` bundle is not committed, esbuild builds it.
-FROM deps AS build
-COPY apps/server apps/server
-COPY packages packages
-RUN pnpm --filter @hepi/server build:ui
-
 FROM toolchain AS runtime
 ENV NODE_ENV=production \
     HEPI_BIND_HOST=127.0.0.1 \
@@ -46,7 +40,6 @@ RUN --mount=type=cache,id=hepi-pnpm-store,target=/pnpm/store \
 # Sources are TypeScript and run directly on Node 24 type stripping (docs/deployment.md), so no build output is needed.
 COPY apps/server apps/server
 COPY packages packages
-COPY --from=build /app/apps/server/public apps/server/public
 RUN install -d -o node -g node /var/lib/hepi
 USER node
 WORKDIR /app/apps/server

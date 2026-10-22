@@ -186,7 +186,7 @@ Backend 资源路由加在其 domain owner(`settings-http.ts`、`conversation-*-
 | `/api/{extensions,skill-market/*}` | `extensions-http.ts`:已安装 extension、全局默认选择与 skill market,实现见 `extension-selection.ts`、`skill-install.ts`、`skill-repository.ts` |
 | `GET /api/search` | `conversation-catalogue-http.ts`、`session-search.ts`:无索引全文搜索 |
 | `/api/agent-definitions*` | `agent-definitions-http.ts`:workspace 自有主机上的定义文档 |
-| `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify`, `/diagnostics*`, `/workbench*` | `diagnostics-http.ts`:诊断页、descriptor 与 credential routes |
+| `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify` | `diagnostics-http.ts`:descriptor 与 credential routes(旧 `/diagnostics*`、`/workbench*` 页面已移除,不再有准入前的页面) |
 
 `server.ts` 只保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback;每个 domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response,不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer;`conversation-catalogue.ts` 拥有唯一的 catalogue row projection。
 
