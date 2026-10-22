@@ -1,0 +1,18 @@
+# Non-UI design exploration brief
+
+User requests six separate specs, each examined by multiple scouts and reviewers, following codebase-design: deep modules, small interface, locality, fewer moving pieces. Planning only: do not modify application code, deploy, run product tests or create implementation tickets. Workspace: `/home/chlo/Documents/dev/hepi-harness`; source baseline `5ec7ffe6`. Concurrent UI work and unrelated untracked notes must remain untouched.
+
+Read the assigned source and relevant existing tests/docs. Read `.pi/skills/skills/engineering/codebase-design/SKILL.md`, `DEEPENING.md`, and `docs/agents/review-policy.md`; reuse GLOSSARY.md vocabulary. Parent already queried graphify narrowly for all six areas; navigation results are in `navigation.md`. Reuse these locations; for a new discovery question, query `~/.local/bin/graphify query "symbol" --budget 1000`, then source-confirm. Graph: `graphify-out/graph.json`. Broad results are truncated: use focused source search after identifying graph locations. Never rebuild graph.
+
+Areas and owning paths:
+
+1. Backend composition/routes: apps/server/src/server.ts:897 createBackendServer, :1885 handle; harness.ts:86 openServerHarness, conversation-operations.ts, existing apps/server/test route integration tests.
+2. Project/workspace registry: server.ts:915-1130 resolution, :2050-2380 project routes, catalogue-binding.ts, project-store.ts, test/project.test.ts, test/catalogue-binding.test.ts, test/ssh-project.test.ts.
+3. Gateway transport: packages/gateway/src/index.ts:503 GatewayRpcServer, :1018 close, startup.ts, existing file-transfer/terminal/provider/MCP tests.
+4. Filesystem adapters: packages/gateway/src/filesystem.ts:312 LocalFilesystem, ssh-filesystem.ts:361 SshFilesystem and :33 embedded Python, runner.ts, existing SSH/file transfer tests and release artifact builder.
+5. Ingress topology: packages/gateway/src/ingress/index.ts:209 createClientIngress, :316 servesFolder; backend /api/workspaces and /api/hosts; protocol workspace/MCP types; ingress-mcp/ingress-catalogue/SSH-workbench tests.
+6. Native artifact verification: apps/app/scripts/verify-artifacts.mjs, existing scripts/lib/credential-sandbox.mjs, apps/app/scripts/offline-install.mjs, native acceptance fixture/driver and packaging CI callers.
+
+For each assigned area give: source evidence with real file lines; proposed interface (including ordering/errors/lifetime and caller example); what implementation hides; dependency categories (in-process, local-substitutable, remote-owned, true-external) and any real adapters; one explicit alternative; deletion test and concrete removals; real existing test seams and replace-not-layer strategy; scope/dependencies/parallelizability and remaining uncertainty. Keep response under 650 words total for both areas. Do not invent line-count savings or claim measured bugs/performance. Distinguish proposed names from existing symbols.
+
+Hard constraints: retain ordinary shipped workflow semantics, safety admission and remote host validation. Never bypass-test any auth/authorization/preflight/safety boundary. Keep one durable Conversation authority; live attachment Map is not duplicate durable state. Gateway already has unified close; preserve request-bound MCP vs disconnect-surviving provider login lifetimes. Existing FilesystemServer interface is real; avoid duplicating it. No aliases/shims/fallback readers for old code. No speculative plugin registries, generic framework, giant injected context or supervisor. A concrete cohesive module may be useful with one caller; ports need actual variation (production/test adapters count when justified).

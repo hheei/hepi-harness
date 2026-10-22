@@ -1,0 +1,858 @@
+{
+  "revision": "5ec7ffe62a2aaf172fb294bd68f1976098cfb012",
+  "scope": "Non-UI production sources in apps/server/src, packages/{gateway,session,client}/src, scripts, apps/app/{src,src-tauri/src,scripts}; excludes *.test.*, test, testing, declarations. Lines/imports/exports are discovery metrics, not complexity verdicts.",
+  "groups": {
+    "apps/server/src": {
+      "files": 46,
+      "lines": 15167
+    },
+    "packages/gateway/src": {
+      "files": 46,
+      "lines": 15039
+    },
+    "packages/session/src": {
+      "files": 7,
+      "lines": 2482
+    },
+    "apps/app/scripts": {
+      "files": 4,
+      "lines": 1213
+    },
+    "scripts": {
+      "files": 21,
+      "lines": 3594
+    },
+    "apps/app/src-tauri": {
+      "files": 2,
+      "lines": 619
+    },
+    "packages/client/src": {
+      "files": 4,
+      "lines": 431
+    },
+    "apps/app/src": {
+      "files": 5,
+      "lines": 399
+    }
+  },
+  "files": [
+    {
+      "path": "apps/server/src/server.ts",
+      "lines": 3241,
+      "imports": 44,
+      "exports": 7
+    },
+    {
+      "path": "packages/gateway/src/index.ts",
+      "lines": 1149,
+      "imports": 24,
+      "exports": 54
+    },
+    {
+      "path": "packages/gateway/src/install.ts",
+      "lines": 989,
+      "imports": 7,
+      "exports": 32
+    },
+    {
+      "path": "packages/gateway/src/filesystem.ts",
+      "lines": 959,
+      "imports": 13,
+      "exports": 49
+    },
+    {
+      "path": "apps/server/src/conversation-operations.ts",
+      "lines": 774,
+      "imports": 8,
+      "exports": 22
+    },
+    {
+      "path": "packages/gateway/src/terminal.ts",
+      "lines": 771,
+      "imports": 6,
+      "exports": 25
+    },
+    {
+      "path": "packages/gateway/src/provider-login.ts",
+      "lines": 767,
+      "imports": 8,
+      "exports": 5
+    },
+    {
+      "path": "apps/server/src/skill-install.ts",
+      "lines": 704,
+      "imports": 6,
+      "exports": 30
+    },
+    {
+      "path": "apps/server/src/workspace-resources.ts",
+      "lines": 693,
+      "imports": 8,
+      "exports": 21
+    },
+    {
+      "path": "packages/gateway/src/ssh-filesystem.ts",
+      "lines": 689,
+      "imports": 8,
+      "exports": 13
+    },
+    {
+      "path": "packages/gateway/src/ingress/index.ts",
+      "lines": 677,
+      "imports": 9,
+      "exports": 7
+    },
+    {
+      "path": "packages/session/src/execution-resources.ts",
+      "lines": 668,
+      "imports": 1,
+      "exports": 27
+    },
+    {
+      "path": "apps/server/src/skill-repository.ts",
+      "lines": 660,
+      "imports": 1,
+      "exports": 30
+    },
+    {
+      "path": "apps/app/scripts/verify-artifacts.mjs",
+      "lines": 657,
+      "imports": 11,
+      "exports": 0
+    },
+    {
+      "path": "packages/gateway/src/ingress/mcp-panel.ts",
+      "lines": 647,
+      "imports": 3,
+      "exports": 6
+    },
+    {
+      "path": "apps/server/src/mcp-conversation-tools.ts",
+      "lines": 623,
+      "imports": 6,
+      "exports": 23
+    },
+    {
+      "path": "packages/gateway/src/files-surface.ts",
+      "lines": 561,
+      "imports": 3,
+      "exports": 5
+    },
+    {
+      "path": "apps/server/src/history-window.ts",
+      "lines": 538,
+      "imports": 3,
+      "exports": 33
+    },
+    {
+      "path": "apps/server/src/conversation-read.ts",
+      "lines": 536,
+      "imports": 4,
+      "exports": 19
+    },
+    {
+      "path": "packages/gateway/src/mcp/host.ts",
+      "lines": 486,
+      "imports": 8,
+      "exports": 5
+    },
+    {
+      "path": "packages/gateway/src/provider-auth.ts",
+      "lines": 486,
+      "imports": 6,
+      "exports": 10
+    },
+    {
+      "path": "packages/session/src/control.ts",
+      "lines": 484,
+      "imports": 1,
+      "exports": 13
+    },
+    {
+      "path": "scripts/lib/deploy.mjs",
+      "lines": 477,
+      "imports": 5,
+      "exports": 16
+    },
+    {
+      "path": "apps/server/src/conversation-navigation.ts",
+      "lines": 467,
+      "imports": 7,
+      "exports": 9
+    },
+    {
+      "path": "packages/gateway/src/worktrees.ts",
+      "lines": 414,
+      "imports": 8,
+      "exports": 12
+    },
+    {
+      "path": "apps/server/src/mcp-grants.ts",
+      "lines": 408,
+      "imports": 6,
+      "exports": 18
+    },
+    {
+      "path": "packages/session/src/resources.ts",
+      "lines": 402,
+      "imports": 0,
+      "exports": 10
+    },
+    {
+      "path": "packages/gateway/src/mcp/config.ts",
+      "lines": 395,
+      "imports": 4,
+      "exports": 17
+    },
+    {
+      "path": "scripts/lib/credential-sandbox.mjs",
+      "lines": 393,
+      "imports": 6,
+      "exports": 8
+    },
+    {
+      "path": "packages/gateway/src/ingress/providers.ts",
+      "lines": 381,
+      "imports": 1,
+      "exports": 9
+    },
+    {
+      "path": "apps/server/src/subtree-control.ts",
+      "lines": 374,
+      "imports": 3,
+      "exports": 11
+    },
+    {
+      "path": "packages/gateway/src/execution.ts",
+      "lines": 360,
+      "imports": 2,
+      "exports": 18
+    },
+    {
+      "path": "apps/server/src/subagents/anchor.ts",
+      "lines": 347,
+      "imports": 4,
+      "exports": 3
+    },
+    {
+      "path": "apps/app/src-tauri/src/main.rs",
+      "lines": 347,
+      "imports": 0,
+      "exports": 0
+    },
+    {
+      "path": "apps/server/src/terminal-relay.ts",
+      "lines": 345,
+      "imports": 3,
+      "exports": 3
+    },
+    {
+      "path": "apps/server/src/subagents/host.ts",
+      "lines": 338,
+      "imports": 6,
+      "exports": 23
+    },
+    {
+      "path": "apps/server/src/agent-definitions.ts",
+      "lines": 336,
+      "imports": 2,
+      "exports": 20
+    },
+    {
+      "path": "apps/server/src/subagents/extension.ts",
+      "lines": 336,
+      "imports": 6,
+      "exports": 5
+    },
+    {
+      "path": "packages/session/src/index.ts",
+      "lines": 327,
+      "imports": 1,
+      "exports": 8
+    },
+    {
+      "path": "apps/server/src/project-store.ts",
+      "lines": 321,
+      "imports": 1,
+      "exports": 12
+    },
+    {
+      "path": "packages/gateway/src/host-client.ts",
+      "lines": 308,
+      "imports": 0,
+      "exports": 11
+    },
+    {
+      "path": "packages/gateway/src/mcp/connection.ts",
+      "lines": 297,
+      "imports": 8,
+      "exports": 17
+    },
+    {
+      "path": "packages/gateway/src/startup.ts",
+      "lines": 290,
+      "imports": 18,
+      "exports": 11
+    },
+    {
+      "path": "packages/session/src/agent-event-connection.ts",
+      "lines": 289,
+      "imports": 1,
+      "exports": 7
+    },
+    {
+      "path": "apps/server/src/subagents/delegate.ts",
+      "lines": 286,
+      "imports": 5,
+      "exports": 8
+    },
+    {
+      "path": "packages/gateway/src/runner.ts",
+      "lines": 281,
+      "imports": 7,
+      "exports": 9
+    },
+    {
+      "path": "packages/gateway/src/mcp/listing.ts",
+      "lines": 279,
+      "imports": 4,
+      "exports": 2
+    },
+    {
+      "path": "scripts/lib/client-runtime.mjs",
+      "lines": 275,
+      "imports": 2,
+      "exports": 15
+    },
+    {
+      "path": "apps/app/src-tauri/src/save.rs",
+      "lines": 272,
+      "imports": 0,
+      "exports": 0
+    },
+    {
+      "path": "packages/gateway/src/mcp/invocation.ts",
+      "lines": 270,
+      "imports": 4,
+      "exports": 8
+    },
+    {
+      "path": "apps/server/src/conversation-items.ts",
+      "lines": 269,
+      "imports": 8,
+      "exports": 8
+    },
+    {
+      "path": "packages/gateway/src/file-transfer.ts",
+      "lines": 268,
+      "imports": 2,
+      "exports": 19
+    },
+    {
+      "path": "apps/server/src/subagents/composition.ts",
+      "lines": 262,
+      "imports": 10,
+      "exports": 5
+    },
+    {
+      "path": "apps/app/scripts/build-artifacts.mjs",
+      "lines": 260,
+      "imports": 8,
+      "exports": 0
+    },
+    {
+      "path": "packages/gateway/src/workbench/ssh-files.ts",
+      "lines": 256,
+      "imports": 8,
+      "exports": 8
+    },
+    {
+      "path": "packages/gateway/src/workbench/app-store-files.ts",
+      "lines": 255,
+      "imports": 6,
+      "exports": 4
+    },
+    {
+      "path": "scripts/lib/cli.mjs",
+      "lines": 254,
+      "imports": 4,
+      "exports": 8
+    },
+    {
+      "path": "packages/gateway/src/workbench/app-store-diff.ts",
+      "lines": 253,
+      "imports": 4,
+      "exports": 9
+    },
+    {
+      "path": "packages/gateway/src/control.ts",
+      "lines": 251,
+      "imports": 3,
+      "exports": 4
+    },
+    {
+      "path": "scripts/build-client-runtime.mjs",
+      "lines": 244,
+      "imports": 9,
+      "exports": 0
+    },
+    {
+      "path": "apps/server/src/model-config.ts",
+      "lines": 237,
+      "imports": 7,
+      "exports": 13
+    },
+    {
+      "path": "apps/server/src/session-title.ts",
+      "lines": 228,
+      "imports": 3,
+      "exports": 6
+    },
+    {
+      "path": "scripts/lib/changed-checks.mjs",
+      "lines": 226,
+      "imports": 5,
+      "exports": 1
+    },
+    {
+      "path": "apps/server/src/agent-definitions-http.ts",
+      "lines": 218,
+      "imports": 4,
+      "exports": 3
+    },
+    {
+      "path": "packages/gateway/src/ingress/static.ts",
+      "lines": 218,
+      "imports": 4,
+      "exports": 5
+    },
+    {
+      "path": "scripts/lib/compare.mjs",
+      "lines": 217,
+      "imports": 5,
+      "exports": 4
+    },
+    {
+      "path": "scripts/lib/discovery.mjs",
+      "lines": 217,
+      "imports": 2,
+      "exports": 11
+    },
+    {
+      "path": "apps/server/src/subagents/recovery.ts",
+      "lines": 212,
+      "imports": 4,
+      "exports": 5
+    },
+    {
+      "path": "apps/server/src/subagents/reporter.ts",
+      "lines": 210,
+      "imports": 4,
+      "exports": 8
+    },
+    {
+      "path": "scripts/deploy-inspect.mjs",
+      "lines": 209,
+      "imports": 6,
+      "exports": 4
+    },
+    {
+      "path": "apps/server/src/pi-config.ts",
+      "lines": 205,
+      "imports": 6,
+      "exports": 4
+    },
+    {
+      "path": "apps/server/src/agent-definitions-store.ts",
+      "lines": 197,
+      "imports": 5,
+      "exports": 10
+    },
+    {
+      "path": "packages/gateway/src/host-terminal.ts",
+      "lines": 197,
+      "imports": 2,
+      "exports": 11
+    },
+    {
+      "path": "packages/session/src/browser.ts",
+      "lines": 194,
+      "imports": 3,
+      "exports": 6
+    },
+    {
+      "path": "apps/server/src/file-relay.ts",
+      "lines": 191,
+      "imports": 3,
+      "exports": 3
+    },
+    {
+      "path": "packages/gateway/src/host-files.ts",
+      "lines": 187,
+      "imports": 4,
+      "exports": 6
+    },
+    {
+      "path": "apps/server/src/session-search.ts",
+      "lines": 176,
+      "imports": 2,
+      "exports": 6
+    },
+    {
+      "path": "packages/client/src/config.ts",
+      "lines": 175,
+      "imports": 3,
+      "exports": 8
+    },
+    {
+      "path": "apps/server/src/read-block.ts",
+      "lines": 174,
+      "imports": 1,
+      "exports": 11
+    },
+    {
+      "path": "apps/app/scripts/offline-install.mjs",
+      "lines": 173,
+      "imports": 4,
+      "exports": 10
+    },
+    {
+      "path": "scripts/dev.mjs",
+      "lines": 168,
+      "imports": 4,
+      "exports": 4
+    },
+    {
+      "path": "packages/gateway/src/workspaces.ts",
+      "lines": 161,
+      "imports": 5,
+      "exports": 6
+    },
+    {
+      "path": "packages/client/src/cli.ts",
+      "lines": 155,
+      "imports": 8,
+      "exports": 3
+    },
+    {
+      "path": "packages/gateway/src/ssh-workspaces.ts",
+      "lines": 155,
+      "imports": 4,
+      "exports": 3
+    },
+    {
+      "path": "packages/gateway/src/multipart.ts",
+      "lines": 154,
+      "imports": 2,
+      "exports": 8
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "lines": 153,
+      "imports": 6,
+      "exports": 3
+    },
+    {
+      "path": "scripts/compare-tests.mjs",
+      "lines": 151,
+      "imports": 4,
+      "exports": 2
+    },
+    {
+      "path": "packages/gateway/src/environment.ts",
+      "lines": 149,
+      "imports": 6,
+      "exports": 4
+    },
+    {
+      "path": "apps/server/src/extension-selection.ts",
+      "lines": 138,
+      "imports": 2,
+      "exports": 12
+    },
+    {
+      "path": "packages/gateway/src/ingress/mcp.ts",
+      "lines": 138,
+      "imports": 3,
+      "exports": 4
+    },
+    {
+      "path": "packages/gateway/src/skill-frontmatter.ts",
+      "lines": 128,
+      "imports": 0,
+      "exports": 1
+    },
+    {
+      "path": "apps/app/scripts/cargo-build.mjs",
+      "lines": 123,
+      "imports": 3,
+      "exports": 8
+    },
+    {
+      "path": "apps/server/src/main.ts",
+      "lines": 123,
+      "imports": 9,
+      "exports": 0
+    },
+    {
+      "path": "apps/server/src/harness.ts",
+      "lines": 122,
+      "imports": 9,
+      "exports": 5
+    },
+    {
+      "path": "packages/session/src/settings.ts",
+      "lines": 118,
+      "imports": 0,
+      "exports": 6
+    },
+    {
+      "path": "packages/gateway/src/process.ts",
+      "lines": 118,
+      "imports": 2,
+      "exports": 2
+    },
+    {
+      "path": "scripts/check-entrypoints.mjs",
+      "lines": 113,
+      "imports": 5,
+      "exports": 4
+    },
+    {
+      "path": "apps/app/src/main.tsx",
+      "lines": 106,
+      "imports": 13,
+      "exports": 0
+    },
+    {
+      "path": "packages/gateway/src/provider-credential-store.ts",
+      "lines": 101,
+      "imports": 2,
+      "exports": 1
+    },
+    {
+      "path": "packages/gateway/src/workbench/index.ts",
+      "lines": 101,
+      "imports": 6,
+      "exports": 6
+    },
+    {
+      "path": "apps/app/src/shell.ts",
+      "lines": 99,
+      "imports": 2,
+      "exports": 8
+    },
+    {
+      "path": "apps/app/src/Configure.tsx",
+      "lines": 98,
+      "imports": 3,
+      "exports": 1
+    },
+    {
+      "path": "apps/server/src/mcp-declarations.ts",
+      "lines": 96,
+      "imports": 1,
+      "exports": 3
+    },
+    {
+      "path": "packages/client/src/doctor.ts",
+      "lines": 96,
+      "imports": 7,
+      "exports": 7
+    },
+    {
+      "path": "packages/gateway/src/worktree-shadow.ts",
+      "lines": 95,
+      "imports": 3,
+      "exports": 2
+    },
+    {
+      "path": "apps/server/src/sidebar-state.ts",
+      "lines": 94,
+      "imports": 3,
+      "exports": 5
+    },
+    {
+      "path": "apps/server/src/provider-config.ts",
+      "lines": 93,
+      "imports": 3,
+      "exports": 3
+    },
+    {
+      "path": "apps/server/src/conversation-input.ts",
+      "lines": 93,
+      "imports": 2,
+      "exports": 2
+    },
+    {
+      "path": "packages/gateway/src/mcp/secrets.ts",
+      "lines": 93,
+      "imports": 1,
+      "exports": 4
+    },
+    {
+      "path": "scripts/test-web-unit.mjs",
+      "lines": 89,
+      "imports": 6,
+      "exports": 2
+    },
+    {
+      "path": "packages/gateway/src/ingress/main.ts",
+      "lines": 88,
+      "imports": 1,
+      "exports": 0
+    },
+    {
+      "path": "apps/server/src/device-credentials.ts",
+      "lines": 85,
+      "imports": 2,
+      "exports": 5
+    },
+    {
+      "path": "apps/server/src/conversation-read-route.ts",
+      "lines": 84,
+      "imports": 2,
+      "exports": 3
+    },
+    {
+      "path": "apps/server/src/catalogue-binding.ts",
+      "lines": 81,
+      "imports": 1,
+      "exports": 4
+    },
+    {
+      "path": "apps/server/src/subagents/status.ts",
+      "lines": 77,
+      "imports": 1,
+      "exports": 5
+    },
+    {
+      "path": "scripts/lib/tap.mjs",
+      "lines": 72,
+      "imports": 0,
+      "exports": 3
+    },
+    {
+      "path": "scripts/deploy-plan.mjs",
+      "lines": 70,
+      "imports": 2,
+      "exports": 0
+    },
+    {
+      "path": "scripts/lib/baseline.mjs",
+      "lines": 69,
+      "imports": 3,
+      "exports": 4
+    },
+    {
+      "path": "packages/gateway/src/workbench/workspace-paths.ts",
+      "lines": 66,
+      "imports": 2,
+      "exports": 6
+    },
+    {
+      "path": "packages/gateway/src/main.ts",
+      "lines": 64,
+      "imports": 3,
+      "exports": 0
+    },
+    {
+      "path": "scripts/ingress-unit.mjs",
+      "lines": 62,
+      "imports": 2,
+      "exports": 0
+    },
+    {
+      "path": "apps/server/src/session-tombstone.ts",
+      "lines": 58,
+      "imports": 3,
+      "exports": 2
+    },
+    {
+      "path": "scripts/check-docs.mjs",
+      "lines": 53,
+      "imports": 3,
+      "exports": 1
+    },
+    {
+      "path": "scripts/lib/presets.mjs",
+      "lines": 53,
+      "imports": 2,
+      "exports": 6
+    },
+    {
+      "path": "apps/server/src/browser-diagnostics.ts",
+      "lines": 51,
+      "imports": 2,
+      "exports": 0
+    },
+    {
+      "path": "apps/app/src/connection.ts",
+      "lines": 51,
+      "imports": 2,
+      "exports": 3
+    },
+    {
+      "path": "apps/app/src/save-host.ts",
+      "lines": 45,
+      "imports": 3,
+      "exports": 1
+    },
+    {
+      "path": "packages/gateway/src/resource-ignore.ts",
+      "lines": 40,
+      "imports": 1,
+      "exports": 2
+    },
+    {
+      "path": "apps/server/src/prompt-templates.ts",
+      "lines": 39,
+      "imports": 0,
+      "exports": 2
+    },
+    {
+      "path": "packages/gateway/src/client.ts",
+      "lines": 37,
+      "imports": 5,
+      "exports": 2
+    },
+    {
+      "path": "scripts/release-plan.mjs",
+      "lines": 29,
+      "imports": 3,
+      "exports": 1
+    },
+    {
+      "path": "apps/server/src/conversation-page.ts",
+      "lines": 19,
+      "imports": 0,
+      "exports": 1
+    },
+    {
+      "path": "packages/gateway/src/workbench/git-environment.ts",
+      "lines": 10,
+      "imports": 0,
+      "exports": 1
+    },
+    {
+      "path": "apps/server/src/routing-location.ts",
+      "lines": 8,
+      "imports": 0,
+      "exports": 1
+    },
+    {
+      "path": "packages/client/src/version.ts",
+      "lines": 5,
+      "imports": 0,
+      "exports": 1
+    }
+  ],
+  "embeddedPrograms": [
+    {
+      "path": "packages/gateway/src/ssh-filesystem.ts",
+      "symbol": "REMOTE_FILESYSTEM_SCRIPT",
+      "line": 33,
+      "embeddedLines": 1191
+    }
+  ]
+}

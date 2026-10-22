@@ -295,13 +295,6 @@ export interface WorkbenchSelection {
   refreshConversationRow(sessions: readonly SessionInfo[]): void;
   /** The conversation on screen was renamed by an answer of its own. */
   renameConversation(sessionId: string, name: string): void;
-  /**
-   * Re-read the conversation on screen by replacing the surface that shows it.
-   *
-   * It is the explicit handover Settings offers today (a definitions change reloads the conversation); the selection
-   * states it rather than the shell keeping a second key beside this one. Re-reading in place is ticket 03's own move.
-   */
-  reloadAttachment(): void;
 }
 
 /**
@@ -744,9 +737,6 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
       const merged = mergeCatalogueRow(open, refreshed);
       // The identity the row now states is the one the memories and the same-project checks are stated in.
       emit({ conversation: merged, projectKey: workspaceKeyOf(merged) });
-    },
-    reloadAttachment(): void {
-      emit({ attachment: state.attachment + 1 });
     },
     renameConversation(sessionId: string, name: string): void {
       const open = state.conversation;
