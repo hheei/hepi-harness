@@ -52,7 +52,7 @@ import {
 } from "../src/mcp-conversation-tools.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 
-const STDIO_FIXTURE = fileURLToPath(new URL("../../../packages/gateway/test/fixtures/mcp/stdio-server.mjs", import.meta.url));
+const STDIO_FIXTURE = fileURLToPath(new URL("../../../packages/gateway/test/fixtures/mcp/stdio-server.ts", import.meta.url));
 const GATEWAY_TOKEN = "gateway-token";
 const BACKEND_TOKEN = "server-token";
 const HEADERS = { authorization: "Bearer " + BACKEND_TOKEN, "content-type": "application/json" };
