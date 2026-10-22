@@ -1289,6 +1289,13 @@ The composer's own cases live beside it (`ChatInput.test.ts` renders the shipped
 half: IME, undo and redo of a completed mention, both completions, a pasted picture, and drafts that survive a reload, a
 promotion and a move to another key.
 
+**Ask in new chat is one fork and one carried prompt.** Choosing it on a selected passage forks at that entry through the
+same `fork` control every other fork uses, and the new conversation is handed the text exactly once: the shell holds it as
+that conversation's initial prompt, the chat mounting for it sends it and states that it consumed it, and the shell drops
+it. Nothing else consumes that value, so a surface that handed the chat a wrapper instead of the callback would leave the
+prompt standing and send it again on the next mount — which is what `apps/web/e2e/chat/ux-quote-initial-prompt.ts` drives
+over ordinary operations: select, Ask in new chat, step to another conversation, come back.
+
 ## Submission recovery
 
 The open conversation's lifecycle is decided in exactly one place: `packages/ui/src/lib/lifecycle-projection.ts`, a pure

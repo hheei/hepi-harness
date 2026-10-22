@@ -1,6 +1,6 @@
 # 行為與驗收矩陣
 
-Status: planned — 下表是驗收要求，尚無本次實作測試結果。
+Status: verified — 需求表；本次實作結果與證據見文末「本次實作驗收結果」。
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Contract: [架構收斂規格](spec.md)；票號及執行狀態見[票單計畫](ticket-plan.md)。
 
@@ -71,3 +71,74 @@ Contract: [架構收斂規格](spec.md)；票號及執行狀態見[票單計畫]
 每列記錄：scenario ID、承接測試／journey、tested revision 與 dirty state、command、exit code、raw log、通過／失敗／未測及原因。可集中在票的驗證節引用既有 runner 報告，不複製整份輸出。沒有執行即保持未測。
 
 純 UI fixture 可證明畫面接線；request ordering 由公開 transport 測；真實上游 OAuth、live compaction、packaged native 只能用對應環境結果聲稱。能力本來未測的部分保留其限制；本工作改到的高風險平台流程若仍無證據，不宣稱整體驗收完成，記錄未完成項。
+
+## 本次實作驗收結果（ticket 12）
+
+Status: verified — 每一列都指向本次實際執行的 driver／suite，並綁定下列 revision。未測能力另列限制，不以 driver 名稱代替結果。
+
+Tested revision: `8526bfca`（clean tree；`git status --porcelain` 為空）。所有 browser／native／build 指令都跑在該 revision。
+統一報告與 raw logs：`.dev/verify/ui12/`（`verify-changed-final/verify.json`、`browser/*.log`、`native/native-acceptance.log`、`web-build.log`、`app-build.log`、`cargo-build.log`）。
+
+| 檢查 | 指令 | Exit | 結果 |
+| --- | --- | --- | --- |
+| changed 選擇器（typecheck／UI+App 測試／web-unit） | `node scripts/verify.mjs --profile=changed --base=8f19a31b` | 0 | UI 474／474、App 29／29、web-unit 14／14，全部 PASS；`verify-changed-final/verify.json` |
+| 文件與入口 | `pnpm check:docs`、`node scripts/check-entrypoints.mjs` | 0 | 466 Markdown、0 broken link、0 guide 漏索引；155 entry files、0 newly missing |
+| Web build | `pnpm --filter @hepi/web build` | 0 | `web-build.log` |
+| App build | `pnpm --filter @hepi/app build` | 0 | `app-build.log` |
+| App 原生 binary（debug profile，共用 cargo target） | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | 0 | `cargo-build.log`；產物 `.dev/cargo-target/debug/hepi-app` |
+| 49 個 browser driver | 見下表各自的 script | 全部 0 | 每個 driver 一份 raw log 在 `browser/`；索引 `browser/index-final.log`、`index-final2.log`、`index-final3.log` |
+| 真實 Tauri native journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts --keep` | 0 | 42 個檢查全過；`native/native-acceptance.log` |
+
+### 選擇、草稿、工作台
+
+| ID | 承接驗證 | 觀察到的結果 |
+| --- | --- | --- |
+| N1 | `ux-workbench-selection`（36 checks）、`ux-navigation-retry`（8）、`workbench-selection.test.ts` | 明確 `?session=`／`?cwd=` 優先於 tab memory；兩者並存時 cwd 勝；真 reload 後 URL、tab memory 與選擇一致 |
+| N2 | `ux-workbench-selection`、`workbench-selection.test.ts` | 無 URL 時回到 tab 記住的 conversation 或 composer，草稿在真 reload 後回到輸入框，且 identity 不變 |
+| N3 | `workbench-selection.test.ts`（延遲 open／read 的 generation fence）、`ux-navigation-retry` | 晚到的 open／read 不改新選擇、URL 或錯誤面板；Retry 只重讀當前未解決意圖 |
+| N4 | `workbench-selection.test.ts`（projectKey hydration）、`ux-conversation-lifetime-shell`（同 scope 不重掛） | 身分補齊合併 row 而不替換 conversation；已開對話保留 |
+| N5 | `panel-state.test.ts`、`ux-workbench-selection`（跨 project 的 reference）、`ux-terminal-close`／`ux-terminal-session` | 跨 project 只清 file tabs；terminal 保留自身 cwd 與 tab 規則 |
+| N6 | `ux-composer-interaction`（24）、draft store 測試 | carry 帶走 live 草稿與 model／thinking；目標停放草稿不合併 |
+| N7 | `ux-workbench-selection`、`useComposerDraft` 案例 | parked draft 取回；New 是獨立 identity，不吞目前文字，也不刪未送出資料 |
+| N8 | `ux-conversation-lifetime`（14）、`useAgentSession.lifecycle.test.ts` | 未知提交只 lookup（1 POST、1 lookup、0 重送）；promotion 在確認點承接草稿／identity |
+| N9 | `ux-workbench-selection`（刪除段）、`ux-navigation-retry` | 刪除當前對話落到同 cwd 的 composer，其他對話與草稿不受影響；gone 與可 retry 分開 |
+| N10 | `ux-references`（43）、`ux-references-acceptance`（45）、`ux-raw-history-sidebar-focus`（32）、`ux-rail-keyboard`（18）、`ux-subtree-control`（78） | 同一 conversation 重點不 reset 閱讀；顯式 target 仍定位；raw-history focus 依既有選項顯示 |
+
+### 對話、歷史與呈現
+
+| ID | 承接驗證 | 觀察到的結果 |
+| --- | --- | --- |
+| C1 | `useAgentSession.lifecycle.test.ts`（在 474 UI 套件內）、`ux-conversation-lifetime` | 較舊 revision／換 connection 的合法結果晚到時不發布；view、prefix、metadata 不回退 |
+| C2 | `ux-visible-turns`（29）、`ux-history-rail`（23）、`ux-history-scope`（11）、`ux-history-navigation-acceptance`（82） | 翻舊頁、live window、jump window 與 head 變更下 transcript 無重複／缺漏／錯序；完整 stats 與 history token 保留。**live compaction 本身未測** |
+| C3 | `useAgentSession.lifecycle.test.ts`、`ux-conversation-lifetime`、`ux-child-recovery`（24） | submit／steer／follow-up／queue／abort 語義保持；收件後網路中斷只 lookup，不重做寫入 |
+| C4 | `completion-delivery.test.ts`、`handover-continuity.test.ts`、`ux-conversation-lifetime` | 前景離開仍追蹤背景工作；每答案至多一次通知；失敗／abort 不誤響 |
+| C5 | `ux-conversation-lifetime-shell`（12）、`conversation-session.test.ts`、lifecycle | 同對話 reload 不重建整棵聊天樹；換 connection 時 registry 重建、舊 source closed、舊讀不寫新 connection |
+| C6 | `ux-chat-scroll`（15）、`ux-transcript-presentation`（15） | 讀歷史時新資料不強拉到底；follow-tail／anchor／jump 依既有動作；移動間不套用舊 conversation scroll |
+| C7 | `ux-transcript-presentation` | notice 依剩餘時間暫停／恢復，離開 view 清理本地 timer，未新增第二種完成判定 |
+| C8 | `ux-composer-interaction`（24）、`ChatInput.test.ts` | IME 組字不誤送；插入與 undo 語義保留；字串、selection、附件與保存值一致 |
+| C9 | `ux-message-copy`（12）、`ux-token-footer`（36）、`ux-subtree-control`（78）、`ux-references` | block identity、展開狀態、延遲資源讀與錯誤顯示保留；呈現不新開 conversation stream |
+
+### 設定、檔案、平台
+
+| ID | 承接驗證 | 觀察到的結果 |
+| --- | --- | --- |
+| R1 | `ux-provider-connection-acceptance`（70） | applied 保存／成功 credential 更新使受影響 catalog 失效，已掛載讀者立即重讀（1→2 次 `/api/models`）；不改目前 model、不清草稿 |
+| R2 | `ux-provider-connection-acceptance` | 未修改關閉 Settings 不刷新、不 fetch；saved-but-not-applied 如實顯示並 readback；catalog 讀失敗可重試且只重讀 |
+| R3 | `ux-provider-connection-acceptance`、models-cache／workflow 測試 | 舊 discovery 結果不蓋新草稿；request fencing 與 cache scope 保留 |
+| R4 | `ux-mcp-workflow`（16）、`ux-mcp-acceptance`（58）、`ux-mcp-tool-states`（62）、`ux-capability-trust`（17） | add／import／修改／刪除／test／trust／codemode 的 pending／result／error 可見；信任流程與脫敏語義不變 |
+| R5 | `ux-mcp-acceptance`（合法 sign-in fixture） | 切 Settings tab 後 active flow 依既有規則繼續／終止；connection dispose 才釋放。**真實上游 OAuth 未執行** |
+| R6 | `ux-skills-project-target`（14）、`ux-skills-inventory-race`（9）、`ux-extensions-panel`（29）、`ux-definition-refresh`（15）、`ux-delegate-definition-race`（6） | scope 不串用；刷新只作用適用 target；無 sessionKey 協定、無提交重播 |
+| R7 | `ux-file-surfaces`（25）、`ux-file-failures`（25）、`ux-docx-preview`（15）、`files-transfer`（17） | metadata／lease／abort／release 保留；docx 超出預檢在讀 bytes 前拒絕；無裸 fetch 或重複遠端下載 |
+| R8 | 真實 Tauri journey（42 checks） | GTK 儲存對話框由 xdotool 回答，落地 bytes 與 workspace 檔案 sha256 相同（1048 bytes）；取消不留檔、控制回到 idle；第二次開啟 picker 後 Escape 收檔 |
+| R9 | `ux-terminal-close`（9）、`ux-terminal-session`（38）、`ux-terminal-fan-in`（26）、`panel-state.test.ts` | 多 tab 共用一個 fan-in 串流與連線預算；close／restart 只一次；tab cwd 不隨 workspace 重寫；與 file tabs 共存 |
+| R10 | `ux-panel-ingress`（77）、`ux-raw-history-sidebar-focus`（32）、`ux-rail-keyboard`（18）、`ux-closeout-accessibility`（28） | desktop／narrow layout、Sidebar drawer、快捷鍵、panel close 的焦點行為保留；資料轉換不依 UI callback 順序 |
+| R11 | `ux-client-acceptance`（58，Web 真實瀏覽器 + App browser-emulated）、`ux-web-logout`（17）、`ux-conversation-lifetime-shell`、真實 Tauri journey | Web 與 App 掛同一 UI：Web 登入／logout 走 ingress 路由；App 同 scope 換 connection 不重掛並重建 registry；真實 shell 以已撤銷憑證啟動時報 refused、再經其自身 Disconnect 刪除憑證並重開為未設定 |
+
+### 剩餘限制（未宣稱）
+
+- **真實上游 OAuth**：R5 只以合法 sign-in fixture 覆蓋，未對真實 provider 授權伺服器執行。
+- **live compaction**：C2 覆蓋 head 變更與 jump window，但未對真實長對話執行一次壓縮。
+- **packaged release artifact**：native journey 使用 debug profile binary，屬功能證據，不是 release 效能或打包產物驗證；未建置 release 或 `.deb`。
+- **Android**：本機無 SDK／adb／裝置，未對行動 App 做任何聲稱。
+- **remote-host**：未在 remote-host 建置或執行；全部 build 在 workstation。
+- **未觀察 run 不補完成音**：ADR 0007 既有契約，本次未改。

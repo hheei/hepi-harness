@@ -5600,3 +5600,64 @@ These final runs supersede the earlier revision's evidence above.
 `remote-host`. The unit cases in `packages/ui/src/lib/models-cache.test.ts` and
 `packages/ui/src/hooks/useAgentSession.lifecycle.test.ts` state the same contract at their own seams and ran inside
 `changed-test` above.
+
+## UI architecture consolidation: system acceptance (ticket 12, 2026-10-22)
+
+Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`, tested revision `255a61ac`
+(clean tree) over base `17fe24d4`. This is the acceptance record for the twelve UI architecture tickets: every
+N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now names an executed result or an
+explicit limit.
+
+| Check | Command | Revision (dirty) | Exit | Log |
+| --- | --- | --- | --- | --- |
+| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/verify-changed-ingress02/verify.json` |
+| Docs and entry points | `pnpm check-docs`, `node scripts/check-entrypoints.mjs` | `255a61ac` (clean) | 0 | 466+ Markdown, 0 broken links; 0 newly missing entry files |
+| Web build | `pnpm --filter @hepi/web build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/web-build.log` |
+| App build | `pnpm --filter @hepi/app build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/app-build.log` |
+| App debug binary | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/cargo-build.log` |
+| 49 browser drivers | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web source identical at `255a61ac`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
+| Real Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts --keep` | `8526bfca` (clean; UI/Web source identical at `255a61ac`) | 0 | `.dev/verify/ui12/native/native-acceptance.log` — 42 checks |
+| Real ingress after Ingress02 | `node apps/web/e2e/acceptance/ux-client-acceptance.ts` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/browser/client-acceptance.log` — 58 checks |
+
+The 49 drivers are the ones the matrix names, each run rather than cited from an earlier revision:
+`ux-workbench-selection` (36), `ux-navigation-retry` (8), `ux-chat-scroll` (15), `ux-transcript-presentation` (15),
+`ux-composer-interaction` (24), `ux-conversation-lifetime` (14), `ux-conversation-lifetime-shell` (12),
+`ux-message-copy` (12), `ux-quote-initial-prompt` (11, new), `ux-references` (43), `ux-references-acceptance` (45),
+`ux-history-navigation-acceptance` (82), `ux-visible-turns` (29), `ux-history-rail` (23), `ux-history-scope` (11),
+`ux-raw-history-sidebar-focus` (32), `ux-rail-keyboard` (18), `ux-subtree-control` (78), `ux-token-footer` (36),
+`ux-panel-ingress` (77), `ux-provider-connection-acceptance` (70), `ux-mcp-workflow` (16), `ux-mcp-acceptance` (58),
+`ux-mcp-tool-states` (62), `ux-capability-trust` (17), `ux-skills-project-target` (14), `ux-skills-inventory-race` (9),
+`ux-extensions-panel` (29), `ux-definition-refresh` (15), `ux-delegate-definition-race` (6), `ux-file-surfaces` (25),
+`ux-file-failures` (25), `ux-docx-preview` (15), `files-transfer` (17), `ux-workbench-scope` (16),
+`ux-terminal-close` (9 PASS lines), `ux-terminal-session` (38), `ux-terminal-fan-in` (26), `ux-web-logout` (17),
+`ux-sidebar-ingress` (15), `ux-pwa-offline` (24), `ux-closeout-accessibility` (28), `ux-child-recovery` (24),
+`ux-client-acceptance` (58).
+
+**What the native journey states, and what it does not.** It is a DEBUG build (`dev` profile, symbols retained): native
+FUNCTIONAL evidence, not release performance and not a packaged artifact. Its statements are kept apart by kind — a
+transport observation printed by the App's own bundle after the ingress admitted its descriptor read; a UI assertion from
+the branch that rendered the surface; a platform assertion asked of the X server (`xdotool` found a real WebKitGTK window;
+the GTK Save file dialog was on the display); and pixel evidence, which the driver only says is not one flat colour. The
+save journey drives the rendered document through the debug shell's own inspector, answers the real GTK dialog with
+`xdotool`, and compares the written file's sha256 with the workspace file's (1048 bytes, equal). The App's logout is
+performed through the surface it ships: the refused connection's Disconnect, then its confirmation, after which the shell
+reopens `configure` and the run's own credential store holds no `dev.hepi.app` entry.
+
+**Two material integration failures found and fixed here**, both in `AppShell`'s own boundary:
+
+- `cad0d86b` (UI11 review P1, forwarded by the coordinator): `ChatArea` passed `() => onInitialPromptConsumed` instead
+  of the callback, so the one-shot quoted prompt was never consumed and replayed on a remount. `test:quote-initial-prompt`
+  is the ordinary regression: select a passage, Ask in new chat, step to another conversation, come back — one admission,
+  not two. Reverting the fix makes it fail with two.
+- `ce5cb804`: the shell rebuilt `searchTarget` on every render while `ChatWindow` deduplicates by identity, so following
+  a reference or a search hit into a long conversation issued two bounded target reads for one window.
+  `ux-references-acceptance` reproduced it (2) and passes after the fix (1). The target is now memoized on the selection's
+  own `navigation` record.
+
+The selection scene also gained the `GET /api/project-trust` answer it needed once UI11 moved that read onto the
+connection's client; that is a driver gap, not a product defect.
+
+**Not claimed.** No release artifact or `.deb` was built or verified; nothing was built or run on `remote-host`; no
+deployment was restarted; the real upstream OAuth flow and a live compaction of a real long conversation were not
+executed; this host has no Android SDK, adb or device. Those limits are stated per row in the matrix and in
+[migration status](migration-status.md).

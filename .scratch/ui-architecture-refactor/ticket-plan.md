@@ -6,7 +6,7 @@ Scope: [規格](spec.md)；保留行為及驗證歸屬見[驗收矩陣](acceptan
 
 ## Cross-effort integration
 
-See the [combined UI + non-UI frontier](../non-ui-architecture-design/README.md#combined-ui--non-ui-implementation-frontier) for concurrent implementation, cross-ticket blockers and shared-file ownership. UI tickets remain independently owned; non-UI work may proceed concurrently when that combined graph permits.
+See the combined UI + non-UI frontier (`.scratch/non-ui-architecture-design/README.md`, kept in the primary checkout rather than this repository) for concurrent implementation, cross-ticket blockers and shared-file ownership. UI tickets remain independently owned; non-UI work may proceed concurrently when that combined graph permits.
 
 ## 執行與接手
 
@@ -26,8 +26,8 @@ See the [combined UI + non-UI frontier](../non-ui-architecture-design/README.md#
 | 08 | [Definitions target 與刷新接線](issues/08-definition-refresh.md) | 03 | resolved／integrated b3ab7871 | Skills/Agents/Extensions、SettingsPanel reload、ExecutionTarget 使用者 |
 | 09 | [訊息 block 呈現模組](issues/09-message-views.md) | none；04／12 驗證整合 | resolved／integrated | MessageView、其內部葉節點與既有測試；保留現有 props |
 | 10 | [檔案 preview 呈現模組](issues/10-file-previews.md) | none | resolved／integrated | FileViewer、preview leaves、useDocxPreview 接線；保留 FileSeam；native save 留票 12 |
-| 11 | [Shell layout 與 panel 接線](issues/11-shell-composition.md) | 01–10 | resolved — `6e16e77a`; correction `cad0d86` reviewed | AppShell 最終組裝、panel/tab presentation、layout/focus 接線 |
-| 12 | [系統驗收與交付記錄](issues/12-system-acceptance.md) | 11 | in-progress — agent-293, `impl/ui-system-acceptance`; final completion awaits UI11 review | 驗收證據、 owning docs、剩餘限制；僅必要整合修正 |
+| 11 | [Shell layout 與 panel 接線](issues/11-shell-composition.md) | 01–10 | resolved／integrated `6e16e77a`；correction `cad0d86` | AppShell 最終組裝、panel/tab presentation、layout/focus 接線 |
+| 12 | [系統驗收與交付記錄](issues/12-system-acceptance.md) | 11 | resolved — `8526bfca` | 驗收證據、 owning docs、剩餘限制；僅必要整合修正 |
 
 初始可開始：工作台選擇與草稿、Accepted conversation readout、MCP 工作流、檔案 preview 呈現模組。這是排程資訊，不是已派工或授權自動部署。
 

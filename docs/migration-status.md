@@ -1451,3 +1451,29 @@ ingress, the real Backend over SQLite, a controlled model endpoint and no interc
 Backend answers again. The rows that stack cannot reach through an ordinary lifecycle stay at the seams listed above;
 [ticket 03](../.scratch/cross-session-references/issues/03-acceptance.md) records which and why.
 
+
+## UI architecture consolidation (delivered; tickets 01–12, acceptance closed)
+
+The twelve-ticket UI architecture refactor is integrated on `impl/ui-system-acceptance` and its acceptance is closed at
+`255a61ac` (clean tree). The behaviour matrix in `.scratch/ui-architecture-refactor/acceptance.md` now carries an executed
+result or a named limit for every N1–N10, C1–C9 and R1–R11 row; the command/revision/log table is in
+[verification](verification.md#ui-architecture-consolidation-system-acceptance-ticket-12-2026-10-22).
+
+What the acceptance actually exercised: `@hepi/ui` 474 unit tests, `@hepi/app` 29, web-unit 14; Web and App builds; a
+debug `hepi-app` binary; 49 browser drivers against the production Web build and the browser-emulated App (each with its
+own raw log); and one real Tauri journey in Xvfb that answered the actual GTK Save dialog and drove the App's own
+Disconnect through the rendered document. Two integration failures were found this way and fixed at their owner — the UI11
+one-shot quoted prompt was never consumed (`cad0d86b`), and the shell rebuilt the chat's navigation target on every render
+so one bounded target window was read twice (`ce5cb804`).
+
+Limits this record keeps:
+
+- **Real upstream OAuth was not executed.** Provider sign-in is covered by a legitimate sign-in fixture at the browser
+  seam; no request reached a real authorization server.
+- **Live compaction of a real long conversation was not executed.** Head changes, jump windows and the live window are
+  covered; the compaction itself is not.
+- **The native journey is a debug build.** Native functional evidence, not release performance, and not a packaged
+  artifact: no release build or `.deb` was produced or verified.
+- **Nothing ran on `remote-host`,** and no deployment was restarted. All builds ran on `workstation`.
+- **Android has no evidence.** This host has no SDK, adb or device, so no mobile App claim is made.
+- **A run that was not observed plays no completion sound** (ADR 0007) remains the contract; unchanged here.
