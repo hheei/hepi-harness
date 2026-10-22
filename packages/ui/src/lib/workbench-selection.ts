@@ -798,4 +798,3 @@ export function useWorkbenchSelectionStore(deps: WorkbenchSelectionDeps): Workbe
   }
   return ref.current;
 }
-

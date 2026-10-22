@@ -88,4 +88,3 @@ Evidence：
 
 剩餘限制：實際 Tauri 原生儲存（真 shell picker 與 app_save_* IPC 寫盤）本票未執行，須由整合驗收票 12 依矩陣 R8
 在 App 環境承接；本票不宣稱該列已驗證。無其他 material findings，無新增 record 級項目。
-
