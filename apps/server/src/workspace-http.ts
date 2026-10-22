@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { gatewayEnvironment, type EnvironmentBinding, type ExecutionHostEnv } from "@hepi/gateway";
-import { PROTOCOL_VERSION } from "@hepi/protocol";
+import { PROTOCOL_VERSION, type WorkspaceLocality } from "@hepi/protocol";
 import { boundedMessage } from "./skill-install.ts";
 
 /**
@@ -22,8 +22,8 @@ export type WorkspaceHttpOptions = {
   readonly bindings: () => readonly (EnvironmentBinding & { readonly retained?: true })[];
   /** Every gateway this deployment configured, by id. */
   readonly gateways: () => readonly GatewayProfileSource[];
-  /** One gateway's execution targets, or the code that says why they could not be read. */
-  readonly profiles: (connection: GatewayProfileSource) => Promise<{ readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly code: string }>;
+  /** One gateway's execution targets, or the code and status that say why they could not be read. */
+  readonly profiles: (connection: GatewayProfileSource) => Promise<{ readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly code: string; readonly status: number }>;
 };
 
 /** A configured gateway as its own client reaches it: the id its answer is keyed by, and its origin and token. */
@@ -54,8 +54,42 @@ export function createWorkspaceHttp(options: WorkspaceHttpOptions): (request: In
       }));
       json(response, 200, { protocol: PROTOCOL_VERSION, hosts }); return true;
     }
+    // The one question a client ingress asks about a folder it is about to serve locally: is this workspace a folder on
+    // the machine of the gateway that ingress configured? The Backend owns the binding — which gateway a workspace id
+    // belongs to — so it is the only process that can answer, and it answers one verdict instead of the two topology
+    // listings a caller would otherwise have to join itself.
+    //
+    // Two facts have to agree, and neither alone is enough. A name is not an identity, so a workspace bound to another
+    // gateway is not local even when the named gateway serves a folder of its own under that same id. And a gateway
+    // that executes through SSH profiles serves folders on other machines (ADR 0005), so it is not the caller's own
+    // host either. Membership is the workspace listing's own, retained bindings included, because a conversation bound
+    // before a removal still resolves its root here; eligibility for a **new** target is a different decision and is not
+    // asked on this route. The empty profile list is read together with the error beside it: a gateway that could not be
+    // reached is reported as `{ profiles: [], error }`, and "no profiles" there states that nothing was asked — which is
+    // why a failed query keeps its own non-success instead of being answered `local: false`.
+    const locality = localityWorkspace(url.pathname);
+    if (request.method === "GET" && locality !== undefined) {
+      const gatewayId = url.searchParams.get("gatewayId") ?? "";
+      if (gatewayId === "") { json(response, 400, { code: "invalid_request", error: "a gatewayId is required" }); return true; }
+      const binding = options.bindings().find(candidate => candidate.id === locality);
+      const connection = binding?.gatewayId === gatewayId ? options.gateways().find(candidate => candidate.gatewayId === gatewayId) : undefined;
+      if (connection === undefined) { json(response, 200, { local: false } satisfies WorkspaceLocality); return true; }
+      const listed = await options.profiles(connection);
+      if (!listed.ok) { json(response, listed.status, { code: listed.code, error: "the execution host could not be read: " + listed.code }); return true; }
+      json(response, 200, { local: Array.isArray(listed.value) && listed.value.length === 0 } satisfies WorkspaceLocality); return true;
+    }
     return false;
   };
+}
+
+/** The workspace id a locality route names, or undefined when this path is some other route. */
+function localityWorkspace(pathname: string): string | undefined {
+  const prefix = "/api/workspaces/";
+  const suffix = "/locality";
+  if (!pathname.startsWith(prefix) || !pathname.endsWith(suffix)) return undefined;
+  const encoded = pathname.slice(prefix.length, pathname.length - suffix.length);
+  if (encoded === "" || encoded.includes("/")) return undefined;
+  try { return decodeURIComponent(encoded); } catch { return undefined; }
 }
 
 function json(response: ServerResponse, status: number, body: unknown): void {

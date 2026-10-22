@@ -164,6 +164,7 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 | `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
 | `/api/terminal*`, `/api/files/{upload,upload-check,bytes}` | `terminal-relay.ts`、`file-relay.ts`:主机中继 |
 | `/api/{workspaces,hosts,host/directories,projects,worktrees,workbench}` | `project-store.ts`、`server.ts`:执行目标与只读操作 |
+| `GET /api/workspaces/:workspaceId/locality?gatewayId=` | `workspace-http.ts`:一个 workspace 是否为该 gateway 本机的目录,client ingress 唯一询问的 locality 结论 |
 | `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `model-config.ts`、`extension-selection.ts`、`skill-install.ts` 等 |
 
 `ConversationOperations.spawn` 在一次 commit 中写 `pi.agent`、`hepi.workspace`、relations、references 与会话作用域

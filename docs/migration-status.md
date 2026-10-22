@@ -816,6 +816,22 @@ revoking access ends access without aborting the agent run. Routes, configuratio
 [verification](verification.md#client-ingress-and-device-credentials-ticket-02). The cutover that makes this the running
 entry is ticket 16, and the deployment runbook is deliberately unchanged until then.
 
+## Backend-owned ingress locality verdict (ingress-binding ticket 01)
+
+The client ingress's folder question is now a Backend answer instead of two listings joined in the Gateway. `GET
+/api/workspaces/:workspaceId/locality?gatewayId=…` (`workspace-http.ts`, shape `WorkspaceLocality` in
+`@hepi/protocol`) states whether a workspace is a folder on the machine of the gateway the caller named. It is the
+predicate the ingress used to assemble itself: membership of the workspace listing, retained bindings included, the
+owner's gateway id, and a host-profile answer with no error and no profiles. A workspace this deployment does not bind,
+an owner that is another gateway, an SSH-profile host and any host result that predicate does not accept all answer
+`{ local: false }`; a query the Backend could not evaluate keeps its own non-success (`503 gateway_offline` for a
+gateway it cannot reach) rather than a fabricated negative. `/api/workspaces` and `/api/hosts` keep their shapes and
+their catalogue callers.
+
+Still open: the ingress itself still composes the two listings, so this route has no product caller yet
+([ticket 02](../.scratch/ingress-binding/issues/02-ingress-migration.md)). Nothing is cached, no path is resolved and no
+filesystem is probed by the verdict.
+
 ## Client ingress conversation slice (ticket 03)
 
 One conversation now works end to end through the client listener: a real caller creates it, reads its state and

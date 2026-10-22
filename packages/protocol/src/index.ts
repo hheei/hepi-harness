@@ -36,6 +36,21 @@ export const DEFAULT_HOST_HEADER = "x-hepi-default-host";
  */
 export const WEB_LOGOUT_PATH = "/api/web-logout";
 
+/**
+ * The one answer a client ingress asks the Backend for about a folder: whether a workspace is a folder on the machine
+ * of the gateway that ingress configured, at `GET /api/workspaces/:workspaceId/locality?gatewayId=:gatewayId`.
+ *
+ * It is a protocol shape because both processes write it: the Backend decides it from its own binding and host-profile
+ * metadata, and the ingress reads it and nothing else. The decision is the Backend's alone — a caller names the gateway
+ * it serves, never the one a workspace is on — so this states a verdict and no topology: no list, no profile, no root.
+ *
+ * A successfully evaluated query answers exactly this. `local: false` covers every evaluated negative — a workspace
+ * this deployment does not bind, an owner that is another gateway, an SSH-profile host, a host result this predicate
+ * does not accept. A query the Backend could not evaluate is not answered with `false`: it keeps its own non-success,
+ * because "could not ask" is not "asked, and it is not this machine".
+ */
+export type WorkspaceLocality = { readonly local: boolean };
+
 export type ProtocolVersion = typeof PROTOCOL_VERSION;
 export type ConversationId = string;
 export type WorkspaceId = string;

@@ -328,6 +328,28 @@ test("a revoked device credential ends an MCP operation that is in flight", asyn
 	}
 });
 
+test("the Backend answers the one locality verdict this origin's folder question rests on", async () => {
+	// The verdict is the Backend's own fact about a workspace, asked through the ordinary admitted client route: this
+	// origin sends its cookie, the ingress forwards it under its service credential, and one small answer comes back.
+	// A second gateway is configured, so "the workspace is local" and "the workspace is on this origin's host" stay
+	// two different questions: only the pair is local.
+	const d = await deployment();
+	try {
+		const local = await d.call("web", "/api/workspaces/local/locality?gatewayId=workstation");
+		assert.equal(local.status, 200);
+		assert.deepEqual(local.body, { local: true });
+
+		// The workspace is bound to this host, and a caller naming another gateway is not asking about this machine.
+		const elsewhere = await d.call("web", "/api/workspaces/local/locality?gatewayId=elsewhere");
+		assert.equal(elsewhere.status, 200);
+		assert.deepEqual(elsewhere.body, { local: false });
+
+		// An App's device bearer reaches the same route, and a caller that was not admitted is refused before it.
+		assert.deepEqual((await d.call("device", "/api/workspaces/local/locality?gatewayId=workstation")).body, { local: true });
+		assert.equal((await fetch(d.origin + "/api/workspaces/local/locality?gatewayId=workstation")).status, 401);
+	} finally { await d.close(); }
+});
+
 test("a workspace the Backend binds to another gateway is refused, even when this host serves the same id", async () => {
 	// Two hosts, each with a folder it calls `local`: the configuration host is the one this origin reaches, and the
 	// Backend binds that workspace id to a different gateway. A registry is a list of names, so the configuration host
