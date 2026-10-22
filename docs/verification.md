@@ -5605,19 +5605,19 @@ These final runs supersede the earlier revision's evidence above.
 
 Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`. Source tested at `255a61ac`
 (clean tree; integration of `17fe24d4`). The drivers that cross the real ingress, and the native journey, were re-run
-afterwards at `8f22ed70`, and the selector and document checks after each documentation-only commit that followed. Those
+afterwards at `8f22ed70`, and the selector and document checks once at the last documentation-only commit `fa7b37dc`. Those
 commits change no source: `git diff --stat 255a61ac HEAD -- packages apps` is empty. This is the acceptance record for the
 twelve UI architecture tickets: every N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now
 names an executed result or an explicit limit.
 
 | Check | Command | Revision (dirty) | Exit | Log |
 | --- | --- | --- | --- | --- |
-| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `255a61ac` source, re-run after each documentation-only commit | 0 | `.dev/verify/ui12/verify-final3/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
-| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | same tree | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
+| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `fa7b37dc` (clean; `255a61ac` source) | 0 | `.dev/verify/ui12/verify-final6/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
+| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | `fa7b37dc` (clean) | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/app-build.log` |
 | App debug binary | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/cargo-build.log` |
-| 44 browser drivers over the shared tree | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web/App source byte-identical at `8f22ed70`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
+| 44 browser drivers over the shared tree (44 unique drivers; 49 executions with the five re-runs below) | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web/App source byte-identical at `8f22ed70`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
 | Real Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts` | `8f22ed70` (clean) | 0 | `.dev/verify/ui12/native/native-acceptance.log` — 42 checks |
 | Five drivers over the real ingress | `ux-client-acceptance`, `ux-mcp-acceptance`, `ux-panel-ingress`, `ux-web-logout`, `ux-provider-connection-acceptance` | `255a61ac` and again `8f22ed70` (clean) | all 0 | same files; index `index-final3.log` |
 

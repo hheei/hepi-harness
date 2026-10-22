@@ -76,17 +76,17 @@ Contract: [架構收斂規格](spec.md)；票號及執行狀態見[票單計畫]
 
 Status: verified — 每一列都指向本次實際執行的 driver／suite，並綁定下列 revision。未測能力另列限制，不以 driver 名稱代替結果。
 
-Tested revision: source `255a61ac`（clean tree，含 Ingress02 `17fe24d4` 整合），之後只改文件。跨真實 ingress 的 driver 與 native journey 在 `8f22ed70` 重跑，changed 選擇器與文件檢查在之後每一個僅文件的提交後重跑（`255a61ac..HEAD` 的 `packages`／`apps` diff 為空）；其餘 driver 跑在 `8526bfca`，而 `packages/ui`、`apps/web`、`apps/app`、`packages/session` 自該修訂起未改（`git diff --stat` 為空），之後只改 `packages/gateway/src/ingress/index.ts` 與文件。
-統一報告與 raw logs：`.dev/verify/ui12/`（`verify-final*/verify.json`（最新一份）、`browser/*.log`、`native/native-acceptance.log`、`web-build.log`、`app-build.log`、`cargo-build.log`）。
+Tested revision: source `255a61ac`（clean tree，含 Ingress02 `17fe24d4` 整合）；`255a61ac..HEAD` 的 `packages`／`apps` diff 為空，後續提交只改文件。跨真實 ingress 的 driver 與 native journey 在 `8f22ed70` 重跑；changed 選擇器與文件檢查在最後一次僅文件提交後跑一次，報告自記它的 `sha`；其餘 44 個 driver 跑在 `8526bfca`，而 `packages/ui`、`apps/web`、`apps/app`、`packages/session` 自該修訂起未改（`git diff --stat` 為空），之後只改 `packages/gateway/src/ingress/index.ts`、驗收 driver 與文件。
+統一報告與 raw logs：`.dev/verify/ui12/`（`verify-final*/verify.json`（最新一份，`verify-final6`）、`browser/*.log`、`native/native-acceptance.log`、`web-build.log`、`app-build.log`、`cargo-build.log`）。
 
 | 檢查 | 指令 | Exit | 結果 |
 | --- | --- | --- | --- |
-| changed 選擇器（typecheck／UI+App 測試／web-unit／check-docs） | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | 0 | UI 474／474、App 29／29、web-unit 14／14、check-docs，全部 PASS；`verify-final*/verify.json`（最新一份） |
+| changed 選擇器（typecheck／UI+App 測試／web-unit／check-docs） | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | 0 | UI 474／474、App 29／29、web-unit 14／14、check-docs，全部 PASS；`verify-final*/verify.json`（最新一份：`verify-final6`，sha `fa7b37dc`） |
 | 文件與入口 | `node scripts/check-docs.mjs`、`node scripts/check-entrypoints.mjs` | 0 | 466 Markdown、0 broken link、0 guide 漏索引；157 entry files、0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | 0 | `web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | 0 | `app-build.log` |
 | App 原生 binary（debug profile，共用 cargo target） | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | 0 | `cargo-build.log`；產物 `.dev/cargo-target/debug/hepi-app` |
-| 49 個 browser driver | 見下表各自的 script | 全部 0 | 每個 driver 一份 raw log 在 `browser/`；索引 `index-final.log`、`index-final2.log`、`index-final3.log`（後者為 `8f22ed70` 上的 5 個 ingress driver） |
+| 44 個 browser driver（共 49 次執行） | 見下表各自的 script | 全部 0 | 每個 driver 一份 raw log 在 `browser/`；索引 `index-final.log`、`index-final2.log`（共 44 個 driver）與 `index-final3.log`（5 個 ingress driver 在 `8f22ed70` 重跑） |
 | 真實 Tauri native journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts` | 0 | 42 個檢查全過（`8f22ed70`）；`native/native-acceptance.log` |
 
 ### 選擇、草稿、工作台
