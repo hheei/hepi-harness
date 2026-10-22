@@ -47,10 +47,13 @@ property of that origin, and one backend can serve several Web origins on differ
 browser. Unset, the MCP surface answers a named limit (below) and every other setting keeps working.
 
 Project-scoped reads, writes, tests, sign-in and trust resolution require proof that the folder belongs to this
-Web origin's local Execution Host. The directory resolver retains the backend's owning gateway id, checks it against
-`HEPI_INGRESS_MCP_GATEWAY_ID`, and uses the existing `/api/hosts` target listing to require a gateway with no SSH
-profiles. Matching absolute paths on different hosts are not the same folder. Foreign folders, missing roots and
-unreadable or unnamed ownership are refused before the local MCP service is called. Global operations that name no
+Web origin's local Execution Host. The directory resolver asks the Backend one question with its own service
+credential — `GET /api/workspaces/:workspaceId/locality?gatewayId=HEPI_INGRESS_MCP_GATEWAY_ID`, answered
+`{ local: boolean }` — and forwards only on an explicit `local: true`. The Backend owns that verdict: it is its own
+binding membership (retained bindings included) plus its own host-profile answer, so a gateway with SSH profiles is not
+this origin's host. Matching absolute paths on different hosts are not the same folder. Foreign folders, missing roots,
+unreadable or unnamed ownership, a refusal and an unanswered query are all refused before the local MCP service is
+called, and no verdict is cached. Global operations that name no
 folder remain available through the configured Web-host service. Remote file and Worktree operations continue to
 resolve their own Execution Host; the local restriction belongs to MCP and project-trust.
 
