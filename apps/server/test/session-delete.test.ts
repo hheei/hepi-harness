@@ -318,7 +318,9 @@ test("the tombstone is written through the durable document path and its seam re
   assert.match(seam, /\/\/ Records are retained because pi-durable 1\.1\.0 has no conversation deletion; this hides the\n\/\/ conversation from the catalogue\. Replace with the upstream deletion primitive when it exists\./);
   // No direct store editing: the removal is a document write through the durable API.
   assert.doesNotMatch(seam, /DELETE FROM|DROP TABLE|unlink|rmSync|openNodeSqliteStorage|new Database/);
+  // The removal route's owner writes it through that seam, and neither it nor the composition root edits a store.
+  const removal = await readFile(new URL("../src/conversation-command-http.ts", import.meta.url), "utf8");
+  assert.match(removal, /import \{ tombstoneConversation \} from "\.\/session-tombstone\.ts";/);
   const server = await readFile(new URL("../src/server.ts", import.meta.url), "utf8");
-  assert.match(server, /import \{ tombstoneConversation, TombstoneDoc \} from "\.\/session-tombstone\.ts";/);
-  assert.doesNotMatch(server, /DELETE FROM|DROP TABLE/);
+  for (const source of [removal, server]) assert.doesNotMatch(source, /DELETE FROM|DROP TABLE/);
 });
