@@ -6,6 +6,7 @@ import { connectionScopeKey, type ConnectionIdentity } from "./connection-scope"
 import { createConversationApi, type ConversationApi } from "./conversation-api";
 import { createConversationRefreshes, type ConversationRefreshes } from "./conversation-refreshes";
 import { createDraftStore, type DraftStore } from "./draft-store";
+import { createChanges, type WorkbenchChange, type WorkbenchChanges } from "./workbench-changes";
 import { createFileSeam, type FileSeam } from "./file/file-seam";
 
 /**
@@ -57,6 +58,15 @@ export interface WorkbenchConnection {
    * connection holds no refresh, so a panel that outlived it asks registrations nothing published into.
    */
   readonly refreshes: ConversationRefreshes;
+  /**
+   * The facts a surface re-reads a resource for, because something outside it changed.
+   *
+   * A shell that counted its own remounts and passed the number down was stating a protocol, not a fact: the sidebar, the
+   * explorer and a viewer each had to know which value meant "read again". The surface that observed the change states it
+   * here instead, on the connection it happened in, and the surface that reads the resource subscribes. It belongs to the
+   * connection for the same reason everything else does — a replaced connection's subscribers are gone with it.
+   */
+  readonly changes: WorkbenchChanges;
 }
 
 /**
@@ -76,6 +86,7 @@ export function workbenchConnection(client: WorkbenchClient, identity: Connectio
     api: createConversationApi(client),
     drafts: createDraftStore(connectionScopeKey(identity)),
     refreshes: createConversationRefreshes(),
+    changes: createChanges(),
   };
 }
 
@@ -100,6 +111,11 @@ export function useWorkbenchConnection(): WorkbenchConnection {
   const value = useOptionalWorkbenchConnection();
   if (value === null) throw new Error("The workbench is mounted outside a connection.");
   return value;
+}
+
+/** One of this connection's changes: what a surface that observed it states, and what a reader subscribes to. */
+export function useWorkbenchChange(which: keyof WorkbenchChanges): WorkbenchChange {
+  return useWorkbenchConnection().changes[which];
 }
 
 /** The opaque scope key, for a store that only needs to name its own entries. */

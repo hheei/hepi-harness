@@ -9,7 +9,7 @@ import { extractTurnWrittenFiles, type WrittenFile } from "../lib/turn-written-f
 import { buildQuotedSelection } from "../lib/quoted-selection";
 import { dropMentionText, splitDroppedItems, type DroppedItem } from "../lib/file/file-upload-client";
 import { uploadFiles } from "../lib/file/file-seam";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useHistoryNavigation } from "../hooks/useHistoryNavigation";
 import { NavigationOutcomeBanner } from "./NavigationOutcomeBanner";
 import { navigationHoldsViewport, searchSettlementAction } from "../lib/history-navigation";
@@ -93,8 +93,6 @@ interface Props {
   onOpenSettings?: (section: SettingsSection) => void;
   onContextUsageChange?: (usage: { percent: number | null; contextWindow: number; tokens: number | null } | null) => void;
   onOpenFile?: (filePath: string, page?: number) => void;
-  /** Files dropped onto the chat were written into the working directory. */
-  onFilesUploaded?: () => void;
   onOpenSession?: (sessionId: string, entryId?: string, options?: { rawHistoryFocus?: boolean }) => void;
   /**
    * Leave this conversation for one that is known to work: the composer of the folder it is in.
@@ -305,7 +303,7 @@ function ProcessDetailsGroup({ messageCount, toolCallCount, expanded, reveal = f
   );
 }
 
-export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
+export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const completionNotificationsEnabled = session?.relation?.kind !== "subagent";
@@ -591,6 +589,9 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
   // Every read this surface makes — the transcript's, the files', and the navigation ones — belongs to the connection
   // the workbench is showing, so the connection is taken here rather than beside the upload that first used it.
   const connection = useWorkbenchConnection();
+  // A dropped upload wrote files into the working directory: the explorer's listing and the open file's patch are stale,
+  // and the surfaces that read them are told so rather than a callback travelling down from the shell.
+  const filesChange = useWorkbenchChange("files");
   /**
    * The conversation's navigation owner: one bounded target read per jump or deep search hit, and the outcome it
    * settled to (history-navigation ticket 03).
@@ -1039,7 +1040,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       if (mentions) chatInputRef?.current?.insertText(mentions);
       if (uploaded.length > 0) {
         addNotice({ type: "success", message: t("chat.dropUploaded", { count: uploaded.length }) });
-        onFilesUploaded?.();
+        filesChange.notify();
       }
       if (skipped.length > 0) {
         addNotice({ type: "warning", message: t("chat.dropAlreadyExists", { names: skipped.join(", ") }) });
@@ -1050,7 +1051,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     } catch (uploadError) {
       addNotice({ type: "error", message: t("chat.dropFailed", { message: uploadError instanceof Error ? uploadError.message : String(uploadError) }) });
     }
-  }, [addNotice, chatInputRef, connection.client, newSessionCwd, onFilesUploaded, session?.cwd, t]);
+  }, [addNotice, chatInputRef, connection.client, filesChange, newSessionCwd, session?.cwd, t]);
 
   const onDrop = useCallback((items: DroppedItem[]) => {
     const { images, files, folders } = splitDroppedItems(items);
