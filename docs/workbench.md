@@ -73,6 +73,35 @@ a local one from its spawn error, and both name python3 (`packages/gateway/src/t
 The terminal panel in the browser is ticket 13's; the two numbers above and the stream budget are this surface's whole
 configuration. See [local integration](local-integration.md) for the CLI and the request shapes.
 
+## The panel beside the chat
+
+The shell (`packages/ui/src/components/AppShell.tsx`) assembles; it decides nothing about tabs, panels or focus that
+its own modules already state. What a person sees around the conversation is a small set of surfaces, each of which owns
+one question:
+
+| Surface | Owns |
+| --- | --- |
+| `ShellTopBar.tsx` | the bar itself: the sidebar toggle, the responsive toolbar, the session stats button, the file toggle and the trust banner, and where its dropdown opens |
+| `ShellTopPanel.tsx` | the one dropdown the bar has open — the child tree with its subtree control, a delegation, the raw history, the system prompt, the tool list, or the session's own facts |
+| `ChatArea.tsx` | the centre: the conversation, or the fresh composer, or the placeholder, or the read failure that stands in for a conversation that could not be read |
+| `WorkspacePanel.tsx` | the panel beside the chat: the tab bar, the one viewer on screen, and the terminals that stay mounted while their shells run |
+| `hooks/useWorkspacePanel.ts` | which tabs the panel holds, which one is on screen, and whether it is open — including its own `sessionStorage` memory across a reload |
+| `hooks/useShellPanels.ts` | the two drag handles and the widths they were left at, each one's maximum being what is left beside the other |
+| `hooks/useSurfaceFocus.ts` | focus returning to the toggle that opened a surface, and outside-pointer/escape dismissal |
+
+The tab rules are one value and a set of transitions over it (`components/panel-state.ts`), not a rule inside each
+handler: a file tab is keyed by absolute path and belongs to the project it was opened under, a terminal tab belongs to
+the page and keeps its own workspace, a close of a terminal is a request its own surface completes, and a project change
+clears the file tabs while leaving a terminal the reader is watching. `components/panel-state.test.ts` holds that
+matrix.
+
+**A change is a fact, not a counter.** A conversation created, renamed, forked, deleted or finished, and a file written
+by an upload or a run, are facts about the workbench. The surface that observed one states it on the connection
+(`lib/workbench-changes.ts`: `changes.catalogue`, `changes.files`), and the surface that reads the resource
+subscribes — the sidebar's rows, the explorer's tree, an open file's patch. What the shell used to thread down was a
+number both ends had to agree meant "read again"; `lib/workbench-changes.test.ts` holds that a signal has no value to
+compare and no replay.
+
 ## Worktrees
 
 Worktree list, create and remove are a gateway host capability of their own, on `POST /v1/worktrees`, served by both kinds of gateway: `GatewayWorktrees` runs git on this machine and `SshWorktreeServer` runs the same git argv through the existing SSH runner, so a local host and a remote host apply one set of rules. `packages/gateway/src/worktrees.ts` is adapted from pi-web's `lib/worktree.ts` at the pin below — the snapshot is

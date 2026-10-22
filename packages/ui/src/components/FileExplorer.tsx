@@ -17,7 +17,7 @@ import { displayPathUnder } from "../lib/display-path";
 import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
 import { useFileSave } from "../hooks/useFileBytes";
 import { FileSaveControl } from "./FileSaveControl";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useI18n } from "../hooks/useI18n";
 type Translate = ReturnType<typeof useI18n>["t"];
 
@@ -42,7 +42,6 @@ interface Props {
   /** The folder behind the routing cwd, shown wherever a path is read by a person. */
   displayCwd?: string | null;
   onOpenFile: (filePath: string, fileName: string, options?: OpenFileOptions) => void;
-  refreshKey?: number;
   onAtMention?: (relativePath: string, isDir: boolean) => void;
   onAtMentions?: (relativePaths: string[]) => void;
   onUploadBusyChange?: (busy: boolean) => void;
@@ -488,7 +487,6 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
   cwd,
   displayCwd,
   onOpenFile,
-  refreshKey,
   onAtMention,
   onAtMentions,
   onUploadBusyChange,
@@ -501,6 +499,9 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
   // Every file answer this panel shows is this connection's own: its Gateway origin, its credential, and its lifetime.
   const connection = useWorkbenchConnection();
   const { files } = connection;
+  // What tells this listing that the workspace's files changed — an upload, a run that wrote them, the toolbar's own
+  // reload. The surface that observed the change states it; this one re-reads the tree, because it is the reader.
+  const filesChange = useWorkbenchChange("files");
   const [roots, setRoots] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -524,7 +525,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
   const searchInputRef = useRef<HTMLInputElement>(null);
   const prevCwdRef = useRef<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
-  const refreshToken = `${refreshKey ?? 0}:${treeRefreshKey}`;
+  const refreshToken = String(treeRefreshKey);
   const uploadBusy = uploadPhase !== "idle";
   const hasSearchQuery = searchQuery.trim().length > 0;
 
@@ -720,7 +721,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
     const cwdChanged = prevCwdRef.current !== cwd;
     prevCwdRef.current = cwd;
 
-    // Reset expanded state only when cwd changes, not on refreshKey bumps
+    // Reset expanded state only when cwd changes, not on a refresh of the same tree
     if (cwdChanged) {
       setExpandedPaths(new Set());
       setHighlightedPaths(new Set());
@@ -754,7 +755,9 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [cwd, files, refreshKey, treeRefreshKey]);
+  }, [cwd, files, treeRefreshKey]);
+
+  useEffect(() => filesChange.subscribe(() => setTreeRefreshKey((key) => key + 1)), [filesChange]);
 
   useEffect(() => {
     if (!isWorkspaceRoutingPath(cwd)) { setGitFiles([]); setChangesError(null); return; }
@@ -770,7 +773,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
       .then((status) => { if (!cancelled) { setGitFiles(status.isGitRepository ? status.files : []); setChangesError(null); } })
       .catch((failure) => { if (!cancelled) { setGitFiles([]); setChangesError(failure instanceof Error ? failure.message : String(failure)); } });
     return () => { cancelled = true; };
-  }, [cwd, files, refreshKey, treeRefreshKey, changesRetryKey]);
+  }, [cwd, files, treeRefreshKey, changesRetryKey]);
 
   useEffect(() => {
     onChangesCountChange?.(gitFiles.length);

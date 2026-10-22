@@ -29,18 +29,20 @@ const client = createClient({
 
 const WORKSPACES = ["ok", "failed", "offline", "absent"] as const;
 
-/** What the shell-level hooks were asked to do, so the journey can assert a click reached them rather than the host. */
+/** What the connection was told, so the journey can assert a click reached the seam rather than the host. */
 declare global {
   interface Window { fileFailureActions: { reloadFolder: number } }
 }
 window.fileFailureActions = { reloadFolder: 0 };
+const connection = workbenchConnection(client, identity);
+connection.changes.files.subscribe(() => { window.fileFailureActions.reloadFolder += 1; });
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("the fixture root element is missing");
 createRoot(rootElement).render(
   <StrictMode>
     <I18nProvider>
-      <WorkbenchConnectionProvider value={workbenchConnection(client, identity)}>
+      <WorkbenchConnectionProvider value={connection}>
         {WORKSPACES.map((name) => (
           <section id={"panel-" + name} key={name} data-workspace={name}>
             <FileExplorer
@@ -53,14 +55,10 @@ createRoot(rootElement).render(
         <section id="viewer-failed">
           <FileViewer filePath="/workspace/failed/notes.md" cwd="/workspace/failed" />
         </section>
-        {/* A file deleted after the listing was read: the panel's move is the folder reload the shell owns, not the
-            same read repeated. The hook is the AppShell's own refresh in production. */}
+        {/* A file deleted after the listing was read: the panel's move is the files change the connection states, not
+            the same read repeated. The surfaces that read the folder are the subscribers. */}
         <section id="viewer-missing">
-          <FileViewer
-            filePath="/workspace/missing/notes.md"
-            cwd="/workspace/missing"
-            onReloadFolder={() => { window.fileFailureActions.reloadFolder += 1; }}
-          />
+          <FileViewer filePath="/workspace/missing/notes.md" cwd="/workspace/missing" />
         </section>
         {/* A preview the host bounded: the viewer states the chunk it shows and the size the host stated. */}
         <section id="viewer-truncated">
