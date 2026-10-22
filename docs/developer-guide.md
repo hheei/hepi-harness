@@ -292,7 +292,9 @@ MCP 的配置、凭据、OAuth 与子进程归 Web origin 主机账号,不归 Ba
 1. Gateway `mcp/config.ts` 管 `mcp.json`(1 MiB)与项目信任;`listing.ts` 启动、列工具、关闭。
    `McpHostService` 的测试期限 30 s,登录 TTL 5 min;登录使用粘贴回调。
 2. `ingress/mcp.ts` 回答 `/api/mcp*` 与 `/api/project-trust`,核对 workspace 的 gateway id;
-   无本机服务答 `mcp_unavailable`。
+   无本机服务答 `mcp_unavailable`。该核对是 `ingress/index.ts:servesFolder` 的一次 locality 读取:
+   `GET /api/workspaces/:workspaceId/locality?gatewayId=`(自己的 gateway id 与 service credential),只有
+   `local: true` 才放行,拒绝／非该形状／传输失败一律 false,不缓存、不读 workspace/host 列表形状。
 3. Backend `mcp-grants.ts` durable 记录会话授予的身份与当时 descriptor。`HEPI_MCP_TOOLS` 只是声明,不授予;
    含 command/args/env/url/headers/auth 等主机键的声明在启动时拒绝。
 4. `McpToolBridge` 注册 deferred、`replay:"unsafe"` 工具,由 `pi.agent.modelTools` 选择。Gateway 每调用重新

@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { Readable } from "node:stream";
-import { DEFAULT_HOST_HEADER, WEB_LOGOUT_PATH } from "@hepi/protocol";
+import { DEFAULT_HOST_HEADER, WEB_LOGOUT_PATH, type WorkspaceLocality } from "@hepi/protocol";
 import { createFileSurface, isFileSurfacePath } from "../files-surface.ts";
 import { MAX_UPLOAD_BATCH_BYTES } from "../multipart.ts";
 import { createMcpIngressSurface, handlesMcpRoute } from "./mcp.ts";
@@ -302,39 +302,28 @@ export function createClientIngress(settings: ClientIngressSettings): ClientIngr
 	 * Whether the workspace id a client named is a folder on the host this origin's MCP service runs on.
 	 *
 	 * The Backend owns the binding — which gateway a workspace id belongs to — so it is the only authority that can
-	 * answer, and this ingress asks it with its own service credential instead of resolving anything itself. Two facts
-	 * have to agree, and the first alone is not enough: a name is not an identity, so a workspace the Backend binds to
-	 * another gateway is refused even when the configured host serves a folder of its own under that same id, and a
-	 * gateway that executes through SSH profiles serves folders on other machines (ADR 0005), so it is not this
-	 * origin's own host either. A listing that could not be read refuses for the same reason it does in the Web entry:
-	 * "could not ask" is not "asked, and there are none". Nothing here resolves a path and nothing is cached.
+	 * answer, and this ingress asks it with its own service credential instead of resolving anything itself. The question
+	 * is one narrow one, `WorkspaceLocality`, so no list, profile, root or account shape is read here: two facts have to
+	 * agree inside the Backend, and the first alone is not enough, so a workspace bound to another gateway is refused
+	 * even when the configured host serves a folder of its own under that same id, and a gateway that executes through
+	 * SSH profiles serves folders on other machines (ADR 0005), so it is not this origin's own host either.
 	 *
-	 * The empty profile list is read together with the error beside it, because the Backend answers both at once: a
-	 * gateway it could not reach is reported as `{ profiles: [], error }`, and "no profiles" there states that nothing
-	 * was asked, not that this host serves its own machine. Only an answer with no error is this host's own account.
+	 * Only an explicit `local: true` is a yes. A refusal, a body that is not that verdict, a transport failure and a
+	 * gateway this deployment does not name all answer `false`: "could not ask" is never "asked, and it is this
+	 * machine", and no earlier answer is remembered, so a host that goes away stops being this machine at once. Nothing
+	 * here resolves a path and nothing is cached.
 	 */
 	async function servesFolder(workspaceId: string): Promise<boolean> {
 		const gatewayId = settings.mcp?.gatewayId ?? "";
 		if (gatewayId === "") return false;
-		const listed = await backendJson("/api/workspaces") as { workspaces?: unknown } | undefined;
-		const workspaces = Array.isArray(listed?.workspaces) ? listed.workspaces as { id?: unknown; gatewayId?: unknown }[] : [];
-		const workspace = workspaces.find((candidate) => candidate.id === workspaceId);
-		if (workspace === undefined || workspace.gatewayId !== gatewayId) return false;
-		const hosts = await backendJson("/api/hosts") as { hosts?: unknown } | undefined;
-		const owners = Array.isArray(hosts?.hosts) ? hosts.hosts as { id?: unknown; profiles?: unknown; error?: unknown }[] : [];
-		const owner = owners.find((candidate) => candidate.id === gatewayId);
-		if (owner === undefined || owner.error !== undefined) return false;
-		return Array.isArray(owner.profiles) && owner.profiles.length === 0;
-	}
-
-	/** One read of the Backend's own metadata, or undefined when it could not be read: a refusal, never an assumption. */
-	async function backendJson(path: string): Promise<unknown> {
+		const path = "/api/workspaces/" + encodeURIComponent(workspaceId) + "/locality?gatewayId=" + encodeURIComponent(gatewayId);
 		try {
-			const response = await fetch(backendOrigin + path, { headers: { authorization: "Bearer " + settings.backend.serviceToken, "content-type": "application/json" } });
-			if (!response.ok) { await response.body?.cancel(); return undefined; }
-			return await response.json();
+			const response = await fetch(backendOrigin + path, { headers: { authorization: "Bearer " + settings.backend.serviceToken } });
+			if (!response.ok) { await response.body?.cancel(); return false; }
+			const verdict = await response.json() as Partial<WorkspaceLocality> | undefined;
+			return verdict?.local === true;
 		} catch {
-			return undefined;
+			return false;
 		}
 	}
 

@@ -328,14 +328,18 @@ renders it, and the gateway owns the behavior because it is the entry that answe
 - **The host resolves the folder, and the binding says which host.** A request names a folder as the browser addresses
   it (`/workspace/<id>`); the ingress sends the workspace id and never a path, and the configuration host resolves it
   against the folders it serves. A name is not an identity, so the id is checked first against the binding the Backend
-  owns: the ingress reads `/api/workspaces` and `/api/hosts` with its **own service credential** and forwards a
-  folder-scoped request only when that workspace is bound to `HEPI_INGRESS_MCP_GATEWAY_ID` **and** that gateway serves
-  no SSH profile — a gateway that executes elsewhere serves folders on other machines, and a listing that could not be
-  read is refused rather than assumed empty. A workspace bound to another gateway is refused here, before any host is
-  asked, so a folder this machine happens to call `local` is never answered for a `local` that belongs to someone
-  else; a folder the bound host itself does not serve is refused by that host (`unknown-workspace`, answered 403
-  `cwd-denied`). `/durable`, the sentinel that means "no folder", leaves the global configuration alone. No path is
-  synthesized and nothing is cached.
+  owns: the ingress asks one question with its **own service credential**,
+  `GET /api/workspaces/:workspaceId/locality?gatewayId=HEPI_INGRESS_MCP_GATEWAY_ID`, and forwards a folder-scoped
+  request only when the answer is `{ local: true }`. The Backend decides that verdict from its own binding membership
+  (retained bindings included) and its own host-profile answer — a gateway that executes over SSH profiles serves
+  folders on other machines, so it is not this origin's host — and the ingress reads no list, profile, root or account
+  shape to reach it. A refusal, a body that is not that verdict and a transport failure are all `false`: "could not
+  ask" is never "asked, and it is this machine", and nothing is remembered, so a host that goes away stops being this
+  machine on the next request. A workspace bound to another gateway is refused here, before any host is asked, so a
+  folder this machine happens to call `local` is never answered for a `local` that belongs to someone else; a folder
+  the bound host itself does not serve is refused by that host (`unknown-workspace`, answered 403 `cwd-denied`).
+  `/durable`, the sentinel that means "no folder", leaves the global configuration alone. No path is synthesized and
+  nothing is cached.
 - **A cookie write is same-origin; a bearer is its own authority.** A write under these routes is refused unless it is
   same-origin **or** it presents a device bearer: a cookie is presented by the browser on its own, so a declared App
   origin must not be able to make the browser write with this session's cookie, while an App reaching this origin from
