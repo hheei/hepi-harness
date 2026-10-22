@@ -13,3 +13,13 @@ graphify-deep/
 
 # Local graphify interpreter stamp.
 .graphify_python
+
+# No extractor exists for logs, stylesheets or these dotfiles. Keep the code
+# and document graph focused on supported inputs.
+*.log
+*.css
+.env*
+.git
+.gitignore
+.dockerignore
+.graphifyignore
