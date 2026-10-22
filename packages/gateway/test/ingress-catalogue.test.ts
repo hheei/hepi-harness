@@ -254,7 +254,11 @@ test("a device bearer reads the catalogue, binds Projects on both hosts and re-b
     const removed = await worktree(app.origin, bearer, { workspaceId: remote.folders[0]!.workspaceId, operation: "remove", path: remoteMade.path, force: true });
     assert.equal(removed.status, 200, JSON.stringify(removed.body));
     assert.equal(app.ssh.host.exists(remoteMade.path), false);
-    const afterRemoval = (await catalogue(app.origin, bearer)).conversations.find(candidate => candidate.id === boundInCheckout)!;
+    const afterCheckoutRemoval = await catalogue(app.origin, bearer);
+    // Three more accepted mutations: each created checkout was recorded as a folder of its Project, and the
+    // removed checkout's folder was unlinked. One revision each — not one per retained binding, not one per read.
+    assert.equal(afterCheckoutRemoval.projectsRevision, listed.projectsRevision + 3);
+    const afterRemoval = afterCheckoutRemoval.conversations.find(candidate => candidate.id === boundInCheckout)!;
     assert.equal(afterRemoval.workspaceId, remoteMade.workspaceId);
     assert.equal(afterRemoval.gatewayId, SSH_GATEWAY);
     assert.deepEqual(afterRemoval.workspace, { gatewayId: SSH_GATEWAY, root: remoteMade.path, retained: true });
@@ -266,7 +270,10 @@ test("a device bearer reads the catalogue, binds Projects on both hosts and re-b
     const deleted = await fetch(app.origin + "/api/projects/" + encodeURIComponent(remote.id) + "?hostId=" + encodeURIComponent(SSH_GATEWAY), { method: "DELETE", headers: bearer });
     assert.equal(deleted.status, 200, await deleted.text());
     const afterProjectRemoval = await catalogue(app.origin, bearer);
-    assert.equal(afterProjectRemoval.projectsRevision, 3);
+    // The Project removal is the fourth accepted mutation since that first read: one revision for the removal
+    // itself, however many folders it retained — a retained binding keeps a bound conversation resolvable, it is
+    // not a separate publication.
+    assert.equal(afterProjectRemoval.projectsRevision, listed.projectsRevision + 4);
     const kept = afterProjectRemoval.conversations.find(candidate => candidate.id === stillBound)!;
     assert.equal(kept.workspaceId, remote.folders[0]!.workspaceId);
     assert.equal(kept.gatewayId, SSH_GATEWAY);
