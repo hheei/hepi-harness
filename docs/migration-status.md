@@ -369,7 +369,7 @@ whatever the host holds. The producer prunes while it walks, applying the same i
 stopping at a declared skill or at the prompts root's own level, so ignored and supporting content is neither read nor
 transmitted nor counted. Both producers read a gitignore pattern with the same grammar: the SSH helper matches with a Python port of the
 `node-ignore` 7.0.5 engine the loader and the local producer already use
-(`packages/gateway/src/ssh-filesystem.ts`, license kept in `packages/gateway/src/node-ignore.LICENSE`), so an ignored
+(`packages/gateway/src/ssh-filesystem-helper.ts`, license kept in `packages/gateway/src/node-ignore.LICENSE`), so an ignored
 file or subtree is pruned before it is read on either host. A declared skill directory stays terminal, so supporting
 documents are never read into the snapshot.
 
@@ -816,6 +816,26 @@ revoking access ends access without aborting the agent run. Routes, configuratio
 [verification](verification.md#client-ingress-and-device-credentials-ticket-02). The cutover that makes this the running
 entry is ticket 16, and the deployment runbook is deliberately unchanged until then.
 
+## Backend-owned ingress locality verdict (ingress-binding ticket 01)
+
+The client ingress's folder question is now a Backend answer instead of two listings joined in the Gateway. `GET
+/api/workspaces/:workspaceId/locality?gatewayId=…` (`workspace-http.ts`, shape `WorkspaceLocality` in
+`@hepi/protocol`) states whether a workspace is a folder on the machine of the gateway the caller named. It is the
+predicate the ingress used to assemble itself: membership of the workspace listing, retained bindings included, the
+owner's gateway id, and a host-profile answer with no error and no profiles. A workspace this deployment does not bind,
+an owner that is another gateway, an SSH-profile host and any host result that predicate does not accept all answer
+`{ local: false }`; a query the Backend could not evaluate keeps its own non-success (`503 gateway_offline` for a
+gateway it cannot reach) rather than a fabricated negative. `/api/workspaces` and `/api/hosts` keep their shapes and
+their catalogue callers.
+
+The client ingress is now its only caller (ingress-binding ticket 02): `servesFolder` in
+`packages/gateway/src/ingress/index.ts` asks this one route with its own configured gateway id and service credential,
+and admits a folder-scoped MCP or project-trust request only on an explicit `local: true`. A refusal, a body that is
+not the verdict and a transport failure are all `false`, no answer is cached, and the workspace/host list casts,
+cross-list join and `backendJson` helper are gone — the ingress reads no list, profile, root or account shape to decide
+whether a folder is its own. `/api/workspaces` and `/api/hosts` keep their shapes for their catalogue callers. Nothing
+is cached, no path is resolved and no filesystem is probed by the verdict.
+
 ## Client ingress conversation slice (ticket 03)
 
 One conversation now works end to end through the client listener: a real caller creates it, reads its state and
@@ -1031,10 +1051,12 @@ Artifacts are one command per half. `apps/app/scripts/build-artifacts.mjs` build
 state, host, target architecture, toolchain versions, per-artifact checksums, per-step exit codes and logs — plus a
 reproducibility measurement: two builds produce a **byte-identical executable**, while the `.deb` container records its
 bundling time (the Tauri bundler does not read `SOURCE_DATE_EPOCH`), so the package checksums differ and the payloads do
-not. `apps/app/scripts/verify-artifacts.mjs` asserts against the produced package: contents, architecture, dependencies,
-resolved libraries, no internal credential or Node/Next payload, a cold start with no connection, a cold start from a
-stored one where a fixture Gateway sees `GET /api/descriptor` arrive with `Origin: tauri://localhost` and the stored
-bearer, the first-run form driven through the real window, and a cold start after forgetting the connection.
+not. `apps/app/scripts/verify-artifacts.mjs` is the entry point that resolves the artifact and calls one concrete
+operation (`apps/app/scripts/verify-artifacts.operation.mjs`), which asserts against the produced package: contents,
+architecture, dependencies, resolved libraries, no internal credential or Node/Next payload, a cold start with no
+connection, a cold start from a stored one where a fixture Gateway sees `GET /api/descriptor` arrive with
+`Origin: tauri://localhost` and the stored bearer, the first-run form driven through the real window, and a cold start
+after forgetting the connection.
 
 Behaviour, commands and limits: [apps/app README](../apps/app/README.md); evidence:
 [verification](verification.md#app-shell-and-packaged-artifacts-ticket-15). Not delivered here: the deployed entry and
@@ -1429,3 +1451,30 @@ ingress, the real Backend over SQLite, a controlled model endpoint and no interc
 Backend answers again. The rows that stack cannot reach through an ordinary lifecycle stay at the seams listed above;
 [ticket 03](../.scratch/cross-session-references/issues/03-acceptance.md) records which and why.
 
+
+## UI architecture consolidation (delivered; tickets 01–12, acceptance closed)
+
+The twelve-ticket UI architecture refactor is integrated on `impl/ui-system-acceptance` and its acceptance is closed at
+`255a61ac` (clean tree), with the ingress-crossing drivers and the native journey re-run at the documentation-only commit
+`8f22ed70`, and the selector and document checks at the last documentation-only commit `fa7b37dc`. The behaviour matrix in `.scratch/ui-architecture-refactor/acceptance.md` now carries an executed
+result or a named limit for every N1–N10, C1–C9 and R1–R11 row; the command/revision/log table is in
+[verification](verification.md#ui-architecture-consolidation-system-acceptance-ticket-12-2026-10-22).
+
+What the acceptance actually exercised: `@hepi/ui` 474 unit tests, `@hepi/app` 29, web-unit 14; Web and App builds; a
+debug `hepi-app` binary; 44 browser drivers (49 executions) against the production Web build and the browser-emulated App (each with its
+own raw log); and one real Tauri journey in Xvfb that answered the actual GTK Save dialog and drove the App's own
+Disconnect through the rendered document. Two integration failures were found this way and fixed at their owner — the UI11
+one-shot quoted prompt was never consumed (`cad0d86b`), and the shell rebuilt the chat's navigation target on every render
+so one bounded target window was read twice (`ce5cb804`).
+
+Limits this record keeps:
+
+- **Real upstream OAuth was not executed.** Provider sign-in is covered by a legitimate sign-in fixture at the browser
+  seam; no request reached a real authorization server.
+- **Live compaction of a real long conversation was not executed.** Head changes, jump windows and the live window are
+  covered; the compaction itself is not.
+- **The native journey is a debug build.** Native functional evidence, not release performance, and not a packaged
+  artifact: no release build or `.deb` was produced or verified.
+- **Nothing ran on `remote-host`,** and no deployment was restarted. All builds ran on `workstation`.
+- **Android has no evidence.** This host has no SDK, adb or device, so no mobile App claim is made.
+- **A run that was not observed plays no completion sound** (ADR 0007) remains the contract; unchanged here.

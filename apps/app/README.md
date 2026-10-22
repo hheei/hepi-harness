@@ -181,6 +181,16 @@ descriptor request arrive with `Origin: tauri://localhost` and the stored device
 through the real window with `xdotool`; and a cold start after forgetting the connection. Report and logs land beside
 the artifact.
 
+`verify-artifacts.mjs` is only the entry point: it resolves `--artifact-dir`/`--log-dir` (the default is the newest
+`.dev/artifacts/<label>` this checkout built), calls `runArtifactVerification({ artifactDir, logDir })` from
+[`scripts/verify-artifacts.operation.mjs`](scripts/verify-artifacts.operation.mjs), prints `{ logDir, passed, failed }`
+and owns the process exit. The operation owns artifact inspection and journey assertions. Its private
+[`scripts/packaged-run.mjs`](scripts/packaged-run.mjs) owns the display, isolated credential store, fixture listeners,
+packaged process groups and temporary install roots. It releases every acquired resource before the operation returns,
+including after a failed journey; `runCleanup.completed` records the result. Importing either module starts nothing.
+Adding an assertion means adding a step to the operation; CLI flags, existing report fields, assertion names and exit
+semantics stay unchanged.
+
 **The package goes through a real `dpkg` transaction, and it is still not a system install.** `dpkg --install` needs
 euid 0, which this host does not grant. It does grant unprivileged user namespaces
 (`kernel.unprivileged_userns_clone=1`) and `bwrap`, so

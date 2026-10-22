@@ -9,6 +9,7 @@ import type { ServerSnapshot } from "@hepi/protocol";
 import type { AgentMessage, SessionInfo } from "../lib/types.ts";
 import type { ReadFailure } from "../lib/read-recovery.ts";
 import type { ChatInputHandle } from "../components/ChatInput.tsx";
+import type { ReloadOutcome } from "./useAgentSession.ts";
 
 const webRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const require = createRequire(import.meta.url);
@@ -50,6 +51,8 @@ type Mount = {
   dirty: boolean;
   render(): void;
   replayEffects(): void;
+  /** Re-render this same mount inside another connection, as the provider's replacement does. */
+  switchConnection(connection: ReturnType<typeof workbenchConnection>): void;
   unmount(): void;
   readonly out: AgentSession;
 };
@@ -80,10 +83,21 @@ function streamRegistry(t: TestContext, { createSource, onAnswered = () => {} }:
 const cache = await jiti("../lib/session-view-cache.ts") as typeof import("../lib/session-view-cache.ts");
 /** The connection this mount is inside: every scoped store the hook reaches keys by this same string. */
 const TEST_SCOPE = "test|backend|account";
+// The hook and the catalog's own module are one bundle, so the rule a change is stated through and the reader that
+// follows it are one module instance: a case can state a change and observe that this compositor re-read because of it.
 const hookBundle = buildSync({
-  entryPoints: [path.join(webRoot, "hooks", "useAgentSession.ts")], bundle: true, write: false,
+  stdin: {
+    contents: [
+      "export * from " + JSON.stringify(path.join(webRoot, "hooks", "useAgentSession.ts")) + ";",
+      "export { invalidateModelCatalog } from " + JSON.stringify(path.join(webRoot, "lib", "models-cache.ts")) + ";",
+    ].join("\n"),
+    resolveDir: webRoot, loader: "ts",
+  },
+  bundle: true, write: false,
   platform: "node", format: "cjs", external: ["react"], alias: { "@": webRoot },
 }).outputFiles[0].text;
+/** The catalog's bounded retry delays, as the hook states them: the waits a case lets expire to reach a later attempt. */
+const CATALOG_RETRY_DELAYS_MS = [2_000, 5_000, 10_000];
 /** A settled copy of one hook value: what the surface states, with no prototype from the sandbox it was built in. */
 const plain = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const respond = (body: unknown, status = 200): StubResponse => ({ ok: status >= 200 && status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
@@ -134,12 +148,27 @@ const frame = (overrides: Partial<NativeSnapshot> & { text?: string }): NativeSn
 const streamFrame = (snapshot: NativeSnapshot, event = "snapshot") => ({ type: "frame", sessionId: "conv", event, data: snapshot });
 function deferredRead() {
   const pending = Promise.withResolvers<StubResponse>();
-  return { promise: pending.promise, release: (body: unknown) => pending.resolve(respond(body)) };
+  return {
+    promise: pending.promise,
+    release: (body: unknown) => pending.resolve(respond(body)),
+    /** The same read answering a refusal: the status is the Backend's own answer, as a real response states it. */
+    releaseAt: (body: unknown, status: number) => pending.resolve(respond(body, status)),
+    /** The same read answering the way a transport failure does, so a caller sees the rejection it would see. */
+    reject: (cause: unknown) => pending.reject(cause),
+  };
 }
 
 // Run the actual bundled hook with independent React and transport state per fixture.
 function harness(t: TestContext, responder: (url: string, init: RequestInit | undefined, body: Record<string, unknown> | undefined) => StubResponse | Promise<StubResponse>) {
   const requests: Request[] = [], sources: Source[] = [];
+  /**
+   * Every timer this hook scheduled, in order.
+   *
+   * A pending timer is a resource: it outlives the render that made it and fires against whatever the surface holds by
+   * then. The cases that state a notice read it to prove the toast's clock is not one of this hook's — a conversation
+   * handed to the background must not be holding a countdown for a toast nobody is drawing (acceptance C7).
+   */
+  const timers: { ms: number; run: () => void }[] = [];
   // Every conversation request this hook makes is the connection's own. The client below is the only way to reach the
   // sandbox's `fetch`, so a request recorded without it is a surface that reached around the connection.
   const clientRequests: string[] = [];
@@ -197,15 +226,20 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
     close() { this.readyState = 2; }
     emit(event: unknown) { this.onmessage?.({ data: JSON.stringify(event) }); }
   }
+  // The catalog answers this case states, one per read, for the cases that observe a re-read's list arriving. Empty by
+  // default: every other case reads the same empty catalog it always did. An entry may be a read held open, which is how
+  // a case makes the answer a change superseded arrive after the one that replaced it.
+  const catalogAnswers: (StubResponse | Promise<StubResponse>)[] = [];
   const sandbox: Record<string, unknown> = {
     module: { exports: {} as Record<string, unknown> }, exports: {}, require: (name: string) => name === "react" ? react : require(name), console,
     URLSearchParams, URL, AbortController, DOMException, crypto: globalThis.crypto, queueMicrotask, EventSource: SandboxSource,
     document: { visibilityState: "visible", title: "", addEventListener() {}, removeEventListener() {} }, navigator: {},
-    setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+    setTimeout: (handler: () => void, ms?: number) => { timers.push({ ms: ms ?? 0, run: handler }); return timers.length; }, clearTimeout() {},
+    setInterval: () => 1, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
     fetch: async (url: string | URL | Request, init?: RequestInit) => {
       const target = String(url), body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : undefined;
       requests.push({ url: target, method: init?.method ?? "GET", body, viaClient: inClient });
-      if (target.startsWith("/api/models")) return respond({ models: {}, modelList: [] });
+      if (target.startsWith("/api/models")) return catalogAnswers.shift() ?? respond({ models: {}, modelList: [] });
       return responder(target, init, body);
     },
   };
@@ -219,6 +253,18 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   // `fetch`, so a request recorded without it is a surface that reached around the connection. The value is built once
   // per mount and handed back unchanged: a store or an effect that keys by the connection must see one connection, not
   // a fresh object per render.
+  // A second connection: the switch case. It is a different Backend, a different account and a different client, so it is
+  // a different conversation API and a different scope — the identity a late answer must be refused against.
+  const anotherConnection = (t: TestContext) => {
+    const client = createClient({
+      origin: "https://gateway-b.example",
+      credential: { kind: "bearer", token: "token-b" },
+      createSource: inertSource,
+      fetch: async (url: string | URL | Request, init?: RequestInit) => (sandbox.fetch as typeof globalThis.fetch)(String(url), init),
+    } as never);
+    t.after(() => client.dispose());
+    return workbenchConnection(client as never, { profile: "profile-b", backendId: "backend-B", accountScope: "account-B" });
+  };
   const defaultConnection = () => workbenchConnection({
     origin: "",
     request: (requestPath: string, init?: RequestInit) => {
@@ -242,7 +288,19 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
   } as unknown as Parameters<typeof workbenchConnection>[0], { profile: "test", backendId: "backend", accountScope: "account" });
   const useAgentSession = (sandbox.module as { exports: Record<string, unknown> }).exports.useAgentSession as (given: Mount["options"]) => AgentSession;
   return {
-    requests, sources, clientRequests,
+    requests, sources, clientRequests, timers, anotherConnection, catalogAnswers,
+    /** State, through the rule, that the deployment's model list changed under every mounted reader. */
+    invalidateCatalog: () => ((sandbox.module as { exports: Record<string, unknown> }).exports.invalidateModelCatalog as () => void)(),
+    /**
+     * Let every retry delay the hook is waiting on expire, once.
+     *
+     * Only the catalog's bounded retry is held this way: those are the timers whose wait is the read's own, and a case
+     * about a retired read states whether the loop it belonged to is still scheduled at all. Nothing runs by default, so
+     * a case that does not release them sees the first attempt and no more.
+     */
+    releaseRetryTimers: () => {
+      for (const timer of timers.splice(0)) if (CATALOG_RETRY_DELAYS_MS.includes(timer.ms)) timer.run();
+    },
     mount(extra: MountOptions = {}, connection = defaultConnection()): Mount {
       let unmounted = false;
       const m = {
@@ -258,6 +316,14 @@ function harness(t: TestContext, responder: (url: string, init: RequestInit | un
         replayEffects() {
           for (const slot of m.slots) slot?.cleanup?.();
           for (const slot of m.slots) if (slot?.effect) slot.cleanup = slot.effect();
+        },
+        // A connection switch: the provider above this mount states a new connection and the tree re-renders inside it.
+        // The shell is **not** remounted — only the provider is keyed by the connection's scope — so this is the same
+        // hook instance rendering again with a different `connection` in context, which is what makes a read that is
+        // still in flight belong to the connection that was replaced.
+        switchConnection(connection: ReturnType<typeof workbenchConnection>) {
+          (m as unknown as { connection: ReturnType<typeof workbenchConnection> }).connection = connection;
+          m.render();
         },
         unmount() { if (!unmounted) { unmounted = true; for (const slot of m.slots) slot?.cleanup?.(); } },
       } as Omit<Mount, "out"> & { stored: AgentSession | null };
@@ -425,6 +491,11 @@ test("creation and follow-up refusals restore text and attachments exactly once"
       assert.deepEqual(plain(restored[0][1]), [{ data: "AQID", mimeType: "image/png" }], kind);
       // The refusal the Backend stated is what the surface shows, whichever route carried it.
       assert.ok(plain(m.out.notices).some(n => n.type === "error" && n.message.includes(kind === "creation" ? "unavailable" : "bad image")), kind);
+      // The notice is a fact this hook states and nothing more: the toast it becomes is drawn by the shelf, so no
+      // countdown of its own is scheduled here. A hook that timed it would leave that clock running when the
+      // conversation is handed over to the background, which is the resource the ticket takes out of this owner.
+      assert.deepEqual(h.timers.map(timer => timer.ms).filter(ms => ms >= 180 && ms <= 5000), [],
+        kind + ": the conversation schedules no notice countdown, and no exit animation: " + JSON.stringify(h.timers));
     } finally { m.unmount(); }
   }
 });
@@ -1109,6 +1180,127 @@ test("the model catalogue is read through the connection, and cached per connect
   assert.deepEqual(plain(other.out.modelList.map(model => model.id)), ["b1"]);
 });
 
+test("a model change re-reads a mounted composer in place, and moves no selection", async (t) => {
+  // The catalog this page holds is the answer a `models.json` save or a credential change supersedes. A composer on
+  // screen must show the list the change produced **while** Settings is still open, and it must not silently move the
+  // conversation onto another model: the change says the list is old, not what this session should run.
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "old", name: "Old" }], modelList: [{ provider: "p", id: "old", name: "Old" }] }));
+  const m = h.mount();
+  await h.pump(m);
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models"));
+  assert.equal(reads().length, 1, "the mount read its catalogue once");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["old"]);
+  assert.equal(modelOf(m).modelId, "kept", "the conversation is on the model it was on");
+
+  // The change: a local fixture read answers the list the write produced, and the rule says the held answer is old.
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "new", name: "New" }], modelList: [{ provider: "p", id: "new", name: "New" }] }));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads().length, 2, "a mounted composer did not re-read after the change");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["new"], "the composer kept the list the change replaced");
+  assert.equal(modelOf(m).modelId, "kept", "the change moved the conversation onto another model");
+  assert.equal(h.requests.filter(request => request.method !== "GET").length, 0, "the refresh wrote something");
+
+  // A page with no mounted reader re-reads nothing: the change costs a page that is not showing a composer no request.
+  m.unmount();
+  h.catalogAnswers.push(respond({ models: [], modelList: [] }));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads().length, 2, "an unmounted composer re-read for a change");
+});
+
+/**
+ * The other half of a change: the read it superseded is still open, and it answers last.
+ *
+ * The cache already refuses to serve a superseded answer to the next reader, which is why this is a fact about the
+ * *consumer*: the read in flight belongs to this composer, it is awaited here, and what it writes is what the composer
+ * shows. A change started a newer read, so the older one describes a catalogue the change replaced — a list that landed
+ * after the newer answer would put the old one back on screen, and its failure would state an error over a catalogue
+ * that had just arrived.
+ *
+ * Both halves are held open and released after the newer read has answered, which is the order the race produces.
+ */
+test("a catalogue read a change superseded states neither its answer nor its failure", async (t) => {
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  const list = (ids: string[], names = ids) => ({ models: ids.map((id, index) => ({ provider: "p", id, name: names[index] })), modelList: ids.map((id, index) => ({ provider: "p", id, name: names[index] })) });
+  h.catalogAnswers.push(respond(list(["old"])));
+  const m = h.mount();
+  await h.pump(m);
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models")).length;
+  const shown = () => plain(m.out.modelList.map(model => model.id));
+  assert.deepEqual(shown(), ["old"]);
+  assert.equal(reads(), 1, "the mount read its catalogue once");
+
+  // The first change's read is held open, and a second change supersedes it before it answers.
+  const held = deferredRead();
+  h.catalogAnswers.push(held.promise);
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads(), 2, "the change did not start a read of its own");
+  h.catalogAnswers.push(respond(list(["new"])));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.equal(reads(), 3, "the second change did not start a read of its own");
+  assert.deepEqual(shown(), ["new"], "the read the second change started is not what the composer shows");
+
+  // The superseded read answers now, last, describing the catalogue both changes replaced.
+  held.release(list(["stale"]));
+  await h.pump(m);
+  assert.deepEqual(shown(), ["new"], "a read a change superseded put the list it was holding back on screen");
+
+  // The same claim on the failure side: a superseded read that fails states no error and retries no further.
+  const heldFailure = deferredRead();
+  h.catalogAnswers.push(heldFailure.promise);
+  h.invalidateCatalog();
+  await h.pump(m);
+  h.catalogAnswers.push(respond(list(["latest"])));
+  h.invalidateCatalog();
+  await h.pump(m);
+  assert.deepEqual(shown(), ["latest"]);
+  assert.equal(m.out.modelError, null, "the catalogue that arrived is stated as unreadable");
+
+  heldFailure.releaseAt({ error: "the catalogue could not be read" }, 500);
+  await h.pump(m);
+  assert.equal(m.out.modelError, null, "a read a change superseded stated its failure over the catalogue that arrived");
+  assert.deepEqual(shown(), ["latest"], "a superseded read's failure discarded the catalogue on screen");
+  // The retired read's bounded retry is retired with it: the wait it would spend its next attempt after is not scheduled,
+  // so a change does not leave a superseded read asking the deployment twice more.
+  assert.deepEqual(h.timers.filter(timer => CATALOG_RETRY_DELAYS_MS.includes(timer.ms)).map(timer => timer.ms), [],
+    "a superseded read kept its retry scheduled");
+  const settled = reads();
+  h.releaseRetryTimers();
+  await h.pump(m);
+  assert.equal(reads(), settled, "the superseded read retried after a change superseded it");
+});
+
+test("a catalog read that failed is stated where the model is chosen, and its retry is one more read", async (t) => {
+  const settings = { model: { provider: "p", modelId: "kept" }, thinkingLevel: "off" } as const;
+  const h = harness(t, url => url.endsWith("/state") ? respond(nativeFrame({ settings })) : normal(url));
+  h.catalogAnswers.push(respond({ error: "the catalogue could not be read" }, 500));
+  const m = h.mount();
+  await h.pump(m);
+  // The readiness of this read is not a promise the retry loop keeps: it waits a bounded delay, and the surface states
+  // the failure it was given rather than an empty list as though the deployment offered no models.
+  assert.match(String(m.out.modelError), /the catalogue could not be read/);
+  assert.deepEqual(plain(m.out.modelList), [], "a failed read is not stated as an empty catalogue");
+  assert.equal(modelOf(m).modelId, "kept", "a failed catalogue read dropped the conversation's model");
+  const reads = () => h.requests.filter(request => request.url.startsWith("/api/models")).length;
+  const before = reads();
+
+  // The recovery is a read of the same catalog: no submission, no write, and no other route beside it.
+  h.catalogAnswers.push(respond({ models: [{ provider: "p", id: "kept", name: "Kept" }], modelList: [{ provider: "p", id: "kept", name: "Kept" }] }));
+  const writes = h.requests.filter(request => request.method !== "GET").length;
+  m.out.retryModels();
+  await h.pump(m);
+  assert.equal(reads(), before + 1, "the retry asked the deployment once");
+  assert.equal(h.requests.filter(request => request.method !== "GET").length, writes, "the retry resent or wrote something");
+  assert.equal(m.out.modelError, null, "the read that answered is the recovery from the one that did not");
+  assert.deepEqual(plain(m.out.modelList.map(model => model.id)), ["kept"]);
+});
+
 /**
  * A read that did not answer is a state the surface can recover from, and the recovery is a read.
  *
@@ -1226,7 +1418,7 @@ test("an explicit reload is one operation on the conversation, not a new attachm
   // What it must not be is a remount — a new attachment would leave a new stream, a new projection and a reader who lost
   // their place — so the stream this mount joined is asserted to be the only one it ever opened.
   const h = harness(t, normal);
-  const reloads: ((() => Promise<void>) | null)[] = [];
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
   const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
   await h.pump(m);
   const reload = reloads.at(-1);
@@ -1247,6 +1439,285 @@ test("an explicit reload is one operation on the conversation, not a new attachm
   assert.equal(reloads.at(-1), null, "the registration is withdrawn with the surface");
 });
 
+/**
+ * What a reload says it did is what the read after it established, not what the reload route answered.
+ *
+ * The Backend's route is a fact about the runtime's resources; the surface's claim is a fact about the conversation.
+ * A read that answered and was accepted is a reload this conversation picked up, and the numbers it named are the ones
+ * named. A read that could not answer is a failure — and one that no longer has the conversation at all is the missing
+ * one — so neither is reported as a success, and a notice is never the only thing standing between the reader and the
+ * truth of what happened.
+ */
+test("a reload reports what the read after it established, and a read that failed is not a success", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  // The reload route always answers, so what differs between the cases is the read that follows it: a window, the
+  // Backend's own not_found, a read the Backend refused, and one that never answered. The last two are both failures but
+  // not the same failure, which is exactly why a bare null could not state them.
+  for (const answer of ["accepted", "missing", "refused", "failure"] as const) {
+    const h = harness(t, (url, init) => {
+      if (url === "/api/conversations/conv/reload") return respond({ resources: { skills: 3, prompts: 2 } });
+      if (!url.endsWith("/state")) return normal(url, init);
+      if (answer === "accepted") return respond(nativeFrame({ revision: 9, text: "the reloaded conversation" }));
+      if (answer === "missing") return respond({ error: "not_found" }, 404);
+      if (answer === "refused") return respond({ error: "the projection is unreadable" }, 422);
+      throw new TypeError("Failed to fetch");
+    });
+    const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
+    const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+    await h.pump(m);
+    const reload = reloads.at(-1);
+    assert.ok(reload, "the surface registers its own reload");
+    const reloadsBefore = h.requests.filter(r => r.url === "/api/conversations/conv/reload").length;
+    const outcome = plain(await reload());
+    await h.pump(m);
+    // One reload route, asked by this operation alone: the surface that triggered it does not ask for a second one.
+    assert.equal(h.requests.filter(r => r.url === "/api/conversations/conv/reload").length, reloadsBefore + 1,
+      answer + ": the Backend's reload route was asked exactly once");
+    // The operation states its outcome to the caller as well as to the reader: a surface outside the chat that awaits it
+    // — a definitions panel asking for a refresh — has to be able to tell a reload this conversation picked up from one
+    // that failed, rather than reading a resolved promise as a success.
+    assert.equal(outcome.status, answer === "accepted" ? "reloaded" : "failed", answer + ": the caller reads what the operation established: " + JSON.stringify(outcome));
+    const notice = plain(m.out.notices).at(-1);
+    assert.ok(notice, answer + ": the reload reports what happened");
+    if (answer === "accepted") {
+      assert.match(notice.message, /3 skills and 2 prompts/, answer + ": the resources the read's own answer named");
+      assert.equal(notice.type, "success");
+      assert.deepEqual(texts(m.out.messages), ["the reloaded conversation"], answer + ": and the read's window is on screen");
+    } else {
+      assert.equal(notice.type, "error", answer + ": a read that could not answer is not a success");
+      // Which failure it was is the read's own classification, so the sentence names the right one: a row the Backend
+      // says is gone, a read the Backend refused and one that never answered are three states with three next steps.
+      const expected = answer === "missing" ? /no longer exists/ : answer === "refused" ? /could not be re-read/ : /could not be reached/;
+      assert.match(notice.message, expected, answer + ": " + notice.message);
+      assert.ok(!/3 skills/.test(notice.message), answer + ": the numbers of a read that never happened are not claimed");
+    }
+    m.unmount();
+  }
+});
+
+/**
+ * A reload route that rejects is a failure the operation states, not a rejection its caller has to catch.
+ *
+ * Settings › General awaits the reload it triggers, and the `/reload` command is a surface that has already finished its
+ * own work by then. Neither can catch what this operation throws at them — one would show an unhandled rejection and the
+ * other a generic command failure — so the route's own rejection is answered where the operation is, as the same kind of
+ * statement a read that failed produces. Nothing is claimed about the conversation: the route that never answered said
+ * nothing about it, and the resources it would have named are not named.
+ */
+test("a reload route that rejects is reported, and no read is asked for what it never changed", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const h = harness(t, (url, init) => {
+    if (url === "/api/conversations/conv/reload") return respond({ error: "the runtime is restarting" }, 503);
+    return normal(url, init);
+  });
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+  // The caller awaits the operation exactly as Settings does. It must settle rather than reject: an unhandled rejection
+  // is the bug this covers, and it would surface here as a thrown call rather than as a notice.
+  await reload();
+  await h.pump(m);
+  const notice = plain(m.out.notices).at(-1);
+  assert.ok(notice, "a rejected reload states what happened");
+  assert.equal(notice.type, "error", "a route that never answered is not a success");
+  assert.match(notice.message, /Reload failed/, "the sentence is the route's failure: " + notice.message);
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore,
+    "and no read was asked for a change that never happened");
+  m.unmount();
+});
+
+/**
+ * A reload that lands after the connection was replaced claims nothing about the surface that replaced it.
+ *
+ * The route and the read belong to one connection and one conversation. A switch while they were in flight makes both
+ * of them facts about a client nothing shows, so the operation must not state an outcome — a notice here would be the
+ * replaced connection's answer dressed as the current one's.
+ */
+test("a reload whose read answers after a connection switch states nothing", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const stale = deferredRead();
+  let reads = 0;
+  const h = harness(t, (url, init) => {
+    if (url === "/api/conversations/conv/reload") return respond({ resources: { skills: 4, prompts: 1 } });
+    if (!url.endsWith("/state")) return normal(url, init);
+    return ++reads === 1 ? stale.promise : respond(nativeFrame({ text: "the new connection" }));
+  });
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  // The reload is asked, and its read is the one still in flight when the connection is replaced underneath it.
+  const pending = reload();
+  await h.pump(m);
+  m.switchConnection(h.anotherConnection(t));
+  await h.pump(m);
+  const noticesBefore = plain(m.out.notices).length;
+  stale.release(nativeFrame({ revision: 9, text: "the replaced connection's answer" }));
+  await pending;
+  await h.pump(m);
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "the replaced connection's reload states nothing: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.deepEqual(texts(m.out.messages), ["the new connection"], "and the new connection's own read is what is on screen");
+  m.unmount();
+});
+
+/**
+ * A read the fold refused is not a read that established the conversation, whatever the auxiliary state read says.
+ *
+ * The transcript and the composer state are two reads, and only the first is ordered by the fold. A refused window is an
+ * older statement of a conversation the surface already shows a newer one of; letting the state read answer on its own
+ * and calling the pair "accepted" is how a reload comes to claim it reloaded a conversation whose window the surface
+ * had just rejected. A refusal therefore ends the read, and the state query is not made on its behalf.
+ */
+test("a reload whose window the fold refused claims nothing, and asks for no state of it", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  // The mount's own read answers revision 9; every read after it answers revision 1, an older window of the same
+  // conversation. That is a refusal the fold makes, not a failure the transport reports, and it is what the probe this
+  // case comes from reproduced: three reads, and a success notice naming resources of a reload nothing established.
+  let reads = 0;
+  const h = harness(t, (url, init) => url === "/api/conversations/conv/reload"
+    ? respond({ resources: { skills: 3, prompts: 2 } })
+    : !url.endsWith("/state") ? normal(url, init)
+      : respond(nativeFrame({ revision: ++reads === 1 ? 9 : 1, text: reads === 1 ? "current" : "old" })));
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  const noticesBefore = plain(m.out.notices).length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  await reload();
+  await h.pump(m);
+
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "a window the fold refused is not a reload this conversation picked up: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore + 1,
+    "and the refused read is the whole read: no state was asked for on behalf of the window nothing accepted");
+  assert.deepEqual(texts(m.out.messages), ["current"],
+    "the transcript still states the newer window the fold kept: " + JSON.stringify(texts(m.out.messages)));
+  m.unmount();
+});
+
+/**
+ * A reload route that answers after the connection was replaced is the replaced connection's answer.
+ *
+ * The route belongs to the client that sent it. A switch while it is in flight makes its rejection — a host that is
+ * restarting, a credential that expired — a fact about a Backend the surface no longer shows, so stating it as the
+ * current connection's failure would put one host's outage on another host's chat. The fence the read already gets is
+ * applied before the notice, and the replaced reload asks for no read at all.
+ */
+test("a reload route that rejects after a connection switch states nothing on the surface that replaced it", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  const stale = deferredRead();
+  const h = harness(t, (url, init) => url === "/api/conversations/conv/reload" ? stale.promise : normal(url, init));
+  const reloads: ((() => Promise<ReloadOutcome>) | null)[] = [];
+  const m = h.mount({ onConversationReloadChange: (reload) => reloads.push(reload) });
+  await h.pump(m);
+  const reload = reloads.at(-1);
+  assert.ok(reload, "the surface registers its own reload");
+  // The reload is asked, and its route is the one still in flight when the connection is replaced underneath it.
+  const pending = reload();
+  await h.pump(m);
+  m.switchConnection(h.anotherConnection(t));
+  await h.pump(m);
+  const noticesBefore = plain(m.out.notices).length;
+  const readsBefore = h.requests.filter(r => r.url.endsWith("/state")).length;
+
+  stale.releaseAt({ error: "old host restarting" }, 503);
+  await pending;
+  await h.pump(m);
+
+  assert.equal(plain(m.out.notices).length, noticesBefore,
+    "the replaced connection's route failure is not this surface's failure: " + JSON.stringify(plain(m.out.notices).slice(noticesBefore)));
+  assert.equal(h.requests.filter(r => r.url.endsWith("/state")).length, readsBefore,
+    "and the replaced connection's reload asks for no read of the conversation it no longer shows");
+  m.unmount();
+});
+
+/**
+ * One `/reload` is one notice.
+ *
+ * The operation states what it established, and the command line is a caller of that operation rather than a second
+ * reporter of it. Two surfaces stating the same outcome is how a single reload reads as two — and how the composer,
+ * told twice, reports a failure the operation had already reported once.
+ */
+test("a /reload command states its outcome once, for a success and for a failure", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  for (const answer of ["reloaded", "failed"] as const) {
+    const h = harness(t, (url, init) => {
+      if (url === "/api/conversations/conv/reload") {
+        return answer === "reloaded" ? respond({ resources: { skills: 3, prompts: 2 } }) : respond({ error: "the runtime is restarting" }, 503);
+      }
+      return normal(url, init);
+    });
+    const m = h.mount();
+    await h.pump(m);
+    const noticesBefore = plain(m.out.notices).length;
+
+    const result = await m.out.handleBuiltinSlashCommand("/reload");
+    await h.pump(m);
+
+    assert.equal(result.handled, true, answer + ": the command is the built-in's");
+    const stated = plain(m.out.notices).slice(noticesBefore);
+    assert.equal(stated.length, 1, answer + ": one reload is one notice: " + JSON.stringify(stated));
+    if (answer === "reloaded") {
+      assert.equal(stated[0].type, "success", "and it is the operation's success");
+      assert.match(stated[0].message, /3 skills and 2 prompts/, "naming the resources the read established");
+    } else {
+      assert.equal(stated[0].type, "error", "and it is the operation's failure");
+      assert.match(stated[0].message, /Reload failed/, "stated once, by the operation that owns it");
+      // The result still carries the failure, so the composer keeps the text that asked for it. The command's error is
+      // a signal to its caller, not a second report to the reader.
+      assert.ok(result.handled && result.error, "the command line still hears that it failed");
+    }
+    m.unmount();
+  }
+});
+
+/**
+ * A read outlives the connection it was asked through, and the connection is what makes its answer stale.
+ *
+ * Two connections can hold a conversation with the **same** id — the durable ids are only unique inside one Backend — so
+ * "is this still the same conversation?" is not the question that decides whether an answer may publish. A switch
+ * replaces the client and its conversation API, and the read that was in flight then answers from the connection the
+ * surface no longer shows. Every way that read can answer is covered, because all of them publish: a snapshot, the
+ * `null` a `not_found` answers with, and a transport failure.
+ */
+test("a read that answers after a connection switch publishes nothing, whatever its conversation id says", async (t) => {
+  cache.deleteSessionViewSnapshot(TEST_SCOPE, "conv");
+  // One held read per outcome, each answered the way a real one would be: a window, the Backend's own not_found, and a
+  // transport failure. Every one of them is the same conversation id, so a conversation-id fence passes them all.
+  for (const answer of ["snapshot", "missing", "failure"] as const) {
+    const stale = deferredRead();
+    let reads = 0;
+    const h = harness(t, url => !url.endsWith("/state") ? normal(url) : ++reads === 1 ? stale.promise : respond(nativeFrame({ text: "the new connection" })));
+    const m = h.mount();
+    await h.pump(m);
+    // The connection is replaced underneath the mount: a switch is a new provider value, and the harness states one by
+    // re-rendering this same hook instance inside it. The held read is the replaced connection's answer from here on,
+    // so it is released after the switch rather than before it.
+    m.switchConnection(h.anotherConnection(t));
+    await h.pump(m);
+    // The new connection reads the conversation for itself: that is what a switch asks of a surface, and it is the
+    // window the surface shows from here on. What the replaced connection answers afterwards must not displace it.
+    assert.deepEqual(texts(m.out.messages), ["the new connection"], answer + ": the new connection's own read is what is on screen");
+    // The held read answers a window of the **same** conversation id: the case where a conversation-id fence is not
+    // enough. The fence is the connection, and the identity of the object the read went through is that connection.
+    if (answer === "snapshot") stale.release(nativeFrame({ text: "the replaced connection's answer" }));
+    else if (answer === "missing") stale.releaseAt({ error: "not_found" }, 404);
+    else stale.reject(new TypeError("Failed to fetch"));
+    await h.pump(m);
+    assert.deepEqual(texts(m.out.messages), ["the new connection"], answer + ": no window of the replaced connection is published");
+    assert.equal(m.out.readFailure ?? null, null, answer + ": and no failure was stated for a connection that was already replaced");
+    assert.equal(m.out.error ?? null, null, answer + ": and no error was stated for it");
+    m.unmount();
+  }
+});
 test("leaving a fresh composer unmounts it without deleting the text the reader typed", async (t) => {
   // The review finding: a connection replacement or an unmount ran a cleanup that cleared the composer's own draft, so
   // the unsent text and images of a fresh composer were gone from the store before anything could park or restore them.

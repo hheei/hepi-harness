@@ -21,7 +21,7 @@ import {
   setLastSettingsSelection,
 } from "../lib/settings-navigation";
 import { workspaceIdFromCwd } from "../lib/skill-inventory";
-import { useExecutionTarget, useTargetFence } from "../lib/workbench-scope";
+import { useConversationRefreshes, useExecutionTarget, useTargetFence } from "../lib/workbench-scope";
 import type { ExecutionTarget } from "@hepi/session/execution-resources";
 import {
   ConfigButton,
@@ -123,17 +123,20 @@ function Toggle({ checked, disabled, label, onChange }: { checked: boolean; disa
 export function AgentsConfig({
   cwd,
   displayCwd,
-  sessionId: _sessionId = null,
+  sessionId = null,
   onClose,
-  onReloaded: _onReloaded,
   embedded = false,
   trust: _trust,
 }: {
   cwd: string;
   displayCwd?: string | null;
+  /**
+   * The conversation Settings was opened from. Saving a definition is a change a conversation picks up by re-reading
+   * its resources, so this panel asks that conversation — and only that one — to do it; the panel never performs the
+   * reload itself and never names a session key.
+   */
   sessionId?: string | null;
   onClose: () => void;
-  onReloaded?: () => void;
   embedded?: boolean;
   trust?: ProjectTrustStatus | null;
 }) {
@@ -144,6 +147,9 @@ export function AgentsConfig({
   const target = useExecutionTarget(workspaceIdFromCwd(cwd));
   /** Whether a read's target is the one on screen now; see {@link useTargetFence}. */
   const belongsTo = useTargetFence(target);
+  // The conversation's own read, published by the chat that owns it. A saved document is this panel's fact; whether
+  // that conversation then picked it up is the conversation's answer, which is what this panel reports.
+  const refreshes = useConversationRefreshes();
   const [definitions, setDefinitions] = useState<AgentDefinitionView[]>([]);
   const [shadowed, setShadowed] = useState<AgentDefinitionView[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(() => getLastSettingsSelection("agents", cwd));
@@ -161,6 +167,9 @@ export function AgentsConfig({
   const [issues, setIssues] = useState<readonly AgentDefinitionIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  // What the open conversation established after this panel wrote a document. It is the conversation's answer, not an
+  // assumption of this panel's: a reload the chat could not complete is stated as the failure it reported.
+  const [conversationRead, setConversationRead] = useState<{ readonly notice?: string; readonly error?: string } | null>(null);
 
   // A definition another scope shadows is still a definition the user may edit or delete, so the list carries both:
   // the effective ones and the shadowed ones, each marked by the `effective` flag the backend answered with.
@@ -278,14 +287,34 @@ export function AgentsConfig({
     finally { setValidating(false); }
   };
 
+  /**
+   * Ask the conversation this Settings was opened from to pick the change up.
+   *
+   * A definition is stored on the execution host, so the conversation that runs there reads it again through its own
+   * reload. This panel names only the conversation it was opened for: the operation, the read and the notice belong to
+   * that chat, and a conversation nothing is mounted for answers "not_open" rather than a reload this panel never
+   * performed.
+   */
+  const readConversation = useCallback(async () => {
+    setConversationRead(null);
+    if (sessionId === null) return;
+    const outcome = await refreshes.refresh(sessionId);
+    if (outcome.status === "reloaded") setConversationRead({ notice: outcome.message });
+    else if (outcome.status === "failed") setConversationRead({ error: outcome.message });
+    // "superseded" and "not_open" are the conversation having nothing to say about what this panel shows: another
+    // conversation is on screen, or none is. Neither is a reload, so neither is reported as one.
+  }, [refreshes, sessionId]);
+
   const save = async () => {
     setSaving(true);
     setError(null);
     setSavedOk(false);
+    setConversationRead(null);
     try {
       await request(false);
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2000);
+      await readConversation();
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setSaving(false); }
   };
@@ -300,6 +329,7 @@ export function AgentsConfig({
       const answer = await target.removeDefinition({ scope: selected.scope, name: selected.name });
       if (!answer.ok) throw new Error(answer.error.message === "" ? answer.error.code ?? answer.error.kind : answer.error.message);
       await load(target);
+      await readConversation();
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setSaving(false); }
   };
@@ -433,7 +463,22 @@ export function AgentsConfig({
           </ConfigDetailStack>
         </ConfigDetail>
       </ConfigSplitView>
-      <ConfigFooter status={(error || valid) && <span role={error ? "alert" : "status"} style={{ color: error ? "#ef4444" : "var(--text-dim)" }}>{error ?? t("agents.valid")}</span>}>
+      <ConfigFooter status={
+        // Three separate facts, each in its own words: whether the document itself was saved and validated, whether the
+        // conversation read the change, and the reason anything failed. A save this panel performed is never reported as
+        // a reload the conversation did not confirm.
+        error !== null ? (
+          <span role="alert" style={{ color: "#ef4444" }}>{error}</span>
+        ) : conversationRead?.error !== undefined ? (
+          // The conversation's own sentence, stated as it reported it: the definition was saved either way, and a
+          // reload that failed says so rather than being dressed up as one that worked.
+          <span role="alert" style={{ color: "#ef4444" }}>{conversationRead.error}</span>
+        ) : conversationRead?.notice !== undefined ? (
+          <span role="status" style={{ color: "var(--text-dim)" }}>{conversationRead.notice}</span>
+        ) : valid ? (
+          <span role="status" style={{ color: "var(--text-dim)" }}>{t("agents.valid")}</span>
+        ) : null
+      }>
         {editing && (
           <>
             <ConfigButton onClick={() => void validate()} disabled={saving || validating || (!creating && draft.name.trim() === "")}>{validating ? t("agents.validating") : t("agents.validate")}</ConfigButton>

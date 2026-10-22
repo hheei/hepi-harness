@@ -39,9 +39,10 @@ import { homedir, tmpdir, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GatewayRpcServer, LocalGateway, SshGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer, REMOTE_INSTALL_SCRIPT, SshInstallServer } from "../../../packages/gateway/src/install.ts";
-import { REMOTE_FILESYSTEM_SCRIPT, SshFilesystem } from "../../../packages/gateway/src/ssh-filesystem.ts";
+import { REMOTE_FILESYSTEM_SCRIPT } from "../../../packages/gateway/src/ssh-filesystem-helper.ts";
+import { SshFilesystem } from "../../../packages/gateway/src/ssh-filesystem.ts";
 import { createSystemSshRunner, type SshRunner } from "../../../packages/gateway/src/runner.ts";
 import { pythonSshRunner } from "../../../packages/gateway/test/ssh-transport.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
@@ -231,9 +232,13 @@ try {
 
   // The local execution host: a temporary account home and workspace, served by the real local gateway.
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
   const installs = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+    installs,
+  });
   await new Promise<void>((resolveListen) => gateway.server.listen(0, "127.0.0.1", resolveListen));
   const gatewayAddress = gateway.server.address();
   if (gatewayAddress === null || typeof gatewayAddress !== "object") throw new Error("the local gateway did not start");
@@ -257,12 +262,11 @@ try {
     profiles = [{ id: "prod", host: "build.example", remoteRoot }];
   }
   const sshWorkspaces = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
-  const sshGateway = new GatewayRpcServer(
-    new SshGateway({ id: "workstation-ssh", token: "ssh-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
-    undefined,
-    new SshFilesystem({ id: "workstation-ssh", profiles, workspaces: sshWorkspaces, runner }),
-    new SshInstallServer({ profiles, workspaces: sshWorkspaces, runner }),
-  );
+  const sshGateway = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "workstation-ssh", token: "ssh-token", profiles, workspaces: sshWorkspaces, allowedCommands: ["bash"], runner }),
+    files: new SshFilesystem({ id: "workstation-ssh", profiles, workspaces: sshWorkspaces, runner }),
+    installs: new SshInstallServer({ profiles, workspaces: sshWorkspaces, runner }),
+  });
   await new Promise<void>((resolveListen) => sshGateway.server.listen(0, "127.0.0.1", resolveListen));
   const sshAddress = sshGateway.server.address();
   if (sshAddress === null || typeof sshAddress !== "object") throw new Error("the SSH gateway did not start");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo, useReducer } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, useReducer } from "react";
 import type {
   AgentMessage,
   ExtensionStatusItem,
@@ -18,7 +18,7 @@ import {
   type NativeFrame,
   type SessionData,
 } from "../lib/durable-projection";
-import { createRequestId, isRefusal, operationFailure } from "../lib/conversation-api";
+import { createRequestId, isRefusal, operationFailure, type ConversationApi } from "../lib/conversation-api";
 import { ConversationSession, type StreamJoin } from "../lib/conversation-session";
 import { workspaceIdOfRoutingPath } from "@hepi/protocol/files";
 import {
@@ -75,23 +75,18 @@ import {
 } from "../lib/lifecycle-acquisition";
 import { readProjection, rekeyProjection, saveProjection } from "../lib/lifecycle-store";
 import { useWorkbenchConnection, useWorkbenchScope } from "../lib/workbench-scope";
-import { invalidateModelCatalog, modelsScopeOf, pageModelsCache } from "../lib/models-cache";
+import { modelsScopeOf, pageModelsCache, subscribeModelCatalog } from "../lib/models-cache";
 import { readCatalogAnswer, type CatalogAnswer } from "../lib/catalog-answer";
 import type { ScopedCache } from "@hepi/session/settings";
 import { hasUnfinishedWork } from "../lib/lifecycle-projection";
 import type { CompletionNotice } from "../lib/completion-delivery";
+import type { NoticeFact } from "../lib/notice-shelf";
 import type { AgentEventSubscription } from "@hepi/session/browser";
 import type { QueuedItemProjection, ServerSnapshot } from "@hepi/protocol";
 import type { AgentEventLike } from "../lib/agent-event-wire";
 import { bareMcpOpensSettings } from "../lib/mcp-command";
 import { isShellCommandDraft } from "../lib/composer-limits";
 import type { SettingsSection } from "../lib/settings-navigation";
-import {
-  CHAT_SCROLL_REATTACH_TOLERANCE,
-  CHAT_SCROLL_TAIL_TOLERANCE,
-  getLiveFollowAttached,
-  shouldShowScrollToLatest,
-} from "../lib/chat/chat-lazy-load";
 import {
   INITIAL_STREAMING_STATE,
   streamReducer,
@@ -159,6 +154,42 @@ type AgentStateResponse = {
   control?: ControlState;
 };
 
+/**
+ * What one conversation read established, stated as the fact rather than as an absence.
+ *
+ * A read has five ways to end and only one of them is "the conversation said something". The other four are not
+ * interchangeable: a read the surface itself superseded says nothing and must claim nothing, a window the fold refused
+ * is an older statement of the same conversation, a `not_found` is the Backend saying the row is gone, and a failure
+ * carries the kind a surface offers recovery for. Reporting them all as `null` made every caller guess which one it got,
+ * and a caller that guessed wrong stated a success over a failure.
+ */
+type ConversationReadOutcome =
+  /** The read answered and the surface is showing it. `agentState` is the composer state when the caller asked for it. */
+  | { readonly status: "accepted"; readonly agentState: { running: boolean; state: AgentStateResponse } | null }
+  /** This answer belongs to a connection or a conversation the surface no longer shows: it says nothing, and claims none. */
+  | { readonly status: "superseded" }
+  /** The fold called this window older than the one on screen: the same conversation, a statement it already superseded. */
+  | { readonly status: "refused" }
+  /** The Backend answered `not_found`: the conversation row is gone, so no retry can bring it back. */
+  | { readonly status: "missing" }
+  /** The read did not answer, as the kind the surface offers recovery for. */
+  | { readonly status: "failed"; readonly failure: ReadFailure }
+  /** The caller aborted the read. Not a state to report. */
+  | { readonly status: "cancelled" };
+
+/**
+ * What one resource reload established, as the operation that performed it states it.
+ *
+ * `reloaded` is the only outcome that claims the route's own answer, because only then did the read accept the
+ * conversation the route changed. `failed` carries the sentence the notice already stated, so a command line can repeat
+ * it without deciding a second time what happened. `superseded` is the operation having nothing to say: another
+ * connection, or a newer window, is what the surface shows.
+ */
+export type ReloadOutcome =
+  | { readonly status: "reloaded"; readonly message: string }
+  | { readonly status: "failed"; readonly message: string }
+  | { readonly status: "superseded" };
+
 export interface QueuedMessages {
   steering: string[];
   followUp: string[];
@@ -177,24 +208,15 @@ export type QueuedItems = readonly QueuedItemProjection[];
 /** One conversation's committed input control, as the wire states it. */
 export type ControlState = ServerSnapshot["control"];
 
-export type NoticeType = "info" | "success" | "warning" | "error";
+export type NoticeType = NoticeFact["type"];
 
-export type NoticeItem = {
-  id: string;
-  message: string;
-  type: NoticeType;
-  exiting?: boolean;
-};
-
-type NoticeState = {
-  visible: NoticeItem[];
-  pending: NoticeItem[];
-};
-
-type NoticeAction =
-  | { type: "add"; notice: NoticeItem }
-  | { type: "mark_oldest_exiting" }
-  | { type: "remove"; id: string };
+/**
+ * One notice the conversation stated. It is a **fact** — an id, a sentence, a kind — and carries no presentation: nothing
+ * here says how long it is drawn, which one is leaving, or how many are on screen. Those belong to the shelf that draws
+ * them (`components/NoticeShelf.tsx`), which is what keeps a toast's clock out of a session that can be handed over to
+ * the background (spec R3, acceptance C7).
+ */
+export type NoticeItem = NoticeFact;
 
 export type AgentPhase =
   /** This surface's own turn is staged and the run does not exist yet: nothing has been asked of a model. */
@@ -246,7 +268,6 @@ export interface UseAgentSessionOptions {
   onAgentEnd?: () => void;
   onSessionCreated?: (session: SessionInfo, sourceDraftKey: string) => void;
   onSessionForked?: (newSessionId: string) => void;
-  modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
@@ -256,10 +277,18 @@ export interface UseAgentSessionOptions {
    * Registers this conversation's explicit reload — the Backend's own resource reload followed by the read that states
    * it — so a surface outside the chat (Settings) asks for one operation instead of remounting the conversation.
    */
-  onConversationReloadChange?: (reload: (() => Promise<void>) | null) => void;
+  /**
+   * Registers this conversation's explicit reload — the Backend's own resource reload followed by the read that states
+   * it — so a surface outside the chat (Settings, the definitions panels) asks for one operation instead of remounting
+   * the conversation, and reads the outcome that operation established.
+   *
+   * The outcome is the operation's whole answer rather than a bare completion, because a caller that reports success has
+   * to be able to tell a reload this conversation picked up from one that failed or that another connection superseded.
+   * A `() => Promise<void>` would make every failure look like a success at the call site.
+   */
+  onConversationReloadChange?: (reload: (() => Promise<ReloadOutcome>) | null) => void;
   /** Opens Settings on a section; a bare `/mcp` the built-in MCP extension owns opens Settings › MCP. */
   onOpenSettings?: (section: SettingsSection) => void;
-  deferInitialScroll?: boolean;
   /** A fresh composer's model and reasoning picks to start with: the composer it replaces had them. */
   initialNewSessionChoices?: NewSessionChoices | null;
   /** A fresh composer reports its own model and reasoning picks, on mount and as they change. */
@@ -289,9 +318,6 @@ const EVENT_STREAM_READY_TIMEOUT_MS = 60_000;
 const EVENT_STREAM_RECONNECT_DELAY_MS = 1_000;
 // Retry temporary model-list failures without requiring a page refresh.
 const MODELS_RETRY_DELAYS_MS = [2_000, 5_000, 10_000];
-const MAX_NOTICES = 5;
-const NOTICE_VISIBLE_MS = 5000;
-const NOTICE_EXIT_ANIMATION_MS = 180;
 function createNoticeId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -301,52 +327,6 @@ function createNoticeId(): string {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function markOldestNoticeExiting(notices: NoticeItem[]): NoticeItem[] {
-  const index = notices.findIndex((notice) => !notice.exiting);
-  if (index === -1) return notices;
-  return notices.map((notice, i) => (
-    i === index ? { ...notice, exiting: true } : notice
-  ));
-}
-
-function fillPendingNotices(visible: NoticeItem[], pending: NoticeItem[]): NoticeState {
-  let nextVisible = visible;
-  let nextPending = pending;
-  while (nextPending.length > 0 && nextVisible.length < MAX_NOTICES) {
-    const [next, ...rest] = nextPending;
-    nextVisible = [...nextVisible, next];
-    nextPending = rest;
-  }
-  if (nextPending.length > 0 && !nextVisible.some((notice) => notice.exiting)) {
-    nextVisible = markOldestNoticeExiting(nextVisible);
-  }
-  return { visible: nextVisible, pending: nextPending };
-}
-
-function noticeReducer(state: NoticeState, action: NoticeAction): NoticeState {
-  switch (action.type) {
-    case "add": {
-      if (state.visible.some((notice) => notice.exiting) || state.visible.length >= MAX_NOTICES) {
-        return {
-          visible: state.visible.some((notice) => notice.exiting)
-            ? state.visible
-            : markOldestNoticeExiting(state.visible),
-          pending: [...state.pending, action.notice],
-        };
-      }
-      return { ...state, visible: [...state.visible, action.notice] };
-    }
-    case "mark_oldest_exiting":
-      return { ...state, visible: markOldestNoticeExiting(state.visible) };
-    case "remove": {
-      const visible = state.visible.filter((notice) => notice.id !== action.id);
-      return fillPendingNotices(visible, state.pending);
-    }
-    default:
-      return state;
-  }
 }
 
 export interface ChatInputHandle {
@@ -389,7 +369,7 @@ type SlashCommandsResponse = {
 export function useAgentSession(opts: UseAgentSessionOptions) {
   const {
     session, newSessionCwd, newSessionDraftKey, onAgentEnd, onSessionCreated, onSessionForked,
-    modelsRefreshKey, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
+    onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
     onOpenSettings,
   } = opts;
 
@@ -417,6 +397,26 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     () => new ConversationSession({ api, ...(subscribeAgentEvents === undefined ? {} : { subscribe: subscribeAgentEvents }) }),
     [api, subscribeAgentEvents],
   );
+  // The connection a read was started under, readable from its answer. A connection switch replaces the client **and**
+  // its conversation API, so the session object a read began with is the connection's own identity: an answer that
+  // arrives after the switch is one from a client the surface no longer shows, and it is refused whatever its
+  // conversation id says. The conversation id alone is not a fence — two connections can hold the same id, and the
+  // reads that matter here are exactly the ones answering with the same id from a replaced connection.
+  const conversationRef = useRef(conversation);
+  conversationRef.current = conversation;
+  const apiRef = useRef(api);
+  apiRef.current = api;
+  /**
+   * Whether an answer that has just arrived still belongs to the connection this surface is showing.
+   *
+   * It is asked at **every** point a read publishes — a snapshot, a `null`, a failure — because the switch that makes
+   * the answer stale can land while the read is in flight, and a fence applied only before the first publish would let
+   * the rest of that same answer through afterwards. The caller names the connection-owned object its read went
+   * through — the conversation session or the connection API — and the identity of that object is the connection: a
+   * switch replaces both, so a read through the replaced one is refused whatever its conversation id says.
+   */
+  const fromCurrentConnection = useCallback((readThrough: ConversationSession | ConversationApi) =>
+    conversationRef.current === readThrough || apiRef.current === readThrough, []);
   // This connection's composer drafts. The store is the connection's own, so a promotion, a rekey or a refused
   // submission's restore can only touch entries of the connection the composer is showing.
   const drafts = connection.drafts;
@@ -525,11 +525,25 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     : view.phase === "running"
       ? agentPhase ?? { kind: "waiting_model" }
       : null;
-  const [promptAnchorActive, setPromptAnchorActive] = useState(false);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  /**
+   * How many turns this surface itself has staged.
+   *
+   * It is the one fact the viewport needs from the conversation and cannot derive: a send of the reader's own owes their
+   * prompt its place at the top of the viewport while the answer streams in. Everything else about the viewport —
+   * following the tail, the scroll it performs, the spacer that makes the room — is the transcript presentation's own
+   * (`hooks/useTranscriptPresentation.ts`), so no scroll ref or scroll decision lives in this hook (spec R4).
+   */
+  const [ownSends, setOwnSends] = useState(0);
   const [slashCommands, setSlashCommands] = useState<SlashCommandInfo[]>([]);
   const [slashCommandsLoading, setSlashCommandsLoading] = useState(false);
-  const [noticeState, dispatchNotice] = useReducer(noticeReducer, { visible: [], pending: [] });
+  /**
+   * The notices the conversation stated, oldest first.
+   *
+   * It holds **facts** and nothing else: how long one is drawn, which is leaving and how many are on screen are the
+   * shelf's own presentation, so this list neither schedules a timer nor marks an entry as exiting. A surface that stops
+   * drawing (a connection handed over, a view unmounted) therefore leaves no clock running here (spec R3/R4).
+   */
+  const [notices, setNotices] = useState<readonly NoticeFact[]>([]);
   const [extensionStatuses, setExtensionStatuses] = useState<ExtensionStatusItem[]>([]);
   const [extensionWidgets, setExtensionWidgets] = useState<ExtensionWidgetItem[]>([]);
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessages>({ steering: [], followUp: [] });
@@ -552,23 +566,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const handleAgentEventRef = useRef<((event: AgentEvent) => void) | null>(null);
   /** How one native state this stream holds becomes the surface's payload. Bound below, read by the join above. */
   const publishStreamStateRef = useRef<((conversationId: string, held: SessionState<AgentMessage>) => void) | null>(null);
-  const initialScrollDoneRef = useRef(Boolean(opts.deferInitialScroll));
-  const lastUserMsgRef = useRef<HTMLDivElement | null>(null);
-  const pendingScrollToUserRef = useRef(false);
-  /**
-   * Whether the reader is following the live edge.
-   *
-   * It starts at the tail for a conversation opened fresh, because that is where such a reader is. It starts **false**
-   * when the surface is deferring the initial scroll to restore a saved position, and that is not a detail: "following
-   * the tail" is a fact about where the reader actually is, and a restore is about to put them somewhere else. A
-   * default of true means the first transcript change follows the tail — a jump away from the position being restored,
-   * which is the one thing restoring must not do. The scroll handler below establishes the real attachment from the
-   * position as soon as there is one.
-   */
-  const isNearBottomRef = useRef(!opts.deferInitialScroll);
-  const previousScrollTopRef = useRef(0);
-  const liveFollowFrameRef = useRef<number | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const ensuringNewSessionRef = useRef<Promise<string | null> | null>(null);
   // The command list as last loaded, and the get_commands request under way, if
   // any. A bare /mcp reads them to tell whose /mcp it is (handleBuiltinSlashCommand).
@@ -602,17 +599,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   useEffect(() => {
     if (isNew) onNewSessionChoicesChange?.({ model: newSessionModel, thinkingLevel: newSessionThinkingLevel });
   }, [isNew, newSessionModel, newSessionThinkingLevel, onNewSessionChoicesChange]);
-
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    // Scroll the chat container itself instead of scrolling a sentinel element
-    // into view: that propagates to every scrollable ancestor, and on mobile
-    // the keyboard-shifted document layer visibly jumps the whole app while
-    // streaming content follows the tail.
-    container.scrollTo({ top: container.scrollHeight, behavior });
-    previousScrollTopRef.current = container.scrollTop;
-  }, []);
 
   // The conversation's own selected model and reasoning level, read from the **accepted** lifecycle facts rather than
   // from a second copy of them: the projection is the one place that decides whether a frame is this conversation's
@@ -904,7 +890,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * the stream's state frame does, stamped with the acquisition it began under. The tree, stats and settings the
    * projection does not carry are applied beside it; readiness is never gated on this read.
    */
-  const loadSession = useCallback(async (sid: string, includeState = false, options?: { force?: boolean; acquisition?: Acquisition }) => {
+  const loadSession = useCallback(async (sid: string, includeState = false, options?: { force?: boolean; acquisition?: Acquisition }): Promise<ConversationReadOutcome> => {
     const acquisition = options?.acquisition ?? beginRead();
     try {
       // The conversation's own read, through this surface's conversation session: the Backend's
@@ -913,6 +899,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // Concurrent reads of one conversation are one request at that owner, so a mount, a stream settle and a reconcile
       // asking at the same moment do not race three answers; a forced read shares nothing.
       const snapshot = await conversation.read(sid, options?.force === true ? { force: true } : {});
+      // The connection this read belongs to. A switch that landed while it was in flight makes every answer below one
+      // from a client the surface no longer shows — including the `null` a not_found answers with — so each is checked
+      // before it publishes, not once before the first of them.
+      if (!fromCurrentConnection(conversation)) return { status: "superseded" };
       if (snapshot === null) {
         // The Backend's own `not_found`: the row is gone, so the view is — and a Retry cannot bring it back. The
         // surface says so instead of drawing an empty conversation that looks like a conversation with no messages.
@@ -921,13 +911,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setError(null);
         setReadFailure({ kind: "missing" });
         deleteSessionViewSnapshot(scope, sid);
-        return null;
+        return { status: "missing" };
       }
       // The read answers the **native** snapshot, and the browser's one projection turns it into the shape the surface
       // renders. The lifecycle statement below is built from that same projected payload, so the transcript on screen
       // and the transcript the fold orders are one object rather than two mappings of one frame.
       const d = projectSession(snapshot);
-      if (sessionIdRef.current !== sid) return null;
+      if (sessionIdRef.current !== sid) return { status: "superseded" };
       // The read is one statement about one conversation, so it goes through the one receiver: the fold decides first,
       // and its own decision is what the beside-view facts below obey — the read's window and the facts that travel with
       // it may not be published when the other is refused. The shared facts themselves (the transcript payload, the head
@@ -950,8 +940,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // Everything else this read states belongs to the read's own path: the tool loadout, the model and thinking
       // overrides and the freshness checkpoint. A read the fold refused is an older window of the same conversation,
       // and none of those facts is any less derived from it than the transcript is. The prefix and the pagination claim
-      // are not here: they were decided with the window they belong to, by the receiver. The separate agent-state query
-      // below is a read of its own with its own ordering, so it is not covered by this decision and still runs.
+      // are not here: they were decided with the window they belong to, by the receiver.
       if (accepted) {
         // A read that landed settles the switch this surface was waiting for, so the override it set is dropped — but
         // only the current read may say so; an older one would drop an override a newer frame is still honouring.
@@ -969,9 +958,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // What is *not* folded in is the case where this answer was refused: a read the fold called older describes a
       // window the surface has already replaced, so its composer fields are not this conversation's current ones and a
       // fresh read is the honest answer. That is the same reason a resync takes one.
-      if (!includeState) return null;
-      if (accepted && d.projectionId !== undefined) {
-        return applyReadAgentState(snapshot, sid);
+      if (!includeState) return accepted ? { status: "accepted", agentState: null } : { status: "refused" };
+      // A refused window is this read having established nothing about the conversation it describes, and that is the
+      // answer whether or not the caller also asked for composer state. The agent-state query below is a read of its
+      // own with its own ordering, but a caller that acted on its answer would resume a run, adopt a phase or claim a
+      // reload from the very statement the fold rejected — the older window arriving by another route. So a refusal
+      // ends the read here: no auxiliary request is made on behalf of a window nothing accepted.
+      if (!accepted) return { status: "refused" };
+      if (d.projectionId !== undefined) {
+        const agentState = applyReadAgentState(snapshot, sid);
+        return agentState === null ? { status: "refused" } : { status: "accepted", agentState };
       }
 
       try {
@@ -980,8 +976,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         const usageRequestId = ++contextUsageRequestIdRef.current;
         const acceptedStamp = captureAcceptedStamp();
         const stateSnapshot = await conversation.read(sid);
+        if (!fromCurrentConnection(conversation)) return { status: "superseded" };
         if (stateSnapshot === null) throw new Error("This conversation no longer exists.");
-        if (sessionIdRef.current !== sid) return null;
+        if (sessionIdRef.current !== sid) return { status: "superseded" };
 
         // The state read answers the conversation's own native snapshot too, so its composer-state fields are projected
         // by the browser from that same payload: the running flag this read acts on and the fields the writer publishes
@@ -999,24 +996,26 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         // What the caller may act on is the accepted answer, not the answer it happened to receive: an answer the
         // fence refused describes a conversation the surface no longer shows, and acting on it — resuming a run's phase,
         // adopting its run flags — would put the older turn back on screen through the caller.
-        return stateAccepted ? agentState : null;
+        return stateAccepted ? { status: "accepted", agentState } : { status: "refused" };
       } catch (e) {
         console.error("Failed to load agent state:", e);
-        return null;
+        return { status: "failed", failure: classifyReadFailure(e) };
       }
     } catch (e) {
       // A read that failed is a state the projection can report — unread when there is no prior projection, the kept
-      // view when there is — instead of an endless spinner or a fabricated outcome.
+      // view when there is — instead of an endless spinner or a fabricated outcome. One whose connection was replaced
+      // while it was in flight reports nothing at all: its failure describes a client the surface no longer shows.
+      if (!fromCurrentConnection(conversation)) return { status: "superseded" };
       const failure = classifyReadFailure(e);
       // A read the caller itself aborted is not a failure to report: it is the surface's own intent about an answer it
       // no longer wants, and folding it would put a transport issue over a conversation the reader just moved away from.
-      if (failure.kind === "cancelled") return "cancelled";
+      if (failure.kind === "cancelled") return { status: "cancelled" };
       setError(String(e));
       setReadFailure(failure);
       fold(unavailableStatement(acquisition, failure.detail ?? failure.kind).input);
-      return "error";
+      return { status: "failed", failure };
     }
-  }, [applyAgentState, applyReadAgentState, beginRead, captureAcceptedStamp, conversation, fold, receive]);
+  }, [applyAgentState, applyReadAgentState, beginRead, captureAcceptedStamp, conversation, fold, fromCurrentConnection, receive]);
 
   /**
    * Read one page of older history. The route forwards the backend's own entries page, and the browser projects it —
@@ -1044,6 +1043,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     // re-baseline (a compaction or a reset) is exactly the event that makes the page describe a context the surface
     // has left. The head marker is that fact, and it is the accepted one — the same value the prefix rule decides on.
     const historyHead = historyHeadRef.current;
+    // The connection this page is read through: a page that answers after a switch is one host's history, so it is
+    // refused before it reaches the reader's prefix whatever its entries say.
+    const readThrough = api;
     try {
       const params = new URLSearchParams();
       if (leafId) params.set("leafId", leafId);
@@ -1058,6 +1060,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         ...(options?.signal ? { signal: options.signal } : {}),
       }) as NativeEntryPage);
       if (sessionIdRef.current !== sid || options?.signal?.aborted || !sessionHookMountedRef.current) return;
+      if (!fromCurrentConnection(readThrough)) return;
       // The conversation re-baselined while this page was in flight: its entries belong to the context the surface has
       // left, so neither the prefix nor the pagination facts are published, and the caller is told no page was
       // established rather than being handed a cursor into history that is no longer on screen.
@@ -1071,12 +1074,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         : claimEarlierHistory(clearPrefix(prev), page.hasMore)));
       return page;
     } catch (e) {
-      if (options?.signal?.aborted) return undefined;
+      if (options?.signal?.aborted || !fromCurrentConnection(readThrough)) return undefined;
       console.error("Failed to load context:", e);
       options?.onReadFailure?.(classifyReadFailure(e));
       return undefined;
     }
-  }, []);
+  }, [api, fromCurrentConnection]);
 
   /**
    * Land one bounded navigation target window in front of the projection's window.
@@ -1134,17 +1137,21 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   }, []);
 
   const loadTools = useCallback(async (sid: string) => {
+    // The connection this read goes through, captured as it begins: a switch that lands while it is in flight makes
+    // its answer one host's tool list, so it is refused before the surface publishes it.
+    const readThrough = api;
     try {
-      const snapshot = await api.read(sid);
+      const snapshot = await readThrough.read(sid);
       const tools = (snapshot?.toolNames ?? []).map((name) => ({ name, description: "Gateway " + name, active: true })) as ToolEntry[];
       if (!tools || !sessionHookMountedRef.current || sessionIdRef.current !== sid) return null;
+      if (!fromCurrentConnection(readThrough)) return null;
       onSystemToolsChange?.(tools);
       return tools;
     } catch (e) {
       console.error("Failed to load tools:", e);
       return null;
     }
-  }, [onSystemToolsChange]);
+  }, [api, fromCurrentConnection, onSystemToolsChange]);
 
   const promoteNewSession = useCallback((messageCount = 0, firstMessage = "(no messages)") => {
     const sid = sessionIdRef.current;
@@ -1368,17 +1375,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     };
   }, [closeEvents, joinEvents, session?.id]);
 
+  /** State one notice fact. How it is drawn, and for how long, is not this owner's question. */
   const addNotice = useCallback((notice: { id?: string; message: string; type?: NoticeType }) => {
     const message = notice.message.trim();
     if (!message) return;
-    dispatchNotice({
-      type: "add",
-      notice: {
-        id: notice.id ?? createNoticeId(),
-        message,
-        type: notice.type ?? "info",
-      },
-    });
+    const fact: NoticeFact = { id: notice.id ?? createNoticeId(), message, type: notice.type ?? "info" };
+    // Stated once per id, so a repeated statement of the same fact does not queue a second toast for it.
+    setNotices((held) => (held.some((drawn) => drawn.id === fact.id) ? held : [...held, fact]));
+  }, []);
+
+  /** The shelf is finished with a fact: it is dropped here, which is the only thing that removes a notice. */
+  const dismissNotice = useCallback((id: string) => {
+    setNotices((held) => (held.some((drawn) => drawn.id === id) ? held.filter((drawn) => drawn.id !== id) : held));
   }, []);
 
   /**
@@ -1611,8 +1619,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     });
     setAgentPhase(isSlashCommandPrompt ? { kind: "running_command" } : { kind: "waiting_model" });
     dispatch({ type: "start" });
-    pendingScrollToUserRef.current = true;
-    setPromptAnchorActive(true);
+    // A staged turn of this reader's own is the viewport's cue: its prompt is followed once the transcript holds it.
+    setOwnSends((sent) => sent + 1);
 
     const piImages = images?.map((img) => ({ type: "image" as const, data: img.data, mimeType: img.mimeType }));
     let sentSessionId: string | null = null;
@@ -1780,7 +1788,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [addNotice, currentModelOverride, isNew, loadSession, setNewSessionModel]);
 
-  const loadModels = useCallback(async (signal?: AbortSignal) => {
+  /**
+   * Which catalog read this surface is on.
+   *
+   * A read states what it found only while it is the newest one: a change this page applied drops the held answer and
+   * starts another read, and the answer the superseded one is still waiting on describes the catalog that change
+   * replaced. The number is that claim, so an answer that arrives last but was asked first writes nothing.
+   */
+  const modelReadSeqRef = useRef(0);
+
+  const loadModels = useCallback(async (signal?: AbortSignal, read = ++modelReadSeqRef.current) => {
     const modelCwd = newSessionCwd ?? session?.cwd ?? "";
     const modelsUrl = modelCwd ? `/api/models?cwd=${encodeURIComponent(modelCwd)}` : "/api/models";
     let d: ModelsResponse;
@@ -1800,11 +1817,16 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         readCatalogAnswer(await client.readJson<unknown>(modelsUrl)));
       signal?.throwIfAborted();
     } catch (e) {
-      if (!signal?.aborted && !(e instanceof DOMException && e.name === "AbortError")) {
+      // A failure is the same fact as an answer: it belongs to the read that asked, and states nothing once a newer read
+      // has claimed the surface — a change applied in between is not undone by a read it superseded going wrong.
+      if (!signal?.aborted && !(e instanceof DOMException && e.name === "AbortError") && read === modelReadSeqRef.current) {
         setModelError(e instanceof Error ? e.message : String(e));
       }
       throw e;
     }
+    // The read answered, but a later one owns this surface now: what it found is returned to whoever asked and never
+    // stated here, because the change that started that read already replaced the catalog this answer describes.
+    if (read !== modelReadSeqRef.current) return;
     setModelNames(d.models);
     setModelError(d.modelError ?? null);
     setModelScopeWarnings(d.modelScopeWarnings ?? []);
@@ -1845,6 +1867,80 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [client, identity, isNew, newSessionCwd, session?.cwd]);
 
+  /**
+   * The one reload this conversation has, whichever surface asked for it.
+   *
+   * Settings › General and the `/reload` command are the same operation: ask the Backend's own resource route, read the
+   * conversation that picks the change up, and state what the **read** established. Having one owner is what makes the
+   * two agree — a surface that reloaded and then asked this would ask twice, and a second implementation would be free
+   * to report a different outcome for the same facts.
+   *
+   * The route's own rejection is answered here rather than left to a caller: a POST that never answered established
+   * nothing, so it is a failure this operation reports like any other. Nothing is thrown out of this function, because
+   * every caller is a surface that has already finished its own work by the time it asks.
+   */
+  const reloadResources = useCallback(async (sid: string): Promise<ReloadOutcome> => {
+    let reloaded: { resources?: { pending?: boolean; skills?: number; prompts?: number } };
+    try {
+      reloaded = await conversation.reload(sid);
+    } catch (e) {
+      // The route belongs to the connection that asked for it. A rejection that lands after this surface was replaced
+      // is one host's failure about a conversation nothing on screen shows — the same fence the read gets, applied
+      // before the notice rather than after it — so the replaced connection's answer is not stated as the current one's.
+      if (!fromCurrentConnection(conversation) || sessionIdRef.current !== sid) return { status: "superseded" };
+      // A route that did not answer says nothing about the conversation, so the failure is the whole statement.
+      const message = `Reload failed: ${e instanceof Error ? e.message : String(e)}`;
+      addNotice({ type: "error", message });
+      return { status: "failed", message };
+    }
+    // The read is what this operation claims: the route only changed the runtime's resources.
+    const read = await loadSession(sid, true, { force: true });
+    switch (read.status) {
+      case "superseded":
+        // Another connection or another conversation is on screen: this one's reload is no longer a fact about what the
+        // surface shows, so it claims nothing rather than stating an outcome for a conversation nobody is looking at.
+        return { status: "superseded" };
+      case "refused":
+        // The fold called this window older than the one it holds. The surface already states the newer window, and a
+        // notice here would contradict the transcript beside it.
+        return { status: "superseded" };
+      case "cancelled": {
+        const message = "Reloaded resources; the conversation could not be re-read";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "missing": {
+        const message = "Reloaded resources; this conversation no longer exists";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "failed": {
+        // Which failure it was is the read's own classification, so the sentence names the right recovery: a row that is
+        // gone, a Backend that refused the read, and one that never answered are three different states.
+        const message = read.failure.kind === "missing"
+          ? "Reloaded resources; this conversation no longer exists"
+          : read.failure.kind === "refused"
+            ? "Reloaded resources; the conversation could not be re-read"
+            : "Reloaded resources; the conversation could not be reached";
+        addNotice({ type: "error", message });
+        return { status: "failed", message };
+      }
+      case "accepted": {
+        const resources = reloaded.resources;
+        if (resources?.pending) {
+          const message = "Reloaded resources; the new catalog applies to the next run";
+          addNotice({ message });
+          return { status: "reloaded", message };
+        }
+        const message = resources
+          ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
+          : "Reloaded session resources";
+        addNotice({ message, type: "success" });
+        return { status: "reloaded", message };
+      }
+    }
+  }, [addNotice, conversation, fromCurrentConnection, loadSession]);
+
   const handleBuiltinSlashCommand = useCallback(async (text: string): Promise<BuiltinSlashCommandResult> => {
     if (!text.startsWith("/")) return { handled: false };
     const match = text.match(/^\/([^\s]+)(?:\s+([\s\S]*))?$/);
@@ -1868,26 +1964,17 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       switch (commandName) {
         case "reload": {
           if (!sid) return complete({ handled: true, error: "No active session to reload" });
-          // A failed Reload throws here, so the shared error notice reports it and the conversation keeps the prefix
-          // and catalog it had. A Reload during an active run is deferred by the backend; say so, because the change
-          // then applies to the next run rather than to the one in flight.
-          const reloaded = await api.reload(sid);
-          await Promise.all([
-            loadSession(sid, true),
-            loadTools(sid),
-            loadSlashCommands(),
-            loadModels(),
-          ]);
-          const resources = reloaded?.resources;
-          if (resources?.pending) {
-            return complete({ handled: true, message: "Reloaded resources; the new catalog applies to the next run" });
-          }
-          return complete({
-            handled: true,
-            message: resources
-              ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
-              : "Reloaded session resources",
-          });
+          // The same operation Settings › General asks for, so the command and the panel cannot disagree about what a
+          // reload established: one owner asks the route, performs the read and states the outcome. This surface only
+          // adds the catalogue the command line also shows; a reload that failed says so and nothing here claims it.
+          // The operation states the outcome, once, in the notice that is the surface's report of it. This case
+          // therefore returns the result without asking `complete` to state it a second time: the command line's job
+          // is the catalogue the command also shows, and `error` here only tells the composer not to clear its text.
+          const outcome = await reloadResources(sid);
+          if (outcome.status === "superseded") return { handled: true };
+          if (outcome.status === "failed") return { handled: true, error: outcome.message };
+          await Promise.all([loadTools(sid), loadSlashCommands(), loadModels()]);
+          return { handled: true, message: outcome.message };
         }
 
         case "mcp": {
@@ -1910,7 +1997,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     } catch (e) {
       return complete({ handled: true, error: e instanceof Error ? e.message : String(e) });
     }
-  }, [addNotice, ensureNewSession, loadModels, loadSession, loadSlashCommands, loadTools, promoteNewSession, onOpenSettings, slashCommandsForMcp]);
+  }, [addNotice, conversation, ensureNewSession, loadModels, loadSlashCommands, loadTools, promoteNewSession, onOpenSettings, reloadResources, slashCommandsForMcp]);
 
   // Let AgentSession.prompt decide atomically whether to queue against the
   // current run or start a new turn if it settled while the request was in
@@ -2098,73 +2185,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [isNew]);
 
-  const scrollToMessage = useCallback((element: HTMLElement, viewportOffset = 16) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    if (liveFollowFrameRef.current !== null) {
-      cancelAnimationFrame(liveFollowFrameRef.current);
-      liveFollowFrameRef.current = null;
-    }
-    initialScrollDoneRef.current = true;
-    pendingScrollToUserRef.current = false;
-    isNearBottomRef.current = false;
-    setPromptAnchorActive(false);
-    container.scrollTo({
-      top: element.getBoundingClientRect().top
-        - container.getBoundingClientRect().top
-        + container.scrollTop
-        - viewportOffset,
-      behavior: "instant",
-    });
-    previousScrollTopRef.current = container.scrollTop;
-  }, []);
-
-  const scrollUserMsgToTop = useCallback(() => {
-    const container = scrollContainerRef.current;
-    const el = lastUserMsgRef.current;
-    if (!container || !el) return;
-    const elAbsTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-    const targetTop = Math.min(Math.max(0, elAbsTop - 16), maxScrollTop);
-
-    if (liveFollowFrameRef.current !== null) {
-      cancelAnimationFrame(liveFollowFrameRef.current);
-      liveFollowFrameRef.current = null;
-    }
-    isNearBottomRef.current = true;
-    previousScrollTopRef.current = targetTop;
-    container.scrollTo({ top: targetTop, behavior: "auto" });
-  }, []);
-
-  const handleScrollPositionChange = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const { scrollTop, clientHeight, scrollHeight } = container;
-      const isAgentRunning = stepRef.current.view.activity !== null;
-      const wasAttached = isNearBottomRef.current;
-      const isAttached = getLiveFollowAttached(
-        wasAttached,
-        previousScrollTopRef.current,
-        scrollTop,
-        clientHeight,
-        scrollHeight,
-        isAgentRunning
-          ? CHAT_SCROLL_REATTACH_TOLERANCE
-          : CHAT_SCROLL_TAIL_TOLERANCE,
-      );
-      isNearBottomRef.current = isAttached;
-      previousScrollTopRef.current = scrollTop;
-      const shouldShow = shouldShowScrollToLatest(scrollTop, clientHeight, scrollHeight);
-      setShowScrollToBottom((previous) => (previous === shouldShow ? previous : shouldShow));
-      if (!wasAttached && isAttached && isAgentRunning) {
-        scrollToBottom("auto");
-      } else if (!isAttached && liveFollowFrameRef.current !== null) {
-        cancelAnimationFrame(liveFollowFrameRef.current);
-        liveFollowFrameRef.current = null;
-      }
-    }
-  }, [scrollToBottom]);
-
   /**
    * Adopt the pending turns of the conversation now on screen. A send belongs to the conversation it was made in, so a
    * different conversation adopts its own set — normally empty — and never inherits another one's. A fresh composer
@@ -2184,7 +2204,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     setStep(stored);
   }, [scope, session?.id, newSessionDraftKey]);
 
-  // Load session on mount
+  // Load the conversation, and re-load it when the connection is replaced.
+  //
+  // The dependency is the **connection**, not the conversation id: a switch replaces the client and its conversation API,
+  // and the same conversation id in another connection is another conversation. Re-running on the connection is what
+  // makes the surface read the conversation it is now showing rather than keep the window the replaced connection
+  // answered with — and the read that runs is fenced against the connection that asked for it, so the replaced one's
+  // answer cannot land on top of it.
   useEffect(() => {
     sessionHookMountedRef.current = true;
     // Usage reads started before a remount are stale.
@@ -2201,20 +2227,21 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // its own reason to ask — and it is asked under this mount's own acquisition, because a read that begins after a
       // recovery would fence the recovery's answers as older callbacks.
       if (hasUnfinishedWork(stepRef.current.view)) fold({ kind: "recover", acquisition });
-      loadSession(session.id, true, { force: true, acquisition }).then((loadedAgentState) => {
-        const agentState = loadedAgentState as { running: boolean; state?: AgentStateResponse } | null;
-        if (agentState?.running) {
+      loadSession(session.id, true, { force: true, acquisition }).then((read) => {
+        // Only an accepted read states composer state: every other outcome is the fold's or the transport's own statement
+        // about the conversation, and a mount resuming a run from one of those would act on an answer the surface refused.
+        if (read.status !== "accepted" || read.agentState === null) return;
+        const agentState = read.agentState;
+        if (agentState.running) {
           loadTools(session.id);
-          if (agentState.state?.isStreaming || agentState.state?.isPromptRunning) {
+          if (agentState.state.isStreaming || agentState.state.isPromptRunning) {
             setAgentPhase(agentState.state.isStreaming ? { kind: "waiting_model" } : { kind: "running_command" });
             dispatch({ type: "resume" });
           }
         }
-        if (agentState?.state) {
-          if (agentState.state.systemPrompt !== undefined) setSystemPrompt(agentState.state.systemPrompt ?? null);
-          if (agentState.state.extensionStatuses !== undefined) setExtensionStatuses(agentState.state.extensionStatuses ?? []);
-          if (agentState.state.extensionWidgets !== undefined) setExtensionWidgets(agentState.state.extensionWidgets ?? []);
-        }
+        if (agentState.state.systemPrompt !== undefined) setSystemPrompt(agentState.state.systemPrompt ?? null);
+        if (agentState.state.extensionStatuses !== undefined) setExtensionStatuses(agentState.state.extensionStatuses ?? []);
+        if (agentState.state.extensionWidgets !== undefined) setExtensionWidgets(agentState.state.extensionWidgets ?? []);
       });
     }
     return () => {
@@ -2253,14 +2280,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           prefixHistoryHead: current.prefix?.historyHead ?? null,
         });
       }
-      if (liveFollowFrameRef.current !== null) {
-        cancelAnimationFrame(liveFollowFrameRef.current);
-        liveFollowFrameRef.current = null;
-      }
       closeEvents();
     };
+    // The mount reads once per connection. Everything else this effect holds — the session prop, the projection it
+    // restored — is captured as it was on that mount, which is what a Strict Mode replay and a promotion remount both
+    // rely on; the connection is the one input that makes a replay a different lifetime rather than the same one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [conversation]);
 
   useEffect(() => {
     onSystemPromptChange?.(systemPrompt);
@@ -2278,135 +2304,89 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
    * It is one operation rather than a remount: the surface asking does not know a session key, a mount counter or an
    * attachment, and nothing is rebuilt — the accepted window, the stream this surface holds and the reader's place in it
    * all stay. A reload during a run is deferred by the Backend, and its answer says so.
+   *
+   * It is the whole operation, so the Backend's reload route is asked **here** and nowhere else: the surface that
+   * triggered it (Settings › General) states that the tools configuration changed, and this performs the reload, the read
+   * and the notice. A caller that reloaded and then asked this would ask for the same reload twice.
+   *
+   * What the notice claims is what the **read** stated, not what the reload route answered. A read that answered and was
+   * accepted is a reload this conversation has picked up, and the resources it names are the ones it named; a read that
+   * failed is stated as a failure rather than dressed up as a success. A read the fold refused, or one whose answer was
+   * superseded, publishes nothing here: the surface has moved on and claims nothing either.
    */
   const onConversationReloadChange = opts.onConversationReloadChange;
-  const reloadConversation = useCallback(async () => {
+  const reloadConversation = useCallback(async (): Promise<ReloadOutcome> => {
     const sid = sessionIdRef.current;
-    if (sid === null) return;
-    const reloaded = await conversation.reload(sid);
-    await loadSession(sid, true);
-    const resources = reloaded?.resources;
-    if (resources?.pending) {
-      addNotice({ message: "Reloaded resources; the new catalog applies to the next run" });
-      return;
-    }
-    addNotice({
-      message: resources
-        ? `Reloaded ${resources.skills ?? 0} skills and ${resources.prompts ?? 0} prompts`
-        : "Reloaded session resources",
-      type: "success",
-    });
-  }, [addNotice, conversation, loadSession]);
+    // A surface with no conversation on screen has nothing to reload, and says so rather than reporting a success.
+    if (sid === null) return { status: "superseded" };
+    // The same operation the command line asks for, and its outcome is passed through: the caller reads what the
+    // operation established instead of inferring it from a promise that resolved.
+    return await reloadResources(sid);
+  }, [reloadResources]);
   useEffect(() => {
     onConversationReloadChange?.(reloadConversation);
     return () => onConversationReloadChange?.(null);
   }, [onConversationReloadChange, reloadConversation]);
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    previousScrollTopRef.current = container.scrollTop;
-    container.addEventListener("scroll", handleScrollPositionChange, { passive: true });
-    return () => {
-      container.removeEventListener("scroll", handleScrollPositionChange);
-    };
-  }, [messages.length, loading, handleScrollPositionChange]);
-
-  useEffect(() => {
-    if (!agentRunning) setPromptAnchorActive(false);
-  }, [agentRunning]);
-
-  useLayoutEffect(() => {
-    if (messages.length > 0) {
-      if (pendingScrollToUserRef.current) {
-        pendingScrollToUserRef.current = false;
-        initialScrollDoneRef.current = true;
-        scrollUserMsgToTop();
-      } else if (!initialScrollDoneRef.current) {
-        initialScrollDoneRef.current = true;
-        scrollToBottom("instant");
-      } else if (view.activity === null && isNearBottomRef.current) {
-        scrollToBottom("auto");
+  /**
+   * This composer's catalog read with its bounded retry: one operation, so a mount, an explicit retry and a change this
+   * page applied all ask the deployment the same way.
+   *
+   * The retry loop is not a second policy beside this read — it *is* this function, which is why a re-read retries on
+   * the same delays the first read does. Each attempt ends on an answer, on the connection going away, on the caller's
+   * own controller, or on a newer read taking the surface over; nothing here decides what the surface holds.
+   *
+   * Starting one takes the newest claim, which is also how a change retires the read it superseded: that loop stops
+   * between attempts and after its delay instead of spending the rest of its bounded retries on a catalog nobody holds
+   * any more.
+   */
+  const readModels = useCallback(async (signal: AbortSignal) => {
+    const read = ++modelReadSeqRef.current;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await loadModels(signal, read);
+        return;
+      } catch {
+        // The read this loop waits on is the connection's, so the only aborts that end this load are this consumer's
+        // own, the connection's own going away, and a newer read of this same surface. Another consumer's exit retires
+        // nothing here, and the next ask may still be answered.
+        if (signal.aborted || client.disposed || read !== modelReadSeqRef.current) return;
+        if (attempt >= MODELS_RETRY_DELAYS_MS.length) return;
+        await delay(MODELS_RETRY_DELAYS_MS[attempt]);
+        if (signal.aborted || client.disposed || read !== modelReadSeqRef.current) return;
       }
     }
-  }, [messages.length, agentRunning, scrollToBottom, scrollUserMsgToTop]);
+  }, [client, loadModels]);
 
-  // Closing Settings is the page's "the deployment's models may have changed" signal: the cached catalog is what that
-  // edit replaced, so the refresh reads the deployment again rather than the answer the edit superseded.
-  const modelsRefreshKeyRef = useRef(modelsRefreshKey);
-  useEffect(() => {
-    if (modelsRefreshKeyRef.current === modelsRefreshKey) return;
-    modelsRefreshKeyRef.current = modelsRefreshKey;
-    modelsCache().invalidate();
-  }, [modelsRefreshKey]);
+  /**
+   * The read a mounted composer re-runs when a model-domain change says what it holds is old.
+   *
+   * It lives under the mount's own controller, so the same teardown that retires the first read retires a re-read too;
+   * a composer that went away re-reads nothing, which is also what makes a change on a page with no mounted reader cost
+   * no request. The re-read asks the deployment because the change invalidated the page's cache; what it must never do
+   * is move the conversation onto another model, so nothing here writes a selection — the catalog arrives and the picker
+   * offers what it now holds.
+   */
+  const catalogRefreshRef = useRef<() => void>(() => {});
+  const retryModels = useCallback(() => catalogRefreshRef.current(), []);
 
   // Load the model list with bounded retries; loadModels exposes each failure.
   useEffect(() => {
     const controller = new AbortController();
-    (async () => {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          await loadModels(controller.signal);
-          return;
-        } catch {
-          // The read this loop waits on is the connection's, so the only aborts that end this load are this consumer's
-          // own and the connection's own going away. Another consumer's exit retires nothing here, and the next ask may
-          // still be answered.
-          if (controller.signal.aborted || client.disposed) return;
-          if (attempt >= MODELS_RETRY_DELAYS_MS.length) return;
-          await delay(MODELS_RETRY_DELAYS_MS[attempt]);
-          if (controller.signal.aborted || client.disposed) return;
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, [client, loadModels, modelsRefreshKey]);
-
-  // Pause notice expiry while hovered or focused.
-  // The remainingMs/startedAt/oldestId refs implement a true pause-and-resume instead of resetting the 5s timer.
-  const [pausedNoticeId, setPausedNoticeId] = useState<string | null>(null);
-  const noticeRemainingMsRef = useRef(NOTICE_VISIBLE_MS);
-  const noticeTimerStartedAtRef = useRef<number | null>(null);
-  const noticeOldestIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (noticeState.visible.length === 0) {
-      noticeOldestIdRef.current = null;
-      return;
-    }
-    const exiting = noticeState.visible.find((notice) => notice.exiting);
-    if (exiting) {
-      const t = setTimeout(() => {
-        dispatchNotice({ type: "remove", id: exiting.id });
-      }, NOTICE_EXIT_ANIMATION_MS);
-      return () => clearTimeout(t);
-    }
-    const oldest = noticeState.visible[0];
-    if (!oldest) return;
-    // Oldest visible notice changed; restart the countdown
-    if (noticeOldestIdRef.current !== oldest.id) {
-      noticeOldestIdRef.current = oldest.id;
-      noticeRemainingMsRef.current = NOTICE_VISIBLE_MS;
-    }
-    if (noticeState.visible.some((notice) => notice.id === pausedNoticeId)) return;
-    noticeTimerStartedAtRef.current = Date.now();
-    const t = setTimeout(() => {
-      dispatchNotice({ type: "mark_oldest_exiting" });
-    }, noticeRemainingMsRef.current);
+    catalogRefreshRef.current = () => { void readModels(controller.signal); };
+    void readModels(controller.signal);
     return () => {
-      clearTimeout(t);
-      // Accrue the elapsed time so the countdown resumes from the remaining time
-      if (noticeTimerStartedAtRef.current !== null) {
-        noticeRemainingMsRef.current = Math.max(
-          0,
-          noticeRemainingMsRef.current - (Date.now() - noticeTimerStartedAtRef.current),
-        );
-        noticeTimerStartedAtRef.current = null;
-      }
+      controller.abort();
+      catalogRefreshRef.current = () => {};
     };
-  }, [noticeState.visible, pausedNoticeId]);
+  }, [readModels]);
 
-  const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
+  // A `models.json` save the Backend applied, a stored or removed credential, and an `enabledModels` write each state
+  // their change through the catalog's own rule; this is the reader half, so a composer on screen shows the list the
+  // change produced instead of waiting for Settings to close.
+  useEffect(() => subscribeModelCatalog(() => catalogRefreshRef.current()), []);
+
+const thinkingLevel: ThinkingLevelOption = displayThinkingLevel ?? "auto";
 
   return {
     // State
@@ -2415,25 +2395,24 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     contextUsage, systemPrompt, forkingEntryId,
     currentModel, displayModel, modelSwitching, sessionStats,
     slashCommands, slashCommandsLoading, queuedMessages, queuedItems, control,
-    notices: noticeState.visible, extensionStatuses, extensionWidgets,
+    notices, extensionStatuses, extensionWidgets,
     isAutoModelSelection: isNew && newSessionModel === null,
     isAutoThinkingSelection: isNew && newSessionThinkingLevel === null,
     statusPhase,
     isNew,
-    promptAnchorActive,
-    showScrollToBottom,
+    /** How many turns this surface itself staged: the viewport's one cue from the conversation (spec R4). */
+    ownSends,
     // Refs
-    sessionIdRef, scrollContainerRef,
-    lastUserMsgRef, pendingScrollToUserRef, initialScrollDoneRef,
+    sessionIdRef,
     // Actions
     handleSend, handleAbort, handleFork, handleModelChange,
     handleSteer, handleFollowUp, handlePromptWithStreamingBehavior,
     handleRecallQueue, handleEditItem, handleCancelItem, handleContinue,
     handleBuiltinSlashCommand,
-    addNotice,
-    setNoticePaused: setPausedNoticeId,
+    addNotice, dismissNotice,
     handleThinkingLevelChange, loadTools, loadSlashCommands, loadContext, landWindow,
     retryRead, dismissReadFailure,
-    scrollToBottom, scrollUserMsgToTop, scrollToMessage,
+    // The catalog's own recovery: re-read the deployment, changing no selection and resending nothing.
+    retryModels,
   };
 }

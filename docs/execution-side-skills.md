@@ -160,6 +160,9 @@ back if the publish rename fails. See [execution-side installation](execution-si
 
 An SSH workspace resolves and reads its resources on the remote host. The gateway's `SshFilesystem` sends the same
 Python 3 helper it uses for files, so the host needs no Pi installation, and nothing is read from the gateway machine.
+Both adapters implement `FilesystemServer`; callers depend on that contract, while construction names
+`LocalFilesystem` or `SshFilesystem`. Resource snapshots and agent-definition requests keep their execution host
+identity and scope; this interface does not choose a different account or resource root.
 
 - **Remote identity.** The helper asks the host's own account database (`pwd.getpwuid(os.getuid())`) for the login and
   home of the account its commands run as, in its own request (`host`), and canonicalizes the home on the host. The
@@ -203,6 +206,15 @@ all. A read then checks, at every point where it would write — the answer, the
 state — that its target is still the one on screen: a superseded read publishes nothing, so it cannot replace the new
 host's inventory, cannot report the old host's error, and cannot end the loading state the new host is still in. A
 `disposed` refusal is not a host failure and is not shown as one.
+
+The panels also ask the right conversation to pick a change up. A definition save, a skill operation and the
+shell-tool setting are changes one conversation re-reads through the connection's `refreshes`
+(`lib/conversation-refreshes.ts`): the mounted chat publishes its own reload for its own id, and a panel names only the
+`sessionId` it was opened for — never a session key, a mount counter or a refresh counter. A write to one conversation
+cannot reload another, a read answered after the reader moved to another conversation is not published as the new one's,
+and a conversation nothing holds answers `not_open` rather than claiming a reload. `AgentsConfig` therefore settles its
+own inventory from the answer and reports the conversation's read beside it, and `SkillsConfig` re-reads the host's
+inventory directly instead of counting a key.
 
 Two consequences a caller has to get right. A panel whose operation writes to a folder other than the one on screen —
 the add pane under a Project, whose scope resolves to the project's own default folder — needs a target for **that**

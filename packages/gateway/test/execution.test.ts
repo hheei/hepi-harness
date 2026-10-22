@@ -81,7 +81,7 @@ function scriptedRunner(
 
 /** A gateway serving one loopback origin, closed by the test that made it. */
 async function listening(gateway: LocalGateway | SshGateway, files?: LocalFilesystem): Promise<{ readonly origin: string; close(): Promise<void> }> {
-	const server = new GatewayRpcServer(gateway, undefined, files);
+	const server = new GatewayRpcServer({ gateway, files });
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address !== null && typeof address === "object");

@@ -25,6 +25,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import type { ConnectionRequest, View } from "./ux-panel-ingress.fixture.tsx";
 
@@ -37,6 +38,8 @@ const INGRESS_ORIGIN = "https://ingress.example:9443";
 const BEARER = "panel-ingress-device-bearer";
 /** One raw API key, typed once by the driver. Nothing below may show it back. */
 const RAW_KEY = "sk-panel-ingress-0123456789abcdef";
+/** A key this origin's host refuses to store (its lock is held), so a failed write is an observation, not a stub. */
+const REFUSED_KEY = "sk-refused-locked";
 /** The hint the host masks on its own machine, which is the only form that ever leaves it. */
 const MASKED_HINT = "sk-a…host";
 
@@ -143,6 +146,32 @@ try {
     check(models.some((entry) => entry.url === INGRESS_ORIGIN + "/api/models-config/discover"), "the provider-discovery probe asks the same origin as the control it gates");
 
     // --- 2b. Provider credentials: set, re-read and remove this host's own key, on the connection. -------------
+    // One mounted catalog reader — the composer of an open page, which follows the model domain's own rule — and one
+    // read of the catalog it holds. Everything below happens with Settings › Models still open: a change this panel
+    // applies must reach that reader now, not when the dialog closes.
+    await page.evaluate(() => window.__uxPanelIngress!.followCatalog());
+    await page.evaluate(() => window.__uxPanelIngress!.readCatalog());
+    const catalogReads = async (): Promise<number> => (await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog())).reads;
+    const catalogEntries = async (): Promise<number> => (await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog())).entries;
+    /**
+     * The read count once it has stopped moving.
+     *
+     * One change can owe more than one read — a `models.json` save also re-verifies the `enabledModels` patterns, which
+     * is a write of its own — so a count read the instant it first moved would be a snapshot mid-sequence. This waits
+     * until the page has been quiet long enough for a settled number, which is what the assertions below compare.
+     */
+    const settledCatalogReads = async (): Promise<number> => {
+      let seen = await catalogReads();
+      for (let quiet = 0; quiet < 8;) {
+        await delay(250);
+        const now = await catalogReads();
+        if (now === seen) quiet += 1; else { seen = now; quiet = 0; }
+      }
+      return seen;
+    };
+    check(await catalogReads() === 1, "the page read its catalog once: " + (await catalogReads()));
+    check(await catalogEntries() === 1, "and its mounted reader is holding that answer");
+
     // The picker lists what the host's listing said, and the key provider is unconfigured, so its detail is the field.
     await page.getByRole("button", { name: "Add provider", exact: true }).click();
     await page.getByRole("button", { name: /Fixture Key/ }).click();
@@ -168,29 +197,82 @@ try {
     const stored = await page.evaluate(() => Object.keys(localStorage).map((key) => key + "=" + localStorage.getItem(key)));
     check(stored.every((entry) => !entry.includes(RAW_KEY)), "no browser storage holds the key: " + JSON.stringify(stored.map((entry) => entry.split("=")[0])));
 
-    // The catalog this page cached is the answer the credential just decided. The Backend resolves availability from
-    // the host's own credential file on each of its reads, so nothing is signalled there; what a credential change owes
-    // this page is that its held answer stops being served. Asserted at the page's cache rather than the composer's DOM,
-    // because the composer is not mounted on this surface and the drop is one rule with one instance.
+    // The catalog is the answer the credential just decided, and the reader mounted above follows it: the stored key
+    // supersedes the held answer, so that reader asks the deployment again **while this panel is still open** — no
+    // close, no reload. The wait is the re-read itself, so this is a settled observation rather than a snapshot.
+    await page.waitForFunction(() => window.__uxPanelIngress!.cachedCatalog().reads > 1, null, { timeout: 30000 });
+    check(true, "a credential change re-read the catalog of a mounted reader with Settings still open");
+    check(await catalogEntries() === 1, "and it is holding the answer the change produced");
+    const readsAfterKeyStore = await settledCatalogReads();
     await page.evaluate(() => window.__uxPanelIngress!.readCatalog());
-    check((await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog())).reads === 1, "the page read its catalog once");
-    check((await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog())).entries === 1, "and is holding that answer");
-    await page.evaluate(() => window.__uxPanelIngress!.readCatalog());
-    check((await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog())).reads === 1, "a second read of one catalog asked again: the cache is not the page's");
+    check(await catalogReads() === readsAfterKeyStore, "a second read of one catalog asked again: the cache is not the page's");
+
+    // A write the host refuses is not an applied change: the panel states the refusal and the held catalog is left
+    // alone, because nothing about what the deployment serves changed.
+    await detail.locator("input").first().fill(REFUSED_KEY);
+    await detail.getByRole("button", { name: "Save", exact: true }).click();
+    await detail.getByText(/another writer holds|ask again/i).first().waitFor({ timeout: 30000 });
+    check(true, "a refused key write is stated in the words its recovery needs: " + (await detail.textContent())?.slice(0, 160));
+    check(await settledCatalogReads() === readsAfterKeyStore, "a failed credential write claimed an applied change: " + (await catalogReads()));
+    check(((await detail.textContent()) ?? "").includes(MASKED_HINT), "and the hint the host still stores is what the panel shows: a refused write changed nothing");
+
+    // --- 2b-2. A `models.json` save: applied is a change, saved-but-not-applied is not. ----------------------
+    // An applied save is two changes, not one: the catalog the runtime now serves, and the `enabledModels` patterns the
+    // panel re-verifies through a write of their own. This check observes the combination, so the not-applied check
+    // below is the one that isolates the condition — there, neither half may reach a catalog reader.
+    const saveButton = page.locator(".config-footer").getByRole("button", { name: "Save", exact: true });
+    const modelsFileReads = async (): Promise<number> => (await connection()).filter((entry) => entry.method === "GET" && entry.url === INGRESS_ORIGIN + "/api/models-config").length;
+    /** The `enabledModels` writes this panel has made: a save re-verifies the switches through one of its own. */
+    const enabledWrites = async (): Promise<number> => (await connection()).filter((entry) => entry.method === "PUT" && entry.url === INGRESS_ORIGIN + "/api/models/enabled").length;
+    const enabledWritesBefore = await enabledWrites();
+    const readsBeforeSave = await settledCatalogReads();
+    await saveButton.click();
+    const readsAfterSave = await (async () => {
+      const deadline = Date.now() + 30_000;
+      while (Date.now() < deadline) {
+        if (await catalogReads() > readsBeforeSave) return await settledCatalogReads();
+        await delay(250);
+      }
+      return await catalogReads();
+    })();
+    check(readsAfterSave > readsBeforeSave, "an applied models.json save re-read the catalog of the mounted reader (" + readsBeforeSave + " → " + readsAfterSave + ")");
+    await saveButton.waitFor({ state: "visible", timeout: 30000 });
+    await page.waitForFunction(() => {
+      const button = [...document.querySelectorAll<HTMLButtonElement>(".config-footer button")].find((candidate) => candidate.textContent?.trim() === "Save");
+      return button !== undefined && !button.disabled;
+    }, undefined, { timeout: 30000 });
+
+    // The same save, answered as the file written and the running runtime unchanged. That is not a change to what the
+    // deployment serves: the panel states it, re-reads the file it edited, and asks no catalog reader to re-read.
+    // The applied save also re-verifies the switches, through an enabledModels write of their own that lands after it.
+    // Both halves are changes, so the not-applied baseline below is taken once the panel has finished that pair: what
+    // it then asserts is about the second save alone.
+    await page.waitForFunction((wanted) => window.__uxPanelIngress!.connection.filter((entry) => entry.method === "PUT" && entry.url === window.__uxPanelIngress!.origin + "/api/models/enabled").length > wanted, enabledWritesBefore, { timeout: 30000 });
+    await page.evaluate(() => window.__uxPanelIngress!.answerModelSave(false));
+    const readsBeforeUnapplied = await settledCatalogReads();
+    const fileReadsBeforeUnapplied = await modelsFileReads();
+    await saveButton.click();
+    await page.locator(".config-footer").getByText(/could not apply it/i).waitFor({ timeout: 30000 });
+    check(true, "a save the runtime did not apply is stated as saved-but-not-applied, not as Saved: " + ((await page.locator(".config-footer").textContent()) ?? "").slice(0, 120));
+    await delay(1_500);
+    check(await settledCatalogReads() === readsBeforeUnapplied, "a save that was not applied claimed an applied catalog change (" + readsBeforeUnapplied + " → " + (await catalogReads()) + ")");
+    check(await modelsFileReads() > fileReadsBeforeUnapplied, "and the panel read the file back rather than trusting the draft it sent (" + fileReadsBeforeUnapplied + " → " + (await modelsFileReads()) + " reads)");
+
+    await page.evaluate(() => window.__uxPanelIngress!.answerModelSave(true));
 
     // Remove it again, guarded by the credential type the listing last said the host stored.
+    const readsBeforeRemoval = await settledCatalogReads();
     await detail.getByRole("button", { name: "Disconnect", exact: true }).click();
     await waitForPath("/api/auth/api-key/fixture-key", "DELETE");
     const removed = (await connection()).find((entry) => entry.method === "DELETE");
     check(removed?.url === INGRESS_ORIGIN + "/api/auth/api-key/fixture-key?expectedType=api_key", "the removal states the type it expects to remove: " + removed?.url);
     await page.waitForFunction(() => window.__uxPanelIngress!.providerHostState().configured === false, null, { timeout: 30000 });
     check(true, "the host's own state is what the panel asked for: the stored key is gone");
-    // The removal is a credential change too, and it drops what the page holds: no settled catalog entry survives it,
-    // and the next read is a second ask of the deployment rather than the answer the removed key produced.
-    await page.waitForFunction(() => window.__uxPanelIngress!.cachedCatalog().entries === 0, null, { timeout: 30000 });
-    check(true, "a credential change dropped the cached catalog");
-    await page.evaluate(() => window.__uxPanelIngress!.readCatalog());
-    check((await page.evaluate(() => window.__uxPanelIngress!.cachedCatalog().reads)) === 2, "and the next read asked the deployment again");
+    // The removal is a credential change too, and the mounted reader follows it exactly as it followed the store: the
+    // answer the removed key produced is not served afterwards.
+    await page.waitForFunction((wanted) => window.__uxPanelIngress!.cachedCatalog().reads > wanted, readsBeforeRemoval, { timeout: 30000 });
+    check(true, "a removed credential asked the deployment again through the same reader: " + (await catalogReads()));
+    check(await catalogEntries() === 1, "and the page holds one answer, the one that removal produced");
 
     // --- 2c. Provider sign-in is withheld while the route next to it is the deployment's named limit. -----------
     await page.getByRole("button", { name: "Add provider", exact: true }).click();
@@ -311,14 +393,29 @@ try {
     const enabledWrite = (await connection()).find((entry) => entry.method === "PUT" && entry.url.startsWith(INGRESS_ORIGIN + "/api/models/enabled"));
     check(enabledWrite !== undefined, "a model switch writes through the connection");
     check(enabledWrite?.url === INGRESS_ORIGIN + "/api/models/enabled", "the write names the configured ingress origin: " + JSON.stringify(enabledWrite?.url));
+    // The setting narrows the catalog every selector reads, so an accepted switch is a change stated through the same
+    // rule a credential write uses: the mounted reader asks the deployment again. A refusal would claim none.
+    const readsBeforeSwitch = await settledCatalogReads();
+    const switchesBefore = (await connection()).filter((entry) => entry.method === "PUT" && entry.url === INGRESS_ORIGIN + "/api/models/enabled").length;
+    await page.locator(".enabled-models-row").first().getByRole("switch").click();
+    await page.waitForFunction((wanted) => window.__uxPanelIngress!.connection.filter((entry) => entry.method === "PUT" && entry.url === window.__uxPanelIngress!.origin + "/api/models/enabled").length > wanted, switchesBefore, { timeout: 30000 });
+    const readsAfterSwitch = await (async () => {
+      const deadline = Date.now() + 30_000;
+      while (Date.now() < deadline) {
+        if (await catalogReads() > readsBeforeSwitch) return await settledCatalogReads();
+        await delay(250);
+      }
+      return await catalogReads();
+    })();
+    check(readsAfterSwitch > readsBeforeSwitch, "an accepted enabledModels write re-read the catalog of the mounted reader (" + readsBeforeSwitch + " → " + readsAfterSwitch + ")");
 
     // --- 4. Extensions: the installed set, the conversation's selection and its write are on the connection. ---
     await setView("extensions");
     await page.getByRole("button", { name: "coding-tools", exact: true }).waitFor({ timeout: 30000 });
-    await waitForPath("/api/sessions/session-1/state", "GET");
+    await waitForPath("/api/conversations/session-1/state", "GET");
     const extensions = await connection();
     check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/extensions" && entry.method === "GET"), "the installed extension set is read on the configured ingress origin");
-    check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/sessions/session-1/state" && entry.method === "GET"), "and so is the open conversation's own selection");
+    check(extensions.some((entry) => entry.url === INGRESS_ORIGIN + "/api/conversations/session-1/state" && entry.method === "GET"), "and so is the open conversation's own selection");
     await page.locator(".config-detail").getByRole("switch").click();
     await waitForPath("/api/extensions", "POST");
     const extensionWrite = (await connection()).find((entry) => entry.method === "POST" && entry.url === INGRESS_ORIGIN + "/api/extensions");
@@ -342,7 +439,7 @@ try {
       "/api/models/enabled",
       "/api/models/refresh",
       "/api/extensions",
-      "/api/sessions/session-1/state",
+      "/api/conversations/session-1/state",
     ]);
     const paths = all.map((entry) => entry.url.slice(INGRESS_ORIGIN.length).split("?")[0]);
     check(paths.every((path) => expectedPaths.has(path)), "every request named a route the deployment serves: " + JSON.stringify([...new Set(paths)]));

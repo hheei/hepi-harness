@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayRpcServer, LocalGateway, type InstallRequest, type InstallResult, type InstallServer } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { LocalInstallServer } from "../../../packages/gateway/src/install.ts";
 import { createInstaller, type InstallerOptions } from "../src/skill-install.ts";
 import type { MarketFetch, SkillMarket } from "../src/skill-repository.ts";
@@ -62,10 +62,14 @@ async function operatorFixture(skillCount: number): Promise<OperatorFixture> {
 	await mkdir(home, { recursive: true });
 	await mkdir(root, { recursive: true });
 	const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-	const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+	const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
 	const real = new LocalInstallServer(workspaces, { identity: { user: "operator", home } });
 	const { server, state } = instrumented(real);
-	const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, server);
+	const gateway = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+		files,
+		installs: server,
+	});
 	await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
 	const address = gateway.server.address();
 	assert.ok(address !== null && typeof address === "object");

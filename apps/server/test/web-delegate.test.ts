@@ -17,7 +17,7 @@ import { contentText } from "@earendil-works/pi-ai";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall, type FauxResponseFactory } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
@@ -40,7 +40,10 @@ type Fixture = { readonly origin: string; readonly backend: BackendServer; reado
 /** One backend over a real SQLite store, a real local execution host and a controlled model. */
 async function startLocal(t: TestContext, dbPath: string, root: string, home: string, script?: (faux: ReturnType<typeof fauxProvider>) => void): Promise<Fixture> {
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspaces, { identity: { user: "operator", home } }));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

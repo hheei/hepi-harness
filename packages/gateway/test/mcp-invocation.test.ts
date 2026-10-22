@@ -56,7 +56,7 @@ async function fixture(): Promise<Fixture> {
 	const registry = new WorkspaceRegistry([{ id: "local", root: folder }]);
 	const gateway = new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
 	const service = new McpHostService(agentDirOf(home), registry);
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, service);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), mcp: service });
 	const http = gatewayHttp(server.server);
 	const pidFile = join(base, "server.pid");
 	const reachedFile = join(base, "slow.reached");

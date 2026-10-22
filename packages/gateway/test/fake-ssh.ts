@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import type { ChildProcess } from "node:child_process";
 import type { GitCommandResult, GitCommandRunner, SshProfile, SshRunner, SshRunnerRequest, SshRunnerResult } from "../src/index.ts";
 import type { ExistingPaths } from "../src/worktrees.ts";
-import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem.ts";
+import { REMOTE_FILESYSTEM_SCRIPT } from "../src/ssh-filesystem-helper.ts";
 import { REMOTE_INSTALL_SCRIPT } from "../src/install.ts";
 
 /**

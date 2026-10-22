@@ -22,7 +22,7 @@ import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall, type FauxResponseFactory } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { WorkspaceRegistry } from "../../../packages/gateway/src/workspaces.ts";
@@ -193,7 +193,10 @@ async function startDelegating(t: TestContext): Promise<DelegateRig> {
   await writeFile(join(root, ".pi", "agents", "worker.md"), "---\nname: worker\ndescription: worker\ntools:\n  - read\ncontext: fresh\n---\n\nbody\n");
 
   const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspaces, { identity: { user: "operator", home } }));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const gatewayAddress = gateway.server.address();
   assert.ok(gatewayAddress !== null && typeof gatewayAddress === "object");

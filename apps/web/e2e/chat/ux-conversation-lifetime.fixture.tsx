@@ -12,10 +12,11 @@ import { createRoot } from "react-dom/client";
 import { ChatWindow } from "@hepi/ui/components/ChatWindow";
 import { I18nProvider } from "@hepi/ui/hooks/useI18n";
 import { createClient } from "@hepi/ui/client";
-import { workbenchConnection, WorkbenchConnectionProvider } from "@hepi/ui/lib/workbench-scope";
+import { useWorkbenchConnection, workbenchConnection, WorkbenchConnectionProvider } from "@hepi/ui/lib/workbench-scope";
 import { CompletionDelivery } from "@hepi/ui/lib/completion-delivery";
 import type { Step } from "@hepi/ui/lib/lifecycle-projection";
 import type { AgentEventLike } from "@hepi/ui/lib/agent-event-wire";
+import type { ReloadOutcome } from "@hepi/ui/hooks/useAgentSession";
 
 const CONVERSATION = "conv-a";
 
@@ -35,10 +36,14 @@ export type LifetimeGate = {
   readonly tones: { conversationId: string; answerKey: string }[];
   /** Deliver one event on a conversation's stream, as the Backend states it. */
   emit(conversationId: string, event: unknown): void;
-  /** Ask the chat for its explicit reload, the way Settings › General does. */
-  reload(): Promise<void>;
+  /** Ask the chat for its explicit reload, the way Settings › General does, and read the outcome it established. */
+  reload(): Promise<ReloadOutcome | null>;
   /** Show another conversation, or the fresh composer, without a new chat surface being built for it. */
   show(conversationId: string | null): void;
+  /** Replace the connection the shell is inside, as picking another Backend does. */
+  switchConnection(): void;
+  /** The conversations whose stream this page still has open, as the stream owner states it. */
+  readonly openStreams: readonly string[];
 };
 
 declare global {
@@ -91,37 +96,56 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
   return json({});
 };
 
-/** One conversation's stream as this page drives it: the real owner is the connection, only the socket is stated. */
-const sources = new Map<string, { onmessage: ((event: MessageEvent<string>) => void) | null; readyState: number }>();
-const createSource = (conversationId: string) => {
+/**
+ * One conversation's stream as this page drives it, per connection: the real owner is the connection's own client, only
+ * the socket is stated. Two connections therefore hold two sources for the same conversation id, which is the whole
+ * point of the switch case — the replaced connection's source is not the new one's.
+ */
+const sources = new Map<string, Map<string, { onmessage: ((event: MessageEvent<string>) => void) | null; readyState: number }>>();
+const createSource = (owner: string) => (conversationId: string) => {
+  const owned = sources.get(owner) ?? new Map();
+  sources.set(owner, owned);
   const source = {
     readyState: 1,
     onmessage: null as ((event: MessageEvent<string>) => void) | null,
     onerror: null as ((event: Event) => void) | null,
     close() { source.readyState = 2; },
   };
-  sources.set(conversationId, source);
+  owned.set(conversationId, source);
   queueMicrotask(() => source.onmessage?.({ data: JSON.stringify({ type: "connected", sessionId: conversationId }) } as MessageEvent<string>));
   return source;
 };
 
-const client = createClient({ origin: "", credential: { kind: "cookie" }, fetch: window.fetch, createSource });
+const client = createClient({ origin: "", credential: { kind: "cookie" }, fetch: window.fetch, createSource: createSource("first") });
 const identity = { profile: "ux-lifetime", backendId: "ux-lifetime", accountScope: "ux-lifetime" };
 const session = { path: "/workspace/conv-a.jsonl", id: CONVERSATION, cwd: "/workspace", created: "2026-01-01T00:00:00Z", modified: "2026-01-01T00:00:00Z", messageCount: 1, firstMessage: "an earlier question" };
 
-let reloadRef: { current: (() => Promise<void>) | null } = { current: null };
+let reloadRef: { current: (() => Promise<ReloadOutcome>) | null } = { current: null };
 let setShown: (conversationId: string | null) => void = () => {};
+let switchConnection: () => void = () => {};
+/** The connection a switch moves to: another Backend and account, so another client, another scope and another stream. */
+const switchedClient = createClient({ origin: "", credential: { kind: "cookie" }, fetch: window.fetch, createSource: createSource("switched") });
+const switchedIdentity = { profile: "ux-lifetime", backendId: "ux-lifetime-switched", accountScope: "ux-lifetime-switched" };
 
 const gate: LifetimeGate = {
   get requests() { return requests; },
   get tones() { return tones; },
   emit(conversationId: string, event: unknown) {
-    const source = sources.get(conversationId);
+    // Both connections' sources hear it: the conversation id is the same on both, and a frame is a frame.
+    const source = [...sources.values()].map((owned) => owned.get(conversationId)).find((candidate) => candidate !== undefined);
     if (source === undefined) throw new Error("no stream is open for " + conversationId);
     source.onmessage?.({ data: JSON.stringify(event) } as MessageEvent<string>);
   },
-  async reload() { await reloadRef.current?.(); },
+  async reload() { return await reloadRef.current?.() ?? null; },
   show(conversationId: string | null) { setShown(conversationId); },
+  switchConnection() { switchConnection(); },
+  get openStreams() {
+    // Each open source, named by the connection that owns it: a switch that released its watches leaves nothing of the
+    // replaced connection open, and the new one holds its own source for the same conversation.
+    return [...sources.entries()].flatMap(([owner, owned]) => [...owned.entries()]
+      .filter(([, source]) => source.readyState === 1)
+      .map(([conversationId]) => owner + ":" + conversationId));
+  },
 };
 window.__lifetime = gate;
 
@@ -133,13 +157,34 @@ window.__lifetime = gate;
 function Host() {
   const [shown, setShownState] = useState<string | null>(CONVERSATION);
   setShown = setShownState;
-  const reload = useRef<(() => Promise<void>) | null>(null);
+  // The connection this shell is inside. A switch replaces the provider value above it — exactly as the workbench does
+  // when the user picks another Backend or profile — and the shell's tree is **not** remounted, so this is the switch
+  // case for the shell's own owned values, the completion registry among them.
+  const connection = useWorkbenchConnection();
+  const reload = useRef<(() => Promise<ReloadOutcome>) | null>(null);
   reloadRef = reload;
-  const delivery = useMemo(() => new CompletionDelivery({
-    subscribe: (conversationId, listener) => client.subscribe(conversationId, listener),
+  // The registry this shell is showing. It belongs to the connection it was built for, so a switch builds the next one
+  // over the new client rather than handing the replaced client's watches a connection they do not describe. The shell
+  // states it in state rather than in a ref, because a ref is the value that survives a switch by accident.
+  const [delivery, setDelivery] = useState(() => new CompletionDelivery({
+    subscribe: (conversationId, listener) => connection.client.subscribe(conversationId, listener),
     lookup: async () => null,
     onAnswered: (notice) => { tones.push(notice); },
-  }), []);
+  }));
+  // Which connection the registry was built for: the identity is the rule, so the swap happens once per switch.
+  const deliveryConnection = useRef(connection);
+  if (deliveryConnection.current !== connection) {
+    deliveryConnection.current = connection;
+    setDelivery((previous) => {
+      // The outgoing registry's watches are released with it: nothing of the replaced connection stays attached.
+      previous.close();
+      return new CompletionDelivery({
+        subscribe: (conversationId, listener) => connection.client.subscribe(conversationId, listener),
+        lookup: async () => null,
+        onAnswered: (notice) => { tones.push(notice); },
+      });
+    });
+  }
   useEffect(() => () => delivery.close(), [delivery]);
   // The conversation on screen owns its frames; every other watch folds its own. Stated during render, as the shell does,
   // so a switch has joined the stream before the surface it replaces leaves it.
@@ -172,12 +217,24 @@ function Host() {
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("the fixture root element is missing");
-createRoot(rootElement).render(
-  <StrictMode>
-    <WorkbenchConnectionProvider value={workbenchConnection(client, identity)}>
+/**
+ * The provider the page states, keyed by the connection exactly as the workbench keys the tree above the shell: a switch
+ * replaces the value and re-renders inside it, which is the case the shell's own connection-owned values must answer.
+ */
+function Page() {
+  const [connection, setConnection] = useState(() => workbenchConnection(client, identity));
+  switchConnection = () => setConnection(workbenchConnection(switchedClient, switchedIdentity));
+  return (
+    <WorkbenchConnectionProvider value={connection}>
       <I18nProvider>
         <Host />
       </I18nProvider>
     </WorkbenchConnectionProvider>
+  );
+}
+
+createRoot(rootElement).render(
+  <StrictMode>
+    <Page />
   </StrictMode>,
 );

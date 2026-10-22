@@ -24,7 +24,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayRpcServer, LocalGateway, MAX_SNAPSHOT_BYTES, MAX_SNAPSHOT_ENTRIES, executionHost, gatewayEnvironment, resourceSnapshot } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createWorkspaceResources } from "../../../apps/server/src/workspace-resources.ts";
 import { kib, listen, outputRoot, timed } from "./lib/probe-lib.mjs";
 
@@ -164,7 +164,7 @@ try {
   for (const [label, groups, filesPerGroup] of [["100 entries", 1, 99], ["1000 entries", 10, 99], ["5000 entries", 50, 99]]) {
     const tree = await skillsTree("loader-" + label.replace(/\W+/g, "-"), groups, filesPerGroup);
     const workspaces = [{ id: "local", root: tree.root }];
-    const files = new GatewayFiles(workspaces, { identity: { user: "operator", home: tree.home } });
+    const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home: tree.home } });
     const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files);
     const { origin } = await listen(gateway.server);
     const env = gatewayEnvironment({ id: "local", gatewayId: "workstation", gatewayOrigin: origin, gatewayToken: "gateway-token" }, "/");

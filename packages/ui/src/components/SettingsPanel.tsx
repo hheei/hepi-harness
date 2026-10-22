@@ -15,7 +15,7 @@ import {
   useChatAppearance,
 } from "../hooks/useChatAppearance";
 import { useEnterSendMode, setEnterSendMode } from "../hooks/useEnterSendMode";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useConversationRefreshes, useWorkbenchConnection } from "../lib/workbench-scope";
 import { cookieLogoutOffered, endWebSession } from "../lib/web-logout";
 import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
 import type { ToolSettingsResponse } from "../lib/api-types";
@@ -51,10 +51,10 @@ interface Props {
    * (/workspace/<id>) and is what every request carries; showing it would name the project after its id.
    */
   displayCwd?: string | null;
+  /** The conversation this Settings was opened from. A change it has to pick up is asked of this conversation. */
   sessionId: string | null;
   initialSection: SettingsSection;
   onClose: () => void;
-  onSessionReloaded: () => void;
   quoteSelectionEnabled: boolean;
   onQuoteSelectionChange: (enabled: boolean) => void;
   /** The page's trust status for `cwd`; Settings › MCP reloads when it changes. */
@@ -85,20 +85,24 @@ export function SettingsSectionIcon({ section, size = 16, strokeWidth = 1.8 }: {
   return <svg {...common}><path d="M9 7V2M15 7V2M6 13V8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5a6 6 0 0 1-12 0ZM12 19v3" /></svg>;
 }
 
-function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, onQuoteSelectionChange }: Pick<Props, "sessionId" | "onSessionReloaded" | "quoteSelectionEnabled" | "onQuoteSelectionChange">) {
+function GeneralSettings({ sessionId, quoteSelectionEnabled, onQuoteSelectionChange }: Pick<Props, "sessionId" | "quoteSelectionEnabled" | "onQuoteSelectionChange">) {
   const { locale, setLocale, supportedLocales, t } = useI18n();
-  // The conversation API of this connection: a reload is the Backend's own route, asked through the connection it is
-  // inside rather than around it — its Gateway origin, under its credential.
-  const { api, client } = useWorkbenchConnection();
+  // The credential this surface is connected as: it decides whether ending the session is an action this host can offer.
+  const { client } = useWorkbenchConnection();
   const { preference, setThemePreference } = useTheme();
   const { width: chatContentWidth, setWidth: setChatContentWidth, fontSize, setFontSize } = useChatAppearance();
   const enterSendMode = useEnterSendMode();
   // Every read and write below belongs to the connection this Settings was opened under, so an App asks its own Gateway
   // origin with its own credential instead of resolving `/api` against the bundle it was loaded from.
   const request = useApiRequest();
+  // The open conversation's own read, published by the chat that owns it. This surface states that the tools
+  // configuration changed; whether that conversation picked it up is the conversation's answer, which is what is shown
+  // here — never a reload this panel assumed.
+  const refreshes = useConversationRefreshes();
   const [shellSettings, setShellSettings] = useState<ToolSettingsResponse | null>(null);
   const [shellSaving, setShellSaving] = useState(false);
   const [shellError, setShellError] = useState<string | null>(null);
+  const [reloadError, setReloadError] = useState<string | null>(null);
   const [thinkingExpanded, setThinkingExpanded] = useState(false);
   const [responseUsageVisible, setResponseUsageVisibleState] = useState(true);
   const [webAuthEnabled, setWebAuthEnabled] = useState(false);
@@ -155,6 +159,7 @@ function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, 
   const togglePowerShell = async (enabled: boolean) => {
     setShellSaving(true);
     setShellError(null);
+    setReloadError(null);
     try {
       const response = await request("/api/tools/settings", {
         method: "PUT",
@@ -164,10 +169,14 @@ function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, 
       const data = await response.json() as ToolSettingsResponse & { error?: string };
       if (!response.ok || data.error) throw new Error(data.error ?? `HTTP ${response.status}`);
       setShellSettings(data);
-      if (sessionId) {
-        await api.reload(sessionId);
-        onSessionReloaded();
-      }
+      // The reload is the conversation's own operation: it asks the Backend's route, re-reads the conversation and
+      // states what happened. This surface only names the conversation it changed and reads what the operation
+      // established, so a reload that failed is a failure it states rather than a success it assumed.
+      if (sessionId === null) return;
+      const outcome = await refreshes.refresh(sessionId);
+      // The conversation's own sentence: the setting was written either way, and a conversation read that failed is
+      // stated as the failure it reported.
+      if (outcome.status === "failed") setReloadError(outcome.message);
     } catch (cause) {
       setShellError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -346,6 +355,7 @@ function GeneralSettings({ sessionId, onSessionReloaded, quoteSelectionEnabled, 
             />
           </div>
           {shellError && <p role="alert" className="settings-general-error">{shellError}</p>}
+          {reloadError && <p role="alert" className="settings-general-error">{reloadError}</p>}
         </section>
       )}
 
@@ -395,7 +405,6 @@ export function SettingsPanel({
   sessionId,
   initialSection,
   onClose,
-  onSessionReloaded,
   quoteSelectionEnabled,
   onQuoteSelectionChange,
   projectTrust,
@@ -500,7 +509,7 @@ export function SettingsPanel({
         </div>
 
         <main className="settings-dialog-main">
-          {sectionHost("general", <GeneralSettings sessionId={sessionId} onSessionReloaded={onSessionReloaded} quoteSelectionEnabled={quoteSelectionEnabled} onQuoteSelectionChange={onQuoteSelectionChange} />)}
+          {sectionHost("general", <GeneralSettings sessionId={sessionId} quoteSelectionEnabled={quoteSelectionEnabled} onQuoteSelectionChange={onQuoteSelectionChange} />)}
           {sectionHost("models", <ModelsConfig embedded cwd={cwd} onClose={onClose} />)}
           {/* Visited sections stay mounted, so the ones whose answer depends on trust take the page's
               status and load again in place when trusting from Settings › MCP changes it. */}
@@ -509,11 +518,13 @@ export function SettingsPanel({
               successful installation asks only it to reload. */}
           {/* The Skills panel names the execution host's own root from its workspace listing, so it needs no display path. */}
           {sectionHost("skills", <SkillsConfig embedded key={cwd} cwd={cwd} sessionId={sessionId} trust={projectTrust} onClose={onClose} />)}
-          {cwd && sectionHost("agents", <AgentsConfig embedded key={cwd} cwd={cwd} displayCwd={displayCwd} sessionId={sessionId} trust={projectTrust} onClose={onClose} onReloaded={onSessionReloaded} />)}
+          {cwd && sectionHost("agents", <AgentsConfig embedded key={cwd} cwd={cwd} displayCwd={displayCwd} sessionId={sessionId} trust={projectTrust} onClose={onClose} />)}
           {/* No project needed: the installed set and the global default belong to the backend, and the
               conversation this was opened from adds that conversation's own selection. An extension whose own
               settings surface is another section links to it rather than being given an editor here. */}
-          {sectionHost("extensions", <ExtensionsConfig embedded key={sessionId ?? ""} sessionId={sessionId} onClose={onClose} onOpenSection={activateSection} />)}
+          {/* Kept mounted across a conversation change instead of being rebuilt for one: the panel already fences the
+              conversation it writes by the id it read, and its own effect re-reads the new conversation's selection. */}
+          {sectionHost("extensions", <ExtensionsConfig embedded sessionId={sessionId} onClose={onClose} onOpenSection={activateSection} />)}
           {/* No project needed: the global mcp.json is listed alone, and a project adds its group. */}
           {/* No trust control: the folder's decision lives on the Web host that owns it, and this Web origin
               only reads it (GET /api/project-trust), so the panel names where it is recorded rather than offering

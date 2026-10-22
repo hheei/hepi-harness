@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createServer, type Server } from "node:http";
+import { createServer, request as httpRequest, type Server } from "node:http";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -67,7 +67,12 @@ async function host(gatewayId = "workstation"): Promise<Host> {
 	const gateway = new LocalGateway({ id: gatewayId, token: GATEWAY_TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
 	// The workspace surface is what a deployment composes beside MCP, and it is how the Backend learns that this host
 	// executes on its own machine: without it the host answers no profile listing at all, which is an unreachable host.
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, new WorkspaceServer(registry, { identity: { user: "operator", home } }), undefined, undefined, new McpHostService(agentDirOf(home), registry));
+	const server = new GatewayRpcServer({
+		gateway,
+		files: new LocalFilesystem(registry),
+		workspaces: new WorkspaceServer(registry, { identity: { user: "operator", home } }),
+		mcp: new McpHostService(agentDirOf(home), registry),
+	});
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");
@@ -93,7 +98,11 @@ async function sshHost(gatewayId = "workstation-ssh"): Promise<Host> {
 	const profiles = [ssh.profile];
 	const registry = new WorkspaceRegistry(sshWorkspaceSeed(profiles));
 	const gateway = new SshGateway({ id: gatewayId, token: GATEWAY_TOKEN, profiles, allowedCommands: ["bash"], workspaces: registry, runner: ssh.runner });
-	const server = new GatewayRpcServer(gateway, undefined, undefined, undefined, new SshWorkspaceServer(registry, { profiles, runner: ssh.runner }), undefined, undefined, new McpHostService(agentDirOf(home), registry));
+	const server = new GatewayRpcServer({
+		gateway,
+		workspaces: new SshWorkspaceServer(registry, { profiles, runner: ssh.runner }),
+		mcp: new McpHostService(agentDirOf(home), registry),
+	});
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address && typeof address === "object");
@@ -111,6 +120,8 @@ type Deployment = {
 	readonly host: Host;
 	readonly cookie: string;
 	readonly device: string;
+	/** What the ingress asked the Backend, when a test stated one of its answers. */
+	readonly asked: { url: string; authorization: string }[];
 	/** One admitted call, as the browser (its cookie) or the App (its device bearer) makes it. */
 	call(identity: "web" | "device", path: string, init?: { method?: string; body?: unknown }): Promise<{ status: number; body: any }>;
 	close(): Promise<void>;
@@ -126,7 +137,9 @@ type Deployment = {
  * against a binding that agrees with it — and a test that states another gateway is the collision this surface has to
  * refuse.
  */
-async function deployment(options: { host?: Host; serveMcp?: boolean; revocationCheckIntervalMs?: number; mcpGatewayId?: string; binding?: { readonly gatewayId: string; readonly origin: string }; workspaceId?: string } = {}): Promise<Deployment> {
+type LocalityAnswer = (url: string) => { status: number; body: string } | "drop" | undefined;
+
+async function deployment(options: { host?: Host; serveMcp?: boolean; revocationCheckIntervalMs?: number; mcpGatewayId?: string; binding?: { readonly gatewayId: string; readonly origin: string }; workspaceId?: string; localityAnswer?: LocalityAnswer } = {}): Promise<Deployment> {
 	const directory = await temporary("hepi-ingress-mcp-");
 	const configurationHost = options.host ?? await host();
 	const binding = options.binding ?? { gatewayId: "workstation", origin: configurationHost.origin };
@@ -135,8 +148,12 @@ async function deployment(options: { host?: Host; serveMcp?: boolean; revocation
 	await new Promise<void>(resolve => backend.server.listen(0, "127.0.0.1", resolve));
 	const backendAddress = backend.server.address();
 	assert.ok(backendAddress && typeof backendAddress === "object");
+	// The decoder test states the answer to one question and nothing else: every other request still reaches the real
+	// Backend, so the caller is admitted by the ordinary Web login and device credential and the folder verdict is the
+	// only fact that comes from a stand-in.
+	const ingressOrigin = await standIn("http://127.0.0.1:" + backendAddress.port, options.localityAnswer);
 	const ingress: ClientIngress = createClientIngress({
-		backend: { origin: "http://127.0.0.1:" + backendAddress.port, serviceToken: BACKEND_TOKEN },
+		backend: { origin: ingressOrigin.origin, serviceToken: BACKEND_TOKEN },
 		webLoginToken: WEB_LOGIN,
 		appOrigins: ["http://app.example"],
 		...(options.serveMcp === false ? {} : { mcp: { origin: configurationHost.origin, token: GATEWAY_TOKEN, gatewayId: options.mcpGatewayId ?? "workstation" } }),
@@ -158,6 +175,7 @@ async function deployment(options: { host?: Host; serveMcp?: boolean; revocation
 		host: configurationHost,
 		cookie,
 		device,
+		asked: ingressOrigin.asked,
 		call: async (identity, path, init = {}) => {
 			const headers: Record<string, string> = identity === "web" ? { cookie } : { authorization: "Bearer " + device };
 			if (init.body !== undefined) { headers["content-type"] = "application/json"; headers.origin = origin; }
@@ -165,8 +183,48 @@ async function deployment(options: { host?: Host; serveMcp?: boolean; revocation
 			const response = await fetch(origin + path, { method: init.method ?? "GET", headers, ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }) });
 			return { status: response.status, body: await response.json() as any };
 		},
-		close: async () => { await ingress.close(); credentials.close(); await backend.close(); if (options.host === undefined) await configurationHost.close(); },
+		close: async () => { await ingress.close(); await ingressOrigin.close(); credentials.close(); await backend.close(); if (options.host === undefined) await configurationHost.close(); },
 	};
+}
+
+/**
+ * The address the ingress reaches when a test states the Backend's answer to the folder question: every other request
+ * is passed on to the real Backend, unchanged, and the locality query is answered as the test states it.
+ *
+ * It stands in for one answer, not for admission: the ingress still asks the same one question with its own service
+ * credential, so what is exercised is the reading of that answer and the caller is admitted by the real Backend.
+ */
+async function standIn(backendOrigin: string, localityAnswer: LocalityAnswer | undefined): Promise<{ origin: string; asked: { url: string; authorization: string }[]; close(): Promise<void> }> {
+	const asked: { url: string; authorization: string }[] = [];
+	if (localityAnswer === undefined) return { origin: backendOrigin, asked, close: async () => undefined };
+	const upstream = new URL(backendOrigin);
+	const server = createServer((request, response) => {
+		const url = request.url ?? "/";
+		// Only the folder question is stated here; every other request, including the login and the device credential a
+		// caller is admitted with, is the real Backend's own answer.
+		const stated = url.includes("/locality?") ? localityAnswer(url) : undefined;
+		if (stated === "drop") { request.socket.destroy(); return; }
+		if (stated !== undefined) {
+			asked.push({ url, authorization: request.headers.authorization ?? "" });
+			request.resume();
+			response.writeHead(stated.status, { "content-type": "application/json" });
+			response.end(stated.body);
+			return;
+		}
+		const forwarded = httpRequest({
+			host: upstream.hostname,
+			port: upstream.port,
+			method: request.method,
+			path: url,
+			headers: request.headers,
+		}, answer => { response.writeHead(answer.statusCode ?? 502, answer.headers); answer.pipe(response); });
+		forwarded.on("error", () => { if (!response.headersSent) response.writeHead(502, { "content-type": "application/json" }); response.end("{}"); });
+		request.pipe(forwarded);
+	});
+	await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address();
+	assert.ok(address && typeof address === "object");
+	return { origin: "http://127.0.0.1:" + address.port, asked, close: async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); } };
 }
 
 /** The global entry an add writes, as the panel's own paste pane sends it. */
@@ -317,6 +375,66 @@ test("a revoked device credential ends an MCP operation that is in flight", asyn
 		hanging.closeAllConnections();
 		await new Promise<void>(resolve => hanging.close(() => resolve()));
 	}
+});
+
+test("the Backend answers the one locality verdict this origin's folder question rests on", async () => {
+	// The verdict is the Backend's own fact about a workspace, asked through the ordinary admitted client route: this
+	// origin sends its cookie, the ingress forwards it under its service credential, and one small answer comes back.
+	// A second gateway is configured, so "the workspace is local" and "the workspace is on this origin's host" stay
+	// two different questions: only the pair is local.
+	const d = await deployment();
+	try {
+		const local = await d.call("web", "/api/workspaces/local/locality?gatewayId=workstation");
+		assert.equal(local.status, 200);
+		assert.deepEqual(local.body, { local: true });
+
+		// The workspace is bound to this host, and a caller naming another gateway is not asking about this machine.
+		const elsewhere = await d.call("web", "/api/workspaces/local/locality?gatewayId=elsewhere");
+		assert.equal(elsewhere.status, 200);
+		assert.deepEqual(elsewhere.body, { local: false });
+
+		// An App's device bearer reaches the same route, and a caller that was not admitted is refused before it.
+		assert.deepEqual((await d.call("device", "/api/workspaces/local/locality?gatewayId=workstation")).body, { local: true });
+		assert.equal((await fetch(d.origin + "/api/workspaces/local/locality?gatewayId=workstation")).status, 401);
+	} finally { await d.close(); }
+});
+
+test("only an explicit local verdict admits a folder, and a failure is never remembered as one", async () => {
+	// The one answer this ingress reads is the Backend's verdict, so what a caller sees is decided by what that answer
+	// says. A refusal, a body that is not the verdict, and a connection that never answered are one product outcome —
+	// the folder is not served here — and none of them is a yes.
+	const answers: readonly { name: string; answer: LocalityAnswer }[] = [
+		{ name: "an evaluated negative", answer: () => ({ status: 200, body: JSON.stringify({ local: false }) }) },
+		{ name: "a Backend that could not evaluate the query", answer: () => ({ status: 503, body: JSON.stringify({ code: "gateway_offline", error: "the execution host could not be read: gateway_offline" }) }) },
+		{ name: "a body with no verdict in it", answer: () => ({ status: 200, body: "{}" }) },
+		{ name: "a verdict stated as text", answer: () => ({ status: 200, body: JSON.stringify({ local: "true" }) }) },
+		{ name: "a body that is not JSON", answer: () => ({ status: 200, body: "local" }) },
+		{ name: "a connection that never answered", answer: () => "drop" },
+	];
+	for (const stated of answers) {
+		const d = await deployment({ localityAnswer: stated.answer });
+		try {
+			const refused = await d.call("web", "/api/mcp?cwd=" + encodeURIComponent("/workspace/local"));
+			assert.equal(refused.status, 403, stated.name + " must not admit a folder");
+			assert.deepEqual(refused.body, { error: "This origin serves no such folder", reason: "cwd-denied" }, stated.name);
+		} finally { await d.close(); }
+	}
+
+	// The question itself: one narrow read naming this origin's own configured gateway, sent under the ingress's
+	// service credential. No workspace list and no host list is fetched to answer it.
+	let local = true;
+	const d = await deployment({ localityAnswer: () => ({ status: 200, body: JSON.stringify({ local }) }) });
+	try {
+		assert.equal((await d.call("web", "/api/mcp?cwd=" + encodeURIComponent("/workspace/local"))).status, 200);
+		assert.deepEqual(d.asked.map(asked => asked.url), ["/api/workspaces/local/locality?gatewayId=workstation"]);
+		assert.deepEqual(d.asked.map(asked => asked.authorization), ["Bearer " + BACKEND_TOKEN]);
+
+		// Nothing is remembered: a host that stops being this machine is read on the next request, not answered from the
+		// last one, so a previous yes can never stand in for a fact that has changed.
+		local = false;
+		assert.equal((await d.call("web", "/api/mcp?cwd=" + encodeURIComponent("/workspace/local"))).status, 403);
+		assert.equal(d.asked.length, 2);
+	} finally { await d.close(); }
 });
 
 test("a workspace the Backend binds to another gateway is refused, even when this host serves the same id", async () => {

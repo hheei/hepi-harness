@@ -48,12 +48,6 @@ export type FileRequest = {
  */
 export type FilesystemServer = { execute(request: FileRequest): Promise<unknown>; close(): Promise<void> };
 
-/**
- * The filesystem surface \`GatewayRpcServer\` accepts for \`/v1/files\`: any \`FilesystemServer\`, local or SSH. The type
- * stays structural so the RPC server can take either implementation, and the value keeps its existing import working.
- */
-export type GatewayFiles = FilesystemServer;
-
 /** Bounded reader operations the gateway exposes as \`reader.*\` methods; both filesystems implement this shape. */
 export type GatewayReader = {
   info(): Promise<{ ok: true; value: FileInfo } | { ok: false; error: FileError }>;
@@ -306,7 +300,7 @@ export async function executionHost(workspaceRoot: string, identity: ExecutionHo
   };
 }
 
-export type GatewayFilesOptions = { readerTtlMs?: number; maxReaders?: number; identity?: ExecutionHostIdentity };
+export type LocalFilesystemOptions = { readerTtlMs?: number; maxReaders?: number; identity?: ExecutionHostIdentity };
 
 /** Local-workspace filesystem: resolves workspace-relative paths against the configured root and serves them through the upstream \`NodeExecutionEnv\`. */
 export class LocalFilesystem implements FilesystemServer {
@@ -314,7 +308,7 @@ export class LocalFilesystem implements FilesystemServer {
   readonly workspaces: WorkspaceRegistry;
   readonly readers: ReaderRegistry<BinaryReader>;
   readonly #identity: ExecutionHostIdentity;
-  constructor(workspaces: WorkspaceRegistry, options: GatewayFilesOptions = {}) {
+  constructor(workspaces: WorkspaceRegistry, options: LocalFilesystemOptions = {}) {
     this.workspaces = workspaces;
     this.readers = new ReaderRegistry(options.readerTtlMs ?? READER_TTL_MS, options.maxReaders ?? MAX_READERS);
     this.#identity = options.identity ?? localExecutionHostIdentity();
@@ -428,9 +422,6 @@ export class LocalFilesystem implements FilesystemServer {
     }, request);
   }
 }
-
-/** Keeps the existing \`GatewayFiles\` import in \`index.ts\` working: the local filesystem is the gateway's default surface. */
-export const GatewayFiles = LocalFilesystem;
 
 /**
  * Largest resource snapshot one discovery may return. Over it discovery fails with a clear error: the response is one

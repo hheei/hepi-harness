@@ -453,11 +453,11 @@ test("a caller that disconnects from /v1/workbench ends the host command it star
   const hanging = hangingRunner();
   const runner: SshRunner = { open: (request) => host.runner.open!(request), execute: hanging.runner.execute };
   const files = new SshFilesystem({ id: "gateway", profiles: [profile], runner, workspaces });
-  const server = new GatewayRpcServer(
-    new SshGateway({ id: "gateway", token: TOKEN, profiles: [profile], allowedCommands: [], runner, workspaces }),
-    sshWorkbench({ workspaces, profiles: [profile], files, runner }),
+  const server = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "gateway", token: TOKEN, profiles: [profile], allowedCommands: [], runner, workspaces }),
+    workbench: sshWorkbench({ workspaces, profiles: [profile], files, runner }),
     files,
-  );
+  });
   const http = gatewayHttp(server.server);
   t.after(async () => { http.close(); await files.close(); host.kill(); });
 
@@ -486,11 +486,11 @@ test("the SSH gateway mounts the workbench on /v1/workbench with the local proto
   const requests: SshRunnerRequest[] = [];
   const runner = hostRunner(app.host, app.root, requests);
   const files = new SshFilesystem({ id: "gateway", profiles, runner, workspaces });
-  const server = new GatewayRpcServer(
-    new SshGateway({ id: "gateway", token: TOKEN, profiles, allowedCommands: [], runner, workspaces }),
-    sshWorkbench({ workspaces, profiles, files, runner }),
+  const server = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "gateway", token: TOKEN, profiles, allowedCommands: [], runner, workspaces }),
+    workbench: sshWorkbench({ workspaces, profiles, files, runner }),
     files,
-  );
+  });
   await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address !== null && typeof address === "object");

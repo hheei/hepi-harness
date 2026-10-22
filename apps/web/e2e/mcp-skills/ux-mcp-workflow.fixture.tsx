@@ -229,7 +229,6 @@ function Fixture() {
           sessionId={null}
           initialSection="mcp"
           onClose={noop}
-          onSessionReloaded={noop}
           quoteSelectionEnabled={false}
           onQuoteSelectionChange={noop}
           projectTrust={{ requiresTrust: true, trusted: true, decision: true, decisionPath: PROJECT, inherited: false }}

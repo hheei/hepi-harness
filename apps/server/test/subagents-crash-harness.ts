@@ -21,7 +21,7 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { CommitPublication, ConversationId, Cursor, Extension, HarnessOptions, ToolRegistration } from "@earendil-works/pi-durable";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { GatewayRpcServer, LocalGateway, gatewayEnvironment } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { openServerHarness, type ServerHarness } from "../src/harness.ts";
 import { createConversationOperations, WorkspaceDoc, type ConversationOperations } from "../src/conversation-operations.ts";
 import { createSubagentHost } from "../src/subagents/composition.ts";
@@ -71,7 +71,10 @@ export type CrashHarness = {
 
 export async function openCrashHarness(dbPath: string, options: CrashHarnessOptions): Promise<CrashHarness> {
   const workspaces = new WorkspaceRegistry([{ id: CRASH_WORKSPACE, root: options.root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspaces, { identity: { user: "operator", home: options.home } }));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspaces, { identity: { user: "operator", home: options.home } }),
+  });
   await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address !== null && typeof address === "object");

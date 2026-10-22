@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { GatewayFiles } from "../src/filesystem.ts";
+import { LocalFilesystem } from "../src/filesystem.ts";
 import { GatewayRpcServer, LocalGateway } from "../src/index.ts";
 import { createBackendServer, type BackendServer } from "../../../apps/server/src/server.ts";
 import { createDeviceCredentials } from "../../../apps/server/src/device-credentials.ts";
@@ -539,7 +539,10 @@ async function workspaceFixture(prefix: string): Promise<Fixture> {
 	await mkdir(join(home, ".pi", "agent"), { recursive: true });
 	await writeFile(join(root, ".pi", "agents", "worker.md"), "---\nname: worker\ndescription: worker\ntools:\n  - read\ncontext: fresh\n---\n\nbody\n");
 	const workspaces = new WorkspaceRegistry([{ id: "local", root }]);
-	const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspaces, { identity: { user: "operator", home } }));
+	const gateway = new GatewayRpcServer({
+		gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+		files: new LocalFilesystem(workspaces, { identity: { user: "operator", home } }),
+	});
 	await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
 	const gatewayAddress = gateway.server.address();
 	assert.ok(gatewayAddress && typeof gatewayAddress === "object");

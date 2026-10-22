@@ -283,7 +283,7 @@ try {
   const marketPath = join(base, "skill-repository.sqlite");
 
   const { GatewayRpcServer, LocalGateway } = await import("../../../packages/gateway/src/index.ts");
-  const { GatewayFiles } = await import("../../../packages/gateway/src/filesystem.ts");
+  const { LocalFilesystem } = await import("../../../packages/gateway/src/filesystem.ts");
   const { LocalInstallServer } = await import("../../../packages/gateway/src/install.ts");
   const { loadPiConfig } = await import("../src/pi-config.ts");
   const { createBackendServer } = await import("../src/server.ts");
@@ -292,9 +292,13 @@ try {
 
   const workspaces = new WorkspaceRegistry([{ id: "local", root: host.root }]);
   const identity = { user: process.env.USER ?? "smoke", home: host.home };
-  const files = new GatewayFiles(workspaces, { identity });
+  const files = new LocalFilesystem(workspaces, { identity });
   const installs = new LocalInstallServer(workspaces, { identity });
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "smoke-gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, files, installs);
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "smoke-gateway-token", workspaces, allowedCommands: ["bash"] }),
+    files,
+    installs,
+  });
   await new Promise<void>((r) => gateway.server.listen(0, "127.0.0.1", r));
   const gatewayPort = (gateway.server.address() as { port: number }).port;
   closers.push(async () => { gateway.server.closeAllConnections(); await gateway.close(); });

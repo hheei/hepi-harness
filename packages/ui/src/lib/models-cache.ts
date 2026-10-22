@@ -46,6 +46,27 @@ export function pageModelsCache<T>(): ScopedCache<T> {
   return (pageCatalogCache ??= createModelsCache<T>()) as ScopedCache<T>;
 }
 
+/** The readers a model change has to reach: one per mounted consumer of the catalog. */
+const catalogReaders = new Set<() => void>();
+
+/**
+ * Follow the model catalog: this reader is told when a change this page applied superseded what it holds.
+ *
+ * The readers are the mounted consumers — the composer's catalog read and anything else listing models — and the
+ * subscription is what makes "mounted" a fact rather than a guess: a reader that unsubscribed is not holding anything
+ * to re-read, so a change costs it nothing. The callback is the reader's own bounded read, not a fetch of this module's:
+ * the retry policy, the scope and the fence belong to whoever asked, and this only says that what it holds is old.
+ *
+ * Every writer of a model-domain resource — a `models.json` save the Backend applied, a stored or removed credential, an
+ * `enabledModels` write — states the change through {@link invalidateModelCatalog}, so there is one rule rather than one
+ * per surface. It is deliberately not a global event bus: it carries no payload, names no other domain and reaches no
+ * reader that did not ask to follow this catalog.
+ */
+export function subscribeModelCatalog(reader: () => void): () => void {
+  catalogReaders.add(reader);
+  return () => { catalogReaders.delete(reader); };
+}
+
 /**
  * State that the deployment's model list may no longer be what this page read.
  *
@@ -54,9 +75,12 @@ export function pageModelsCache<T>(): ScopedCache<T> {
  * change superseded. Dropping it is what makes the next read ask, and the generation rule inside the cache is what
  * stops a read already running when the credential changed from becoming the answer served afterwards.
  *
- * This is deliberately not a reload. Nothing here fetches, notifies or retries: a composer that is open keeps what it
- * shows, and the next read of the catalog is the fresh one. That is the same rule a `models.json` save follows.
+ * Mounted readers are then told, so a composer that is on screen re-reads now instead of showing an answer the change
+ * replaced until someone closes Settings. Nothing is fetched here: a reader re-reads through its own bounded read, and a
+ * page with no mounted reader fetches nothing at all — the next read is simply the fresh one. The current model, the
+ * draft and any selection stay exactly as they were: this says the list is old, not what the session should run.
  */
 export function invalidateModelCatalog(): void {
   pageModelsCache<unknown>().invalidate();
+  for (const reader of [...catalogReaders]) reader();
 }

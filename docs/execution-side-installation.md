@@ -220,6 +220,14 @@ not touched. A published installation with a failed Reload answers HTTP 200 with
 conversation was named there is nothing to reload, so `reload` is absent: the response never fabricates a success or
 a failure for an adoption that was never asked for.
 
+The panels keep that distinction. Settings › Skills reports an installation's own outcome beside the `reload` the
+Backend answered, and a skill switch that adopted nothing still reports the document change it made. Settings › Agents
+and Settings › General do not send a reload at all: they ask the conversation they were opened for to re-read its
+resources through the connection's `refreshes` (`hold`/`release`/`refresh`), and report what that read established.
+A definition saved while no chat holds that conversation answers `not_open` — the document is stored, and no reload is
+claimed. A read that failed, or one the chat reported as `superseded` because another conversation came on screen, is
+never shown as a successful reload.
+
 ## The SSH transport
 
 An SSH-host installation is many helper calls for one publication — one per 32 KiB chunk of the bundle plus the

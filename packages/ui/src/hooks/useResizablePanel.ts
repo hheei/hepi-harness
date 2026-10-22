@@ -58,6 +58,9 @@ function writeStoredWidth(storageKey: string, width: number): void {
   }
 }
 
+/** One draggable panel: the refs and handlers its surface renders, and the width it is at. */
+export type ResizablePanel = ReturnType<typeof useResizablePanel>;
+
 export function useResizablePanel(options: UseResizablePanelOptions) {
   const {
     ariaLabel,

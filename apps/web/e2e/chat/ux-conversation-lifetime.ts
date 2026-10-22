@@ -147,6 +147,29 @@ try {
     await page.locator("[data-fixture-show=\"conversation\"]").click();
     await page.locator(COMPOSER).waitFor({ timeout: 20000 });
     check(await page.evaluate(() => (window.__lifetime?.tones.length ?? 0)) === 1, "coming back does not replay the notice the registry already claimed");
+
+    // --- 6. A connection switch rebuilds the shell's registry over the new client, and releases the old one. ----
+    // The shell's tree is not remounted by a switch, so the registry that was built once for the first connection
+    // would keep its watches — the replaced client's source, the answers it already noticed — attached to a
+    // connection nothing shows. The switch states a new connection, and the shell states the registry that belongs
+    // to it: the old one is closed and a new one is built over the new client.
+    // A marker set now, on the surface this switch is about: it survives only if the shell's tree did.
+    await page.evaluate(() => {
+      const chat = document.querySelector("[data-chat-scroll]") ?? document.querySelector("textarea[placeholder*=\"Message\"]")?.closest("div");
+      if (chat) (chat as HTMLElement).dataset.switchMarker = "kept";
+    });
+    const streamsBefore = await page.evaluate(() => window.__lifetime!.openStreams);
+    await page.evaluate(() => window.__lifetime!.switchConnection());
+    // The surface inside the new connection reads its conversation again — through the new client's own read — so the
+    // switch is visible as a read of the same conversation id under a different connection.
+    await page.waitForFunction((before) => (window.__lifetime?.requests ?? []).filter((path) => path.includes("/state")).length > before,
+      await page.evaluate(() => (window.__lifetime?.requests ?? []).filter((path) => path.includes("/state")).length), { timeout: 20000 });
+    const streamsAfter = await page.evaluate(() => window.__lifetime!.openStreams);
+    check(JSON.stringify(streamsAfter) !== JSON.stringify(streamsBefore),
+      "the connection switch moved the stream: " + JSON.stringify(streamsBefore) + " -> " + JSON.stringify(streamsAfter));
+    check(await page.evaluate(() => document.querySelector("[data-switch-marker=\"kept\"]") !== null),
+      "and the shell's own tree survived the switch, so the registry was rebuilt rather than remounted away");
+    check(await page.evaluate(() => (window.__lifetime?.tones.length ?? 0)) === 1, "the answers the old registry noticed are not re-noticed by the new one");
     check(pageErrors.length === 0, "no page error occurred" + (pageErrors.length === 0 ? "" : ": " + pageErrors.join(" | ")));
     assert.ok(true);
   } finally {

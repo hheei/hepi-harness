@@ -9,6 +9,38 @@ its relative layout under `.dev/worktree-archive/<name>`, and a log whose worktr
 under the repository root's own `.dev/verify/<topic>`. Where neither applies, the path is historical evidence for that
 row, not a runnable command.
 
+## Readable statically bundled SSH helper (filesystem adapters 01)
+
+Source: `impl/nonui-filesystem-01` at `5ec7ffe62a2aaf172fb294bd68f1976098cfb012` plus the uncommitted working tree of that
+slice. The remote filesystem helper moved out of one escaped 45,582-character string literal in
+`packages/gateway/src/ssh-filesystem.ts` into `packages/gateway/src/ssh-filesystem-helper.ts`, where it is one
+Python line per source line. It is still a static TypeScript import: no asset, loader, generated file, sidecar or
+runtime source lookup was added, and `SshFilesystem` sends the same program over the same session bootstrap. Only
+the three sequences a template literal would consume (backslash, backtick, dollar-brace) are escaped.
+
+Logs below are relative to `.dev/verify/nonui-filesystem-01/` and
+`.dev/verify/2026-10-21T13-12-51-032-verify-changed/` (the runner's own run directory).
+
+| Command | Exit | Evidence |
+| --- | --- | --- |
+| decoded-program comparison: `git show HEAD:packages/gateway/src/ssh-filesystem.ts` literal vs the new module | 0 | `{"equal":true,"bytesBefore":43443,"bytesAfter":43443,"shaBefore":"60f28535…cb4c","shaAfter":"60f28535…cb4c"}` — byte-identical, so no inert formatting change either |
+| `node --test test/ssh-helper-source.test.ts` (packages/gateway) | 0 | 1/1 pass: no CR, no interpolation, >1,000 lines, `node-ignore@7.0.5` notice, the backslash-built `_TEST_INVALID_TRAILING_BACKSLASH`, `b"\xef\xbb\xbf"` and `chunk.find(b"\n"…)` verbatim, and `python3` compiles the decoded source |
+| `node --test test/{ssh-helper-source,ignore-parity,ssh-filesystem,ssh-session,ssh-resources,ssh-workspaces,resource-snapshot,filesystem,files-surface,ingress-resources-install,ingress-ssh-workbench,file-transfer,file-transfer-sshd,host-files,ssh}.test.ts` (packages/gateway) | 0 | `gateway-ssh-suites.log`: 104 tests, 104 pass, 0 fail — the ordinary admitted file/SSH workflows, including the loopback-sshd and parity suites |
+| `node --test $(find src test -name '*.test.ts' | sort)` (packages/gateway acceptance) | 0 | `gateway-acceptance.log`: 496 tests, 496 pass, 0 fail — the whole package, not only the selected suites |
+| `node --test test/{ssh-project,agent-definitions-http,agent-definitions-route}.test.ts` (apps/server) | 0 | `server-ssh-project.log`: 20 tests, 20 pass — resource snapshot, permitted agent-definition read/write and host account semantics over the SSH adapter |
+| `pnpm typecheck` | 0 | `typecheck.log`; workspace and root tooling projects |
+| `pnpm --filter @hepi/client build` | 0 | `client-build.log`; the helper program is in `dist/cli.js` (712,636 bytes, 43 chunks), and the entry file carries `Kael Zhang` and `node-ignore 7.0.5 port` |
+| `HEPI_REQUIRE_SSH_SMOKE=1 pnpm --filter @hepi/client smoke:pack` | 0 | `client-smoke-pack.log`: 6 checks — packed tarball installed outside the checkout, help/version/doctor, local gateway, and a real localhost sshd serving account, read, command and worktree create/remove through `remote-loopback` |
+| `pnpm verify:changed --quiet` | 0 | `verify.json` in the run directory: `changed-typecheck`, `changed-test` (362 tests, 362 pass), `web-unit` (14 pass) and `check-docs` all exit 0, `sha 5ec7ffe6…`, `dirty: true` for this slice's files |
+| `pnpm verify:changed --quiet --base=5ec7ffe6` | 0 | `verify-changed-committed.log` and the run directory's `verify.json`: the same four steps exit 0 on the committed slice, `sha bcc02f26…`, `dirty: false` |
+
+The build and pack ran on the workstation. `python3` 3.13.13 is the interpreter the local fixture and the helper's own
+syntax check use; the helper's runtime requirement is unchanged (Python 3 on the execution host).
+
+**Not covered here.** No remote-host deployment was made from this slice, and the persisted-state, alias-retirement and
+cross-adapter scenario work belongs to the later filesystem tickets. The parity suite proves the two engines agree over
+its generated corpus, not over every pattern `node-ignore` accepts.
+
 ## TypeScript test migration (2026-10-21)
 
 Source: main at 67e3682967b067948f9b066ee72e20486323771b plus the uncommitted integrated working tree,
@@ -5482,3 +5514,157 @@ acceptance boxes stay unticked:
 - **Interactive OAuth against real upstream endpoints stays unmeasured** (provider 05's named limit: the composed service
   declares `auth.oauth` only over a scripted provider), and the terminal/upload rows reuse unchanged-source evidence from
   earlier revisions rather than re-running at this one.
+## Native artifact verification: the callable operation (2026-10-21)
+
+`apps/app/scripts/verify-artifacts.mjs` was a 657-line file whose top level selected the artifact, created the log
+directory and sampled the login keyring before the journey began, and whose tail called `process.exit`. It is now the
+operational entry point only — resolve `--artifact-dir`/`--log-dir`, call
+`runArtifactVerification({ artifactDir, logDir })` from `apps/app/scripts/verify-artifacts.operation.mjs`, print
+`{ logDir, passed, failed }`, exit — and the operation owns the artifact inspection, the packaged journey, the private
+display and credential store it acquires, its fixture listeners and packaged process groups, their release, and report
+finalization. Importing the operation performs no artifact lookup, creates no directory, spawns nothing and never exits.
+Flags, the default artifact choice, the summary line, the report's fields and the exit semantics are unchanged; no generic
+verifier, scenario runner or class per subprocess was introduced.
+
+Branch `impl/nonui-native-01`, base `5ec7ffe6`. The packaged journey was run against a **prebuilt debug artifact**
+(`.dev/artifacts/nv01-debug`, `Hepi_0.1.0_amd64.deb`, provenance revision `5ec7ffe6`, `dirty: true`) built on this
+workstation; nothing ran on or was built on `remote-host`.
+
+| Check | Command | Revision | Exit | Result |
+| --- | --- | --- | --- | --- |
+| The callable operation's interface | `node --test apps/app/test/verify-artifacts-operation.test.ts` | `5ec7ffe6` + this change (dirty tree) | 0 | 3 pass / 0 fail — importing the operation starts nothing, and a report counts the assertions it recorded in order, bounds a detail at 800 characters and states an absent one as an empty string |
+| The shared packaged-environment guard, pointed at the operation | `node --test scripts/credential-sandbox.test.ts` | `5ec7ffe6` + this change (dirty tree) | 0 | 14 pass / 0 fail; the driver table now reads `verify-artifacts.operation.mjs`, the file that builds every packaged environment |
+| Selector over the changed package and its dependents | `pnpm verify:changed --base=5ec7ffe6` | `5ec7ffe6` + this change (`dirty: true`) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/app` **29 pass / 0 fail**, this change's three included), `script-typecheck` 0, `script-tests` 0 (**89 pass**), `check-entrypoints` 0 (141 entries, 0 newly missing), `check-docs` 0 (466 files, 0 broken links) — `.dev/verify/2026-10-21T13-14-43-025-verify-changed/verify.json` |
+| The packaged artifact journey, through the new entry point | `node apps/app/scripts/verify-artifacts.mjs --artifact-dir=.dev/artifacts/nv01-debug --log-dir=.dev/verify/nv01/final` | `5ec7ffe6` + this change (dirty tree); artifact from `5ec7ffe6` | 0 | **54 assertions, 0 failures** — `.dev/verify/nv01/final/report.json` and `.dev/verify/nv01/final.log`; `dpkgState` `Status: install ok installed`, `installExit` 0, `verifyExit` 0, `rootRemoved` true, `credentialStore.retained` `removed with the run`, developer keyring `0ced02df2ba9… -> 0ced02df2ba9…` unchanged |
+| The same artifact and host, through the pre-change script | `node <5ec7ffe6 verify-artifacts.mjs> --artifact-dir=.dev/artifacts/nv01-debug --log-dir=.dev/verify/nv01/legacy-run` | `5ec7ffe6` | 0 | **54 assertions, 0 failures** — `.dev/verify/nv01/legacy-run/report.json`. Compared field by field with the run above: identical report key set, identical assertion names in identical order, identical outcomes. The nine differing details are the run's own identities (bearer values, the private bus path, the retained dpkg log path) |
+
+**What the paired run establishes.** The comparison is the replacement's evidence: a refactor of this size could pass its
+own tests and still change what the artifact check observes, so the same artifact was verified by both the old script and
+the new entry point on the same host and the two reports were diffed. Teardown was checked as a process fact rather than
+read from the report: after the final run no `Xvfb :9x`, no `hepi-app` from this worktree and no private
+`dbus-daemon --print-address` from either run was alive, and no `hepi-artifact-cred-*` tree remained under `/tmp`. The
+`Xvfb :90`, `dbus-daemon` and `hepi-app` processes still running belong to other checkouts and predate this run by two
+days; they were left alone.
+
+**Not claimed.** No release-profile artifact was built or verified, no `remote-host` build or run happened, and no
+system `dpkg` install was made — the transaction ran in a private user namespace over a root this run removed. The debug
+artifact is functional evidence only, not a release measurement.
+
+**The run at the committed revision `0aab74e9` differs only where it must.** The verifier binds
+`provenance-names-the-built-revision` to `git rev-parse HEAD`, and the artifact was built from `5ec7ffe6`, so running the
+committed tree against it reports `5ec7ffe62a2a… (HEAD 0aab74e9c…)` and 53/54 with that one failure
+(`.dev/verify/nv01/postcommit.log`). The other 53 assertion outcomes and the report's key set are identical to the run
+above, which is the point of the assertion: a run against an artifact built from another revision is a different run, and
+it says so rather than passing. The passing runs are the two revision-matched ones.
+
+## Model workflow refresh (ticket 06, 2026-10-21)
+
+Branch `impl/ui-model-workflow`, base `b3ab7871`. The `modelsRefreshKey` hop from `AppShell` → `ChatWindow` →
+`useAgentSession` is gone, and with it the "closing Settings" refresh: every write of a model-domain resource now states
+its change through the catalog's own rule. `packages/ui/src/lib/models-cache.ts` keeps the one page cache and gained the
+mounted readers (`subscribeModelCatalog`); `invalidateModelCatalog()` drops the cached answer **and** tells those readers,
+each of which re-runs the read it already owns — the same bounded retry a mount performs.
+
+What each write states: a `models.json` save the Backend answered `applied:true` (plus the `enabledModels`
+re-verification it then performs), and an accepted `enabledModels` write, both call the rule. A `models.json` save
+answered `applied:false` is saved-but-not-applied: it reads the file back, states the failure and claims no catalog
+change, because the running runtime still serves what it had. A refused credential write returns before the rule, so the
+stored hint and the held catalog stay as they were. A catalog read that fails is stated where the model is chosen and
+offers one Retry, which is one more read of `/api/models` and no part of a mutation.
+
+| Check | Command | Revision | Exit | Result |
+| --- | --- | --- | --- | --- |
+| Selector over the changed packages and their dependents | `pnpm verify:changed --base=b3ab7871` | `a5687489` (clean tree) | 0 | `changed-typecheck` 0, `changed-test` 0 (`@hepi/ui` **464 pass / 0 fail**, `@hepi/app` green), `web-unit` 0 (14 pass), `check-docs` 0 (465 files, 0 broken links) — `.dev/verify/2026-10-21T19-06-11-174-verify-changed/verify.json` |
+| The settings panels' own browser seam, with the workflow's observations | `pnpm --filter @hepi/web test:panel-ingress` | `a5687489` (clean tree) | 0 | **77 checks, all ok** — `.dev/verify/ticket06/panel-ingress-committed.log`. A stored credential re-read the mounted reader's catalog with Settings still open; a refused key write claimed no change; an applied `models.json` save re-read it; a save the runtime could not apply added no catalog read and re-read the file instead; an accepted `enabledModels` write re-read it; a removal re-read it |
+| The provider acceptance journey, with Settings kept open | `pnpm --filter @hepi/web test:provider-acceptance` | `a5687489` (clean tree) | 0 | **70 checks, 0 failures** — `.dev/verify/ticket06/provider-acceptance-committed.log`. A stored key re-read the catalog behind the still-open dialog (1 → 2 reads of `/api/models`); no conversation-settings write followed the change; the composer offered the newly authenticated model; the removal re-read it again (2 → 3); closing an unedited Settings made no read at all |
+| The rule is load-bearing, not incidental | `test:panel-ingress`, mutated tree | `a5687489` + mutation (`dirty: true`) | 1 | Removing the reader loop in `invalidateModelCatalog()` fails `test:panel-ingress` with `the fixture threw: page.waitForFunction: Timeout 30000ms exceeded`. Calling the rule on a saved-but-not-applied save fails the same driver with `FAIL a save that was not applied claimed an applied catalog change (4 → 5)`. Both mutations were reverted before the runs recorded above |
+
+Correction at `8a64b0e2`: each catalog reader now owns a sequence claim. Superseded success and failure responses
+cannot replace current state, and superseded retry loops stop before another attempt. The lifecycle regression releases
+old responses last and checks the retry schedule. Independent correction review found no remaining material finding;
+its focused lifecycle run passed 40/40. The historical table above describes the earlier revision.
+
+Merged source `07943df4`: `pnpm verify:changed --base=62c2c588` exit 0 (UI 465/465, App 29/29,
+Web unit 14/14, selected typechecks). Report and raw step logs:
+`.dev/verify/2026-10-21T19-21-04-372-verify-changed/verify.json`. Graph update also exited 0.
+
+Final browser evidence at clean `8a64b0e2`: `pnpm --filter @hepi/web test:panel-ingress` exit 0
+(77 checks), `pnpm --filter @hepi/web test:provider-acceptance` exit 0 (70 checks, zero failures).
+The preceding Web build exited 0. `pnpm verify:changed --base=b3ab7871 --log-dir=.dev/verify/ticket06-final`
+also exited 0 (UI 465, App 29, Web unit 14, typecheck and docs). Raw logs are worktree-local under
+`.dev/worktrees/ui-model-workflow/.dev/verify/ticket06-final/`: `verify.json`, `changed-test.log`,
+`changed-typecheck.log`, `panel-ingress.log`, `provider-acceptance.log`, and `web-build.log`.
+These final runs supersede the earlier revision's evidence above.
+
+**Not claimed.** No deployment was restarted or inspected, no App-host journey ran, and nothing was built or run on
+`remote-host`. The unit cases in `packages/ui/src/lib/models-cache.test.ts` and
+`packages/ui/src/hooks/useAgentSession.lifecycle.test.ts` state the same contract at their own seams and ran inside
+`changed-test` above.
+
+## UI architecture consolidation: system acceptance (ticket 12, 2026-10-22)
+
+Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`. Source tested at `255a61ac`
+(clean tree; integration of `17fe24d4`). The drivers that cross the real ingress, and the native journey, were re-run
+afterwards at `8f22ed70`, and the selector and document checks once at the last documentation-only commit `fa7b37dc`. Those
+commits change no source: `git diff --stat 255a61ac HEAD -- packages apps` is empty. This is the acceptance record for the
+twelve UI architecture tickets: every N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now
+names an executed result or an explicit limit.
+
+| Check | Command | Revision (dirty) | Exit | Log |
+| --- | --- | --- | --- | --- |
+| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `fa7b37dc` (clean; `255a61ac` source) | 0 | `.dev/verify/ui12/verify-final6/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
+| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | `fa7b37dc` (clean) | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
+| Web build | `pnpm --filter @hepi/web build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/web-build.log` |
+| App build | `pnpm --filter @hepi/app build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/app-build.log` |
+| App debug binary | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/cargo-build.log` |
+| 44 browser drivers over the shared tree (44 unique drivers; 49 executions with the five re-runs below) | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web/App source byte-identical at `8f22ed70`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
+| Real Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts` | `8f22ed70` (clean) | 0 | `.dev/verify/ui12/native/native-acceptance.log` — 42 checks |
+| Five drivers over the real ingress | `ux-client-acceptance`, `ux-mcp-acceptance`, `ux-panel-ingress`, `ux-web-logout`, `ux-provider-connection-acceptance` | `255a61ac` and again `8f22ed70` (clean) | all 0 | same files; index `index-final3.log` |
+
+The drivers are the ones the matrix names, each run rather than cited from an earlier revision:
+`ux-workbench-selection` (36), `ux-navigation-retry` (8), `ux-chat-scroll` (15), `ux-transcript-presentation` (15),
+`ux-composer-interaction` (24), `ux-conversation-lifetime` (14), `ux-conversation-lifetime-shell` (12),
+`ux-message-copy` (12), `ux-quote-initial-prompt` (11, new), `ux-references` (43), `ux-references-acceptance` (45),
+`ux-history-navigation-acceptance` (82), `ux-visible-turns` (29), `ux-history-rail` (23), `ux-history-scope` (11),
+`ux-raw-history-sidebar-focus` (32), `ux-rail-keyboard` (18), `ux-subtree-control` (78), `ux-token-footer` (36),
+`ux-panel-ingress` (77), `ux-provider-connection-acceptance` (70), `ux-mcp-workflow` (16), `ux-mcp-acceptance` (58),
+`ux-mcp-tool-states` (62), `ux-capability-trust` (17), `ux-skills-project-target` (14), `ux-skills-inventory-race` (9),
+`ux-extensions-panel` (29), `ux-definition-refresh` (15), `ux-delegate-definition-race` (6), `ux-file-surfaces` (25),
+`ux-file-failures` (25), `ux-docx-preview` (15), `files-transfer` (17), `ux-workbench-scope` (16),
+`ux-terminal-close` (9 PASS lines), `ux-terminal-session` (38), `ux-terminal-fan-in` (26), `ux-web-logout` (17),
+`ux-sidebar-ingress` (15), `ux-pwa-offline` (24), `ux-closeout-accessibility` (28), `ux-child-recovery` (24),
+`ux-client-acceptance` (58).
+
+**What the native journey states, and what it does not.** It is a DEBUG build (`dev` profile, symbols retained): native
+FUNCTIONAL evidence, not release performance and not a packaged artifact. Its statements are kept apart by kind — a
+transport observation printed by the App's own bundle after the ingress admitted its descriptor read; a UI assertion from
+the branch that rendered the surface; a platform assertion asked of the X server (`xdotool` found a real WebKitGTK window;
+the GTK Save file dialog was on the display); and pixel evidence, which the driver only says is not one flat colour. The
+save journey drives the rendered document through the debug shell's own inspector, answers the real GTK dialog with
+`xdotool`, and compares the written file's sha256 with the workspace file's (1048 bytes, equal). The App's logout is
+performed through the surface it ships: the refused connection's Disconnect, then its confirmation, after which the shell
+reopens `configure` and the run's own credential store holds no `dev.hepi.app` entry.
+
+**Two material integration failures found and fixed here**, both in `AppShell`'s own boundary:
+
+- `cad0d86b` (UI11 review P1, forwarded by the coordinator): `ChatArea` passed `() => onInitialPromptConsumed` instead
+  of the callback, so the one-shot quoted prompt was never consumed and replayed on a remount. `test:quote-initial-prompt`
+  is the ordinary regression: select a passage, Ask in new chat, step to another conversation, come back — one admission,
+  not two. Reverting the fix makes it fail with two.
+- `ce5cb804`: the shell rebuilt `searchTarget` on every render while `ChatWindow` deduplicates by identity, so following
+  a reference or a search hit into a long conversation issued two bounded target reads for one window.
+  `ux-references-acceptance` reproduced it (2) and passes after the fix (1). The target is now memoized on the selection's
+  own `navigation` record.
+
+The selection scene also gained the `GET /api/project-trust` answer it needed once UI11 moved that read onto the
+connection's client; that is a driver gap, not a product defect.
+
+**Why the split is not a shortcut.** `git diff --stat 8526bfca 8f22ed70 -- packages/ui apps/web apps/app packages/session`
+is empty: the 44 drivers that read the shared UI tree and the browser-emulated App ran against byte-identical source, and
+the two commits after them changed `packages/gateway/src/ingress/index.ts` (Ingress02) and documentation only. The five
+drivers that do cross the real ingress were re-run at the final commit rather than cited, and so was the native journey.
+
+**Not claimed.** No release artifact or `.deb` was built or verified; nothing was built or run on `remote-host`; no
+deployment was restarted; the real upstream OAuth flow and a live compaction of a real long conversation were not
+executed; this host has no Android SDK, adb or device. Those limits are stated per row in the matrix and in
+[migration status](migration-status.md).

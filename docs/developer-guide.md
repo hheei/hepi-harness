@@ -5,6 +5,8 @@
 
 ## System shape
 
+Backend live attachment lifetime belongs to `apps/server/src/conversation-attachments.ts`: lookup, single-flight attachment, recovery and close borrow Harness from `server.ts`. Keep durable writes in `conversation-operations.ts`; close views before Harness. HTTP and transcript projections share credential-error redaction from `public-errors.ts`.
+
 ```text
 Web (cookie) / Tauri App (device bearer)
         │ packages/ui shared workbench · HTTP + SSE
@@ -21,6 +23,10 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 没有多租户或 shell 沙箱:授予 bash 等于允许以 gateway 用户身份运行任意脚本。
 见 [ADR 0001](adr/0001-single-authoritative-durable-runtime.md)。
 
+Gateway file transports depend on `FilesystemServer` in `packages/gateway/src/filesystem.ts`. Construct
+`LocalFilesystem` for this machine and `SshFilesystem` for SSH profiles. The shared positive contract tests use both
+adapters, including a real loopback SSH helper session; adapter-specific resource and transport tests remain separate.
+
 ## Directory map
 
 | 位置 | 职责 | 入口 |
@@ -31,7 +37,7 @@ Backend 的 `Set-Cookie`。文件、MCP、provider auth 可由 ingress 的主机
 | `packages/session` | 快照、SSE、重连、控制与资源读取 | `src/browser.ts`、`src/agent-event-connection.ts`、`src/control.ts`、`src/resources.ts` |
 | `packages/protocol` | 版本化帧、路径与类型 | `src/index.ts`、`src/navigation.ts`、`src/files.ts`、`src/gateway.ts` |
 | `packages/gateway` | ingress、执行、文件、终端、SSH、MCP、provider 凭据 | `src/ingress/index.ts`、`src/client.ts`、`src/startup.ts`、`src/index.ts` |
-| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/harness.ts` |
+| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/conversation-attachments.ts`、`src/conversation-catalogue.ts`、domain `*-http.ts` modules、`src/harness.ts` |
 | `scripts` | dev、验证、文档/入口检查、只读部署检查 | `dev.mjs`、`verify.mjs`、`check-docs.mjs`、`check-entrypoints.mjs` |
 | `deploy` | 服务端镜像与 Compose | [Container deployment](container-deployment.md) |
 | `docs` | 当前指南、限定 revision/日期的证据、ADR | [索引](README.md) |
@@ -134,7 +140,7 @@ Web 身份命名为 `web:<sha256 前 32 位>`。路由由一个入口分派:
   `close()` 中止所有附着响应。
 - 仅配置 `HEPI_INGRESS_STATIC_DIR` 时服务静态页;非 `/api` 路径不代理。
 
-Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingress surface。
+Backend 资源路由加在其 domain owner(`settings-http.ts`、`conversation-*-http.ts`、`project-http.ts`、`workspace-http.ts`、`diagnostics-http.ts`),再在 `server.ts` 的固定 dispatch 顺序里接一行;主机资源加在 ingress surface。
 **检查:** `pnpm --filter @hepi/gateway test`、`pnpm --filter @hepi/web test:web-logout`、
 `test:panel-ingress`、`test:client-acceptance`。配置见 [Client ingress](client-ingress.md)。
 
@@ -148,17 +154,27 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 
 | 路由 | 所有者 / 用途 |
 | --- | --- |
-| `GET /api/descriptor` | `server.ts`:协议、身份、Backend/account scope、build、capabilities |
+| `GET /api/descriptor` | `diagnostics-http.ts`:协议、身份、Backend/account scope、build、capabilities |
 | `GET/POST /api/device-credentials`, `DELETE …/:id` | `device-credentials.ts`:只允许 Web 身份签发/列举/撤销 |
-| `POST /internal/credentials/verify` | `server.ts`:ingress 身份核验 |
-| `GET/POST /api/conversations`, `GET …/:id` | `conversation-operations.ts`、`catalogue-binding.ts`:目录、创建、relations/references/配置 |
-| `GET …/:id/state`, `GET …/:id/events` | `history-window.ts`:快照与 SSE |
-| `GET …/:id/submissions?requestId=` | `server.ts`:只读 durable 记录或 null |
-| `POST …/:id/{messages,fork,abort,delegate,recovery,references}` | `conversation-input.ts`、`subtree-control.ts`、`subagents/`:输入、控制与关系 |
-| `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
+| `POST /internal/credentials/verify` | `diagnostics-http.ts`:ingress 身份核验 |
+| `GET/POST /api/conversations` | `conversation-catalogue-http.ts`、`conversation-catalogue.ts`:目录、running poll、创建;每行来自唯一 catalogue projection |
+| `GET …/:id` | `conversation-command-http.ts`、`conversation-operations.ts`:identity、relations/references/配置 |
+| `GET …/:id/state`, `GET …/:id/events` | `conversation-history-http.ts`、`history-window.ts`:快照与 SSE |
+| `GET …/:id/submissions?requestId=` | `conversation-command-http.ts`:只读 durable 记录或 null |
+| `POST …/:id/{messages,fork,abort,delegate,recovery,references}` | `conversation-command-http.ts`、`conversation-extensions-http.ts`、`conversation-input.ts`、`subtree-control.ts`、`subagents/`:输入、控制与关系 |
+| `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-history-http.ts`、`conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
 | `/api/terminal*`, `/api/files/{upload,upload-check,bytes}` | `terminal-relay.ts`、`file-relay.ts`:主机中继 |
-| `/api/{workspaces,hosts,host/directories,projects,worktrees,workbench}` | `project-store.ts`、`server.ts`:执行目标与只读操作 |
-| `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `model-config.ts`、`extension-selection.ts`、`skill-install.ts` 等 |
+| `/api/{workspaces,hosts,host/directories,workbench}` | `workspace-http.ts`:执行目标与只读操作 |
+| `GET /api/workspaces/:workspaceId/locality?gatewayId=` | `workspace-http.ts`:一个 workspace 是否为该 gateway 本机的目录,client ingress 唯一询问的 locality 结论 |
+| `/api/{projects,worktrees,workbench,host/directories}` | `project-http.ts` 解码请求并陈述结果;mutation、checkout lifecycle、host call 与 publication 全在 `project-registry.ts` |
+| `/api/{models,models-config,sidebar-state}` | `settings-http.ts`,配置实现见 `model-config.ts`、`sidebar-state.ts` |
+| `/api/{extensions,skill-market/*}` | `extensions-http.ts`:已安装 extension、全局默认选择与 skill market,实现见 `extension-selection.ts`、`skill-install.ts`、`skill-repository.ts` |
+| `GET /api/search` | `conversation-catalogue-http.ts`、`session-search.ts`:无索引全文搜索 |
+| `/api/agent-definitions*` | `agent-definitions-http.ts`:workspace 自有主机上的定义文档 |
+| `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify`, `/diagnostics*`, `/workbench*` | `diagnostics-http.ts`:诊断页、descriptor 与 credential routes |
+
+`server.ts` 只保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback;每个 domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response,不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer;`conversation-catalogue.ts` 拥有唯一的 catalogue row projection。
+
 
 `ConversationOperations.spawn` 在一次 commit 中写 `pi.agent`、`hepi.workspace`、relations、references 与会话作用域
 request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent Definition/context strategy。
@@ -178,6 +194,18 @@ request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent 
 (forced 读不共用)、唯一准入路径(立即 send、steer、follow-up)、by-id lookup、Backend 自身 reload 与释放。它不做
 排序、不持 timer/retry queue/socket;折叠决定答案含义,`hooks/useAgentSession.ts` 呈现并执行 fold 请求。同对话 reload
 是读取与重新取得资源,不是新 attachment:聊天保留其树、其 stream 与读者位置,Shell 不再为此提供 mount key。
+该操作只有一个 owner(`reloadResources`):Settings › General 与 Settings › Agents 只声明配置已变、向**该对话**取得
+read 结果,不自行发请求;`/reload` 命令调用同一函数。接线不再是 Shell 传给 panel 的 callback:聊天的 reload 发布在
+connection 的 `refreshes`(`lib/conversation-refreshes.ts`,`hold`/`release`/`refresh`),panel 只送
+`sessionId`。没有 mounted 聊天持有该 id 时答案 `not_open`,不虚报 reload;切换对话后属于旧对话的答案不写到新对话,
+settings view 因此不需要 sessionKey、mount key 或 refresh counter。
+通知只声称**读取**已确立的事实,而读取结果是带类型的 `ConversationReadOutcome`
+(`accepted` / `refused` / `missing` / `failed`+`ReadFailure` / `cancelled` / `superseded`),不是可空值。`refused` 即读取
+到此结束:不会为一个 fold 已拒绝的 window 再发 agent-state 读取,否则调用方会据其答案恢复 run 或声称 reload。路由本身
+被拒绝时由该操作报为 `failed`,既不会向 await 的调用方抛出未处理 rejection,也不会为一个没发生的变更再发读取;但仅在
+发起它的 connection 仍是当前 connection 时——切换后到达的拒绝为 `superseded`,不发声。一次 reload 只发一条通知:
+`/reload` 只是同一操作的调用方,不重复陈述其结果。读取另按**发起它的 connection** 设栅栏(不只 conversation id,两个 connection
+可有同一 id):切换后到达的 window、`not_found` 或 failure 一律拒绝,不写到新 connection 的 surface。
 已被接受的 readout(accepted window、其前方的 older prefix、该 window 的 pagination claim)由
 `lib/conversation-readout.ts` 在同一个接受步骤发布:prefix 依共享 `decidePrefix` 与 readout 已持有的上一个 window
 同步决定,不再由 React effect 追赶。metadata(stats、history token/head、leaf、display model)留在被接受的 payload 上,
@@ -264,7 +292,9 @@ MCP 的配置、凭据、OAuth 与子进程归 Web origin 主机账号,不归 Ba
 1. Gateway `mcp/config.ts` 管 `mcp.json`(1 MiB)与项目信任;`listing.ts` 启动、列工具、关闭。
    `McpHostService` 的测试期限 30 s,登录 TTL 5 min;登录使用粘贴回调。
 2. `ingress/mcp.ts` 回答 `/api/mcp*` 与 `/api/project-trust`,核对 workspace 的 gateway id;
-   无本机服务答 `mcp_unavailable`。
+   无本机服务答 `mcp_unavailable`。该核对是 `ingress/index.ts:servesFolder` 的一次 locality 读取:
+   `GET /api/workspaces/:workspaceId/locality?gatewayId=`(自己的 gateway id 与 service credential),只有
+   `local: true` 才放行,拒绝／非该形状／传输失败一律 false,不缓存、不读 workspace/host 列表形状。
 3. Backend `mcp-grants.ts` durable 记录会话授予的身份与当时 descriptor。`HEPI_MCP_TOOLS` 只是声明,不授予;
    含 command/args/env/url/headers/auth 等主机键的声明在启动时拒绝。
 4. `McpToolBridge` 注册 deferred、`replay:"unsafe"` 工具,由 `pi.agent.modelTools` 选择。Gateway 每调用重新
@@ -318,6 +348,11 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 互斥;SSH 从 profile 播种 `remote-<profile>` registry,不提供 MCP。环境 `main.ts` 与打包 CLI 只读各自配置并处理
 信号。新主机能力加 capability、`/v1` 路由与 Backend relay;Backend 生产代码不拼执行 HTTP。
 
+`GatewayRpcServer` 只接受一个具名 `GatewayCapabilities` 对象(执行 gateway 与各 surface),入口按名字声明本机提供
+哪些能力,未设置即"本机不提供",该路由回答自己的具名上限。`close()` 由组合者独占:terminal → provider 登录 →
+MCP → files → HTTP 连接 → gateway → listener,每个能力只销毁一次;重复调用等待同一次关闭。传输族本身不销毁任何
+capability。
+
 **检查:** `pnpm --filter @hepi/gateway test`(host-client/host-files/host-terminal/process/control)、
 `pnpm --filter @hepi/gateway test:acceptance`(execution/ingress);server 的
 `gateway-client-boundary/terminal-relay/file-relay.test.ts`。
@@ -328,9 +363,13 @@ ledger 作答;同 ID 不同请求拒绝;重启时 admitted/dispatched 调用报 
 | --- | --- | --- |
 | 客户端 API | Backend `server.ts` + UI `lib/*-api.ts` | `*.http.test.ts` |
 | 本机能力 | gateway capability + ingress surface 或 Backend relay | `host-*.test.ts`、boundary test |
+| gateway 传输族 framing(文件 payload、终端流) | `packages/gateway/src/transport/{file-payload,terminal}.ts`;入口只保留路由识别、凭证校验与未知路由 | `file-transfer`、`terminal`、`terminal-stream-budget` 套件,以及同目录的纯解析测试 |
+| gateway 传输族 framing(其余 JSON 面)与生命周期 | `packages/gateway/src/transport/{execution,mcp,providers,control}.ts`;执行帧流与中止、MCP 断连取消、provider 登录存活于请求、控制面缺失能力命名 | `execution`、`mcp`、`provider-login`、`control` 套件、`transport/routes.test.ts` 路由纯测试,以及 `transport-lifetimes.test.ts` |
+| gateway 组合(capability 集合)与关闭顺序 | `packages/gateway/src/index.ts` 的 `GatewayCapabilities`/`close()`;入口在 `src/startup.ts` 与各夹具按名字装配 | `composition.test.ts`(关闭顺序/只销毁一次/缺失能力)、`startup.test.ts` |
 | 帧/字段 | protocol → Backend → session → UI | delta-frames、frame-size |
 | durable 事实/恢复 | `conversation-operations.ts` | `conversation-*.test.ts` |
 | 面板/交互 | UI `components` + `lib` | `pnpm test:web:unit`、对应 e2e |
+| composer 編輯行為(草稿、補全、鍵盤、附件) | `packages/ui/src/components/composer/`;畫面本身留在 `ChatInput.tsx` | `pnpm --filter @hepi/ui test`、`pnpm --filter @hepi/web test:composer-interaction` |
 | 开发脚本 | `scripts/` | `pnpm test:scripts` |
 
 ## Verification record

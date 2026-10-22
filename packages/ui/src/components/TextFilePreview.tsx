@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { getFileDirectory, getRelativeFilePath } from "../lib/file/file-paths";
 import { FileSaveControl } from "./FileSaveControl";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useI18n } from "../hooks/useI18n";
 import { formatByteSize as formatSize } from "../lib/byte-size";
 import { classifyFileReadFailure, type FileReadFailure } from "../lib/file/file-read-failure";
@@ -47,9 +47,6 @@ export interface TextFilePreviewProps {
   onMentionLines?: (relativePath: string, startLine: number, endLine: number) => void;
   /** Insert this file's relative path into the chat input (@ mention). */
   onAtMention?: (relativePath: string, isDir: boolean) => void;
-  gitRefreshKey?: number;
-  /** Reload the directory listing: what a file that moved or was deleted needs rather than the same read repeated. */
-  onReloadFolder?: () => void;
   /** Close this file tab. Offered on a read that failed, so the reader is not left in a dead end. */
   onClose?: () => void;
   initialDisplayMode?: DisplayMode;
@@ -81,16 +78,16 @@ export function TextFilePreview({
   onOpenFile,
   onMentionLines,
   onAtMention,
-  gitRefreshKey,
-  onReloadFolder,
   onClose,
   initialDisplayMode,
   initialState,
   onStateChange,
 }: TextFilePreviewProps) {
   const { t } = useI18n();
-  // The file and its Git patch both belong to this connection.
+  // The file and its Git patch both belong to this connection, and so does the fact that the files under the workspace
+  // changed: the patch is the one read that has to follow it, because the file's own bytes are read once.
   const { files } = useWorkbenchConnection();
+  const filesChange = useWorkbenchChange("files");
   const [data, setData] = useState<FileData | null>(null);
   const [gitDiff, setGitDiff] = useState<GitFileDiffResponse | null>(null);
   const [gitDiffLoading, setGitDiffLoading] = useState(false);
@@ -234,7 +231,11 @@ export function TextFilePreview({
 
   useEffect(() => {
     void fetchGitDiff(filePath);
-  }, [fetchGitDiff, filePath, gitRefreshKey]);
+  }, [fetchGitDiff, filePath]);
+
+  // A run wrote files, or an upload did: this file's patch is stale. Only the patch is re-read — the file the reader is
+  // looking at was read once and its content is not re-fetched under them.
+  useEffect(() => filesChange.subscribe(() => { void fetchGitDiff(filePath); }), [fetchGitDiff, filePath, filesChange]);
 
   useEffect(() => {
     // HTML gets the same rendered-first treatment as markdown: a generated page
@@ -364,7 +365,7 @@ export function TextFilePreview({
         failure={failure}
         retrying={retrying}
         onRetry={retryRead}
-        onReloadFolder={onReloadFolder}
+        onReloadFolder={() => filesChange.notify()}
         onClose={onClose}
       />
     );

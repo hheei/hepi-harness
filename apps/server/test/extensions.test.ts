@@ -9,7 +9,7 @@ import { fauxAssistantMessage, fauxProvider, fauxToolCall } from "@earendil-work
 import { defineExtension, type Extension } from "@earendil-works/pi-durable";
 import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { createWorkspaceResources, type WorkspaceResources } from "../src/workspace-resources.ts";
@@ -38,7 +38,10 @@ async function start(t: { after(fn: () => unknown): void }, dbPath: string, reso
   const root = join(base, "workspace");
   await mkdir(root, { recursive: true });
   const workspace = new WorkspaceRegistry([{ id: "local", root }]);
-  const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }), undefined, new GatewayFiles(workspace));
+  const gateway = new GatewayRpcServer({
+    gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces: workspace, allowedCommands: ["bash"] }),
+    files: new LocalFilesystem(workspace),
+  });
   await new Promise<void>(resolve => gateway.server.listen(0, "127.0.0.1", resolve));
   const address = gateway.server.address();
   assert.ok(address && typeof address === "object");

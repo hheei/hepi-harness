@@ -10,7 +10,7 @@ import type { ConversationId } from "@earendil-works/pi-durable";
 import { createModels } from "@earendil-works/pi-ai/models";
 import { fauxAssistantMessage, fauxProvider, fauxToolCall, type FauxResponseFactory, type FauxResponseStep } from "@earendil-works/pi-ai/providers/faux";
 import { GatewayRpcServer, LocalGateway } from "@hepi/gateway";
-import { GatewayFiles } from "../../../packages/gateway/src/filesystem.ts";
+import { LocalFilesystem } from "../../../packages/gateway/src/filesystem.ts";
 import { createBackendServer, type BackendServer } from "../src/server.ts";
 import { openServerHarness } from "../src/harness.ts";
 import { SERVER_MODEL } from "./faux-fixture.ts";
@@ -64,11 +64,11 @@ async function fixture(t: { after(fn: () => unknown): void }, transcript?: strin
   // A local gateway cannot be a linked worktree here, so the shadowed context path the host would resolve for one is
   // injected exactly as the gateway would report it: the loader must drop that file and keep the others.
   const shadowed = options.shadowedContextFile?.(repository);
-  const gatewayFiles = (): GatewayFiles => {
-    const files = new GatewayFiles(workspaces, { identity: { user: "operator", home } });
+  const gatewayFiles = (): LocalFilesystem => {
+    const files = new LocalFilesystem(workspaces, { identity: { user: "operator", home } });
     if (shadowed === undefined) return files;
-    return new (class extends GatewayFiles {
-      override async execute(request: Parameters<GatewayFiles["execute"]>[0]): Promise<unknown> {
+    return new (class extends LocalFilesystem {
+      override async execute(request: Parameters<LocalFilesystem["execute"]>[0]): Promise<unknown> {
         const result = await super.execute(request) as { ok?: boolean; value?: Record<string, unknown> };
         if (result.ok !== true || result.value === undefined) return result;
         if (request.method === "executionHost") return { ...result, value: { ...result.value, shadowedContextFile: shadowed } };
@@ -85,7 +85,10 @@ async function fixture(t: { after(fn: () => unknown): void }, transcript?: strin
   // over the same account home and repository.
   const gateways: GatewayRpcServer[] = [];
   const startGateway = async (): Promise<{ id: string; gatewayId: string; gatewayOrigin: string; gatewayToken: string }> => {
-    const gateway = new GatewayRpcServer(new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }), undefined, gatewayFiles());
+    const gateway = new GatewayRpcServer({
+      gateway: new LocalGateway({ id: "workstation", token: "gateway-token", workspaces, allowedCommands: ["bash"] }),
+      files: gatewayFiles(),
+    });
     gateways.push(gateway);
     await new Promise<void>((resolve) => gateway.server.listen(0, "127.0.0.1", resolve));
     const address = gateway.server.address();

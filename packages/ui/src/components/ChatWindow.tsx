@@ -9,7 +9,7 @@ import { extractTurnWrittenFiles, type WrittenFile } from "../lib/turn-written-f
 import { buildQuotedSelection } from "../lib/quoted-selection";
 import { dropMentionText, splitDroppedItems, type DroppedItem } from "../lib/file/file-upload-client";
 import { uploadFiles } from "../lib/file/file-seam";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useHistoryNavigation } from "../hooks/useHistoryNavigation";
 import { NavigationOutcomeBanner } from "./NavigationOutcomeBanner";
 import { navigationHoldsViewport, searchSettlementAction } from "../lib/history-navigation";
@@ -24,7 +24,9 @@ import { useI18n } from "../hooks/useI18n";
 import { phaseLabel } from "../lib/chat/chat-phase-label";
 import { ReadFailurePanel } from "./ReadFailurePanel";
 import { ChildRecoveryPanel } from "./ChildRecoveryPanel";
-import { useAgentSession, type NewSessionChoices, type NoticeItem, type UseAgentSessionOptions } from "../hooks/useAgentSession";
+import { useAgentSession, type NewSessionChoices, type UseAgentSessionOptions } from "../hooks/useAgentSession";
+import { useTranscriptPresentation } from "../hooks/useTranscriptPresentation";
+import { NoticeShelf } from "./NoticeShelf";
 import { useDragDrop } from "../hooks/useDragDrop";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useScrollbarVisibility } from "../hooks/useScrollbarVisibility";
@@ -33,7 +35,7 @@ import type { AppUpdateResponse } from "../lib/api-types";
 import type { ToolEntry } from "../lib/tool-presets";
 import type { SettingsSection } from "../lib/settings-navigation";
 import { findChatScrollAnchor, type ChatScrollPosition } from "../lib/chat/chat-scroll-position";
-import { getPromptAnchorSpacerHeight, isScrollAtTail } from "../lib/chat/chat-lazy-load";
+import { isScrollAtTail } from "../lib/chat/chat-lazy-load";
 import { useTranscriptWindow } from "../lib/transcript-window";
 import { startScrollSettlement, type ScrollSettlementHandle } from "../lib/scroll-settlement";
 
@@ -80,20 +82,17 @@ interface Props {
   onAgentEnd?: () => void;
   onSessionCreated?: (session: SessionInfo, sourceDraftKey: string) => void;
   onSessionForked?: (newSessionId: string) => void;
-  modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSystemToolsChange?: (tools: ToolEntry[] | null) => void;
   onSystemInfoLoaderChange?: (loader: (() => Promise<void>) | null) => void;
   /** Registers this conversation's explicit reload for the surfaces that ask for one from outside the chat. */
-  onConversationReloadChange?: (reload: (() => Promise<void>) | null) => void;
+  onConversationReloadChange?: UseAgentSessionOptions["onConversationReloadChange"];
   onSessionStatsChange?: (stats: SessionStatsInfo | null) => void;
   /** Opens Settings on a section: a bare `/mcp` that pi's built-in MCP extension owns opens Settings › MCP. */
   onOpenSettings?: (section: SettingsSection) => void;
   onContextUsageChange?: (usage: { percent: number | null; contextWindow: number; tokens: number | null } | null) => void;
   onOpenFile?: (filePath: string, page?: number) => void;
-  /** Files dropped onto the chat were written into the working directory. */
-  onFilesUploaded?: () => void;
   onOpenSession?: (sessionId: string, entryId?: string, options?: { rawHistoryFocus?: boolean }) => void;
   /**
    * Leave this conversation for one that is known to work: the composer of the folder it is in.
@@ -304,7 +303,7 @@ function ProcessDetailsGroup({ messageCount, toolCallCount, expanded, reveal = f
   );
 }
 
-export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onFilesUploaded, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
+export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onReadFailureBack, initialScrollPosition, onScrollPositionChange, newSessionCwd, newSessionDraftKey, newSessionContextBar, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd, onSessionCreated, onSessionForked, subscribeAgentEvents, onProjectionChange, onLiveSettlement, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange, onConversationReloadChange, onSessionStatsChange, onOpenSettings, onContextUsageChange, onOpenFile, onOpenSession, onAskInNewChat, quoteSelectionEnabled = false, initialPrompt, onInitialPromptConsumed, soundEnabled = true, onSoundToggle, playDoneSound = () => {}, unlockAudio }: Props) {
   const { t } = useI18n();
   const isMobile = useIsMobile();
   const completionNotificationsEnabled = session?.relation?.kind !== "subagent";
@@ -337,26 +336,24 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     contextUsage, forkingEntryId,
     displayModel: displayModelValue, modelSwitching, sessionStats,
     slashCommands, slashCommandsLoading, queuedMessages, queuedItems, control,
-    notices, extensionStatuses, extensionWidgets, setNoticePaused, addNotice,
+    notices, extensionStatuses, extensionWidgets, addNotice, dismissNotice,
+    ownSends,
     isAutoModelSelection,
     isAutoThinkingSelection,
     statusPhase,
     isNew,
-    showScrollToBottom,
-    sessionIdRef, scrollContainerRef,
-    lastUserMsgRef, promptAnchorActive,
+    sessionIdRef,
     handleSend, handleAbort, handleFork, handleModelChange,
     handleSteer, handleFollowUp, handlePromptWithStreamingBehavior,
     handleRecallQueue, handleEditItem, handleCancelItem, handleContinue,
     handleBuiltinSlashCommand,
-    handleThinkingLevelChange, loadSlashCommands, scrollUserMsgToTop,
-    loadContext, activeLeafId, scrollToBottom, scrollToMessage, landWindow,
+    handleThinkingLevelChange, loadSlashCommands,
+    loadContext, activeLeafId, landWindow, retryModels,
   } = useAgentSession({
     session, newSessionCwd, newSessionDraftKey, initialNewSessionChoices, onNewSessionChoicesChange, onAgentEnd: wrappedOnAgentEnd, onSessionCreated, onSessionForked,
     subscribeAgentEvents, onProjectionChange, onLiveSettlement,
-    modelsRefreshKey, chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
+    chatInputRef, onSystemPromptChange, onSystemToolsChange, onSystemInfoLoaderChange,
     onConversationReloadChange, onOpenSettings,
-    deferInitialScroll: Boolean(pendingScrollRestore),
   });
   const sessionBusy = agentRunning;
   /**
@@ -534,6 +531,15 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
   // which turns are drawn. The sentinel at the top asks for the previous page; the loaded pages and their cursors
   // belong to the hook, and the window never reads one.
   const sentinelRef = useRef<HTMLDivElement>(null);
+  /**
+   * The transcript's own boxes, as this surface draws them.
+   *
+   * They are pure UI refs and stay local: the scrolling element the window measures, the content box a reading position
+   * is measured against, and the box the reader's text selection is taken from. What a scroll *means* — following the
+   * tail, placing a target, holding the reader's prompt — is the transcript presentation's (`useTranscriptPresentation`);
+   * this component only hands it the elements and asks it to move.
+   */
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const messageContentRef = useRef<HTMLDivElement | null>(null);
   const loadingOlderRef = useRef(false);
   const restoreStartedRef = useRef(false);
@@ -583,6 +589,9 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
   // Every read this surface makes — the transcript's, the files', and the navigation ones — belongs to the connection
   // the workbench is showing, so the connection is taken here rather than beside the upload that first used it.
   const connection = useWorkbenchConnection();
+  // A dropped upload wrote files into the working directory: the explorer's listing and the open file's patch are stale,
+  // and the surfaces that read them are told so rather than a callback travelling down from the shell.
+  const filesChange = useWorkbenchChange("files");
   /**
    * The conversation's navigation owner: one bounded target read per jump or deep search hit, and the outcome it
    * settled to (history-navigation ticket 03).
@@ -665,6 +674,35 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
    */
   const adoptScrollPositionRef = useRef<(() => void) | null>(null);
   const adoptScrollPosition = useCallback(() => adoptScrollPositionRef.current?.(), []);
+  // The transcript element as state, not only as a ref.
+  //
+  // The window computes its ranges in a layout effect that takes the element it measures. Read straight off the ref
+  // during render, that value is whatever the ref held when the render began, and the transcript element does not exist
+  // on a render that shows a read failure in the transcript place. The Retry that recovers such a read mounts the
+  // element for the first time, and a ref assignment is not a render: the window kept measuring nothing and drew no turn
+  // at all, so the panel left and an empty transcript arrived in its place. The element therefore lives in state as
+  // well, and the callback ref below is what publishes it.
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
+  const attachScrollContainer = useCallback((element: HTMLDivElement | null) => {
+    scrollContainerRef.current = element;
+    setScrollElement(element);
+  }, []);
+  /**
+   * The transcript's presentation: the viewport, follow-tail, the reader's own prompt, and the scrolls this surface asks
+   * for. The conversation states what the transcript holds; where the reader is inside it is this owner's, so no scroll
+   * ref or scroll decision of the session's is reachable from here (spec R4).
+   */
+  const presentation = useTranscriptPresentation({
+    conversationId: session?.id ?? null,
+    busy: sessionBusy,
+    ownSends,
+    messageCount: messages.length,
+    loading,
+    scrollElement,
+    streamingMessage: streamState.streamingMessage,
+    deferInitialScroll: Boolean(pendingScrollRestore),
+    adoptScrollPosition,
+  });
   const { message: searchMessage, block: searchBlock } = resolveSearchTarget(messages, entryIds, pendingSearchScroll);
   const searchHistoryRef = useRef({ entryIds, historyCursor, hasEarlierMessages });
   searchHistoryRef.current = { entryIds, historyCursor, hasEarlierMessages };
@@ -792,7 +830,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
           const context = await loadContext(sessionId, activeLeafId, before, { signal: controller.signal });
           if (controller.signal.aborted) return;
           if (!context) {
-            scrollToBottom("instant");
+            presentation.scrollToBottom("instant");
             setPendingScrollRestore(null);
             return;
           }
@@ -808,7 +846,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
           hasMore = context.hasMore;
         }
         if (!controller.signal.aborted) {
-          scrollToBottom("instant");
+          presentation.scrollToBottom("instant");
           setPendingScrollRestore(null);
         }
       } finally {
@@ -821,7 +859,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     // back a new `loadContext`), and the position effect above is what cancels a restore whose position is gone.
     // `messages.length` is in the dependencies because it is the transcript's own arrival signal: a restore that is
     // waiting for the first page must be re-run when that page lands.
-  }, [activeLeafId, loadContext, loading, messages.length, pendingScrollRestore, scrollToBottom, searchTarget, session?.id]);
+  }, [activeLeafId, loadContext, loading, messages.length, pendingScrollRestore, presentation, searchTarget, session?.id]);
 
   /**
    * A rail node the transcript does not carry is one navigation, not a walk.
@@ -1002,7 +1040,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       if (mentions) chatInputRef?.current?.insertText(mentions);
       if (uploaded.length > 0) {
         addNotice({ type: "success", message: t("chat.dropUploaded", { count: uploaded.length }) });
-        onFilesUploaded?.();
+        filesChange.notify();
       }
       if (skipped.length > 0) {
         addNotice({ type: "warning", message: t("chat.dropAlreadyExists", { names: skipped.join(", ") }) });
@@ -1013,7 +1051,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     } catch (uploadError) {
       addNotice({ type: "error", message: t("chat.dropFailed", { message: uploadError instanceof Error ? uploadError.message : String(uploadError) }) });
     }
-  }, [addNotice, chatInputRef, connection.client, newSessionCwd, onFilesUploaded, session?.cwd, t]);
+  }, [addNotice, chatInputRef, connection.client, filesChange, newSessionCwd, session?.cwd, t]);
 
   const onDrop = useCallback((items: DroppedItem[]) => {
     const { images, files, folders } = splitDroppedItems(items);
@@ -1118,19 +1156,6 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     if (index < 0) return null;
     return turnModel.turns.find((turn) => index >= turn.startIndex && index < turn.endIndex)?.key ?? null;
   }, [pendingSearchScroll, entryIds, turnModel.turns]);
-  // The transcript element as state, not only as a ref.
-  //
-  // The window computes its ranges in a layout effect that takes the element it measures. Read straight off the ref
-  // during render, that value is whatever the ref held when the render began, and the transcript element does not exist
-  // on a render that shows a read failure in the transcript place. The Retry that recovers such a read mounts the
-  // element for the first time, and a ref assignment is not a render: the window kept measuring nothing and drew no turn
-  // at all, so the panel left and an empty transcript arrived in its place. The element therefore lives in state as
-  // well, and the callback ref below is what publishes it.
-  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
-  const attachScrollContainer = useCallback((element: HTMLDivElement | null) => {
-    scrollContainerRef.current = element;
-    setScrollElement(element);
-  }, [scrollContainerRef]);
   const windowModel = useTranscriptWindow({
     turns: turnModel.turns,
     scrollElement,
@@ -1158,8 +1183,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       // The window is told first, so the scroll this causes is adopted as the baseline rather than corrected: the
       // position was computed from the geometry on screen now, and a prepend correction would move the reader a second
       // time by a change the caller has already accounted for.
-      adoptScrollPosition();
-      scrollToMessage(turn, position.anchorOffset);
+      presentation.scrollTo(turn, position.anchorOffset);
       setPendingScrollRestore(null);
       setRestoreAnchorKey(null);
       return;
@@ -1168,13 +1192,13 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     // effect re-runs when the range changes. Falling back to the tail here would move the reader somewhere they never
     // were, which is the one thing restoring a position must not do.
     if (restoreAnchorReady && turnKey === null && !entryIds.includes(position.anchorEntryId)) {
-      scrollToBottom("instant");
+      presentation.scrollToBottom("instant");
       setPendingScrollRestore(null);
     }
     // The mounted range is a dependency for the same reason it is for search: the anchor's turn may not be mounted when
     // this first runs, the reveal above mounts it, and the scroll happens on the pass where it is finally on screen.
     // Without it the restore never lands, and the reader is left where the conversation opened.
-  }, [adoptScrollPosition, entryIds, pendingScrollRestore, restoreAnchorReady, scrollToBottom, scrollToMessage, searchTarget, scrollContainerRef, windowModel.ranges]);
+  }, [entryIds, pendingScrollRestore, presentation, restoreAnchorReady, searchTarget, scrollContainerRef, windowModel.ranges]);
 
   // A reveal is a request, not a permanent mount: once the viewport alone would show the revealed turn, the request is
   // dropped and the turn stays mounted because the reader is looking at it. Without this the revealed turn would stay
@@ -1224,7 +1248,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
         target: () => scrollContainerRef.current?.querySelector<HTMLElement>(targetSelector) ?? null,
         // Each step of a settlement is a scroll this surface decided, so the window adopts it instead of applying a
         // prepend correction for geometry the settlement has already measured.
-        scrollTo: (target) => { adoptScrollPosition(); scrollToMessage(target as HTMLElement); },
+        scrollTo: (target) => { presentation.scrollTo(target as HTMLElement); },
         onSettled: () => {
           searchSettleRef.current = null;
           searchSettleEntryRef.current = null;
@@ -1255,7 +1279,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       { backgroundColor: "var(--bg-selected)" },
       { backgroundColor: "transparent" },
     ], { duration: 2500 });
-  }, [adoptScrollPosition, pendingSearchScroll, searchTarget, searchMessage, scrollContainerRef, scrollToMessage, onSearchTargetHandled, windowModel.ranges, windowModel.offsets]);
+  }, [pendingSearchScroll, presentation, searchTarget, searchMessage, scrollContainerRef, onSearchTargetHandled, windowModel.ranges, windowModel.offsets]);
 
   // The minimap names the turn it could not find mounted by the entry that turn is anchored on; the window mounts
   // exactly that turn, without drawing the history between it and the viewport.
@@ -1271,7 +1295,8 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
 
   const messageRef = (refIndex: number, index: number) => (el: HTMLDivElement | null) => {
     messageRefs.current[refIndex] = el;
-    if (index === turnModel.lastUserIndex) (lastUserMsgRef as { current: HTMLDivElement | null }).current = el;
+    // The reader's own latest prompt is the box the prompt anchor is measured against, and the box a follow moves to.
+    if (index === turnModel.lastUserIndex) presentation.anchors.lastPrompt(el);
   };
 
   const renderMessageView = (
@@ -1335,104 +1360,6 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
   // sentinel while loaded turns still stood above the reader, which left them unable to reach the rest of what they
   // had already paged in.
   const hasMoreItems = hasEarlierMessages || (windowModel.ranges[0]?.start ?? 0) > 0;
-  const promptAnchorSpacerRef = useRef<HTMLDivElement | null>(null);
-  const promptAnchorSpacerHeightRef = useRef(0);
-  const promptAnchorMeasureFrameRef = useRef<number | null>(null);
-  const promptAnchorAdjustmentDoneRef = useRef(false);
-  const promptAnchorUpdateRef = useRef<(() => void) | null>(null);
-
-  useLayoutEffect(() => {
-    const spacer = promptAnchorSpacerRef.current;
-    if (!agentRunning || !promptAnchorActive) {
-      promptAnchorUpdateRef.current = null;
-      promptAnchorSpacerHeightRef.current = 0;
-      promptAnchorAdjustmentDoneRef.current = false;
-      if (spacer) spacer.style.height = "";
-      return;
-    }
-
-    const container = scrollContainerRef.current;
-    const messageContent = messageContentRef.current;
-    const userMessage = lastUserMsgRef.current;
-    if (!container || !messageContent || !userMessage || !spacer) return;
-
-    let disposed = false;
-    const updatePromptAnchorSpacer = () => {
-      if (
-        disposed
-        || scrollContainerRef.current !== container
-        || messageContentRef.current !== messageContent
-        || lastUserMsgRef.current !== userMessage
-        || promptAnchorSpacerRef.current !== spacer
-      ) return;
-
-      const containerTop = container.getBoundingClientRect().top;
-      const userMessageTop = userMessage.getBoundingClientRect().top
-        - containerTop
-        + container.scrollTop;
-      const targetTop = Math.max(0, userMessageTop - 16);
-      const contentEnd = spacer.getBoundingClientRect().top
-        - containerTop
-        + container.scrollTop;
-      const nextPromptAnchorSpacerHeight = getPromptAnchorSpacerHeight(
-        targetTop,
-        contentEnd,
-        container.clientHeight,
-      );
-
-      const isInitialMeasurement = !promptAnchorAdjustmentDoneRef.current;
-      const needsInitialAdjustment = isInitialMeasurement
-        && nextPromptAnchorSpacerHeight > 0;
-      if (isInitialMeasurement) promptAnchorAdjustmentDoneRef.current = true;
-      if (nextPromptAnchorSpacerHeight === promptAnchorSpacerHeightRef.current) return;
-
-      promptAnchorSpacerHeightRef.current = nextPromptAnchorSpacerHeight;
-      spacer.style.height = nextPromptAnchorSpacerHeight > 0
-        ? `${nextPromptAnchorSpacerHeight}px`
-        : "";
-      if (needsInitialAdjustment) scrollUserMsgToTop();
-    };
-
-    promptAnchorUpdateRef.current = updatePromptAnchorSpacer;
-    const schedulePromptAnchorMeasure = () => {
-      if (disposed || promptAnchorMeasureFrameRef.current !== null) return;
-      promptAnchorMeasureFrameRef.current = requestAnimationFrame(() => {
-        promptAnchorMeasureFrameRef.current = null;
-        updatePromptAnchorSpacer();
-      });
-    };
-
-    updatePromptAnchorSpacer();
-    const observer = typeof ResizeObserver === "undefined"
-      ? null
-      : new ResizeObserver(schedulePromptAnchorMeasure);
-    observer?.observe(container);
-    observer?.observe(messageContent);
-    observer?.observe(userMessage);
-    return () => {
-      disposed = true;
-      if (promptAnchorUpdateRef.current === updatePromptAnchorSpacer) {
-        promptAnchorUpdateRef.current = null;
-      }
-      observer?.disconnect();
-      if (promptAnchorMeasureFrameRef.current !== null) {
-        cancelAnimationFrame(promptAnchorMeasureFrameRef.current);
-        promptAnchorMeasureFrameRef.current = null;
-      }
-    };
-  }, [
-    agentRunning,
-    lastUserMsgRef,
-    messages.length,
-    promptAnchorActive,
-    scrollContainerRef,
-    scrollUserMsgToTop,
-  ]);
-
-  useLayoutEffect(() => {
-    promptAnchorUpdateRef.current?.();
-  }, [streamState.streamingMessage]);
-
   const availableThinkingLevels = displayModelValue
     ? (modelThinkingLevels[`${displayModelValue.provider}:${displayModelValue.modelId}`] ?? null)
     : null;
@@ -1455,6 +1382,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       modelNames={modelNames}
       modelList={modelList}
       modelError={modelError}
+      onModelRetry={retryModels}
       runFailure={runFailure}
       modelScopeWarnings={modelScopeWarnings}
       onModelChange={handleModelChange}
@@ -1572,7 +1500,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
           pointerEvents: "none",
         }}
       >
-        <NoticeShelf notices={notices} floating onPauseChange={setNoticePaused} />
+        <NoticeShelf facts={notices} onRetire={dismissNotice} floating />
       </div>
 
       {/* A read that failed while the conversation was still on screen. The projection keeps its accepted window across
@@ -1698,7 +1626,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
               </div>
             )}
 
-            <div ref={promptAnchorSpacerRef} aria-hidden="true" />
+            <div ref={presentation.anchors.spacer} aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -1814,10 +1742,10 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
           >
             <button
               type="button"
-              className={`chat-scroll-to-bottom${showScrollToBottom && !pendingScrollRestore ? " is-visible" : ""}`}
+              className={`chat-scroll-to-bottom${presentation.showScrollToBottom && !pendingScrollRestore ? " is-visible" : ""}`}
               title={t("chat.scrollToLatest")}
               aria-label={t("chat.scrollToLatest")}
-              onClick={() => scrollToBottom("smooth")}
+              onClick={() => presentation.scrollToBottom("smooth")}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 5v14M5 12l7 7 7-7" />
@@ -1857,104 +1785,3 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
     </div>
   );
 }
-
-// Toast 整体高度上限；文本区高度上限 = 整体上限 - 上下 padding(14*2) - 上下边框(1*2)
-const NOTICE_MAX_HEIGHT_PX = 500;
-const NOTICE_TEXT_MAX_HEIGHT_PX = NOTICE_MAX_HEIGHT_PX - 30;
-
-function NoticeShelf({ notices, floating = false, onPauseChange }: { notices: NoticeItem[]; floating?: boolean; onPauseChange?: (id: string | null) => void }) {
-  if (notices.length === 0) return null;
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        // Right-anchored: every toast's right edge aligns here, widths extend leftward
-        alignItems: "flex-end",
-        marginBottom: floating ? 0 : 10,
-      }}
-    >
-      {notices.map((notice, index) => {
-        const color = notice.type === "error"
-          ? "#ef4444"
-          : notice.type === "warning"
-            ? "#d97706"
-            : notice.type === "success"
-              ? "#10b981"
-              : "var(--accent)";
-        return (
-          <div
-            key={notice.id}
-            className="notice-shelf-item"
-            onMouseEnter={() => onPauseChange?.(notice.id)}
-            onMouseLeave={(event) => {
-              if (!event.currentTarget.contains(document.activeElement)) onPauseChange?.(null);
-            }}
-            onFocus={() => onPauseChange?.(notice.id)}
-            onBlur={(event) => {
-              if (!event.currentTarget.matches(":hover")) onPauseChange?.(null);
-            }}
-            style={{
-              display: "flex",
-              // Top-align children so the type dot sits by the first line on multi-line toasts
-              alignItems: "flex-start",
-              gap: 10,
-              minHeight: 60,
-              height: "auto",
-              // 整体高度上限：超出后由文本区内部滚动承担（见下方 span 的 overflowY），
-              // 容器自身保持 hidden，小圆点固定在顶部不随文本滚动
-              maxHeight: NOTICE_MAX_HEIGHT_PX,
-              // The floating wrapper is pointerEvents:"none" (click-through by design),
-              // so the toast itself must opt back into interactivity or hover events never reach it
-              pointerEvents: "auto",
-              marginBottom: index === notices.length - 1 ? 0 : 6,
-              overflow: "hidden",
-              borderRadius: 14,
-              border: "1px solid color-mix(in srgb, var(--border) 70%, transparent)",
-              background: "var(--bg)",
-              color: "var(--text-muted)",
-              width: "fit-content",
-              maxWidth: "min(100%, 620px)",
-              boxShadow: floating
-                ? "0 1px 2px rgba(15,23,42,0.05), 0 10px 28px -14px rgba(15,23,42,0.24)"
-                : "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.10)",
-              fontSize: 14,
-              lineHeight: 1.5,
-              transformOrigin: "top right",
-              // Use backwards fill for the entrance animation so height styles return to
-              // inline styles once it finishes; otherwise the keyframe's fixed 60px would
-              // stick around in fill mode and permanently clamp the expanded toast
-              animation: notice.exiting
-                ? "notice-shelf-out 0.18s ease-in forwards"
-                : "notice-shelf-in 0.18s ease-out backwards",
-              padding: "0 12px",
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: color,
-                flexShrink: 0,
-                // Align with the optical center of the first text line: 14px vertical
-                // padding + (21px line box - 7px dot) / 2
-                marginTop: 21,
-              }}
-            />
-            {/* Full text by default: pre-line preserves \n (nowrap/normal collapse
-                newlines into spaces) and long lines wrap instead of truncating;
-                content taller than the cap scrolls inside the text area */}
-            <span
-              tabIndex={0}
-              style={{ padding: "14px 0", minWidth: 0, maxWidth: "100%", maxHeight: NOTICE_TEXT_MAX_HEIGHT_PX, overflowY: "auto", scrollbarWidth: "thin", whiteSpace: "pre-line", wordBreak: "break-word" }}
-            >
-              {notice.message}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-

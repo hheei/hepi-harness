@@ -675,11 +675,30 @@ tool-call/tool-result pairing, the process group's expansion and reveal, timesta
 
 **Only the turns near the viewport are mounted.** The window is `packages/ui/src/lib/transcript-window.ts`, and it owns
 exactly one question: which turns are mounted. It takes the turn descriptions from `chat-turn-model`, the scrolling
-element from `useAgentSession`, and the measured heights of what is on screen, and it returns the ranges to mount plus
+element the surface gives it, and the measured heights of what is on screen, and it returns the ranges to mount plus
 the spacers that stand in for everything it omits. It does not read a page of history, decide what a turn is, or own
 the scroll position; the loaded history and its cursors stay the hook's, search and the minimap keep their own owners,
 and `ChatWindow` still owns what a turn looks like. There is one renderer: `TranscriptWindowSurface` maps a range to
 elements through the same `renderTurn` the surface used before, so nothing draws a transcript twice.
+
+**Where the reader is, is the presentation's.** `packages/ui/src/hooks/useTranscriptPresentation.ts` owns the viewport:
+whether the reader is following the live tail, the tolerance a return to the tail re-attaches at, the "jump to the
+latest" offer, the scroll a placement performs, and the prompt anchor — the spacer that keeps the reader's own latest
+prompt at the top of the viewport while its answer streams in. It is a separate owner because the conversation had been
+reaching into the DOM to do it: `useAgentSession` now holds no scrolling element, no scroll-position refs and no layout
+effect, and what it states to the presentation is one fact — how many turns this surface itself staged
+(`ownSends`) — because a send of the reader's own is the one thing a viewport owes that it cannot observe for itself.
+A live turn does not pull a reader who has scrolled back (acceptance C6); a reader who returns to the tail is followed
+again; and every placement states itself to the window through `adoptScrollPosition` first, so the window treats a
+scroll the surface decided as its baseline rather than correcting it a second time.
+
+**A notice is a fact; its clock belongs to the shelf.** The conversation states notices — an unanswered turn's reason, a
+refused draft, an upload that skipped a file — as `{ id, message, type }` facts (`lib/notice-shelf.ts`) and drops one
+when a surface says it is done with it. How long a notice is drawn, how many are on screen, which one is playing its
+leave animation, and the pause a hover or a focus buys are `packages/ui/src/components/NoticeShelf.tsx`'s, because
+they are things a surface that is on screen does: a conversation handed to the background holds no countdown for a
+toast nobody is drawing (acceptance C7). A pause keeps the remaining time rather than restarting the duration, and an
+over-full shelf retires its oldest notice rather than dropping a statement nobody read.
 
 Four properties are what make it work with dynamic content:
 
@@ -1143,7 +1162,11 @@ deep-search journeys observed together. This line's own scenes are `apps/web/e2e
 the production `ChatMinimap`), `apps/web/e2e/history/ux-rail-keyboard.ts` (that same rail driven by the keyboard alone),
 `apps/web/e2e/history/ux-history-scope.ts` (the production `useHistoryNavigation` across a compaction, a late page and a jump)
 and `apps/web/e2e/history/ux-navigation-retry.ts` (the production `ChatWindow` under `StrictMode` with only its network
-boundary replaced).
+boundary replaced). The presentation owners have their own scene:
+`apps/web/e2e/chat/ux-transcript-presentation.ts` drives the production `NoticeShelf` and `useTranscriptPresentation` with
+real timers and a real scrolling element — a notice drawn and retired by the shelf's clock, held while the reader is on
+it and resumed for the time it had left, a reader scrolled back not being pulled to the tail, and a reader back at the
+tail being followed again.
 
 ## The session-switch cache
 
@@ -1232,6 +1255,47 @@ saved by the user before that page's first refresh, and every reload after it is
 [deployment runbook](deployment-runbook.md#existing-open-pages-at-a-web-contract-switch) states that step for the
 cutover.
 
+## The composer: one editor, one write path, one command port
+
+`packages/ui/src/components/ChatInput.tsx` is the layout, and the behaviour behind it is four modules in
+`packages/ui/src/components/composer/`, each with one question to answer:
+
+- `useComposerDraft.ts` owns the live text, its pictures and the **one** write to the connection's draft store. Adoption is
+  not a write: a composer that has not yet read its stored draft holds an empty value that is not the user's text, so it
+  reads before it may save, and the save effect is rebuilt exactly once when it has. Rekey, a restored submission and a
+  clear replace the live value and let that same effect persist the result — no second writer exists to race them.
+- `useComposerMenus.ts` owns the `@` index, the `/` palette, the input history and the open popups, and answers each
+  keystroke by delegating to `keyboard.ts`, where the priority between menu, send, queue, built-in and native newline is a
+  pure decision (`decideComposerKey`) rather than an untestable key handler. IME comes first in that decision: a composition
+  is never a command, and the Enter that confirms one is swallowed for a short grace period.
+- `dispatch.ts` owns what a submit, a queued steer/follow-up and a built-in command do with the draft — including the
+  shell-draft refusal, which keeps the draft on screen because the host refuses the turn before it is sent.
+- `editor-text.ts` holds the operations that must stay native: `replaceTextareaRange` performs a completion or an insertion
+  as real `execCommand` edits so the textarea's own undo stack records them, and `replaceLinksWithMarkdown` turns a pasted
+  fragment's labels into links.
+
+The conversation operations arrive as one `ComposerCommands` value in `composer/commands.ts` — send, steer, follow up, run a
+built-in, continue after the user's own stop, recall the queue, edit or cancel a queued item by the identity the host gave
+it. The chat surface states that object; the composer never receives the session's runtime state, its request ids or a
+pending flag it would have to interpret. The model and reasoning readout (`ComposerControls.tsx`) and the queue rows
+(`ComposerQueue.tsx`) are readers of the conversation's own facts: a selection the catalog no longer lists is named as
+unavailable rather than replaced, and a queued item is drawn from the projection the host stated, so a refused edit puts
+the host's current text back on screen. The imperative handle (`insertText`, `prependText`, `rekeyDraft`,
+`restoreSubmission`, `addImages`) stays because a surrounding surface legitimately needs to put text into a textarea; those
+are editor operations on the native element, not a second path into the draft.
+
+The composer's own cases live beside it (`ChatInput.test.ts` renders the shipped surface in a real connection;
+`composer/*.test.ts` cover dispatch and the key decision), and `apps/web/e2e/chat/ux-composer-interaction.ts` is the browser
+half: IME, undo and redo of a completed mention, both completions, a pasted picture, and drafts that survive a reload, a
+promotion and a move to another key.
+
+**Ask in new chat is one fork and one carried prompt.** Choosing it on a selected passage forks at that entry through the
+same `fork` control every other fork uses, and the new conversation is handed the text exactly once: the shell holds it as
+that conversation's initial prompt, the chat mounting for it sends it and states that it consumed it, and the shell drops
+it. Nothing else consumes that value, so a surface that handed the chat a wrapper instead of the callback would leave the
+prompt standing and send it again on the next mount — which is what `apps/web/e2e/chat/ux-quote-initial-prompt.ts` drives
+over ordinary operations: select, Ask in new chat, step to another conversation, come back.
+
 ## Submission recovery
 
 The open conversation's lifecycle is decided in exactly one place: `packages/ui/src/lib/lifecycle-projection.ts`, a pure
@@ -1257,7 +1321,22 @@ UI I/O — the stream reader it joined through the shell's one source per conver
 admission path, the by-id lookup and the explicit reload — and is the caller that performs what the fold requests. That
 value is bound to one connection and one conversation identity, so its reader and its reads are released together; the
 chat's mount identity is the conversation it shows, which is why a reload of the same conversation re-reads instead of
-rebuilding the surface. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
+rebuilding the surface. The reload is one owner's operation, and the `/reload` command asks the same function Settings ›
+General does: Settings states the change, awaits the answer and performs nothing itself, and the operation performs the
+Backend's route, the read and the notice. The operation's `ReloadOutcome` is what a surface outside the chat reads
+when it awaits it — `reloaded` with the sentence the read stated, `failed` with the failure's own sentence, or
+`superseded` when another connection or conversation is on screen — so a definitions panel asking for a refresh cannot
+read a resolved promise as a success. What the notice claims is what the **read** established, which is a typed
+outcome rather than a nullable one: `accepted`, `refused` (an older window the fold rejected), `missing` (the Backend's
+`not_found`), `failed` (carrying the read's own `ReadFailure` kind), `cancelled`, and `superseded` (another connection or
+conversation is on screen, so there is nothing to claim). A `refused` window ends the read — the agent-state query is
+not made for a window the fold rejected, because a caller acting on its answer would resume a run or claim a reload from
+the statement the surface just refused. A route that rejects is reported as a `failed` outcome by the operation, so a
+caller that awaits it cannot receive an unhandled rejection and no read is asked for a change that never happened — and a
+rejection that lands after a connection switch is `superseded` instead, because the route belongs to the client that
+sent it. One reload is one notice: `/reload` is a caller of the same operation and does not restate its outcome. A read is fenced by the **connection** it was asked through — not only by the conversation id, because two
+connections can hold the same id — so an answer that arrives after a switch is refused whether it is a window, a
+`not_found` or a failure. The conversation's own selected model and reasoning level are read from the accepted transcript rather than
 from a mirror beside it, so a refused frame cannot move them; the separate `/state` agent-state query is an
 independent read with its own ordering and refines that transcript without being gated on a window's acceptance. That
 read is stamped, when it begins, with the accepted statement it describes — the attachment's identity **and** its

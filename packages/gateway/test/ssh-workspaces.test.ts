@@ -21,13 +21,12 @@ async function startSshGateway(host: FakeSshHost, profiles?: readonly SshProfile
   const registry = new WorkspaceRegistry(list.map(profile => ({ id: "remote-" + profile.id, root: profile.remoteRoot, profileId: profile.id })));
   const runner = host.runner;
   const workspaces = new SshWorkspaceServer(registry, { profiles: list, runner });
-  const server = new GatewayRpcServer(
-    new SshGateway({ id: "workstation-ssh", token: TOKEN, profiles: list, allowedCommands: ["sh", "node", "bash"], runner, workspaces: registry }),
-    undefined,
-    new SshFilesystem({ id: "workstation-ssh", profiles: list, runner, workspaces: registry }),
-    new SshInstallServer({ profiles: list, runner, workspaces: registry }),
+  const server = new GatewayRpcServer({
+    gateway: new SshGateway({ id: "workstation-ssh", token: TOKEN, profiles: list, allowedCommands: ["sh", "node", "bash"], runner, workspaces: registry }),
+    files: new SshFilesystem({ id: "workstation-ssh", profiles: list, runner, workspaces: registry }),
+    installs: new SshInstallServer({ profiles: list, runner, workspaces: registry }),
     workspaces,
-  );
+  });
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
   assert.ok(address && typeof address === "object");

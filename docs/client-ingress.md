@@ -328,14 +328,18 @@ renders it, and the gateway owns the behavior because it is the entry that answe
 - **The host resolves the folder, and the binding says which host.** A request names a folder as the browser addresses
   it (`/workspace/<id>`); the ingress sends the workspace id and never a path, and the configuration host resolves it
   against the folders it serves. A name is not an identity, so the id is checked first against the binding the Backend
-  owns: the ingress reads `/api/workspaces` and `/api/hosts` with its **own service credential** and forwards a
-  folder-scoped request only when that workspace is bound to `HEPI_INGRESS_MCP_GATEWAY_ID` **and** that gateway serves
-  no SSH profile — a gateway that executes elsewhere serves folders on other machines, and a listing that could not be
-  read is refused rather than assumed empty. A workspace bound to another gateway is refused here, before any host is
-  asked, so a folder this machine happens to call `local` is never answered for a `local` that belongs to someone
-  else; a folder the bound host itself does not serve is refused by that host (`unknown-workspace`, answered 403
-  `cwd-denied`). `/durable`, the sentinel that means "no folder", leaves the global configuration alone. No path is
-  synthesized and nothing is cached.
+  owns: the ingress asks one question with its **own service credential**,
+  `GET /api/workspaces/:workspaceId/locality?gatewayId=HEPI_INGRESS_MCP_GATEWAY_ID`, and forwards a folder-scoped
+  request only when the answer is `{ local: true }`. The Backend decides that verdict from its own binding membership
+  (retained bindings included) and its own host-profile answer — a gateway that executes over SSH profiles serves
+  folders on other machines, so it is not this origin's host — and the ingress reads no list, profile, root or account
+  shape to reach it. A refusal, a body that is not that verdict and a transport failure are all `false`: "could not
+  ask" is never "asked, and it is this machine", and nothing is remembered, so a host that goes away stops being this
+  machine on the next request. A workspace bound to another gateway is refused here, before any host is asked, so a
+  folder this machine happens to call `local` is never answered for a `local` that belongs to someone else; a folder
+  the bound host itself does not serve is refused by that host (`unknown-workspace`, answered 403 `cwd-denied`).
+  `/durable`, the sentinel that means "no folder", leaves the global configuration alone. No path is synthesized and
+  nothing is cached.
 - **A cookie write is same-origin; a bearer is its own authority.** A write under these routes is refused unless it is
   same-origin **or** it presents a device bearer: a cookie is presented by the browser on its own, so a declared App
   origin must not be able to make the browser write with this session's cookie, while an App reaching this origin from
@@ -639,8 +643,8 @@ export a caller uses, and the catalog cache in `models-cache.ts` is one instance
 The composer's own catalogue read (`useAgentSession.loadModels`) is wired to it: the read goes through the workbench's
 `WorkbenchClient` — this Gateway's origin and this connection's credential — and the page's one cache holds the answer
 under the connection's scope plus the folder, so a switch reads the new connection's catalogue instead of the previous
-one's and two selectors on one page share one read. Closing Settings invalidates the cached catalogue, because the
-`models.json` edit that panel may have made is what the cache was holding.
+one's and two selectors on one page share one read. Closing Settings changes nothing — the refresh is the write, not
+the dismissal, and a dialog closed without an edit neither drops an entry nor asks the deployment anything.
 The answer itself is read by one function, `packages/ui/src/lib/catalog-answer.ts`. This ingress forwards the Backend's
 catalogue as the Backend states it — `models` is the list of models it can serve — while the retired Next BFF restated
 the same list twice, a `provider:id` → name map under `models` and the entries under `modelList`. The workbench reads
@@ -651,9 +655,23 @@ The workbench's catalog cache (`packages/ui/src/lib/models-cache.ts`) is that ru
 the scope it keys by is the same identity `packages/ui/src/lib/connection-scope.ts` gives every other scoped store, so
 drafts, remembered views and a cached catalog cannot disagree about whose connection they belong to. The instance lives with the rule rather than with the hook that first
 read a catalog, because the surface that supersedes the answer is a different one: Settings › Models stores or removes a
-provider credential, and a credential change drops the cached catalog through `invalidateModelCatalog()` the way a
-`models.json` save bumps the generation — a composer that is open keeps what it shows, and its next read asks the
-deployment again.
+provider credential, and its write is what a change is stated through.
+
+**A change is stated once and followed by whoever is mounted.** `models-cache.ts` holds both halves of the rule: the one
+page cache, and `subscribeModelCatalog`, the set of mounted readers. Every writer of a model-domain resource — a
+`models.json` save the Backend reported `applied`, a stored or removed credential, a sign-in that stored one, an
+`enabledModels` write — calls `invalidateModelCatalog()`, which drops the cached answer and then tells those readers.
+Each reader re-runs its own bounded read (the same one its mount makes, failures retried on the same delays), so a
+composer on screen shows the list the write produced **while Settings is still open**, and a page with no mounted reader
+asks the deployment nothing until something reads it again. Nothing is fetched, resent or re-selected by the rule itself:
+the answer says what the deployment offers, never what a conversation should run, so the current model and the draft stay
+as they were.
+
+A write that did not apply claims no change. A `models.json` save answered `applied:false` reads the file back and
+states saved-but-not-applied; a refused credential write leaves the listing and the catalog exactly as they were. A
+catalog read that fails is stated where the model is chosen, with a Retry that is one more read of the same route and no
+part of a mutation. There is no `modelsRefreshKey` between the shell, the chat window and the conversation hook: the
+same write that used to wait for the dialog to close is what states the change now.
 
 Nothing is signalled to the Backend when a credential changes, because there is nothing a signal could say that the
 Backend does not re-resolve on the read it was already going to make. Which models a credential authenticates is decided

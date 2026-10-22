@@ -56,7 +56,7 @@ async function fixture(): Promise<Fixture> {
 	const registry = new WorkspaceRegistry([{ id: "local", root: folder }]);
 	const gateway = new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
 	const service = new McpHostService(agentDirOf(home), registry);
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, service);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), mcp: service });
 	const http = gatewayHttp(server.server);
 	const pidFile = join(base, "server.pid");
 	const reachedFile = join(base, "slow.reached");
@@ -398,7 +398,7 @@ test("a gateway that serves no MCP answers the named limit, and no other setting
 	const registry = new WorkspaceRegistry([{ id: "local", root: home }]);
 	const gateway = new LocalGateway({ id: "workstation", token: TOKEN, workspaces: registry, allowedCommands: ["bash"] }, new MemoryLedger());
 	// The eighth capability is the MCP host service: without it the route still answers, and answers with its own limit.
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, undefined);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry) });
 	const http = gatewayHttp(server.server);
 	try {
 		const response = await http.call({ method: "POST", path: "/v1/mcp", headers: { authorization: "Bearer " + TOKEN, "content-type": "application/json" }, body: JSON.stringify(listing()) });

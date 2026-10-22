@@ -94,7 +94,7 @@ async function host(options: { serveProviders?: boolean; serveLogins?: boolean; 
 				// grace on every start; the bound itself is unchanged.
 				...(options.graceMs === undefined ? {} : { graceMs: options.graceMs }),
 			});
-	const server = new GatewayRpcServer(gateway, undefined, new LocalFilesystem(registry), undefined, undefined, undefined, undefined, undefined, providers, logins);
+	const server = new GatewayRpcServer({ gateway, files: new LocalFilesystem(registry), providers, providerLogins: logins, });
 	await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
 	const address = server.server.address();
 	assert.ok(address !== null && typeof address === "object");

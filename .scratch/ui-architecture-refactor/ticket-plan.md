@@ -6,7 +6,7 @@ Scope: [規格](spec.md)；保留行為及驗證歸屬見[驗收矩陣](acceptan
 
 ## Cross-effort integration
 
-See the [combined UI + non-UI frontier](../non-ui-architecture-design/README.md#combined-ui--non-ui-implementation-frontier) for concurrent implementation, cross-ticket blockers and shared-file ownership. UI tickets remain independently owned; non-UI work may proceed concurrently when that combined graph permits.
+See the combined UI + non-UI frontier (`.scratch/non-ui-architecture-design/README.md`, kept in the primary checkout rather than this repository) for concurrent implementation, cross-ticket blockers and shared-file ownership. UI tickets remain independently owned; non-UI work may proceed concurrently when that combined graph permits.
 
 ## 執行與接手
 
