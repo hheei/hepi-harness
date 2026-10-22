@@ -27,7 +27,7 @@ See the combined UI + non-UI frontier (`.scratch/non-ui-architecture-design/READ
 | 09 | [訊息 block 呈現模組](issues/09-message-views.md) | none；04／12 驗證整合 | resolved／integrated | MessageView、其內部葉節點與既有測試；保留現有 props |
 | 10 | [檔案 preview 呈現模組](issues/10-file-previews.md) | none | resolved／integrated | FileViewer、preview leaves、useDocxPreview 接線；保留 FileSeam；native save 留票 12 |
 | 11 | [Shell layout 與 panel 接線](issues/11-shell-composition.md) | 01–10 | resolved／integrated `6e16e77a`；correction `cad0d86` | AppShell 最終組裝、panel/tab presentation、layout/focus 接線 |
-| 12 | [系統驗收與交付記錄](issues/12-system-acceptance.md) | 11 | resolved — `8526bfca` | 驗收證據、 owning docs、剩餘限制；僅必要整合修正 |
+| 12 | [系統驗收與交付記錄](issues/12-system-acceptance.md) | 11 | resolved — source `255a61ac` | 驗收證據、 owning docs、剩餘限制；僅必要整合修正 |
 
 初始可開始：工作台選擇與草稿、Accepted conversation readout、MCP 工作流、檔案 preview 呈現模組。這是排程資訊，不是已派工或授權自動部署。
 
