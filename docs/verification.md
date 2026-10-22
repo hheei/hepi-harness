@@ -5604,15 +5604,16 @@ These final runs supersede the earlier revision's evidence above.
 ## UI architecture consolidation: system acceptance (ticket 12, 2026-10-22)
 
 Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`. Source tested at `255a61ac`
-(clean tree; integration of `17fe24d4`), with the drivers that cross the real ingress, and the native journey, re-run at the
-final commit `8f22ed70`, whose only difference from `255a61ac` is documentation. This is the acceptance record for the
+(clean tree; integration of `17fe24d4`). The drivers that cross the real ingress, and the native journey, were re-run
+afterwards at `8f22ed70`, and the selector and document checks at `64544a3e` — two commits whose only difference from
+`255a61ac` is documentation. This is the acceptance record for the
 twelve UI architecture tickets: every N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now
 names an executed result or an explicit limit.
 
 | Check | Command | Revision (dirty) | Exit | Log |
 | --- | --- | --- | --- | --- |
-| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `8f22ed70` (clean) | 0 | `.dev/verify/ui12/verify-final/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
-| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | `8f22ed70` (clean) | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
+| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `64544a3e` (clean) | 0 | `.dev/verify/ui12/verify-final2/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
+| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | `64544a3e` (clean) | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/app-build.log` |
 | App debug binary | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/cargo-build.log` |

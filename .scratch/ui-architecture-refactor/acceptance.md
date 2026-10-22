@@ -76,12 +76,12 @@ Contract: [架構收斂規格](spec.md)；票號及執行狀態見[票單計畫]
 
 Status: verified — 每一列都指向本次實際執行的 driver／suite，並綁定下列 revision。未測能力另列限制，不以 driver 名稱代替結果。
 
-Tested revision: source `255a61ac`（clean tree，含 Ingress02 `17fe24d4` 整合），最後提交 `8f22ed70`。跨真實 ingress 的 driver 與 native journey 在 `8f22ed70` 重跑；其餘 driver 跑在 `8526bfca`，而 `packages/ui`、`apps/web`、`apps/app`、`packages/session` 自該修訂起未改（`git diff --stat` 為空），之後只改 `packages/gateway/src/ingress/index.ts` 與文件。
-統一報告與 raw logs：`.dev/verify/ui12/`（`verify-final/verify.json`、`browser/*.log`、`native/native-acceptance.log`、`web-build.log`、`app-build.log`、`cargo-build.log`）。
+Tested revision: source `255a61ac`（clean tree，含 Ingress02 `17fe24d4` 整合），之後只改文件的 `8f22ed70`+`64544a3e`。跨真實 ingress 的 driver 與 native journey 在 `8f22ed70` 重跑，changed 選擇器與文件檢查在 `64544a3e` 重跑；其餘 driver 跑在 `8526bfca`，而 `packages/ui`、`apps/web`、`apps/app`、`packages/session` 自該修訂起未改（`git diff --stat` 為空），之後只改 `packages/gateway/src/ingress/index.ts` 與文件。
+統一報告與 raw logs：`.dev/verify/ui12/`（`verify-final2/verify.json`、`browser/*.log`、`native/native-acceptance.log`、`web-build.log`、`app-build.log`、`cargo-build.log`）。
 
 | 檢查 | 指令 | Exit | 結果 |
 | --- | --- | --- | --- |
-| changed 選擇器（typecheck／UI+App 測試／web-unit／check-docs） | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | 0 | UI 474／474、App 29／29、web-unit 14／14、check-docs，全部 PASS；`verify-final/verify.json` |
+| changed 選擇器（typecheck／UI+App 測試／web-unit／check-docs） | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | 0 | UI 474／474、App 29／29、web-unit 14／14、check-docs，全部 PASS；`verify-final2/verify.json`（`64544a3e`） |
 | 文件與入口 | `node scripts/check-docs.mjs`、`node scripts/check-entrypoints.mjs` | 0 | 466 Markdown、0 broken link、0 guide 漏索引；157 entry files、0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | 0 | `web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | 0 | `app-build.log` |
