@@ -139,7 +139,7 @@ export function ChatArea(props: Props) {
         onAskInNewChat={onAskInNewChat}
         quoteSelectionEnabled={quoteSelectionEnabled}
         initialPrompt={initialPrompt}
-        onInitialPromptConsumed={() => onInitialPromptConsumed}
+        onInitialPromptConsumed={onInitialPromptConsumed}
         soundEnabled={soundEnabled}
         onSoundToggle={onSoundToggle}
         playDoneSound={playDoneSound}
