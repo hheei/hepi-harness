@@ -1,32 +1,31 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { readFile } from "node:fs/promises";
+import { createDiagnosticsHttp, createDiagnosticsPages } from "./diagnostics-http.ts";
+import { createWorkspaceHttp } from "./workspace-http.ts";
+import { createSettingsHttp } from "./settings-http.ts";
+import { createConversationHistoryHttp } from "./conversation-history-http.ts";
+import { createConversationCommandHttp } from "./conversation-command-http.ts";
+import { createConversationExtensionsHttp } from "./conversation-extensions-http.ts";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import { contentText, getSupportedThinkingLevels, type ImageContent, type Models, type TextContent } from "@earendil-works/pi-ai";
-import { safeFailure, SAFE_CREDENTIAL_ERROR } from "./public-errors.ts";
-import { createConversationAttachments, TitleDoc, projectEntry, pageEntries, send, type ConversationRuntime, type ServerEntry } from "./conversation-attachments.ts";
+import { type ImageContent, type Models, type TextContent } from "@earendil-works/pi-ai";
+import { safeFailure } from "./public-errors.ts";
+import { createConversationAttachments, type ConversationRuntime } from "./conversation-attachments.ts";
 export type { ServerSnapshot, ServerEntry, ServerDelta, ServerFrame, ServerFailure } from "./conversation-attachments.ts";
-import { type AgentChange, type ConversationId, type EntryId, type EntryRecord, type AgentState, type TaskInspection, type Cursor, type ModelRef, InboxDoc, ConversationBusy, type Extension } from "@earendil-works/pi-durable";
+import { type ConversationId, type TaskInspection, type Cursor, type ModelRef, type Extension } from "@earendil-works/pi-durable";
 import { GatewayHostClient, gatewayEnvironment, HostTransportError, type EnvironmentBinding, type ExecutionHostEnv } from "@hepi/gateway";
-import { DEFAULT_HOST_HEADER, HEARTBEAT_FRAME, HEARTBEAT_INTERVAL_MS, parseSessionUiStateRequest, projectSubmission, validateCommand, MAX_SESSION_UI_REQUEST_BYTES, MAX_SUBMISSION_BODY_BYTES, MAX_TOOL_RESULT_IMAGE_BYTES, PROTOCOL_VERSION, TOOL_RESULT_IMAGE_MIMES, type ProtocolCommand, type SessionUiStateRefusalReason, type ConversationProvenance, type SubmitImage } from "@hepi/protocol";
+import { DEFAULT_HOST_HEADER, HEARTBEAT_INTERVAL_MS, PROTOCOL_VERSION, type ConversationProvenance, type SubmitImage } from "@hepi/protocol";
 import type { McpToolList, WorkbenchOperation, WorkspaceRequest as HostRequest } from "@hepi/protocol/gateway";
-import { readSidebarState, writeSidebarState } from "./sidebar-state.ts";
-import { submitConversationInput } from "./conversation-input.ts";
-import { buildTitleTranscript, generateSessionTitle, MAX_TITLE_LENGTH } from "./session-title.ts";
-import { tombstoneConversation, TombstoneDoc } from "./session-tombstone.ts";
+import { readSidebarState } from "./sidebar-state.ts";
 import { ConversationOperationRefusal, createConversationOperations, WorkspaceDoc } from "./conversation-operations.ts";
-import { SubtreeControlRefusal, type SubtreeChildOutcome, type SubtreeControlResult } from "./subtree-control.ts";
+import { type SubtreeChildOutcome, type SubtreeControlResult } from "./subtree-control.ts";
 import { conversationPage } from "./conversation-page.ts";
 import { catalogueListVersion, type CatalogueWorkspace } from "./catalogue-binding.ts";
-import { handleConversationRead } from "./conversation-read-route.ts";
-import { handleConversationNavigation, handleConversationNavigationTarget } from "./conversation-navigation.ts";
-import { base64ByteLength, parseReadBlockQuery, readBlockImageAnswer, readBlockTextPage } from "./read-block.ts";
-import { createConversationItemOperations, handleConversationItems } from "./conversation-items.ts";
-import { SEARCH_LIMITS, SearchQueryTooLong, searchConversationBodies } from "./session-search.ts";
-import { ensureAdoptedResources, readEffectiveResources, reloadResources, resourceSummary, type WorkspaceResources } from "./workspace-resources.ts";
+import { createConversationItemOperations } from "./conversation-items.ts";
+import { SearchQueryTooLong, searchConversationBodies } from "./session-search.ts";
+import { ensureAdoptedResources, resourceSummary, type WorkspaceResources } from "./workspace-resources.ts";
 import { ENVIRONMENT_EXTENSION, openServerHarness, type ExtensionInstallFailure, type ServerHarness, type HarnessConfiguration } from "./harness.ts";
 import { extensionNameList, ExtensionSelectionDoc, materializeSelection, readDefaultSelection, resolveDefaultSelection, writeDefaultSelection, type InstalledExtension } from "./extension-selection.ts";
-import { readModelConfig, saveModelConfig, type ModelConfigTarget } from "./model-config.ts";
+import { type ModelConfigTarget } from "./model-config.ts";
 import { skillMarketRoute, type SkillMarket } from "./skill-repository.ts";
 import { boundedMessage, createInstaller, installRequest, toggleRequest, updateRequest, type Installer } from "./skill-install.ts";
 import { createTerminalRelay } from "./terminal-relay.ts";
@@ -35,12 +34,10 @@ import { createAgentDefinitionsHandler } from "./agent-definitions-http.ts";
 import { createSubagentHost, type SubagentCatalogueRow } from "./subagents/composition.ts";
 import { createSubagentExtension } from "./subagents/extension.ts";
 import { DispatchDoc, SUBAGENT_ANCHOR_TASK, SUBAGENT_EXTENSION } from "./subagents/host.ts";
-import { createForkAnchor } from "./subagents/anchor.ts";
-import { createSubagentDelegation, delegateDetails } from "./subagents/delegate.ts";
-import { childRecovery, preparationRetryTarget } from "./subagents/recovery.ts";
-import { projectRunStatus, tasksOf, type ConversationRunStatus } from "./subagents/status.ts";
+import { createSubagentDelegation } from "./subagents/delegate.ts";
+import { projectRunStatus, type ConversationRunStatus } from "./subagents/status.ts";
 import { createMcpToolBridge, MCP_EXTENSION, MCP_TOOL_PREFIX, type McpCallTarget, type McpToolDeclaration } from "./mcp-conversation-tools.ts";
-import { grantEntriesOf, grantRequest, mcpConfigReadOf, mcpGrantSelection, mcpToolListOf, readMcpGrants, reconcileMcpOffer, writeMcpGrants } from "./mcp-grants.ts";
+import { grantEntriesOf, mcpConfigReadOf, mcpGrantSelection, mcpToolListOf, readMcpGrants, reconcileMcpOffer, writeMcpGrants } from "./mcp-grants.ts";
 
 /** The two per-catalogue facts a status needs, read once for a whole list. */
 type CatalogueFacts = { readonly tasks: ReadonlyMap<string, readonly TaskInspection[]>; readonly waitingReports: ReadonlySet<string> };
@@ -48,9 +45,9 @@ type CatalogueFacts = { readonly tasks: ReadonlyMap<string, readonly TaskInspect
 /** One child's outcome with its current session row attached, which is what a subtree answer projects. */
 type SubtreeProjectedOutcome = SubtreeChildOutcome & { readonly session?: CatalogueEntry };
 
+
 /** One subtree request's answer as the HTTP surface states it: the recorded outcomes plus each child's current row. */
 type SubtreeProjectedResult = Omit<SubtreeControlResult, "outcomes"> & { readonly outcomes: readonly SubtreeProjectedOutcome[] };
-import { oversizeFrame, scopeFromFacts, tokenFromFacts, VISIBLE_WINDOW } from "./history-window.ts";
 import { createProjectRegistry, WEB_HOST_REQUIRED, type GatewayConnection, type ProjectMutation } from "./project-registry.ts";
 import type { ProjectRecord, ProjectStore } from "./project-store.ts";
 import type { DeviceCredentials } from "./device-credentials.ts";
@@ -133,18 +130,6 @@ type CatalogueEntry = {
   subagentParentConversationId?: string;
 };
 /**
- * The refusals the upstream fork route names, honoured here so a caller can tell why a fork is unavailable instead of
- * receiving a bare status. `not_found`: no such conversation. `unsaved`: the named fork point is not committed in that
- * conversation, which is a client whose transcript is ahead of the durable one. `empty`: the branch carries no user or
- * assistant message.
- */
-type ForkRefusal = "not_found" | "unsaved" | "empty";
-const FORK_REFUSALS: Record<ForkRefusal, { status: number; error: string }> = {
-  not_found: { status: 404, error: "Session not found" },
-  unsaved: { status: 409, error: "This session has not been saved yet. Send a message before forking it." },
-  empty: { status: 409, error: "Nothing to fork: the session has no messages" },
-};
-/**
  * A workspace a removed folder left behind. It resolves like any other binding, so a conversation already bound to it
  * keeps its host, its root and its execution environment; the marker is what keeps it out of every target picker and
  * out of the home and default-directory answers (spec decision 23).
@@ -186,113 +171,7 @@ function hostTransportAnswer(error: unknown, mutating: boolean): { readonly code
  */
 type Options = HarnessConfiguration & { dbPath: string; authToken: string; workspaces?: readonly EnvironmentBinding[]; gateways?: readonly GatewayConnection[]; projects?: ProjectStore; defaultModel?: ModelRef | null; models?: Models; modelConfig?: ModelConfigTarget; workspaceResources?: WorkspaceResources; skillMarket?: SkillMarket; installer?: Installer; heartbeatIntervalMs?: number; deviceCredentials?: DeviceCredentials; buildId?: string; backendId?: string; accountScope?: string; mcpTools?: readonly McpToolDeclaration[] };
 
-/**
- * Catalog metadata crosses into the browser, so nested objects are rebuilt field by field instead of forwarded:
- * models.json passes unknown properties through the upstream schema and provider composer (`applyModelOverride`
- * spreads the override), and an apiKey or authorization smuggled into `cost` or `thinkingLevelMap` would otherwise
- * reach every client. `ModelCost` and `ThinkingLevelMap` in `@earendil-works/pi-ai` dist/types.d.ts define the
- * allowed fields.
- */
-const THINKING_LEVELS: readonly string[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
-const COST_RATES: readonly string[] = ["input", "output", "cacheRead", "cacheWrite"];
-
-function finiteNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function projectCostRates(source: Record<string, unknown>): Record<string, number> | undefined {
-  const rates: Record<string, number> = {};
-  for (const key of COST_RATES) {
-    const value = finiteNumber(source[key]);
-    if (value === undefined) return undefined;
-    rates[key] = value;
-  }
-  return rates;
-}
-
-function projectCost(cost: unknown): Record<string, unknown> | undefined {
-  if (cost === null || typeof cost !== "object" || Array.isArray(cost)) return undefined;
-  const source = cost as Record<string, unknown>;
-  const rates = projectCostRates(source);
-  if (rates === undefined) return undefined;
-  const tiers: Record<string, number>[] = [];
-  if (Array.isArray(source.tiers)) {
-    for (const tier of source.tiers) {
-      if (tier === null || typeof tier !== "object" || Array.isArray(tier)) continue;
-      const rates = projectCostRates(tier as Record<string, unknown>);
-      const above = finiteNumber((tier as Record<string, unknown>).inputTokensAbove);
-      if (rates === undefined || above === undefined) continue;
-      tiers.push({ inputTokensAbove: above, ...rates });
-    }
-  }
-  return tiers.length === 0 ? rates : { ...rates, tiers };
-}
-
-function projectThinkingLevelMap(map: unknown): Record<string, string | null> | undefined {
-  if (map === null || typeof map !== "object" || Array.isArray(map)) return undefined;
-  const source = map as Record<string, unknown>;
-  const projected: Record<string, string | null> = {};
-  for (const level of THINKING_LEVELS) {
-    const value = source[level];
-    if (typeof value === "string") projected[level] = value;
-    else if (value === null) projected[level] = null;
-  }
-  return Object.keys(projected).length === 0 ? undefined : projected;
-}
-
-
-
-
-/**
- * One entry as this conversation's own history holds it.
- *
- * The runtime's global `tx.entry()` is a lookup by id alone, and entry ids are **inherited**: a fork's entries and
- * its parent's are the same records. A read block therefore resolves through the conversation's fork-aware history,
- * so an id from another conversation is not readable here, while an ancestor entry a fork inherited still is. The
- * read is a native range of exactly one id, so it costs one lookup and scans no transcript.
- */
-async function visibleEntry(item: ConversationRuntime, id: EntryId): Promise<EntryRecord | undefined> {
-  const page = await item.conversation.entries({ minEntryId: id, maxEntryId: id }, 1, undefined, BACKGROUND_CONTEXT);
-  return page.items[0];
-}
-
-/** One base64 image block as the read block reads it, whichever of the two shapes it was written in. */
-function readBlockImage(block: unknown): { data: string; mimeType: string; bytes: number } | undefined {
-  if (typeof block !== "object" || block === null || Array.isArray(block)) return undefined;
-  const value = block as Record<string, unknown>;
-  if (value.type !== "image") return undefined;
-  const source = typeof value.source === "object" && value.source !== null ? value.source as Record<string, unknown> : undefined;
-  const data = typeof value.data === "string" ? value.data : source?.type === "base64" && typeof source.data === "string" ? source.data : undefined;
-  const mimeType = typeof value.mimeType === "string" ? value.mimeType : typeof source?.media_type === "string" ? source.media_type : undefined;
-  if (data === undefined || mimeType === undefined) return undefined;
-  // The size is arithmetic over the base64 length, not a decode: measuring an image must not allocate a copy of it, and
-  // the answer a range produces is sliced from the characters the range touches (`read-block.ts`).
-  return { data, mimeType, bytes: base64ByteLength(data) };
-}
-
-/**
- * The keepalive one attached event-stream client receives, and the timer that writes it.
- *
- * A conversation publishes nothing while it is quiet, and every hop between this process and the browser bounds how
- * long a body may stay silent. The comment frame is bytes that carry no event, so it defeats that bound without
- * inventing a lifecycle fact a client would have to interpret.
- *
- * The write is skipped when the client is mid-backlog: a keepalive is worth nothing if the connection is already
- * behind, and the ordinary send path is what closes a client that cannot keep up. The interval is unref'd, so an idle
- * stream never holds this process open by itself.
- */
-function startKeepalive(response: ServerResponse, intervalMs: number): () => void {
-  // A cadence of zero states no keepalive at all: an origin with no idle bound in front of it writes nothing, and the
-  // stream is then exactly as quiet as its own events make it.
-  if (!(intervalMs > 0)) return () => {};
-  const timer = setInterval(() => {
-    if (response.writableEnded || response.destroyed) return;
-    if (response.writableLength > 0) return;
-    response.write(HEARTBEAT_FRAME);
-  }, intervalMs);
-  timer.unref();
-  return () => clearInterval(timer);
-}
+/** The bounded JSON body reader every route shares: one limit per route, and a body that is not JSON reads as absent. */
 async function readBody(request: IncomingMessage, limitBytes = 1024 * 1024): Promise<unknown> {
   const chunks: Buffer[] = [];
   let bytes = 0;
@@ -302,11 +181,6 @@ async function readBody(request: IncomingMessage, limitBytes = 1024 * 1024): Pro
 }
 function authorized(request: IncomingMessage, token: string): boolean { return request.headers.authorization === "Bearer " + token; }
 function json(response: ServerResponse, status: number, body: unknown): void { response.writeHead(status, { "content-type": "application/json" }); response.end(JSON.stringify(body)); }
-/** A refused sidebar-state write: the reason the caller can act on, in the shared response shape. */
-function sidebarRefusal(response: ServerResponse, status: number, reason: SessionUiStateRefusalReason, error: string): void {
-  json(response, status, { error, reason });
-}
-
 /**
  * One project as a client sees it: its identity and name, the host every folder is on, and each recorded folder with
  * the `/workspace/<id>` routing its conversations bind plus whether it is the project's default. The default is what a
@@ -1043,47 +917,6 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     },
   });
   /**
-   * The identity this deployment states to a client that asks who it is connected to. It is configuration, not a
-   * negotiation: a client either speaks this build's protocol or it does not connect, and nothing here adapts to an
-   * older one.
-   */
-  const backendId = options.backendId ?? process.env.HEPI_BACKEND_ID ?? "hepi-backend";
-  /**
-   * The capabilities this build really has, stated from what the caller configured rather than from what a client hopes
-   * for. A capability a deployment did not configure is absent, which is the honest answer a client can act on.
-   */
-  const capabilitiesOf = (configured: Options): Record<string, boolean> => ({
-    conversations: true,
-    projects: configured.projects !== undefined,
-    skillMarket: configured.skillMarket !== undefined,
-    modelConfiguration: configured.modelConfig !== undefined,
-    workspaceResources: configured.workspaceResources !== undefined,
-    deviceCredentials: configured.deviceCredentials !== undefined,
-  });
-  /** The account scope every conversation, project and credential in this Backend belongs to. */
-  const accountScope = options.accountScope ?? process.env.HEPI_ACCOUNT_SCOPE ?? "default";
-  /**
-   * The client identity the ingress admitted, which it states on every request it forwards.
-   *
-   * It travels on the ingress's own service-credential request, so this server does not have to re-derive an identity it
-   * never saw: the ingress is the one surface that admits a client, and a header it sets is a fact about the request it
-   * already authorized. A malformed one is refused rather than defaulted, because a descriptor that names the wrong
-   * client is worse than no descriptor.
-   */
-  const readIdentity = (request: IncomingMessage, response: ServerResponse): { kind: "web" } | { kind: "device"; id: string; label: string } | undefined => {
-    const header = request.headers["x-hepi-client"];
-    const value = typeof header === "string" ? header : undefined;
-    if (value === undefined) { json(response, 400, { error: "the client identity is required" }); return undefined; }
-    let parsed: unknown;
-    try { parsed = JSON.parse(value); } catch { json(response, 400, { error: "the client identity is malformed" }); return undefined; }
-    if (typeof parsed !== "object" || parsed === null) { json(response, 400, { error: "the client identity is malformed" }); return undefined; }
-    const stated = parsed as { kind?: unknown; id?: unknown; label?: unknown };
-    if (stated.kind === "web") return { kind: "web" };
-    if (stated.kind === "device" && typeof stated.id === "string" && typeof stated.label === "string") return { kind: "device", id: stated.id, label: stated.label };
-    json(response, 400, { error: "the client identity is malformed" });
-    return undefined;
-  };
-  /**
    * The execution host this Backend serves the caller of *this* request from, as the ingress that admitted it stated.
    *
    * Which computer a client is served from is the deployment's own fact, so the ingress states it as trusted
@@ -1103,63 +936,84 @@ export async function createBackendServer(options: Options): Promise<BackendServ
    * refused by the same resolution the stated one goes through.
    */
   const hostOfRequest = (request: IncomingMessage, named: string | undefined): string | undefined => named ?? statedDefaultHost(request);
+  /**
+   * The HTTP domain owners, composed once and dispatched in this fixed order. Each is a concrete handler over the
+   * operations it uses — never a registry and never a shared context — so a route change touches its owner and this
+   * wiring. Order is the entry's own: the pages and the descriptor before admission, the deployment's metadata and the
+   * relays next, then the project routes and the catalogue, and the conversation-scoped domains last, because they
+   * resolve a conversation identity first.
+   */
+  const pages = createDiagnosticsPages();
+  const diagnostics = createDiagnosticsHttp({
+    buildId: options.buildId,
+    backendId: options.backendId ?? process.env.HEPI_BACKEND_ID ?? "hepi-backend",
+    accountScope: options.accountScope ?? process.env.HEPI_ACCOUNT_SCOPE ?? "default",
+    // The capabilities this build really has, stated from what the caller configured rather than from what a client
+    // hopes for. A capability a deployment did not configure is absent, which is the honest answer a client can act on.
+    capabilities: {
+      conversations: true,
+      projects: options.projects !== undefined,
+      skillMarket: options.skillMarket !== undefined,
+      modelConfiguration: options.modelConfig !== undefined,
+      workspaceResources: options.workspaceResources !== undefined,
+      deviceCredentials: options.deviceCredentials !== undefined,
+    },
+    deviceCredentials: options.deviceCredentials,
+    readBody,
+  });
+  const workspaces = createWorkspaceHttp({
+    bindings: registry.bindings,
+    gateways: registry.connections,
+    profiles: hostProfiles,
+  });
+  const settings = createSettingsHttp({
+    conversation: getConversation,
+    models: runtime.models,
+    defaultModel: runtime.model,
+    defaultThinkingLevel: options.defaultThinkingLevel,
+    modelConfig: options.modelConfig,
+    resources: options.workspaceResources,
+    readCommitted,
+    session: runtime.harness,
+    resourceEnvironment,
+    readBody,
+  });
+  const conversationHistory = createConversationHistoryHttp({ conversation: getConversation, read: operations, heartbeatIntervalMs });
+  const conversationCommands = createConversationCommandHttp({
+    conversation: getConversation,
+    operations,
+    items,
+    delegation,
+    subagentHost,
+    harness: runtime.harness,
+    models: runtime.models,
+    stream: options.settings?.stream,
+    attach,
+    catalogueRow: async (attached) => catalogueEntry(attached, await catalogueFacts()),
+    subtreeAnswer,
+    submissionContent,
+    imageRefusal,
+    readBody,
+  });
+  const conversationExtensions = createConversationExtensionsHttp({
+    conversation: getConversation,
+    requestedSelection,
+    listedServer: mcpListedServer,
+    grantAnswer: mcpGrantAnswer,
+    writeGrants: writeMcpConversationGrants,
+    readBody,
+  });
+
   const server = createServer((request, response) => { void handle(request, response).catch((error: unknown) => json(response, 500, { error: safeFailure(error) })); });
 
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? "/", "http://localhost");
-    if (request.method === "GET" && (url.pathname === "/diagnostics" || url.pathname === "/diagnostics.js")) {
-      const script = url.pathname.endsWith(".js");
-      const page = await readFile(new URL(script ? "../public/diagnostics.js" : "../public/diagnostics.html", import.meta.url));
-      response.writeHead(200, { "content-type": script ? "text/javascript; charset=utf-8" : "text/html; charset=utf-8" }); response.end(page); return;
-    }
-    if (request.method === "GET" && (url.pathname === "/workbench" || url.pathname === "/workbench.js")) {
-      const script = url.pathname.endsWith(".js");
-      const page = await readFile(new URL(script ? "../public/workbench.js" : "../public/workbench.html", import.meta.url));
-      response.writeHead(200, { "content-type": script ? "text/javascript; charset=utf-8" : "text/html; charset=utf-8" }); response.end(page); return;
-    }
+    // The operator pages answer before admission; everything below them is a client route that admission guards.
+    if (await pages(request, response, url)) return;
     if (!authorized(request, options.authToken)) { json(response, 401, { error: "unauthorized" }); return; }
-    // The one client-facing description of this Backend. It states the identity a caller is connected to, the account
-    // scope it is scoped to, the build that answered and the capabilities this build really has — and nothing a client
-    // could infer a version negotiation from, because there is none: a client speaks this protocol or it does not
-    // connect. The caller's own identity is added by the ingress that admitted it, so this route never guesses one.
-    if (url.pathname === "/api/descriptor" && request.method === "GET") {
-      const identity = readIdentity(request, response);
-      if (identity === undefined) return;
-      json(response, 200, {
-        protocol: PROTOCOL_VERSION,
-        client: identity,
-        backend: { id: backendId },
-        account: { scope: accountScope },
-        build: { id: options.buildId ?? null },
-        capabilities: capabilitiesOf(options),
-      });
-      return;
-    }
-    if (url.pathname === "/api/device-credentials") {
-      if (options.deviceCredentials === undefined) { json(response, 404, { error: "device credentials are not configured" }); return; }
-      if (request.method === "GET") { json(response, 200, { credentials: options.deviceCredentials.list() }); return; }
-      if (request.method === "POST") {
-        const body = await readBody(request) as { label?: unknown } | undefined;
-        if (typeof body?.label !== "string" || body.label.trim() === "") { json(response, 400, { error: "a label is required" }); return; }
-        json(response, 201, options.deviceCredentials.issue({ label: body.label.trim() })); return;
-      }
-      json(response, 405, { error: "method not allowed" }); return;
-    }
-    if (url.pathname.startsWith("/api/device-credentials/") && request.method === "DELETE") {
-      if (options.deviceCredentials === undefined) { json(response, 404, { error: "device credentials are not configured" }); return; }
-      const id = decodeURIComponent(url.pathname.slice("/api/device-credentials/".length));
-      const revoked = options.deviceCredentials.revoke(id);
-      json(response, revoked ? 200 : 404, revoked ? { ok: true, id } : { error: "unknown credential" }); return;
-    }
-    // One client request's authority, asked by the client ingress on every request it admits and again on the revocation
-    // interval for a response that stays open. It is a check, never an issuance, and it answers with the credential's
-    // identity only: the digest it was looked up by is never in the answer.
-    if (url.pathname === "/internal/credentials/verify" && request.method === "POST") {
-      if (options.deviceCredentials === undefined) { json(response, 404, { error: "device credentials are not configured" }); return; }
-      const body = await readBody(request) as { token?: unknown } | undefined;
-      const checked = typeof body?.token === "string" && body.token !== "" ? options.deviceCredentials.check(body.token) : { ok: false as const, reason: "unknown" as const };
-      json(response, 200, checked); return;
-    }
+    // The diagnostics surface: the descriptor, the device credentials and the authority check the ingress asks. It is
+    // composed here because it is what this build states about itself, and it answers nothing about a conversation.
+    if (await diagnostics(request, response, url)) return;
     if (options.skillMarket !== undefined && url.pathname.startsWith("/api/skill-market/")) {
       // Repository and market browsing are decoupled from conversations: no conversation is touched or listed here.
       // Installation is the one exception, and it names the conversation it installs for: publication and that
@@ -1225,34 +1079,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     if (url.pathname === "/api/files/upload" || url.pathname === "/api/files/upload-check" || url.pathname === "/api/files/bytes") {
       if (await fileRelay(request, response, url)) return;
     }
-    // The execution workspaces this backend can bind, each with the account its tools actually run as. Resolving the
-    // account goes through the gateway's own executionHost answer, so a UI label can never substitute this process's
-    // identity for the host's. An unreachable host is reported as such instead of being shown as the backend's account.
-    if (request.method === "GET" && url.pathname === "/api/workspaces") {
-      const workspaces = await Promise.all(registry.bindings().map(async (binding) => {
-        const { id, gatewayId } = binding;
-        // A binding a removal retained stays in this list — a conversation bound to it resolves its display root from
-        // here — but says so, so no picker and no home/default-directory answer can offer it as a target.
-        const marker = binding.retained === true ? { retained: true as const } : {};
-        const result = await (gatewayEnvironment(binding, "/") as ExecutionHostEnv).executionHost(BACKGROUND_CONTEXT);
-        return result.ok
-          ? { id, gatewayId, ...marker, host: { user: result.value.user, home: result.value.home }, workspaceRoot: result.value.workspaceRoot }
-          : { id, gatewayId, ...marker, hostError: boundedMessage(result.error.message) };
-      }));
-      json(response, 200, { workspaces }); return;
-    }
-    // The execution targets this deployment configured: each gateway's id, and for a gateway that serves remote
-    // profiles, those profiles with the account the host itself reports. Ids and names only — never a gateway URL or
-    // token — so the New Project dialog can offer a remote host explicitly instead of guessing one.
-    if (request.method === "GET" && url.pathname === "/api/hosts") {
-      const hosts = await Promise.all([...gateways.values()].map(async (connection) => {
-        const listed = await hostProfiles(connection);
-        return listed.ok
-          ? { id: connection.gatewayId, profiles: listed.value }
-          : { id: connection.gatewayId, profiles: [], error: listed.code };
-      }));
-      json(response, 200, { protocol: PROTOCOL_VERSION, hosts }); return;
-    }
+    // The deployment's execution targets: the workspaces it binds and the gateways it configured. Both are metadata,
+    // and a workspace's account is the host's own answer rather than this process's identity.
+    if (await workspaces(request, response, url)) return;
     // The directories of the host named on the request, so a folder can be chosen on the computer that serves this Web
     // origin or on a configured remote host. Browsing is that host's own read-only listing: the backend never reads a
     // directory and never substitutes its own account, and the profile is passed through so the listing is the
@@ -1373,54 +1202,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
       const answered = await agentDefinitions(request, url);
       if (answered !== undefined) { json(response, answered.status, answered.body); return; }
     }
-    // The model configuration the Settings editor reads and saves. It is the backend's own agent-directory models.json
-    // and the runtime that serves it, so a save is validated, written and applied to the same authority that answers the
-    // next request. There is no second registry and no synthetic seed: an unconfigured environment deployment is an
-    // environment-owned base provider, not a file entry, so an empty file reads as empty instead of pretending otherwise.
-    if (url.pathname === "/api/models-config") {
-      const target = options.modelConfig;
-      if (target === undefined) { json(response, 404, { error: "model configuration is not owned by this backend" }); return; }
-      if (request.method === "GET") {
-        try {
-          json(response, 200, readModelConfig(target.path));
-        } catch {
-          // The read error can quote the file's own bytes, which may include a credential reference.
-          json(response, 500, { error: "models.json could not be read; fix the file on the backend host" });
-        }
-        return;
-      }
-      if (request.method === "PUT") {
-        const result = await saveModelConfig(target, await readBody(request));
-        // Three outcomes stay distinct: a rejected draft leaves the file and the running runtime untouched; a saved
-        // draft that could not be applied is reported as saved-but-not-applied instead of as success.
-        if (result.status === "invalid") { json(response, 400, { success: false, error: result.error }); return; }
-        json(response, 200, result.applied ? { success: true, applied: true } : { success: true, applied: false, error: result.error });
-        return;
-      }
-      json(response, 405, { error: "method not allowed" });
-      return;
-    }
-    if (request.method === "GET" && url.pathname === "/api/models") {
-      // Resolving credentials is the only fallible work of this route, and the raw rejection can quote auth.json or
-      // models.json: upstream `AuthStorage.readLatestData` parses auth.json without wrapping, so the failure here is a
-      // bare `SyntaxError` whose message contains the file's first bytes. Report the safe text instead.
-      let available;
-      try {
-        available = await runtime.models.getAvailable();
-      } catch {
-        json(response, 500, { error: SAFE_CREDENTIAL_ERROR });
-        return;
-      }
-      const thinkingLevelMaps: Record<string, Record<string, string | null>> = {};
-      const models = available.map((model) => {
-        const thinkingLevelMap = projectThinkingLevelMap(model.thinkingLevelMap);
-        if (thinkingLevelMap !== undefined) thinkingLevelMaps[model.provider + ":" + model.id] = thinkingLevelMap;
-        return { provider: model.provider, id: model.id, name: model.name, reasoning: model.reasoning, contextWindow: model.contextWindow, maxTokens: model.maxTokens, cost: projectCost(model.cost), input: [...model.input], thinkingLevelMap };
-      });
-      // `defaultModel` is stated explicitly, including as null: a deployment that configured none must not leave the
-      // field absent, because a client would then read the absence as "unspecified" and pick something itself.
-      json(response, 200, { models, thinkingLevels: Object.fromEntries(available.map(model => [model.provider + ":" + model.id, getSupportedThinkingLevels(model)])), thinkingLevelMaps, defaultModel: runtime.model ?? null, defaultThinkingLevel: options.defaultThinkingLevel ?? "off" }); return;
-    }
+    // The settings surface: this deployment's model catalog, the models.json it owns, the shared sidebar document, and
+    // one conversation's own configuration and adopted resources.
+    if (await settings(request, response, url)) return;
     // The durable extensions this backend installed and the global default selection. The installed set is the
     // runtime's registry and the tools and sections are those extensions' own, so nothing here can drift from what a
     // conversation is offered. The default is hepi state: it is what a conversation created after a change selects, and
@@ -1433,28 +1217,6 @@ export async function createBackendServer(options: Options): Promise<BackendServ
         if (!asked.ok) { json(response, asked.status, { code: asked.code, error: asked.error }); return; }
         await writeDefaultSelection(runtime.harness, asked.names);
         json(response, 200, extensionInventory()); return;
-      }
-      json(response, 405, { error: "method not allowed" }); return;
-    }
-    // The sidebar's shared state: pins, archive, project order and the unread marker, as one session-scoped
-    // document, so every client of this backend reads and writes the same arrangement. One change per request, and the
-    // answer is the state after the change, so a client never has to guess what happened. A body over the documented
-    // limit is refused before it is read, and a body that is not this protocol's is refused with the reason.
-    if (url.pathname === "/api/sidebar-state") {
-      if (request.method === "GET") { json(response, 200, { protocol: PROTOCOL_VERSION, state: await readSidebarState(runtime.harness) }); return; }
-      if (request.method === "POST") {
-        const contentType = String(request.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
-        if (contentType !== "application/json") { sidebarRefusal(response, 415, "content-type", "Content-Type must be application/json"); return; }
-        let body: unknown;
-        try {
-          body = await readBody(request, MAX_SESSION_UI_REQUEST_BYTES);
-        } catch (error) {
-          sidebarRefusal(response, 413, "too-large", safeFailure(error));
-          return;
-        }
-        const parsed = parseSessionUiStateRequest(body);
-        if (!parsed.ok) { sidebarRefusal(response, 400, "invalid-request", parsed.error); return; }
-        json(response, 200, { protocol: PROTOCOL_VERSION, state: await writeSidebarState(runtime.harness, parsed.request) }); return;
       }
       json(response, 405, { error: "method not allowed" }); return;
     }
@@ -1568,748 +1330,12 @@ export async function createBackendServer(options: Options): Promise<BackendServ
         throw error;
       }
     }
-    const parts = url.pathname.split("/").filter(Boolean);
-    const id = parts[2];
-    const item = id === undefined ? undefined : getConversation(id);
-    // Every conversation-scoped route refuses an unknown conversation the same way, with the code a caller needs to
-    // name the refusal in its own language rather than echoing an English sentence.
-    if (parts[0] !== "api" || parts[1] !== "conversations" || item === undefined) { json(response, 404, { code: "not_found", error: "conversation not found" }); return; }
-    const action = parts[3];
-    // One conversation's identity: its catalogue row plus the relations it records, its native record edges, the
-    // references it makes and its effective configuration. The row comes from the same catalogue projection the list
-    // uses, and the rest from the one relations seam, so a by-id read and a list read cannot state two creators. A
-    // removed conversation still answers — its records are retained — and its relations stay readable.
-    if (request.method === "GET" && parts.length === 3) {
-      const info = await operations.get(id);
-      if (info === undefined) { json(response, 404, { code: "not_found", error: "conversation not found" }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversation: catalogueEntry(item, await catalogueFacts()), ...info }); return;
-    }
-    // The bounded raw history of one conversation. What the stream and `state` carry is the **active window**; this is
-    // the entry table's own fork-aware record, so a compaction's dropped prefix and a fork's inherited prefix are both
-    // readable here. The body is text lines or one image, everything else is stated in `details` and `diagnostics`,
-    // and `cursor` continues a page exactly where it stopped. Query: `offset`, `limit`, `entryId`, `blockIndex`,
-    // `tail`, `cursor`. The one read every caller shares: `agent_read` calls the same operation.
-    if (request.method === "GET" && action === "read" && parts.length === 4) {
-      const answer = await handleConversationRead(operations, id, url.searchParams);
-      json(response, answer.status, answer.body); return;
-    }
-    // The navigation outline: one bounded page of this conversation's committed user messages, read from its
-    // **fork-aware committed history** rather than the active window, so a compaction's dropped prefix and a fork's
-    // inherited prefix stay enumerable. Each anchor carries an opaque coordinate over the conversation, the history
-    // scope and the entry it names, and a short preview of the committed user text — no message body, and no
-    // unbounded index: `limit` is capped, the page is measured, and `nextCursor` continues where it stopped. The
-    // identity it states is the window's own `historyRevision` token plus its append-invariant scope part, so a
-    // caller can tell an append (which extends the outline and keeps every anchor) from a re-baseline (which retires
-    // the page, by name). Query: `limit`, `cursor`, `scope`.
-    if (request.method === "GET" && action === "navigation" && parts.length === 4) {
-      const facts = item.historyFacts();
-      const answer = await handleConversationNavigation(
-        { conversation: item.conversation, snapshot: tokenFromFacts(id, facts), scope: scopeFromFacts(id, facts), tail: facts.tail },
-        id,
-        url.searchParams,
-      );
-      json(response, answer.status, answer.body); return;
-    }
-    // The bounded target window one of the outline's own coordinates addresses: the committed history around that
-    // entry, projected by the **same** expression the stream and an older page are projected by (so a target entry
-    // and a live entry cannot differ, and the deferred read blocks behind a heavy block are the same URLs), bounded
-    // by the two message counts the caller asks for and by the page byte budget, and read against the snapshot the
-    // caller names so an append cannot move the window under it. The membership fence is the runtime's own
-    // membership-checked scan, which is why a compacted entry is readable, a fork's inherited entry is readable in
-    // the fork, and an entry of a sibling branch is `missing` rather than silently absent from a window that looks
-    // complete. The route carries no second projection and no history derivation of its own. Query: `anchor`,
-    // `before`, `after`, `snapshot`, `entry`, `block`.
-    if (request.method === "GET" && action === "navigation" && parts[4] === "around" && parts.length === 5) {
-      const facts = item.historyFacts();
-      const answer = await handleConversationNavigationTarget(
-        { conversation: item.conversation, snapshot: tokenFromFacts(id, facts), scope: scopeFromFacts(id, facts), tail: facts.tail, project: entry => projectEntry(entry, id) },
-        id,
-        url.searchParams,
-      );
-      json(response, answer.status, answer.body); return;
-    }
-    // The browser's own delegation, over the **same** seam the model's two delegating tools call. The user picked the
-    // definition and wrote the task in the main conversation's composer; the definition decides the configuration and
-    // the context strategy, and the request carries neither, so a quick create cannot override the policy the
-    // definition or the user's configuration set (spec D01, D10, D11).
-    //
-    // The body names a definition and a task. `conversationId` addresses a conversation that already exists — the
-    // child tree's own "delegate again" — and its absence means a child this request creates. `requestId` is the
-    // caller's stable attempt identity: a retry after a lost answer is answered with the child or the dispatch the
-    // first attempt made rather than a second one (spec D04, A19).
-    //
-    // Every refusal is the answer and never a queue entry: an over-limit request, an unresolvable definition and a
-    // user's own stop on the target are all stated with the code that names them (spec D12, A15).
-    if (request.method === "POST" && action === "delegate" && parts.length === 4) {
-      const body = await readBody(request) as { name?: unknown; task?: unknown; conversationId?: unknown; requestId?: unknown } | undefined;
-      if (typeof body?.name !== "string" || body.name.trim() === "") { json(response, 400, { code: "invalid_request", error: "name is the agent definition to run" }); return; }
-      if (typeof body.task !== "string" || body.task.trim() === "") { json(response, 400, { code: "invalid_request", error: "task is the child's complete task" }); return; }
-      const requestId = typeof body.requestId === "string" && body.requestId.trim() !== "" ? body.requestId : randomUUID();
-      // A dispatch to a conversation that already exists is a different operation: it creates nothing, and the target
-      // keeps its identity, its history and its configuration (spec D05).
-      if (body.conversationId !== undefined) {
-        if (typeof body.conversationId !== "string" || body.conversationId.trim() === "") { json(response, 400, { code: "invalid_request", error: "conversationId must be a conversation id" }); return; }
-        const dispatched = await delegation.dispatch({ delegating: id, requestId, targetConversationId: body.conversationId, task: body.task });
-        if (!dispatched.ok) { json(response, dispatched.code === "not_found" ? 404 : 409, { protocol: PROTOCOL_VERSION, code: dispatched.code, error: dispatched.message }); return; }
-        const target = getConversation(dispatched.conversationId);
-        json(response, 202, {
-          protocol: PROTOCOL_VERSION,
-          conversationId: dispatched.conversationId,
-          dispatchId: dispatched.dispatchId,
-          requestId,
-          ...(dispatched.submissionId === "" ? {} : { submissionId: dispatched.submissionId }),
-          ...(target === undefined ? {} : { conversation: catalogueEntry(target, await catalogueFacts()) }),
-        }); return;
-      }
-      const answered = await delegation.delegate({ delegating: id, requestId, definition: body.name, task: body.task });
-      if (!answered.ok) {
-        // The refusals a caller has to tell apart are the ones a user can act on: an over-limit request is a refusal and
-        // not a queue, and an unresolvable definition is a configuration problem rather than a conflict.
-        const status = answered.code === "depth_exceeded" || answered.code === "children_exceeded" ? 409
-          : answered.code === "unknown_definition" || answered.code === "no_execution_host" || answered.code === "unknown_workspace" ? 404
-          : 400;
-        json(response, status, { protocol: PROTOCOL_VERSION, code: answered.code, error: answered.message }); return;
-      }
-      const existing = getConversation(answered.childConversationId);
-      const attached = existing ?? await (async () => {
-        const record = await runtime.harness.conversation(Number(answered.childConversationId) as ConversationId, BACKGROUND_CONTEXT);
-        return record === undefined ? undefined : attach(record, { subagentParent: id });
-      })();
-      json(response, answered.created ? 201 : 200, {
-        protocol: PROTOCOL_VERSION,
-        ...delegateDetails(answered) as object,
-        ...(attached === undefined ? {} : { conversation: catalogueEntry(attached, await catalogueFacts()) }),
-      }); return;
-    }
-    //
-    // **One delegated child's recovery facts, and the retry of its preparation** (the audit's G2 and G6).
-    //
-    // The read answers what the runtime already holds per durable object — the dispatch record, the anchor's phase,
-    // and where that dispatch's report stands — beside the child's own `runStatus`, which this does not replace. No
-    // second status store and no whole-child flag: a conversation with no delegation under it answers `null`.
-    //
-    // The write is the retry the delegation seam **already** supports, and nothing else: it takes the dispatch/request
-    // identity the read answered with and the failed attempt's own task id, and performs the one write
-    // `retryPreparation` performs when a caller replays its own delegation request (spec D11, A14). Same child, same
-    // dispatch, no second admission and no fresh identity — and no automatic retry anywhere: an identity that no longer
-    // matches what the record states is refused by name rather than retried into a different attempt. The answer
-    // restates the child's recovery facts, because the retry write is durable and the parked anchor acts on it on its
-    // own schedule: what the caller reads back is the record's state, not a promise about a task.
-    if (request.method === "GET" && action === "recovery" && parts.length === 4) {
-      const recovery = await childRecovery(runtime.harness, id);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, ...(recovery === undefined ? { recovery: null } : { recovery }) });
-      return;
-    }
-    if (request.method === "POST" && action === "recovery" && parts.length === 4) {
-      const body = await readBody(request) as { requestId?: unknown; failedTaskId?: unknown } | undefined;
-      if (typeof body?.requestId !== "string" || body.requestId.trim() === "") { json(response, 400, { code: "invalid_request", error: "requestId is the dispatch identity the recovery read answered with" }); return; }
-      if (typeof body.failedTaskId !== "string" || body.failedTaskId.trim() === "") { json(response, 400, { code: "invalid_request", error: "failedTaskId is the preparation attempt this retry names" }); return; }
-      const target = await preparationRetryTarget(runtime.harness, id);
-      if (!target.ok) { json(response, 409, { protocol: PROTOCOL_VERSION, code: target.code, error: target.message }); return; }
-      if (target.requestId !== body.requestId || target.failedTaskId !== body.failedTaskId) {
-        json(response, 409, { protocol: PROTOCOL_VERSION, code: "identity_stale", error: "conversation " + id + " now states dispatch " + target.requestId + " and failed attempt " + target.failedTaskId + ", so this request names a different attempt" });
-        return;
-      }
-      await subagentHost.retryPreparation(target.delegatingConversationId, target.requestId, target.failedTaskId);
-      const recovery = await childRecovery(runtime.harness, id);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, requestId: target.requestId, failedTaskId: target.failedTaskId, recovery });
-      return;
-    }
-    // A structured reference from this conversation to another, optionally to one entry of it. It is saved as this
-    // conversation's own state: the target's relations, workspace and owner are untouched, and the reference grants no
-    // control over it and copies none of its content. A repeated reference to the same target **and entry** is
-    // idempotent, and one that could not be followed is refused by name before anything is stored — a removed target
-    // is `target-unavailable`, an entry outside the target's visible committed fork-aware history is `entry-missing`
-    // or `entry-out-of-scope` — so the answer states the same named outcome the resolving read reports later.
-    if (request.method === "POST" && action === "references" && parts.length === 4) {
-      const body = await readBody(request) as { conversationId?: unknown; entryId?: unknown; label?: unknown } | undefined;
-      if (typeof body?.conversationId !== "string" || body.conversationId.trim() === "") { json(response, 400, { code: "invalid_request", error: "conversationId is required" }); return; }
-      if (body.entryId !== undefined && typeof body.entryId !== "string") { json(response, 400, { code: "invalid_request", error: "entryId must be an entry id string" }); return; }
-      if (body.label !== undefined && typeof body.label !== "string") { json(response, 400, { code: "invalid_request", error: "label must be a string" }); return; }
-      try {
-        const references = await operations.addReference(id, { conversationId: body.conversationId, ...(body.entryId === undefined ? {} : { entryId: body.entryId }), ...(body.label === undefined ? {} : { label: body.label }) });
-        json(response, 201, { protocol: PROTOCOL_VERSION, conversationId: id, references }); return;
-      } catch (error) {
-        if (error instanceof ConversationOperationRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-    }
-    // The window's own statement, on the read a client makes before it has a stream: the same bounded entries the
-    // stream's first frame carries, with the facts that say what the window is.
-    if (request.method === "GET" && action === "state") {
-      const current = item.snapshot();
-      const oversize = oversizeFrame(current, current.entries.at(-1)?.id ?? null);
-      // A read that cannot be carried answers a named reason and the entry that caused it. The entry stays readable
-      // through its own route, so the caller is told the first load could not be bounded rather than being handed a
-      // transcript that claims to be complete. No unbounded mode is added here: a consumer that needs everything pages.
-      if (oversize !== undefined) { json(response, 413, { protocol: PROTOCOL_VERSION, conversationId: id, revision: current.revision, reason: "frame_too_large", ...oversize }); return; }
-      json(response, 200, current); return;
-    }
-    // Older history, by entry id. `before` is **exclusive** and is the oldest id the client already holds — the
-    // meaning the copied app's own paging gives it — so prepending a page never duplicates the boundary entry. The
-    // page is bounded below by the newest head marker at or before it, so it can never hand back entries the active
-    // context has left behind, and it applies the same count rule, the same byte budget and the same projection
-    // expression as the stream, so a paged entry and a streamed entry cannot differ.
-    if (request.method === "GET" && action === "entries" && parts.length === 4) {
-      const before = url.searchParams.get("before");
-      if (before !== null && !/^[0-9]+$/.test(before)) { json(response, 400, { code: "invalid_request", error: "before must be an entry id" }); return; }
-      const requested = Number(url.searchParams.get("tail") ?? String(VISIBLE_WINDOW));
-      if (!Number.isInteger(requested) || requested <= 0) { json(response, 400, { code: "invalid_request", error: "tail must be a positive integer" }); return; }
-      const page = pageEntries(item, before === null ? undefined : Number(before) as EntryId, Math.min(requested, 1000));
-      // The page answers the same question the window does about its own size, and for the same reason: a page that
-      // cannot be carried must say so by name rather than hand back a body the transport would have refused. The
-      // entry it names is the one the budget could not shrink away, and its own read block still serves it whole.
-      const oversize = oversizeFrame(page, page.entries.at(-1)?.id ?? null);
-      if (oversize !== undefined) { json(response, 413, { protocol: PROTOCOL_VERSION, conversationId: id, reason: "frame_too_large", ...oversize }); return; }
-      json(response, 200, page); return;
-    }
-    // One entry, projected and redacted exactly as the stream projects it. It is the read block a deferred history
-    // entry names: the full entry stays reachable by id even when the frame that would have carried it could not be.
-    if (request.method === "GET" && action === "entries" && parts.length === 5) {
-      const entry = await visibleEntry(item, Number(parts[4]) as EntryId);
-      const projected = entry === undefined ? undefined : projectEntry(entry, id);
-      if (projected === undefined) { json(response, 404, { code: "not_found", error: "entry not found" }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, entry: projected }); return;
-    }
-    // The thinking read block: the full text of one block of one entry, which is what a deferred preview replaced.
-    // The provider's opaque signature stays native — nothing renders it and nothing sends it back from a projected
-    // entry — so this route restores the thinking a user can read and nothing else.
-    if (request.method === "GET" && action === "entries" && parts.length === 6 && parts[5] === "thinking") {
-      const entry = await visibleEntry(item, Number(parts[4]) as EntryId);
-      const content = entry?.model?.[0]?.content;
-      if (!Array.isArray(content)) { json(response, 404, { code: "not_found", error: "entry not found" }); return; }
-      const blockIndex = Number(url.searchParams.get("blockIndex") ?? "0");
-      const block = Number.isInteger(blockIndex) ? content[blockIndex] : undefined;
-      if (block === undefined) { json(response, 400, { code: "invalid_request", error: "blockIndex is outside this entry's content" }); return; }
-      // One bounded page, in the same shape the text block answers: a thinking block can be long, and restoring it must
-      // not mean handing over an unbounded body. `thinking` is the field this family's own name, and the page facts
-      // ride beside it, so a caller follows `nextOffset` exactly as it would for a text.
-      const bounds = parseReadBlockQuery(url.searchParams);
-      if (!bounds.ok) { json(response, 400, { code: "invalid_request", error: bounds.error }); return; }
-      const page = readBlockTextPage(block.type === "thinking" ? block.thinking : "", bounds.offset, bounds.limit);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, entryId: String(parts[4]), blockIndex, thinking: page.text, offset: page.offset, totalBytes: page.totalBytes, truncated: page.truncated, ...(page.nextOffset === undefined ? {} : { nextOffset: page.nextOffset }) }); return;
-    }
-    // The text read block: the full text a deferred **text** preview replaced. It is the third member of the family the
-    // thinking and tool-result-image blocks already form, resolved through the same fork-aware history read, so the
-    // entry a preview names is restored by the same primitive that restores the other two and nothing about entry
-    // scope is decided twice.
-    //
-    // The block index addresses the **native** content: a text-only prompt is stored as a plain string rather than as
-    // an array of blocks, so that shape answers index 0 with the whole string. A block index outside the content, or a
-    // block that is not text, answers the reason it could not be served rather than an empty string that a caller
-    // would render as an empty message.
-    if (request.method === "GET" && action === "entries" && parts.length === 6 && parts[5] === "text") {
-      const entry = await visibleEntry(item, Number(parts[4]) as EntryId);
-      const content = entry?.model?.[0]?.content;
-      if (content === undefined) { json(response, 404, { code: "not_found", error: "entry not found" }); return; }
-      const blockIndex = Number(url.searchParams.get("blockIndex") ?? "0");
-      if (!Number.isInteger(blockIndex) || blockIndex < 0) { json(response, 400, { code: "invalid_request", error: "blockIndex must be a non-negative integer" }); return; }
-      if (typeof content === "string") {
-        if (blockIndex !== 0) { json(response, 400, { code: "invalid_request", error: "blockIndex is outside this entry's content" }); return; }
-        const bounds = parseReadBlockQuery(url.searchParams);
-        if (!bounds.ok) { json(response, 400, { code: "invalid_request", error: bounds.error }); return; }
-        const page = readBlockTextPage(content, bounds.offset, bounds.limit);
-        json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, entryId: String(parts[4]), blockIndex, ...page }); return;
-      }
-      const block = Array.isArray(content) && blockIndex < content.length ? content[blockIndex] : undefined;
-      if (block === undefined) { json(response, 400, { code: "invalid_request", error: "blockIndex is outside this entry's content" }); return; }
-      if ((block as { type?: unknown }).type !== "text") { json(response, 404, { code: "not_found", error: "this block is not text" }); return; }
-      const bounds = parseReadBlockQuery(url.searchParams);
-      if (!bounds.ok) { json(response, 400, { code: "invalid_request", error: bounds.error }); return; }
-      const page = readBlockTextPage(String((block as { text?: unknown }).text ?? ""), bounds.offset, bounds.limit);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, entryId: String(parts[4]), blockIndex, ...page }); return;
-    }
-    // The image read block: exactly the bytes the frame's deferred URL names. It serves the image block of **any**
-    // entry, because the policy that decided the frame's shape is the message's, not its role's: a user's own accepted
-    // prompt image is deferred to this same block. An image the policy would not defer is refused with a named reason
-    // rather than served anyway.
-    if (request.method === "GET" && action === "entries" && parts.length === 6 && parts[5] === "tool-result-image") {
-      const entry = await visibleEntry(item, Number(parts[4]) as EntryId);
-      const content = entry?.model?.[0]?.content;
-      const blockIndex = Number(url.searchParams.get("blockIndex") ?? "0");
-      const block = Array.isArray(content) && Number.isInteger(blockIndex) ? content[blockIndex] : undefined;
-      const image = readBlockImage(block);
-      if (image === undefined) { json(response, 404, { code: "not_found", error: "image not found" }); return; }
-      if (!TOOL_RESULT_IMAGE_MIMES.has(image.mimeType) || image.bytes > MAX_TOOL_RESULT_IMAGE_BYTES) { json(response, 415, { code: "image_not_served", error: "this image is outside the tool-result image policy" }); return; }
-      // A bounded answer: a caller that only needs a window of the image asks for a byte range and gets those bytes,
-      // decoded from the groups the range touches rather than from a copy of the whole image. The refusal for a range
-      // outside the block is a 416, so a client learns to ask differently instead of receiving an empty body it would
-      // render as a broken image.
-      const answer = readBlockImageAnswer(image, request.headers.range);
-      response.writeHead(answer.status, answer.headers);
-      response.end(answer.body); return;
-    }
-    // Recovery, not the normal path: a client whose send or stream ended before it could tell admission from failure
-    // asks the conversation about the one submission it made, by the request id it generated. The answer is the durable
-    // record itself — terminal or not — so nothing is inferred and nothing is resent. An id this conversation never
-    // admitted answers null, which is a statement about that request and not a failed lookup.
-    if (request.method === "GET" && action === "submissions") {
-      const requestId = url.searchParams.get("requestId");
-      if (requestId === null || requestId.trim() === "") { json(response, 400, { error: "requestId required" }); return; }
-      const record = await item.conversation.commit(tx => tx.submissionByRequest(item.conversation.id, requestId), BACKGROUND_CONTEXT);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, submission: record === undefined ? null : projectSubmission(record) }); return;
-    }
-    if (request.method === "GET" && action === "commands") {
-      // Commands come from the catalog in effect for this conversation alone: listing never rediscovers the execution
-      // host, and a candidate deferred to the next run is listed so the UI shows what that run will adopt.
-      const adopted = options.workspaceResources === undefined ? undefined : await readEffectiveResources(readCommitted, item.conversation.id, BACKGROUND_CONTEXT);
-      json(response, 200, { commands: adopted === undefined ? [] : options.workspaceResources!.commands(adopted) }); return;
-    }
-    // Rename: the name a user sets for a conversation, stored as this conversation's own hepi document. The
-    // request and response shape follow upstream's `PATCH /api/sessions/[id]` ({ name }) so the existing browser
-    // surface keeps its contract, while the state it writes is durable conversation-scoped hepi state and not a file.
-    if (request.method === "PATCH" && parts.length === 3) {
-      const body = await readBody(request) as { name?: unknown } | undefined;
-      const title = typeof body?.name === "string" ? body.name.trim() : undefined;
-      if (title === undefined) { json(response, 400, { code: "invalid_request", error: "name is required" }); return; }
-      if (title === "") { json(response, 400, { code: "invalid_request", error: "a session name of 1 to " + MAX_TITLE_LENGTH + " characters is required" }); return; }
-      if ([...title].length > MAX_TITLE_LENGTH) { json(response, 400, { code: "invalid_request", error: "a session name of 1 to " + MAX_TITLE_LENGTH + " characters is required" }); return; }
-      await item.conversation.commit(async (tx) => { (await tx.doc(TitleDoc, item.conversation.id)).title = title; }, BACKGROUND_CONTEXT);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, name: title }); return;
-    }
-    // Auto-name, on an explicit request only (spec decisions 16 and 25): the name is generated from this
-    // conversation's own committed transcript by the model this conversation already selected, and written as the
-    // same hepi title document the rename writes, so the catalogue lists it in the read that lists the session. No
-    // path names a conversation implicitly, and a name the user typed is replaced only here, by this request. The
-    // request and response shape follow upstream's `POST /api/sessions/[id]/auto-name`.
-    if (request.method === "POST" && action === "auto-name") {
-      // A removed conversation is out of the catalogue but its records are retained, so it is still reachable by id.
-      // Naming it would produce a name no surface can show, so it is refused with the reason the caller reads.
-      if (item.deletedAt() !== undefined) { json(response, 409, { code: "session_deleted", error: "This session was deleted. Start a new session to continue." }); return; }
-      const selected = item.snapshot().settings.model;
-      const model = selected === null ? undefined : runtime.models.getModel(selected.provider, selected.modelId);
-      // The framework's own wording for the same failure: a conversation whose selection is gone is told which model
-      // is missing, and a deployment that configured none is told that, rather than being handed a manufactured one.
-      if (model === undefined) { json(response, 409, { code: "no_model", error: selected === null ? "No model is configured" : "Model " + selected.provider + "/" + selected.modelId + " is not available" }); return; }
-      // The transcript is this conversation's committed model context, read through the runtime's own public read: a
-      // turn still in flight only means the newest reply is missing from it, and there is nothing to wait for.
-      const transcript = buildTitleTranscript((await item.conversation.context(BACKGROUND_CONTEXT)).messages);
-      if (transcript.trim() === "") { json(response, 409, { code: "no_transcript", error: "The session has no usable text to name" }); return; }
-      try {
-        const title = await generateSessionTitle({ models: runtime.models, model, transcript, stream: options.settings?.stream });
-        await item.conversation.commit(async (tx) => { (await tx.doc(TitleDoc, item.conversation.id)).title = title; }, BACKGROUND_CONTEXT);
-        json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, title });
-      } catch (error) {
-        // A failed generation writes nothing: the name the conversation had is the name it keeps, and the reason is
-        // reported so the surface can say what failed instead of showing a name that was never stored.
-        json(response, 502, { code: "title_failed", error: safeFailure(error) });
-      }
-      return;
-    }
-    // Removal, as a hepi-owned tombstone: the conversation's records are retained because pi-durable 1.1.0 has no
-    // conversation deletion, and this hides the conversation from the catalogue instead. The tombstone is written
-    // through the durable document path — nothing is deleted from any store — and the removal is presented as an
-    // ordinary one. The family's own pin, archive and unread entries are cleared in the same commit, so no orphan
-    // entry is left in the shared sidebar document. A live run is not stopped or waited for: the removal is answered
-    // at once and the run settles into the retained records. The conversation's children keep their own entries and
-    // their own rows, and nothing about them points at a parent that is gone, because a removed conversation only
-    // leaves the catalogue.
-    if (request.method === "DELETE" && parts.length === 3) {
-      await tombstoneConversation(runtime.harness, item.conversation.id, [id], Date.now());
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, removed: true }); return;
-    }
-    if (request.method === "GET" && action === "settings") { json(response, 200, { protocol: PROTOCOL_VERSION, ...item.snapshot().settings }); return; }
-    // The whole selection of one conversation, read as one answer: the extensions it selects, the tools those select
-    // offer it, and inside them its MCP grants and the servers its host has configured. Nothing here asks a host
-    // whether it is up, and nothing here derives an offer — `offered` is the runtime's own resolution.
-    if (request.method === "GET" && action === "extensions") {
-      // `?mcp=<server>` is the one read that asks a host what one server holds, and it is asked, never defaulted: an
-      // ordinary read of the selection starts nothing. Every other query of this seam answers the conversation's own
-      // durable state and the host's own configuration files.
-      const asked = url.searchParams.get("mcp");
-      const listing = asked === null || asked.trim() === "" ? undefined : await mcpListedServer(id, asked.trim());
-      if (listing !== undefined && !listing.ok) { json(response, listing.status, { protocol: PROTOCOL_VERSION, code: listing.code, error: listing.error }); return; }
-      const agent = await item.conversation.agent(BACKGROUND_CONTEXT);
-      const toolNames = agent.tools.map(tool => tool.name);
-      json(response, 200, {
-        protocol: PROTOCOL_VERSION,
-        conversationId: id,
-        extensions: agent.extensions.map(extension => extension.name),
-        toolNames,
-        mcp: { ...(await mcpGrantAnswer(item, id, toolNames)), ...(listing === undefined ? {} : { listed: listing.list }) },
-      }); return;
-    }
-    // `pi.agent.extensions` says whether this conversation may be granted MCP tools at all and `pi.agent.modelTools`
-    // says which ones it is offered; both are the framework's own per-conversation fields, and the approved shape is
-    // one seam that writes them rather than a second route family, a second registry concept or a second selection
-    // document. The body therefore carries the extension names, exactly as it always did, plus an optional `mcp`
-    // section stating one server's grants for this conversation:
-    //
-    // - `mcp: { server, tools: [...] }` replaces this conversation's grants of that server, and `tools: []` revokes
-    //   them. Either half of the body may be left out to say nothing about that half: `{ mcp }` alone writes grants and
-    //   leaves the extension selection where it stands, `{ extensions }` alone writes the selection and touches no
-    //   grant. What a server **holds** is read (`?mcp=<server>`), never written by omission, because listing connects a
-    //   server and an accidental listing is not something a grant request should be able to ask for.
-    // - Whatever the body said, the answer is the whole selection: extension names, offered tool names, and the
-    //   conversation's grants — one seam answers the state it just wrote.
-    //
-    // Nothing here takes a client's description of a tool's arguments, and nothing here writes an agent document by
-    // hand: a grant's descriptor is copied from the host's listing, the offer is written through the runtime's own
-    // `configure` seam, and both halves are validated before either is applied — a bad name writes neither part.
-    if (request.method === "PATCH" && action === "extensions") {
-      const body = await readBody(request);
-      const states = (key: string): boolean => body !== null && typeof body === "object" && !Array.isArray(body) && key in body;
-      if (!states("extensions") && !states("mcp")) { json(response, 400, { protocol: PROTOCOL_VERSION, code: "invalid_request", error: "the body states extensions, mcp, or both" }); return; }
-      // One seam, two halves, and each half validates in its own words: a request that states only `mcp` says nothing
-      // about extensions and is not refused for that, and a request that states both writes both or neither.
-      const selection = states("extensions") ? requestedSelection(body, item.snapshot().workspaceId !== undefined) : undefined;
-      if (selection !== undefined && !selection.ok) { json(response, selection.status, { code: selection.code, error: selection.error }); return; }
-      // The `mcp` section is read with the same care as the extension names, and a key the host owns is refused by name.
-      const grant = states("mcp") ? grantRequest((body as { mcp?: unknown }).mcp) : undefined;
-      if (grant !== undefined && "code" in grant) { json(response, 400, { protocol: PROTOCOL_VERSION, ...grant }); return; }
-      // The grant is written first, so a host that refuses a name leaves the extension selection exactly as it stood.
-      if (grant !== undefined) {
-        const refusal = await writeMcpConversationGrants(id, grant.server, grant.tools);
-        if (refusal !== undefined) { json(response, refusal.status, { protocol: PROTOCOL_VERSION, code: refusal.code, error: refusal.error }); return; }
-      }
-      if (selection !== undefined && selection.ok) await item.conversation.configure({ extensions: selection.extensions }, BACKGROUND_CONTEXT);
-      const agent = await item.conversation.agent(BACKGROUND_CONTEXT);
-      const toolNames = agent.tools.map(tool => tool.name);
-      json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, extensions: agent.extensions.map(extension => extension.name), toolNames, mcp: await mcpGrantAnswer(item, id, toolNames) }); return;
-    }
-    // Fork: the new conversation inherits the source's history up to the chosen entry, with the runtime's own
-    // fork-aware history and document semantics, and the source is only read, so a live run in it is untouched. Body
-    // `{ at?, requestId? }` names the entry — without one the conversation's newest committed entry is the fork point,
-    // which is what the sidebar's row menu asks for — and the request identity that makes a retry after a lost answer
-    // answer the branch the first attempt created. Everything that can refuse is answered before the fork, and the fork
-    // itself is the one creation seam's atomic commit, so a refusal creates nothing. The upstream route's request and
-    // response shapes are the contract: answer the new identity plus its catalogue row.
-    if (request.method === "POST" && action === "fork") {
-      const body = await readBody(request) as { at?: unknown; requestId?: unknown; model?: ModelRef; thinkingLevel?: unknown } | undefined;
-      const refusal = (code: ForkRefusal) => { json(response, FORK_REFUSALS[code].status, { protocol: PROTOCOL_VERSION, code, error: FORK_REFUSALS[code].error }); };
-      const named = body?.at;
-      // A named fork point that is not an entry id cannot be one this conversation holds: the upstream "unsaved"
-      // source, a client whose transcript is ahead of the durable conversation.
-      if (named !== undefined && (typeof named !== "string" || !/^[0-9]+$/.test(named))) { refusal("unsaved"); return; }
-      // A conversation a task owns is a subagent's, and a copy of it is a branch of that subagent: it keeps the
-      // conversation it was taken from as its display parent and gets an **independent** native owner — a background
-      // anchor of the source's own scope — so it is dispatched, queued and controlled on its own and the source's task
-      // is never reused. A branch of an ordinary conversation stays ownerless and top-level, as it always was, so the
-      // native fork source and the display parent stay two different facts (spec D14, A17).
-      const record = await runtime.harness.commit(tx => tx.conversation(item.conversation.id), BACKGROUND_CONTEXT);
-      if (record === undefined) { refusal("not_found"); return; }
-      const child = record.owner !== undefined;
-      // The newest committed entry of the conversation's fork-aware history is its leaf, which is the point a fork
-      // with no `at` starts from. Read through the public history read rather than inferred from the view, whose last
-      // element is not the newest entry once a head marker leads the active range.
-      const leaf = named ?? (await item.conversation.entries({}, 1, undefined, BACKGROUND_CONTEXT)).items[0]?.id;
-      if (leaf === undefined) { refusal("empty"); return; }
-      const entryId = Number(leaf) as EntryId;
-      // The view the fork would start with, read through the same as-of context a fork uses. It throws for an entry
-      // that is not visible from this conversation, which is the refusal; a branch carrying no user or assistant
-      // message has nothing to continue from.
-      let branch;
-      try { branch = await item.conversation.context(BACKGROUND_CONTEXT, { at: entryId }); }
-      catch { refusal("unsaved"); return; }
-      if (!branch.entries.some(entry => entry.model?.some(message => message.role === "user" || message.role === "assistant"))) { refusal("empty"); return; }
-      const requestId = typeof body?.requestId === "string" && body.requestId.trim() !== "" ? body.requestId : randomUUID();
-      // A branch starts from the configuration in force at the entry it was taken from — the native agent document
-      // forks `asOf` — and a caller may name a field to replace on top of that copy. The two fields are the ones the
-      // settings route already validates, so a branch cannot be created with a configuration this backend would refuse
-      // to store: an unknown model or level is answered before the fork, exactly as it is on the settings route.
-      if (body?.model !== undefined && runtime.models.getModel(body.model.provider, body.model.modelId) === undefined) { json(response, 400, { code: "unknown_model", error: "unknown model" }); return; }
-      if (body?.thinkingLevel !== undefined && (typeof body.thinkingLevel !== "string" || !["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(body.thinkingLevel))) { json(response, 400, { code: "invalid_thinking_level", error: "invalid thinking level" }); return; }
-      const overrides: AgentChange = {
-        ...(body?.model === undefined ? {} : { model: body.model }),
-        ...(body?.thinkingLevel === undefined ? {} : { thinkingLevel: body.thinkingLevel as AgentState["thinkingLevel"] }),
-      };
-      try {
-        const spawned = await operations.spawn({
-          requestId,
-          source: { conversationId: id, entryId: String(entryId) },
-          ...(Object.keys(overrides).length === 0 ? {} : { agent: overrides }),
-          // The child's anchor is created inside the same commit as the branch, so the branch's native owner exists
-          // exactly when the branch does, and it starts in the permanent idle phase: a branch has no delegation to
-          // admit, only an owner of its own (spec D14).
-          ownership: child
-            ? { kind: "created-task", create: (tx) => createForkAnchor(tx, item.conversation.id) }
-            : { kind: "ownerless" },
-          ...(child ? { createdBy: id, displayParentId: id, provenance: { origin: "user" as const } } : {}),
-        });
-        const attached = await attach(spawned.conversation, { forkSource: id, ...(child ? { subagentParent: id } : {}) });
-        json(response, 201, { protocol: PROTOCOL_VERSION, conversationId: spawned.conversationId, conversation: catalogueEntry(attached, await catalogueFacts()) }); return;
-      } catch (error) {
-        if (error instanceof ConversationOperationRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-    }
-    if (request.method === "PATCH" && action === "settings") {
-      const body = await readBody(request) as { model?: ModelRef; thinkingLevel?: string } | undefined;
-      if (!body || (!body.model && body.thinkingLevel === undefined)) { json(response, 400, { error: "settings required" }); return; }
-      if (body.model && !runtime.models.getModel(body.model.provider, body.model.modelId)) { json(response, 400, { error: "unknown model" }); return; }
-      const level = body.thinkingLevel;
-      if (level !== undefined && !["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(level)) { json(response, 400, { error: "invalid thinking level" }); return; }
-      await item.conversation.configure({ model: body.model, thinkingLevel: level as AgentState["thinkingLevel"] }, BACKGROUND_CONTEXT);
-      const agent = await item.conversation.agent(BACKGROUND_CONTEXT);
-      json(response, 200, { protocol: PROTOCOL_VERSION, model: agent.model, thinkingLevel: agent.thinkingLevel }); return;
-    }
-    if (request.method === "GET" && action === "events") {
-      const requestedRevision = Number(url.searchParams.get("after") ?? "0");
-      const current = item.snapshot();
-      response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
-      // The baseline is the same bounded object the HTTP read answers, so it is bounded here too. A baseline that
-      // cannot be carried is **stated** rather than written: the transport would destroy the connection and the client
-      // would reconnect to the same frame, which is the endless resync this margin exists to prevent. The stream stays
-      // open, the next commit publishes normally, and the named entry stays readable through its own route.
-      const oversize = oversizeFrame(current, current.entries.at(-1)?.id ?? null);
-      if (oversize === undefined) send(response, "snapshot", current);
-      else send(response, "state_oversize", { protocol: PROTOCOL_VERSION, conversationId: id, revision: current.revision, reason: "frame_too_large", ...oversize });
-      if (url.searchParams.has("after") && (!Number.isInteger(requestedRevision) || requestedRevision !== current.revision)) send(response, "resync_required", { protocol: PROTOCOL_VERSION, conversationId: id, revision: current.revision });
-      // This connection is attached from here on, and a conversation can stay quiet for as long as its user leaves it
-      // alone. The keepalive is armed with the attachment and disarmed with it, so an idle stream outlives every idle
-      // bound in front of it while a disconnected one leaves nothing running behind it.
-      const stopKeepalive = startKeepalive(response, heartbeatIntervalMs);
-      item.clients.add(response);
-      request.on("close", () => { stopKeepalive(); item.clients.delete(response); });
-      return;
-    }
-    // One user message, through the one admission seam: an idle conversation places it and runs, a busy one queues
-    // it, and a conversation the user has stopped is resumed by this dispatch — an immediate send is the user's own
-    // decision to continue, so it clears `held` atomically with the admission. The caller is the authenticated host,
-    // never the body, so no request can claim to be someone else (spec D02, D07).
-    if (request.method === "POST" && action === "messages") {
-      // A removed conversation is out of the catalogue but its records are retained, so it is still reachable by id.
-      // A new turn on it would be a turn the user cannot see, so it is refused with the reason the caller reads.
-      if (item.deletedAt() !== undefined) { json(response, 409, { ok: false, code: "session_deleted", accepted: false, message: "This session was deleted. Start a new session to continue." }); return; }
-      const body = await readBody(request, MAX_SUBMISSION_BODY_BYTES);
-      const command = { ...(typeof body === "object" && body !== null ? body : {}), conversationId: id } as ProtocolCommand;
-      const validation = validateCommand(command, { conversationWorkspaceId: item.snapshot().workspaceId });
-      if (!validation.ok) { json(response, 400, validation); return; }
-      const whenBusy = (body as { whenBusy?: unknown }).whenBusy;
-      if (whenBusy !== undefined && whenBusy !== "steer" && whenBusy !== "followUp" && whenBusy !== "reject") { json(response, 400, { error: "invalid busy behavior" }); return; }
-      const images = command.images ?? [];
-      const refusedImages = imageRefusal(item, images);
-      if (refusedImages !== undefined) { json(response, 400, { ok: false, ...refusedImages }); return; }
-      try {
-        const sent = await operations.send(id, { requestId: command.requestId, caller: "user", content: await submissionContent(item, command.text, images), whenBusy: whenBusy ?? "followUp" });
-        // A held conversation turns this send into a resume, and the answer states how that went: `stopping` means the
-        // old stop still drains and the same request id finishes the intent, which is what the composer retries.
-        json(response, 202, { protocol: PROTOCOL_VERSION, requestId: command.requestId, ...(sent.submissionId === undefined ? {} : { submissionId: sent.submissionId }), ...(sent.status === undefined ? {} : { status: sent.status, ...(sent.reason === undefined ? {} : { reason: sent.reason }) }), control: sent.control });
-      } catch (error) {
-        if (!(error instanceof ConversationBusy)) throw error;
-        json(response, 409, { code: "conversation_busy", accepted: false });
-      }
-      return;
-    }
-    if (request.method === "POST" && action === "reload") {
-      // Explicit Reload: discover and parse a complete candidate, then commit it atomically. A failure changes nothing
-      // and answers with the error, so the UI can notify without the conversation losing its adopted prefix.
-      if (options.workspaceResources === undefined) { json(response, 404, { error: "resource loading is not configured" }); return; }
-      try {
-        await reloadResources(item.conversation, options.workspaceResources, await resourceEnvironment(item), BACKGROUND_CONTEXT);
-        json(response, 200, { protocol: PROTOCOL_VERSION, resources: await resourceSummary(readCommitted, item.conversation.id, BACKGROUND_CONTEXT) });
-      } catch (error) {
-        json(response, 500, { error: safeFailure(error), resources: await resourceSummary(readCommitted, item.conversation.id, BACKGROUND_CONTEXT) });
-      }
-      return;
-    }
-    // The native abort contract is unchanged and stays separate from a stop: it withdraws the queued inputs, marks the
-    // ordinary scope for abort and waits for it, and it never sets a hold. A user who wants the conversation to stay
-    // paused until they say otherwise uses `stop` (spec D07).
-    if (request.method === "POST" && action === "abort") { await item.conversation.abort(BACKGROUND_CONTEXT); json(response, 202, { protocol: PROTOCOL_VERSION, state: "interrupted" }); return; }
-    // Stop: the trusted user's own decision, committed atomically with the withdrawal of the inputs queued at this
-    // point and the abort marks of the conversation's ordinary live tasks. It never waits for the drain, so the answer
-    // states whether the ordinary scope is already idle; input arriving after the commit stays queued and visible, and
-    // repeating the same request id returns the same durable receipt instead of clearing the later items (spec D07).
-    if (request.method === "POST" && action === "stop") {
-      const body = await readBody(request) as { requestId?: unknown; expectedControlRevision?: unknown } | undefined;
-      if (typeof body?.requestId !== "string" || body.requestId.trim() === "") { json(response, 400, { code: "invalid_request", error: "requestId is required" }); return; }
-      if (body.expectedControlRevision !== undefined && (!Number.isInteger(body.expectedControlRevision) || (body.expectedControlRevision as number) < 0)) { json(response, 400, { code: "invalid_request", error: "expectedControlRevision must be a non-negative integer" }); return; }
-      try {
-        const stopped = await operations.stop(id, { requestId: body.requestId, stopSource: "user", ...(body.expectedControlRevision === undefined ? {} : { expectedControlRevision: body.expectedControlRevision as number }) });
-        json(response, stopped.status === "rejected" ? 409 : 202, { protocol: PROTOCOL_VERSION, conversationId: id, requestId: body.requestId, status: stopped.status, ...(stopped.reason === undefined ? {} : { reason: stopped.reason }), drain: stopped.drain, control: stopped.control, receipt: stopped.receipt });
-      } catch (error) {
-        if (!(error instanceof ConversationOperationRefusal)) throw error;
-        json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) });
-      }
-      return;
-    }
-    // Continue: the user's explicit resume. While the old stop's ordinary scope still drains the answer is `stopping`
-    // and every queued input stays; once the native scope is idle the same commit clears `held`, admits the optional
-    // input and consumes the held period's queue. An empty continue starts no run and invents no user message, and a
-    // retry of the same request id reads its durable receipt instead of performing the resume twice (spec D08).
-    if (request.method === "POST" && action === "continue") {
-      const body = await readBody(request, MAX_SUBMISSION_BODY_BYTES) as { requestId?: unknown; expectedControlRevision?: unknown; text?: unknown; images?: unknown; whenBusy?: unknown } | undefined;
-      if (typeof body?.requestId !== "string" || body.requestId.trim() === "") { json(response, 400, { code: "invalid_request", error: "requestId is required" }); return; }
-      if (body.expectedControlRevision !== undefined && (!Number.isInteger(body.expectedControlRevision) || (body.expectedControlRevision as number) < 0)) { json(response, 400, { code: "invalid_request", error: "expectedControlRevision must be a non-negative integer" }); return; }
-      const text = body.text === undefined ? undefined : body.text;
-      if (text !== undefined && typeof text !== "string") { json(response, 400, { code: "invalid_request", error: "text must be a string" }); return; }
-      const images = (body.images ?? []) as readonly SubmitImage[];
-      if (!Array.isArray(body.images ?? []) || (body.images !== undefined && !Array.isArray(body.images))) { json(response, 400, { code: "invalid_request", error: "images must be an array" }); return; }
-      // The resume's optional input is admitted under the runtime's own admission, so it is validated exactly as an
-      // ordinary message: a body that would not be a valid submission is refused before the resume commit.
-      if (text !== undefined || images.length > 0) {
-        const command = { protocol: PROTOCOL_VERSION, type: "conversation.submit", conversationId: id, requestId: body.requestId, text: text ?? "", ...(images.length > 0 ? { images } : {}) } as ProtocolCommand;
-        const validation = validateCommand(command, { conversationWorkspaceId: item.snapshot().workspaceId });
-        if (!validation.ok) { json(response, 400, validation); return; }
-        const refusedImages = imageRefusal(item, images);
-        if (refusedImages !== undefined) { json(response, 400, { ok: false, ...refusedImages }); return; }
-      }
-      const whenBusy = body.whenBusy;
-      if (whenBusy !== undefined && whenBusy !== "steer" && whenBusy !== "followUp") { json(response, 400, { code: "invalid_request", error: "whenBusy must be steer or followUp" }); return; }
-      try {
-        // The resume's input is admitted under the resume's **own** request id, so a retry after a lost answer is one
-        // identity end to end: the control receipt answers the resume and the submission answers the message.
-        const resumed = await operations.continue(id, {
-          requestId: body.requestId,
-          caller: "user",
-          ...(body.expectedControlRevision === undefined ? {} : { expectedControlRevision: body.expectedControlRevision as number }),
-          ...(text === undefined && images.length === 0 ? {} : { input: { content: await submissionContent(item, text ?? "", images), whenBusy: whenBusy ?? "followUp" } }),
-        });
-        json(response, resumed.status === "rejected" ? 409 : 202, { protocol: PROTOCOL_VERSION, conversationId: id, requestId: body.requestId, status: resumed.status, ...(resumed.reason === undefined ? {} : { reason: resumed.reason }), ...(resumed.submissionId === undefined ? {} : { submissionId: resumed.submissionId }), control: resumed.control, receipt: resumed.receipt });
-      } catch (error) {
-        if (!(error instanceof ConversationOperationRefusal)) throw error;
-        json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) });
-      }
-      return;
-    }
-    // The control state and one durable receipt. A caller whose stop or continue answer was lost reads back what really
-    // happened instead of re-sending an intent, and the answer states the *latest* control so an older operation's
-    // receipt can never be read as the current state (spec D08).
-    if (request.method === "GET" && action === "control") {
-      const requestId = url.searchParams.get("requestId") ?? undefined;
-      try {
-        const current = await operations.control(id, requestId === undefined || requestId.trim() === "" ? undefined : requestId);
-        json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, control: current.control, receipt: current.receipt ?? null });
-      } catch (error) {
-        if (!(error instanceof ConversationOperationRefusal)) throw error;
-        json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) });
-      }
-      return;
-    }
-    // Subtree control: an explicit stop or interrupt of the **captured** descendant subtree, which is a different
-    // decision from this conversation's own stop. A parent's stop stays local (spec decision 1), so this route is the
-    // only one that reaches children, and it reaches them through the same `stop`/`abort` contracts every other caller
-    // uses. The scope is captured by the first request under a request id and answered from that capture on a replay, so
-    // a child created afterwards is never implicitly included; a selective request names a subset of the same capture.
-    // The answer states one outcome and one current control state per child, so a partial result is visible instead of
-    // being flattened into a single status, and nothing here touches history, relations or tombstones (spec D01-D05).
-    if (request.method === "POST" && action === "subtree-control") {
-      const body = await readBody(request) as { requestId?: unknown; action?: unknown; selected?: unknown } | undefined;
-      if (typeof body?.requestId !== "string" || body.requestId.trim() === "") { json(response, 400, { code: "invalid_request", error: "requestId is required" }); return; }
-      if (body.action !== "stop" && body.action !== "interrupt") { json(response, 400, { code: "invalid_request", error: "action must be stop or interrupt" }); return; }
-      if (body.selected !== undefined && (!Array.isArray(body.selected) || body.selected.some((entry) => typeof entry !== "string" || entry.trim() === ""))) {
-        json(response, 400, { code: "invalid_request", error: "selected must be an array of conversation ids" }); return;
-      }
-      try {
-        // The caller is the host's own statement, exactly as it is for a single-conversation stop: this HTTP surface is
-        // the user, and nothing in the body selects it.
-        const controlled = await operations.subtreeControl(id, {
-          requestId: body.requestId,
-          action: body.action,
-          stopSource: "user",
-          ...(body.selected === undefined ? {} : { selected: body.selected as string[] }),
-        });
-        // A partial result is not a failed request: the request was accepted and every child answered, so the answer is
-        // 202 with `partial`, each child's own recorded status and each child's current session row beside it.
-        json(response, 202, { protocol: PROTOCOL_VERSION, conversationId: id, ...(await subtreeAnswer(controlled)) });
-      } catch (error) {
-        if (error instanceof ConversationOperationRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        if (error instanceof SubtreeControlRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-      return;
-    }
-    // The durable record of one subtree request: the captured scope, every child's committed outcome and each child's
-    // current control state. A caller whose answer was lost reads back what really happened instead of re-sending the
-    // intent, which is the same recovery read the single-conversation control route offers (spec D04, D05).
-    if (request.method === "GET" && action === "subtree-control") {
-      const requestId = url.searchParams.get("requestId");
-      if (requestId === null || requestId.trim() === "") { json(response, 400, { code: "invalid_request", error: "requestId is required" }); return; }
-      try {
-        const controlled = await operations.subtreeControlRequest(id, requestId);
-        if (controlled === undefined) { json(response, 404, { protocol: PROTOCOL_VERSION, code: "unknown_request", error: "no subtree request with that id on this conversation" }); return; }
-        json(response, 200, { protocol: PROTOCOL_VERSION, conversationId: id, ...(await subtreeAnswer(controlled)) });
-      } catch (error) {
-        if (error instanceof ConversationOperationRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        if (error instanceof SubtreeControlRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-      return;
-    }
-    // Recall: take the queued inputs back out of the conversation and hand their text to the caller, which is the one
-    // thing the runtime does not already offer. `abort()` withdraws the same items but discards them, because an abort
-    // means the user no longer wants what they queued. A recall means the user wants it back to edit, so the items are
-    // withdrawn with the runtime's own `pi.inbox` document and settled as unanswered — never placed, so the boundary
-    // that would have run them has nothing left to place — while the text is returned in queue order. The run already
-    // in flight is untouched: this removes what has not started, it does not stop what has.
-    if (request.method === "POST" && action === "recall-queue") {
-      // A removed conversation keeps its records but is out of every surface, so a queue write on it is refused for the
-      // same reason a new turn is: the caller would be editing a queue nobody can see (spec D09, A22).
-      if (item.deletedAt() !== undefined) { json(response, 409, { code: "session_deleted", error: "This session was deleted. Start a new session to continue." }); return; }
-      const recalled = { steering: [] as string[], followUp: [] as string[] };
-      await item.conversation.commit(async (tx) => {
-        const inbox = await tx.doc(InboxDoc, item.conversation.id);
-        // Backwards, so splicing the array the runtime reads cannot skip an item; `unshift` restores queue order.
-        for (let index = inbox.items.length - 1; index >= 0; index--) {
-          const queued = inbox.items[index];
-          // A queued write is not user input and has no text to hand back; it stays for its own boundary.
-          if (queued.mode === "write") continue;
-          // The runtime names the mode `steer`; the snapshot a client reads calls that list `steering`.
-          recalled[queued.mode === "steer" ? "steering" : "followUp"].unshift(contentText(queued.content));
-          tx.settleSubmission(queued.id, { status: "unanswered", reason: "recalled" });
-          inbox.items.splice(index, 1);
-        }
-      }, BACKGROUND_CONTEXT);
-      json(response, 200, { protocol: PROTOCOL_VERSION, ...recalled }); return;
-    }
-    // The busy composer's steer and follow-up: the same admission seam as an ordinary message, with the same control
-    // rule and the same content — the protocol's own text and image blocks. It is a **queue-only** input, so it never
-    // resumes a held conversation — a draft the user staged while the turn was running is not their decision to
-    // continue (spec D07).
-    if (request.method === "POST" && action === "busy") {
-      const body = await readBody(request, MAX_SUBMISSION_BODY_BYTES);
-      const mode = typeof body === "object" && body !== null ? (body as { mode?: unknown }).mode : undefined;
-      if (mode !== "follow-up" && mode !== "steer") { json(response, 400, { error: "mode must be follow-up or steer" }); return; }
-      const input = (typeof body === "object" && body !== null ? body : {}) as { text?: unknown; requestId?: unknown; images?: unknown };
-      if (typeof input.requestId !== "string" || !input.requestId.trim()) { json(response, 400, { error: "requestId required" }); return; }
-      if (input.images !== undefined && !Array.isArray(input.images)) { json(response, 400, { error: "images must be an array" }); return; }
-      // A body that is not the shape this route reads is refused rather than coerced, so a caller is never answered
-      // with a draft it did not write.
-      if (input.text !== undefined && typeof input.text !== "string") { json(response, 400, { error: "text must be a string" }); return; }
-      const text = input.text ?? "";
-      const images = (input.images ?? []) as readonly SubmitImage[];
-      // A queued draft is a submission like any other, so it is validated the same way: an empty body and an attachment
-      // the protocol refuses are answered before anything is admitted, rather than staged and dropped.
-      const validation = validateCommand({ protocol: PROTOCOL_VERSION, type: "conversation.submit", conversationId: id, requestId: input.requestId, text, ...(images.length > 0 ? { images } : {}) } as ProtocolCommand, { conversationWorkspaceId: item.snapshot().workspaceId });
-      if (!validation.ok) { json(response, 400, validation); return; }
-      const refusedImages = imageRefusal(item, images);
-      if (refusedImages !== undefined) { json(response, 400, { ok: false, ...refusedImages }); return; }
-      if (item.deletedAt() !== undefined) { json(response, 409, { ok: false, code: "session_deleted", accepted: false, message: "This session was deleted. Start a new session to continue." }); return; }
-      try {
-        const sent = await operations.send(id, { requestId: input.requestId, caller: "user", resume: false, content: await submissionContent(item, text, images), whenBusy: mode === "steer" ? "steer" : "followUp" });
-        json(response, 202, { protocol: PROTOCOL_VERSION, mode, requestId: input.requestId, submissionId: sent.submissionId, control: sent.control });
-      } catch (error) {
-        if (!(error instanceof ConversationOperationRefusal)) throw error;
-        json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) });
-      }
-      return;
-    }
-    // The pending queue, item by item, and the two per-item operations the Web offers on it. The queue is the
-    // runtime's own `pi.inbox`, so nothing here is a second queue: a read projects it, an edit writes one item's
-    // content in one commit after confirming the token the caller read, and a cancel is the native abort. Neither
-    // operation clears a hold or starts a run — a hold is the user's decision, and deciding about one queued item is
-    // not a decision to continue (spec D09, A11).
-    if (action === "items") {
-      const submissionId = parts[4];
-      const method = request.method ?? "GET";
-      // A removed conversation keeps its records but is out of every surface, so a queue write on it is refused for the
-      // same reason a new turn is: the caller would be editing a queue nobody can see (spec D09, A22).
-      if (method !== "GET" && item.deletedAt() !== undefined) { json(response, 409, { code: "session_deleted", error: "This session was deleted. Start a new session to continue." }); return; }
-      if (method === "GET" && submissionId === undefined) {
-        const answer = await handleConversationItems(items, id, "list", undefined, undefined);
-        json(response, answer.status, answer.body); return;
-      }
-      if (method === "PATCH" && submissionId !== undefined) {
-        const answer = await handleConversationItems(items, id, "edit", submissionId, await readBody(request, MAX_SUBMISSION_BODY_BYTES));
-        json(response, answer.status, answer.body); return;
-      }
-      if (method === "DELETE" && submissionId !== undefined) {
-        const answer = await handleConversationItems(items, id, "cancel", submissionId, undefined);
-        json(response, answer.status, answer.body); return;
-      }
-      json(response, 405, { error: "method not allowed" }); return;
-    }
+    // The conversation-scoped routes. Each domain module resolves the conversation it is asked about and answers its
+    // own paths, so a route change touches one module and this wiring; the entry keeps only the dispatch order and the
+    // final fallback.
+    if (await conversationHistory(request, response, url)) return;
+    if (await conversationCommands(request, response, url)) return;
+    if (await conversationExtensions(request, response, url)) return;
     json(response, 404, { error: "not found" });
   }
 
