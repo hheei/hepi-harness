@@ -48,7 +48,7 @@ panel ingress、terminal close/session/fan-in、history keyboard/focus、workben
 
 ## 交付記錄
 
-變更修訂：worktree base `e6a0ffd2`（dirty tree；本票未 commit，由 coordinator 整合）。
+變更修訂：commit `f58ed307`（worktree base `e6a0ffd2`，clean tree）。
 
 Changed paths（相對 `packages/ui/src`，另有列明者）：
 
@@ -78,17 +78,18 @@ Changed paths（相對 `packages/ui/src`，另有列明者）：
 pending 狀態、`FileExplorer` 的 `refreshKey` prop、`openSessionStatsPanel`／`systemBtnRef` 等死符號。無 shim／alias／
 雙路徑保留；`FileSeam`、`TerminalFanIn`、selection owner、project/terminal cwd 規則未改。
 
-Evidence（同一 dirty source，base `e6a0ffd2`）：
+Evidence（revision `f58ed307`，clean tree，base `e6a0ffd2`）：
 
-- `pnpm verify:changed` exit 0：changed-typecheck、changed-test（`@hepi/app`／`@hepi/ui`）、web-unit、check-docs 全 PASS；
-  log `.dev/verify/2026-10-22T01-54-12-406-verify-changed`（同 source 亦跑過 `…01-48-37-971`、`…01-46-37-325`）。
-- `pnpm --filter @hepi/ui test`：474 pass / 0 fail。
+- `pnpm verify:changed --base=e6a0ffd2` exit 0：changed-typecheck、changed-test（`@hepi/app`／`@hepi/ui`）、web-unit、
+  check-docs 全 PASS；log `.dev/verify/2026-10-22T01-55-31-743-verify-changed`。
+- `pnpm --filter @hepi/ui test`：474 pass / 0 fail（`.dev/verify/2026-10-22T01-55-f58ed30-ticket11/ui-tests.log`）。
 - `pnpm --filter @hepi/web build`、`pnpm --filter @hepi/app build` exit 0。
-- focused browser drivers exit 0：`test:terminal-close`（9 checks，含 pending creation／cleanup 與 restart）、
-  `test:terminal-fan-in`（26）、`test:terminal-session`（UX-13 PASSED）、`test:workbench-scope`、
-  `test:file-failures`、`test:file-surfaces`、`test:token-footer`、`test:panel-ingress`、
-  `test:raw-history-sidebar-focus`、`test:rail-keyboard`、`test:subtree-control`、`test:chat-scroll`、
-  `test:history-rail`、`test:history-scope`、`test:visible-turns`、`test:composer-interaction`。
+- focused browser drivers 全部 exit 0，每個 driver 一份 raw log 在
+  `.dev/verify/2026-10-22T01-55-f58ed30-ticket11/`：`terminal-close`（9 checks，含 pending creation／cleanup 與
+  restart）、`terminal-fan-in`（26）、`terminal-session`（UX-13 PASSED）、`chat-scroll`（host bounded 800/800）、
+  `history-rail`、`history-scope`、`visible-turns`、`composer-interaction`、`file-failures`、`file-surfaces`、
+  `workbench-scope`、`token-footer`、`panel-ingress`、`raw-history-sidebar-focus`、`rail-keyboard`、
+  `subtree-control`。
 - 拆檔期間發現並修正的 material finding：`WorkspacePanel` 一度被放在 shell 的 flex row 之外，`#root` 因此長到 854px
   （viewport 800）。`test:chat-scroll` 的「host is bounded by the viewport」抓住它；panel 已回到 row 內，該 driver 現
   800/800 通過。
