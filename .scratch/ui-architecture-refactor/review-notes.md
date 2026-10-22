@@ -41,6 +41,20 @@ Ticket 01 closeout：agent-230 第一次複審確認原 findings 1／2／3／5�
 
 僅在有具體 finding 時追加：trigger、source／repro evidence、正常使用可能性、user impact、fix/record/investigate、負責票及重訪條件。`record` 是完整處置，不形成阻擋依賴或自動擴大實作範圍。
 
+## Ticket 12 系統驗收審核 — 2026-10-22
+
+Independent reviewer `agent-292` 在 `fa7b37dc` 對本票交付分別執行 Standards 與 Spec 審核，兩者皆無 material findings。審核為行為定義，不以 driver 名稱取代結果：
+
+| 項目 | 審核結論 |
+| --- | --- |
+| 導航 target memoization（`ce5cb804`） | 修正屬於適當 owner（`AppShell` 以選擇 `navigation` 記錄 memoize），回應 `ChatWindow` 的 identity 去重，非 caller 防護 |
+| 引用 prompt journey | 一個 fork、一則訊息，離開→回來不重播 |
+| native journey | 真實確認、重開後未設定、本次 run 憑據 store 為空 |
+| fixture trust answer | `GET /api/project-trust` 答案屬 driver 補齊，非產品缺口 |
+| 統計 | 44 個唯一 driver、49 次執行，與 raw log 索引一致 |
+
+審核範圍為交付的行為與所有權；未執行的能力（真實上游 OAuth、live compaction、release、Android）繼續作為限制記錄，不作為已驗收項目。
+
 ## 規劃文件審閱與檢查 — 2026-10-21
 
 獨立 reviewer `agent-220` 讀取本 effort 全部文件、原始盤點及倉庫 review/verification policy，分別檢查 Standards 與 Spec：兩者皆無 material findings。範圍限規劃的一致性、替換切片、依賴及驗收歸屬，不構成產品程式碼審閱或實作驗收。
@@ -50,3 +64,17 @@ Ticket 01 closeout：agent-230 第一次複審確認原 findings 1／2／3／5�
 `pnpm check:docs --json=.dev/verify/ui-architecture-plan/docs.json` 在 `a57100bb4917d408ee51c19beeda30d3efecc857` 加本次未提交規劃文件的工作樹執行，exit 0；raw log：`.dev/verify/ui-architecture-plan/docs.log`，JSON：`.dev/verify/ui-architecture-plan/docs.json`。`git diff --check` 同一工作樹 exit 0，raw log：`.dev/verify/ui-architecture-plan/diff-check.log`。工作樹另有先前的 durable-ledger scratch，未納入本次編寫／審閱範圍。
 
 未執行產品測試、build 或 browser/native journey：本次僅建立規格及 tickets，矩陣仍是未執行需求。以上本地 `.dev` 檔案是當前工作區證據，不保證在新 checkout 中存在。
+
+
+## Ticket 03 integration review
+
+Agent-248 reviewed integrated Ticket 03 against R3 and acceptance C1/C3-C5/N8/N10 without running tests. Four material findings in ordinary connection/settings workflows; ticket reopened and corrections required at owner boundaries.
+
+| Finding | Trigger and user impact | Required correction |
+| --- | --- | --- |
+| CompletionDelivery registry remains initialized once in AppShell while WorkbenchConnection can change without remounting AppShell. | Switch connection in the same shell; new ChatWindow joins old-client registry, losing new connection completion/background watches. | Key or recreate registry by connection identity; dispose old registry interest and subscribe through new client. |
+| ConversationSession changes with API identity, but mount read effect is empty-dependency and loadSession validates only conversation id on null/error paths. | Same conversation ID across connection switch while old read is in flight; old answer can clear/rewind new transcript or publish old failure. | Add connection-generation/owner fence to all read success, null and error publication, including post-read agent state. |
+| Settings General reload calls `api.reload(sessionId)` before registered onSessionReloaded, which calls conversation.reload again. | Ordinary setting mutation reloads resources; duplicate route mutation violates one-operation behavior and may duplicate work. | Put reload ownership in one caller; callback performs follow-up read/report only, or Settings delegates full operation to chat. |
+| reloadConversation ignores `loadSession` result then unconditionally emits success. | Backend reload succeeds but follow-up read fails; UI reports success despite unreadable/unknown updated state. | Gate success notice on accepted read; surface read failure without claiming success. |
+
+C3 and N8 pass by source/test review. C1 and C5 fail pending fixes; C4 partial due registry lifetime. N10 has no material regression found but was not independently verified. Browser fixture mounts ChatWindow with custom registry, not production AppShell/SettingsPanel; add ordinary public-shell interaction coverage for connection switch and exactly-once reload if seam permits. No bypass probes or test execution by reviewer.

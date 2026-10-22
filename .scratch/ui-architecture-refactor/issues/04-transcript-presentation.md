@@ -1,7 +1,7 @@
 # Transcript 與 notice 呈現
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: [對話 I/O 與 view attachment](03-conversation-lifetime.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R4 transcript、R3 顯示責任
@@ -24,10 +24,10 @@ Acceptance: [行為矩陣](../acceptance.md) — C2、C6、C7、N10
 
 ## 驗收條件
 
-- [ ] useAgentSession／對話工作階段不持有 DOM scroll refs 或 toast 顯示 timer。
-- [ ] 新訊息不強拉正在閱讀歷史的使用者；follow-tail、jump 與 return-to-bottom 合矩陣。
-- [ ] 切 conversation 不套用舊 anchor／scroll；notice pause/resume 使用剩餘時間。
-- [ ] raw history、jump window 與 prefix 沒有因拆分多出另一個資料擁有者。
+- [x] useAgentSession／對話工作階段不持有 DOM scroll refs 或 toast 顯示 timer。
+- [x] 新訊息不強拉正在閱讀歷史的使用者；follow-tail、jump 與 return-to-bottom 合矩陣。
+- [x] 切 conversation 不套用舊 anchor／scroll；notice pause/resume 使用剩餘時間。
+- [x] raw history、jump window 與 prefix 沒有因拆分多出另一個資料擁有者。
 
 ## 驗證與證據
 
@@ -47,4 +47,8 @@ chat-scroll、history rail/scope、raw-history sidebar focus、rail keyboard、n
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+UI04 commits `5ca5731e`, `aed06dec`, `b80ddec7`: `useTranscriptPresentation`, `NoticeShelf`, `notice-shelf` own scrolling and notice clocks. Removed runtime DOM refs/layout effects/timers and scroll returns. Worker ran 13 browser drivers, 312 assertions, exit 0 at `b80ddec7`; raw logs `.dev/worktrees/ui-transcript/.dev/verify/ui-transcript-04-final/`.
+
+Integrated at `b3ab7871` in `.dev/worktrees/architecture-consolidation`. Combined `pnpm verify:changed --base=ddc82d03` exit 0 (typecheck, tests, web-unit, docs); raw report `.dev/verify/2026-10-21T17-08-21-052-verify-changed/`.
+
+On unchanged integrated revision `b3ab7871`, `pnpm --filter @hepi/web test:transcript-presentation && pnpm --filter @hepi/web test:composer-interaction && pnpm --filter @hepi/web test:definition-refresh` exit 0. Full raw log `/home/chlo/.pi/agent/sessions/--home-chlo-Documents-dev-hepi-harness--/tasks/01a15c17-51ee-75d2-80b8-9ae57d3c15af/bash-f4a6b0-15.log`. Cross-ticket ReloadOutcome registration variance resolved by integrating UI04 and UI08 together. Real Backend long-history/native acceptance remains ticket12.

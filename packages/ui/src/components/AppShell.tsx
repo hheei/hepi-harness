@@ -353,9 +353,12 @@ export function AppShell() {
   // Where a navigation must land inside its conversation, read from the selection: the entry the reader asked for, and
   // whether the raw-history surface is the one that can show it.
   const navigationTarget = selectionState.navigation;
-  const searchTarget = navigationTarget === null
+  // The target is memoized on the selection's own record because the chat reads it by identity: it holds the target it
+  // already asked about and issues one bounded read per target it is handed. A fresh object per render is a new target
+  // to it, so following a reference or a search hit into a long conversation asked the Backend twice for one window.
+  const searchTarget = useMemo(() => navigationTarget === null
     ? null
-    : { sessionId: navigationTarget.sessionId, entryId: navigationTarget.entryId ?? "", ...(navigationTarget.blockIndex === undefined ? {} : { blockIndex: navigationTarget.blockIndex }) };
+    : { sessionId: navigationTarget.sessionId, entryId: navigationTarget.entryId ?? "", ...(navigationTarget.blockIndex === undefined ? {} : { blockIndex: navigationTarget.blockIndex }) }, [navigationTarget]);
   const handleSearchTargetHandled = useCallback((target: { sessionId: string; entryId: string }) => {
     selection.navigationHandled(target.sessionId, target.entryId);
   }, [selection]);

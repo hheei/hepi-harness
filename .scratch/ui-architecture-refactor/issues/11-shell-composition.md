@@ -1,7 +1,7 @@
 # Shell layout 與 panel 接線
 
 Type: implementation
-Status: resolved
+Status: resolved — integrated at `6e16e77a`; P1 quote-consumption correction `cad0d86` confirmed by agent-292
 Blocked by: [工作台選擇與草稿](01-workbench-selection.md), [Accepted conversation readout](02-conversation-readout.md), [對話 I/O 與 view attachment](03-conversation-lifetime.md), [Transcript 與 notice 呈現](04-transcript-presentation.md), [Composer 互動與命令介面](05-composer-interaction.md), [模型與 provider 工作流](06-model-workflow.md), [MCP 工作流](07-mcp-workflow.md), [Definitions target 與刷新接線](08-definition-refresh.md), [訊息 block 呈現模組](09-message-views.md), [檔案 preview 呈現模組](10-file-previews.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R7 Shell、全部責任整合
@@ -94,5 +94,14 @@ Evidence（revision `f58ed307`，clean tree，base `e6a0ffd2`）：
   （viewport 800）。`test:chat-scroll` 的「host is bounded by the viewport」抓住它；panel 已回到 row 內，該 driver 現
   800/800 通過。
 
-剩餘限制：R11 的 App host 切 connection／logout 驗收屬整合票 12；本票只證明 Web ingress 與 App build 消費同一組裝。
-未執行真 Tauri 原生儲存（票 10 已記錄）。
+### 整合後續（票 12 執行）
+
+- P1 review finding（agent-292）：`ChatArea` 把 `onInitialPromptConsumed` 以 `() => onInitialPromptConsumed` 傳下去，
+  回傳的是 callback 而非呼叫它，因此 quoted prompt 在重掛時會重播。修正 `cad0d86b` 直接傳遞該 callback。
+  agent-292 窄幅複審確認修正、無其他 material finding。新增的 `test:quote-initial-prompt` 以普通操作（選取 → Ask in
+  new chat → 切走 → 切回）證明只送出一次。
+- 票 12 另外發現並修正 `searchTarget` 每次 render 重建導致同一 bounded target window 被讀兩次（`ce5cb804`），
+  以及 selection scene 未答 `GET /api/project-trust` 的 driver 缺口。詳見[票 12](12-system-acceptance.md)。
+
+剩餘限制：R11 的 App host 切 connection／logout 驗收由整合票 12 於真實 Tauri 執行（42 checks 全過）；本票本身只證明
+Web ingress 與 App build 消費同一組裝。真 Tauri 原生儲存亦於票 12 執行（R8）。

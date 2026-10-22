@@ -1,7 +1,7 @@
 # Composer 互動與命令介面
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: [對話 I/O 與 view attachment](03-conversation-lifetime.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R4 composer、R1 草稿契約
@@ -24,10 +24,10 @@ Acceptance: [行為矩陣](../acceptance.md) — C8、N6–N8、C3 的 composer 
 
 ## 驗收條件
 
-- [ ] IME 不誤送，補全插入／undo 正確，圖片與文字在 move/reload/promotion 保留。
-- [ ] ChatWindow 不必知道 editor 內部 selection／補全計時與 queue 命令實作。
-- [ ] 不以巨型 context/any 打包原本 props；edit interaction 不是未使用的 pass-through。
-- [ ] models/queue 真相仍由其領域提供，未在 composer 複製另一份可寫權威。
+- [x] IME 不誤送，補全插入／undo 正確，圖片與文字在 move/reload/promotion 保留。
+- [x] ChatWindow 不必知道 editor 內部 selection／補全計時與 queue 命令實作。
+- [x] 不以巨型 context/any 打包原本 props；edit interaction 不是未使用的 pass-through。
+- [x] models/queue 真相仍由其領域提供，未在 composer 複製另一份可寫權威。
 
 ## 驗證與證據
 
@@ -47,4 +47,8 @@ ChatInput 及 chat helpers 現有案例；focused browser IME/undo、completion/
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+UI05 commits `346d2b7b`, `fa6b9c5b`: composer commands/editor/popup/notice/queue modules replace monolithic ChatInput internals; ChatInput shrank from 3175 to about 800 lines. One live draft and command seam preserve native undo, IME, attachments, promotion and parking. Worker reports 451 UI tests plus composer browser journey passing.
+
+Integrated at `b3ab7871` in `.dev/worktrees/architecture-consolidation`. Combined `pnpm verify:changed --base=ddc82d03` exit 0 (typecheck, tests, web-unit, docs); raw report `.dev/verify/2026-10-21T17-08-21-052-verify-changed/`.
+
+On unchanged integrated revision `b3ab7871`, `pnpm --filter @hepi/web test:transcript-presentation && pnpm --filter @hepi/web test:composer-interaction && pnpm --filter @hepi/web test:definition-refresh` exit 0. Full raw log `/home/chlo/.pi/agent/sessions/--home-chlo-Documents-dev-hepi-harness--/tasks/01a15c17-51ee-75d2-80b8-9ae57d3c15af/bash-f4a6b0-15.log`. Cross-ticket ReloadOutcome registration variance resolved by integrating UI04 and UI08 together. Real Backend long-history/native acceptance remains ticket12.

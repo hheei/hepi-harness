@@ -784,6 +784,73 @@ try {
   check(field(revokedState, "backend") === "" && field(revokedState, "client") === "", "and that refusal states no connection: " + String(revokedState));
   check(revokedRun.lines.every((line) => statedConnection(line) === null), "and no line of that run ever stated an admitted connection");
   const peaks = { coldStart: cold.peakRssKb(), configured: configured.peakRssKb(), revokedCredential: revokedRun.peakRssKb() };
+
+  // 4c. The App's own logout, through the surface it ships. A refused connection is the one state in which the shell
+  //     offers connection management, and Disconnect is the App's sign-out: it deletes this machine's stored entry and
+  //     restarts unconfigured. Both steps are the person's — the panel's control, then its confirmation — and what
+  //     follows is read from the store and from the restarted document rather than assumed.
+  // The inspector is a per-process server on one port, so a document is only usable once it answers: a socket that
+  // attached to the window a restart replaced evaluates nothing. Asking a trivial expression is what tells the two apart,
+  // and the whole attach is retried rather than the question.
+  const refusalDocument = await (async () => {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const candidate = await openDocument();
+      if (candidate === null) { await delay(2000); continue; }
+      if (await candidate.evaluate("1+1") === 2) return candidate;
+      candidate.close();
+      await delay(2000);
+    }
+    return null;
+  })();
+  check(refusalDocument !== null, "the refused shell's own document is reachable, so its recovery surface can be used");
+  if (refusalDocument !== null) {
+    try {
+      const click = async (describe: string, expression: string): Promise<boolean> => {
+        const deadline = Date.now() + 60_000;
+        for (;;) {
+          const answer = await refusalDocument.evaluate(expression);
+          if (answer === "clicked") return true;
+          if (Date.now() > deadline) {
+            const shown = String(await refusalDocument.evaluate("document.body.innerText")).replace(/\s+/g, " ").slice(0, 400);
+            check(false, "the refusal surface never offered " + describe + " (last answer: " + String(answer) + "; it showed: " + shown + ")");
+            return false;
+          }
+          await delay(500);
+        }
+      };
+      const offeredDisconnect = await click("the Disconnect control",
+        '(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent.trim()==="Disconnect…"); if(!b) return "none"; b.click(); return "clicked";})()');
+      if (offeredDisconnect) {
+        // The confirmation's own control, and nothing else, is what deletes the entry.
+        const confirmOffered = await click("the confirmation's own Disconnect control",
+          '(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent.trim()==="Disconnect this computer"); if(!b) return "none"; return "clicked";})()');
+        check(confirmOffered, "disconnecting asks for its confirmation before anything is deleted");
+        // The confirmation is a second, deliberate step, and it is the one that deletes the entry. Its click is
+        // dispatched and its reply is raced against a short wait rather than awaited: the shell deletes the stored
+        // connection and restarts itself, so the answer to a script that clicked may never arrive from the process that
+        // clicked. The restart is what the driver reads as the outcome, and it is the same statement either way.
+        const answered = await Promise.race([
+          refusalDocument.evaluate('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent.trim()==="Disconnect this computer"); if(!b) return "none"; b.click(); return "clicked";})()'),
+          delay(5000).then(() => "no reply (the shell restarted)"),
+        ]);
+        check(answered === "clicked" || answered === "no reply (the shell restarted)",
+          "the confirmation's own control was clicked: " + String(answered));
+        if (answered === "clicked" || answered === "no reply (the shell restarted)") {
+          // The shell restarts into a document with no connection, and the entry it deleted is gone from this run's own
+          // store: the two halves of the App's logout, read where each one really is.
+          const unconfiguredAgain = await revokedRun.waitFor((line) => surfaceIs(line, "configure"), 180_000);
+          check(unconfiguredAgain !== null, "the shell restarted unconfigured after the disconnect: " + String(unconfiguredAgain));
+          const storeAfterDisconnect = credentials.search(CONNECTION_ATTRIBUTES);
+          check(storeAfterDisconnect.unlocked.length === 0 && storeAfterDisconnect.locked.length === 0,
+            "and this machine's stored connection is gone from the run's own credential store: " + JSON.stringify(storeAfterDisconnect));
+        }
+      }
+    } catch (error) {
+      check(false, "App logout error: " + (error instanceof Error ? error.message : String(error)).slice(0, 400));
+    } finally {
+      refusalDocument.close();
+    }
+  }
   await revokedRun.stop();
   // The native half of the ticket's performance box: the peak resident size of each shell process this run started,
   // read from the kernel's own record while the process was alive. Debug profile, so it is a functional-run cost, not a
