@@ -1336,7 +1336,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     if (await conversationHistory(request, response, url)) return;
     if (await conversationCommands(request, response, url)) return;
     if (await conversationExtensions(request, response, url)) return;
-    json(response, 404, { error: "not found" });
+    json(response, 404, { code: "not_found", error: "conversation not found" });
   }
 
   return { server, async close() { await conversations.close(); await runtime.close(); await new Promise<void>((resolve) => { if (!server.listening) resolve(); else server.close(() => resolve()); }); } };

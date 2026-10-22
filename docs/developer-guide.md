@@ -37,7 +37,7 @@ adapters, including a real loopback SSH helper session; adapter-specific resourc
 | `packages/session` | 快照、SSE、重连、控制与资源读取 | `src/browser.ts`、`src/agent-event-connection.ts`、`src/control.ts`、`src/resources.ts` |
 | `packages/protocol` | 版本化帧、路径与类型 | `src/index.ts`、`src/navigation.ts`、`src/files.ts`、`src/gateway.ts` |
 | `packages/gateway` | ingress、执行、文件、终端、SSH、MCP、provider 凭据 | `src/ingress/index.ts`、`src/client.ts`、`src/startup.ts`、`src/index.ts` |
-| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/harness.ts` |
+| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/conversation-attachments.ts`、domain `*-http.ts` modules、`src/harness.ts` |
 | `scripts` | dev、验证、文档/入口检查、只读部署检查 | `dev.mjs`、`verify.mjs`、`check-docs.mjs`、`check-entrypoints.mjs` |
 | `deploy` | 服务端镜像与 Compose | [Container deployment](container-deployment.md) |
 | `docs` | 当前指南、限定 revision/日期的证据、ADR | [索引](README.md) |
@@ -158,14 +158,19 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 | `GET/POST /api/device-credentials`, `DELETE …/:id` | `device-credentials.ts`:只允许 Web 身份签发/列举/撤销 |
 | `POST /internal/credentials/verify` | `server.ts`:ingress 身份核验 |
 | `GET/POST /api/conversations`, `GET …/:id` | `conversation-operations.ts`、`catalogue-binding.ts`:目录、创建、relations/references/配置 |
-| `GET …/:id/state`, `GET …/:id/events` | `history-window.ts`:快照与 SSE |
-| `GET …/:id/submissions?requestId=` | `server.ts`:只读 durable 记录或 null |
-| `POST …/:id/{messages,fork,abort,delegate,recovery,references}` | `conversation-input.ts`、`subtree-control.ts`、`subagents/`:输入、控制与关系 |
-| `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
+| `GET …/:id/state`, `GET …/:id/events` | `conversation-history-http.ts`、`history-window.ts`:快照与 SSE |
+| `GET …/:id/submissions?requestId=` | `conversation-command-http.ts`:只读 durable 记录或 null |
+| `POST …/:id/{messages,fork,abort,delegate,recovery,references}` | `conversation-command-http.ts`、`conversation-extensions-http.ts`、`conversation-input.ts`、`subtree-control.ts`、`subagents/`:输入、控制与关系 |
+| `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-history-http.ts`、`conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
 | `/api/terminal*`, `/api/files/{upload,upload-check,bytes}` | `terminal-relay.ts`、`file-relay.ts`:主机中继 |
-| `/api/{workspaces,hosts,host/directories,projects,worktrees,workbench}` | `project-store.ts`、`server.ts`:执行目标与只读操作 |
+| `/api/{workspaces,hosts,host/directories,workbench}` | `workspace-http.ts`:执行目标与只读操作 |
 | `GET /api/workspaces/:workspaceId/locality?gatewayId=` | `workspace-http.ts`:一个 workspace 是否为该 gateway 本机的目录,client ingress 唯一询问的 locality 结论 |
-| `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `model-config.ts`、`extension-selection.ts`、`skill-install.ts` 等 |
+| `/api/{projects,worktrees}` | `server.ts` wire dispatch delegates mutation and checkout lifecycles to `project-registry.ts` |
+| `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `settings-http.ts` 与各领域操作模块,如 `model-config.ts`、`extension-selection.ts`、`skill-install.ts` |
+| `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify`, `/diagnostics*`, `/workbench*` | `diagnostics-http.ts`:诊断页、descriptor 与 credential routes |
+
+`server.ts` 保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback。各 HTTP domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response;不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer。
+
 
 `ConversationOperations.spawn` 在一次 commit 中写 `pi.agent`、`hepi.workspace`、relations、references 与会话作用域
 request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent Definition/context strategy。

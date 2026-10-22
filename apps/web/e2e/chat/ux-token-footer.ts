@@ -290,10 +290,10 @@ try {
     await page.locator('[data-fixture-locale="en"]').click();
 
     console.log("== the aggregate session toolbar is untouched");
-    // AppShell is a shared UI panel; the Web host only mounts it.
-    const appShell = await readFile(join(webRoot, "..", "..", "packages", "ui", "src", "components", "AppShell.tsx"), "utf8");
+    // The top bar is a shared UI panel; the Web host only mounts it, and the toolbar glyphs belong to that panel.
+    const topBar = await readFile(join(webRoot, "..", "..", "packages", "ui", "src", "components", "ShellTopBar.tsx"), "utf8");
     check(
-      appShell.includes("viewBox=\"0 0 10 10\"") && appShell.includes("strokeWidth=\"1.2\""),
+      topBar.includes("viewBox=\"0 0 10 10\"") && topBar.includes("strokeWidth=\"1.2\""),
       "the aggregate toolbar keeps its own 10-grid, 1.2-stroke glyphs",
     );
     check(pageErrors.length === 0, "no page error occurred" + (pageErrors.length === 0 ? "" : ": " + pageErrors.join(" | ")));

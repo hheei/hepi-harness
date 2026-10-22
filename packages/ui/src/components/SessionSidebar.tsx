@@ -63,7 +63,7 @@ import { configuredDefaultCwd, configuredHome, useWorkspaceApi, workspaceIdentit
 import { focusIfLost } from "../lib/stacked-dialog";
 import { createRequestId, operationFailure } from "../lib/conversation-api";
 import { catalogueRow, type CatalogueEntry } from "../lib/conversation-catalogue";
-import { useWorkbenchConnection } from "../lib/workbench-scope";
+import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useSelectionState, useWorkbenchSelection, type SelectConversationOptions } from "../lib/workbench-selection";
 import { useI18n } from "../hooks/useI18n";
 import { useIsMobile } from "../hooks/useIsMobile";
@@ -145,11 +145,8 @@ function ToolbarIconButton({
 interface Props {
   /** What the bar above a fresh composer reaches through (`SessionSidebarControl`). */
   controlRef?: Ref<SessionSidebarControl>;
-  refreshKey?: number;
   onOpenFile?: (filePath: string, fileName: string, options?: { sourceSessionId?: string | null; modeHint?: "diff" }) => void;
   onOpenTerminal?: (cwd: string) => void;
-  explorerRefreshKey?: number;
-  onExplorerRefresh?: () => void;
   onAtMention?: (relativePath: string, isDir: boolean) => void;
   onAtMentions?: (relativePaths: string[]) => void;
   onRunningSessionIdsChange?: (ids: Set<string>) => void;
@@ -339,7 +336,7 @@ function buttonAnchor(element: HTMLElement, align: "start" | "end"): SidebarMenu
   return { kind: "rect", rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }, align };
 }
 
-export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTerminal, explorerRefreshKey, onExplorerRefresh, onAtMention, onAtMentions, onRunningSessionIdsChange, onSessionsChange }: Props) {
+export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMention, onAtMentions, onRunningSessionIdsChange, onSessionsChange }: Props) {
   const { t } = useI18n();
   // The workbench's one selection. This surface reads it — which conversation is open, which folder is in effect — and
   // sends it intents; it holds no selection of its own beyond the search, expansion and menus that are this panel's
@@ -355,6 +352,12 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
   // requests to the Gateway this page was admitted to, under its credential — never to whatever origin happens to serve
   // the document.
   const connection = useWorkbenchConnection();
+  // What tells this list its catalogue is stale: a conversation created, renamed, forked, deleted or finished somewhere
+  // this surface did not see. It is stated by whoever observed it, and this is the surface that reads the rows.
+  const catalogueChange = useWorkbenchChange("catalogue");
+  // The files under the workspace changed: the explorer's listing and the open file's diff are stale, and the surfaces
+  // that read them re-read on this signal rather than on a counter the shell kept.
+  const filesChange = useWorkbenchChange("files");
   // The catalogue and the row writes are this connection's own: the Backend's `/api/conversations…` vocabulary, asked
   // under this page's credential rather than around it, and assembled with the connection rather than here.
   const api = connection.api;
@@ -424,7 +427,6 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
   const filesPickerRef = useRef<ProjectWorktreePickerHandle>(null);
   const [worktreeState, setWorktreeState] = useState<WorktreeState | null>(null);
   const [worktreeLoadingCwd, setWorktreeLoadingCwd] = useState<string | null>(null);
-  const [explorerKey, setExplorerKey] = useState(0);
   const [explorerUploadBusy, setExplorerUploadBusy] = useState(false);
   const [fileSearchOpen, setFileSearchOpen] = useState(false);
   const [sessionSearchOpen, setSessionSearchOpen] = useState(false);
@@ -621,7 +623,7 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
         detailsHydrationTimerRef.current = null;
       }
     };
-  }, [loadSessions, refreshKey]);
+  }, [catalogueChange, loadSessions]);
 
   useEffect(() => {
     let stopped = false;
@@ -750,9 +752,12 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
     writeUnread([selectedSessionId], false);
   }, [selectedSessionId, unreadSessionIds, writeUnread]);
 
-  useEffect(() => {
-    if (explorerRefreshKey !== undefined) setExplorerKey((k) => k + 1);
-  }, [explorerRefreshKey]);
+  // The catalogue is stale: the rows are re-read by the effect above, and the worktree listing beside them follows it,
+  // because a checkout's own list is what a conversation in it names.
+  useEffect(() => catalogueChange.subscribe(() => {
+    setWtRefreshKey((key) => key + 1);
+    void loadSessions(false, true);
+  }), [catalogueChange, loadSessions]);
 
   const projectSelection = useCallback((root: string, key: string, displayRoot?: string, retained = false): ProjectSelection => ({
     root,
@@ -872,7 +877,7 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
         });
       });
     return () => { cancelled = true; };
-  }, [selectedCwd, wtRefreshKey, refreshKey, workspaceApi, workspaces, projects]);
+  }, [selectedCwd, wtRefreshKey, workspaceApi, workspaces, projects]);
 
 
   // Prefer an exact UI selection while a refetch is in flight. Once the
@@ -2322,8 +2327,7 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
               </ToolbarIconButton>
               <ToolbarIconButton
                 onClick={() => {
-                  if (onExplorerRefresh) onExplorerRefresh();
-                  else setExplorerKey((k) => k + 1);
+                  filesChange.notify();
                   setExplorerRefreshDone(true);
                   if (explorerRefreshTimerRef.current) clearTimeout(explorerRefreshTimerRef.current);
                   explorerRefreshTimerRef.current = setTimeout(() => setExplorerRefreshDone(false), 2000);
@@ -2354,7 +2358,6 @@ export function SessionSidebar({ controlRef, refreshKey, onOpenFile, onOpenTermi
               cwd={explorerCwd}
               displayCwd={selectedProject?.displayRoot ?? null}
               onOpenFile={onOpenFile ?? (() => {})}
-              refreshKey={explorerKey}
               onAtMention={onAtMention}
               onAtMentions={onAtMentions}
               onUploadBusyChange={setExplorerUploadBusy}

@@ -31,10 +31,10 @@ test("only the subtree surface reaches the subtree routes, and the global sideba
   for (const [file, text] of [[TREE, source(TREE)], ["./SessionSidebar.tsx", source("./SessionSidebar.tsx")], ["./SessionTree.tsx", source("./SessionTree.tsx")]] as const) {
     assert.equal(/subtree/i.test(text), false, file + " controls no subtree: it is navigation");
   }
-  // The dock-level entry is mounted by the shell alone, and only beside the tree it names.
-  const shell = source("./AppShell.tsx");
-  assert.equal((shell.match(/<SubtreeControlPanel/g) ?? []).length, 1, "one subtree surface, mounted where the child tree is");
-  assert.match(shell, /activeTopPanel === "agents"[\s\S]*<AgentSessionPanel[\s\S]*<SubtreeControlPanel/, "it sits below the tree, not instead of it");
+  // The dock-level entry is mounted by the top panel alone, and only beside the tree it names.
+  const panel = source("./ShellTopPanel.tsx");
+  assert.equal((panel.match(/<SubtreeControlPanel/g) ?? []).length, 1, "one subtree surface, mounted where the child tree is");
+  assert.match(panel, /activePanel === "agents"[\s\S]*<AgentSessionPanel[\s\S]*<SubtreeControlPanel/, "it sits below the tree, not instead of it");
 });
 
 test("controlling a subtree costs no connection per child and reads no per-row state", () => {

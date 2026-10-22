@@ -187,8 +187,9 @@ try {
   check(!/without the workbench/.test(viewer), "the viewer called a failed preview a missing capability: " + viewer.slice(0, 160));
   check(!/could not answer for a file preview/.test(viewer), "the viewer echoed the surface's raw body: " + viewer.slice(0, 160));
 
-  // 6. A file deleted after the listing was read is stated as gone, and its next move is the folder the shell reloads —
-  //    not the same read repeated. The surface's own 404 body is not on screen, so no host path is either.
+  // 6. A file deleted after the listing was read is stated as gone, and its next move is the folder reload the
+  //    connection states — not the same read repeated. The surface's own 404 body is not on screen, so no host path is
+  //    either.
   const missing = await page.evaluate(() => {
     const panel = document.getElementById("viewer-missing");
     return {
@@ -205,7 +206,7 @@ try {
 
   await page.click("#viewer-missing button:has-text('Reload folder')");
   const reloads = await page.evaluate(() => window.fileFailureActions.reloadFolder);
-  check(reloads === 1, "the reload button reached the shell's own folder refresh, got " + reloads);
+  check(reloads === 1, "the reload button reached the connection's files change, got " + reloads);
 
   // 7. A bounded preview states the bytes it shows against the size the host stated. It used to draw its own delivered
   //    size as the file's end — every truncated file read as complete — beside a "Load more" the host cannot serve.
