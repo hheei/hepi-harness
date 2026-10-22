@@ -37,7 +37,7 @@ adapters, including a real loopback SSH helper session; adapter-specific resourc
 | `packages/session` | 快照、SSE、重连、控制与资源读取 | `src/browser.ts`、`src/agent-event-connection.ts`、`src/control.ts`、`src/resources.ts` |
 | `packages/protocol` | 版本化帧、路径与类型 | `src/index.ts`、`src/navigation.ts`、`src/files.ts`、`src/gateway.ts` |
 | `packages/gateway` | ingress、执行、文件、终端、SSH、MCP、provider 凭据 | `src/ingress/index.ts`、`src/client.ts`、`src/startup.ts`、`src/index.ts` |
-| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/conversation-attachments.ts`、domain `*-http.ts` modules、`src/harness.ts` |
+| `apps/server` | 会话、任务、模型注册与 durable 执行语义 | `src/main.ts`、`src/server.ts`、`src/conversation-attachments.ts`、`src/conversation-catalogue.ts`、domain `*-http.ts` modules、`src/harness.ts` |
 | `scripts` | dev、验证、文档/入口检查、只读部署检查 | `dev.mjs`、`verify.mjs`、`check-docs.mjs`、`check-entrypoints.mjs` |
 | `deploy` | 服务端镜像与 Compose | [Container deployment](container-deployment.md) |
 | `docs` | 当前指南、限定 revision/日期的证据、ADR | [索引](README.md) |
@@ -140,7 +140,7 @@ Web 身份命名为 `web:<sha256 前 32 位>`。路由由一个入口分派:
   `close()` 中止所有附着响应。
 - 仅配置 `HEPI_INGRESS_STATIC_DIR` 时服务静态页;非 `/api` 路径不代理。
 
-Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingress surface。
+Backend 资源路由加在其 domain owner(`settings-http.ts`、`conversation-*-http.ts`、`project-http.ts`、`workspace-http.ts`、`diagnostics-http.ts`),再在 `server.ts` 的固定 dispatch 顺序里接一行;主机资源加在 ingress surface。
 **检查:** `pnpm --filter @hepi/gateway test`、`pnpm --filter @hepi/web test:web-logout`、
 `test:panel-ingress`、`test:client-acceptance`。配置见 [Client ingress](client-ingress.md)。
 
@@ -154,10 +154,11 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 
 | 路由 | 所有者 / 用途 |
 | --- | --- |
-| `GET /api/descriptor` | `server.ts`:协议、身份、Backend/account scope、build、capabilities |
+| `GET /api/descriptor` | `diagnostics-http.ts`:协议、身份、Backend/account scope、build、capabilities |
 | `GET/POST /api/device-credentials`, `DELETE …/:id` | `device-credentials.ts`:只允许 Web 身份签发/列举/撤销 |
-| `POST /internal/credentials/verify` | `server.ts`:ingress 身份核验 |
-| `GET/POST /api/conversations`, `GET …/:id` | `conversation-operations.ts`、`catalogue-binding.ts`:目录、创建、relations/references/配置 |
+| `POST /internal/credentials/verify` | `diagnostics-http.ts`:ingress 身份核验 |
+| `GET/POST /api/conversations` | `conversation-catalogue-http.ts`、`conversation-catalogue.ts`:目录、running poll、创建;每行来自唯一 catalogue projection |
+| `GET …/:id` | `conversation-command-http.ts`、`conversation-operations.ts`:identity、relations/references/配置 |
 | `GET …/:id/state`, `GET …/:id/events` | `conversation-history-http.ts`、`history-window.ts`:快照与 SSE |
 | `GET …/:id/submissions?requestId=` | `conversation-command-http.ts`:只读 durable 记录或 null |
 | `POST …/:id/{messages,fork,abort,delegate,recovery,references}` | `conversation-command-http.ts`、`conversation-extensions-http.ts`、`conversation-input.ts`、`subtree-control.ts`、`subagents/`:输入、控制与关系 |
@@ -165,11 +166,14 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 | `/api/terminal*`, `/api/files/{upload,upload-check,bytes}` | `terminal-relay.ts`、`file-relay.ts`:主机中继 |
 | `/api/{workspaces,hosts,host/directories,workbench}` | `workspace-http.ts`:执行目标与只读操作 |
 | `GET /api/workspaces/:workspaceId/locality?gatewayId=` | `workspace-http.ts`:一个 workspace 是否为该 gateway 本机的目录,client ingress 唯一询问的 locality 结论 |
-| `/api/{projects,worktrees}` | `server.ts` wire dispatch delegates mutation and checkout lifecycles to `project-registry.ts` |
-| `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `settings-http.ts` 与各领域操作模块,如 `model-config.ts`、`extension-selection.ts`、`skill-install.ts` |
+| `/api/{projects,worktrees,workbench,host/directories}` | `project-http.ts` 解码请求并陈述结果;mutation、checkout lifecycle、host call 与 publication 全在 `project-registry.ts` |
+| `/api/{models,models-config,sidebar-state}` | `settings-http.ts`,配置实现见 `model-config.ts`、`sidebar-state.ts` |
+| `/api/{extensions,skill-market/*}` | `extensions-http.ts`:已安装 extension、全局默认选择与 skill market,实现见 `extension-selection.ts`、`skill-install.ts`、`skill-repository.ts` |
+| `GET /api/search` | `conversation-catalogue-http.ts`、`session-search.ts`:无索引全文搜索 |
+| `/api/agent-definitions*` | `agent-definitions-http.ts`:workspace 自有主机上的定义文档 |
 | `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify`, `/diagnostics*`, `/workbench*` | `diagnostics-http.ts`:诊断页、descriptor 与 credential routes |
 
-`server.ts` 保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback。各 HTTP domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response;不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer。
+`server.ts` 只保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback;每个 domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response,不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer;`conversation-catalogue.ts` 拥有唯一的 catalogue row projection。
 
 
 `ConversationOperations.spawn` 在一次 commit 中写 `pi.agent`、`hepi.workspace`、relations、references 与会话作用域
