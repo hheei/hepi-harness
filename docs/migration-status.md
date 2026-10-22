@@ -828,8 +828,13 @@ an owner that is another gateway, an SSH-profile host and any host result that p
 gateway it cannot reach) rather than a fabricated negative. `/api/workspaces` and `/api/hosts` keep their shapes and
 their catalogue callers.
 
-Still open: the ingress itself still composes the two listings, so this route has no product caller yet (ingress-binding
-ticket 02). Nothing is cached, no path is resolved and no filesystem is probed by the verdict.
+The client ingress is now its only caller (ingress-binding ticket 02): `servesFolder` in
+`packages/gateway/src/ingress/index.ts` asks this one route with its own configured gateway id and service credential,
+and admits a folder-scoped MCP or project-trust request only on an explicit `local: true`. A refusal, a body that is
+not the verdict and a transport failure are all `false`, no answer is cached, and the workspace/host list casts,
+cross-list join and `backendJson` helper are gone — the ingress reads no list, profile, root or account shape to decide
+whether a folder is its own. `/api/workspaces` and `/api/hosts` keep their shapes for their catalogue callers. Nothing
+is cached, no path is resolved and no filesystem is probed by the verdict.
 
 ## Client ingress conversation slice (ticket 03)
 
