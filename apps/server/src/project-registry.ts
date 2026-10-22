@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { GatewayHostClient, HostTransportError, type EnvironmentBinding } from "@hepi/gateway";
-import type { WorkspaceRequest, WorktreeRequest, WorktreeListing } from "@hepi/protocol/gateway";
+import type { WorkspaceRequest, WorkbenchRequest, WorkbenchResult, WorktreeRequest, WorktreeListing } from "@hepi/protocol/gateway";
 import { catalogueWorkspace, type CatalogueBinding, type CatalogueWorkspace } from "./catalogue-binding.ts";
 import type { NewProjectFolder, ProjectFolder, ProjectRecord, ProjectStore, RetainedBinding } from "./project-store.ts";
 
@@ -33,6 +33,9 @@ export const WEB_HOST_REQUIRED = "no Web host gateway is named: the Web UI serve
 
 /** One configured gateway: where a host is reached, and the credential this deployment reaches it with. */
 export type GatewayConnection = { readonly gatewayId: string; readonly gatewayOrigin: string; readonly gatewayToken: string };
+
+/** One host request's answer: the host's value, or the refusal a route states with its own status. */
+export type HostCallAnswer = { readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly code: string; readonly status: number };
 
 /** A binding a removal retained, as the workspace listing states it: resolvable, never a target. */
 type RetainedEnvironmentBinding = EnvironmentBinding & { readonly retained: true };
@@ -117,6 +120,18 @@ export type ProjectRegistry = {
 	/** Re-assert one recorded folder's root on its Project's host, for a caller that already holds the folder. */
 	ensureFolder(project: ProjectRecord, folder: ProjectFolder): Promise<void>;
 	/**
+	 * One host request this registry's own workflows also make, answered the same way: the host's success, its refusal
+	 * with the status the route states, or the transport failure classified by whether a repetition is safe. A caller
+	 * that browses a host's directories or proxies one workbench read holds no client of its own, so the origin join, the
+	 * bearer header and the meaning of a lost answer stay here instead of being rebuilt per route.
+	 */
+	hostCall(connection: GatewayConnection, request: WorkspaceRequest): Promise<HostCallAnswer>;
+	/**
+	 * One workbench read on a resolved binding's host: the host's own answer — a value or its refusal, which keeps the
+	 * code it stated — or `gateway_offline` when no answer arrived at all.
+	 */
+	workbench(binding: EnvironmentBinding, request: WorkbenchRequest): Promise<WorkbenchResult | { readonly ok: false; readonly code: "gateway_offline" }>;
+	/**
 	 * The four Project workflows. Each takes the host id the calling Web origin named (`hostId`), resolves the host the
 	 * operation belongs to, performs the host work it needs, records the outcome and publishes it; each answers a
 	 * refusal, with its own status, instead of a half-applied change. A deployment that records no Projects answers
@@ -185,7 +200,7 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 	 * refusal (which keeps its code) or a transport failure classified by whether a repetition is safe. A registration
 	 * may have run when its answer was lost, so it is reported as an unknown outcome instead of an offline host.
 	 */
-	const hostCall = async (connection: GatewayConnection, request: WorkspaceRequest): Promise<{ readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly code: string; readonly status: number }> => {
+	const hostCall = async (connection: GatewayConnection, request: WorkspaceRequest): Promise<HostCallAnswer> => {
 		try {
 			const result = await new GatewayHostClient({ gatewayOrigin: connection.gatewayOrigin, gatewayToken: connection.gatewayToken }).control.workspaces(request);
 			return result.ok ? { ok: true, value: result.value } : { ok: false, code: result.code, status: result.code === "workspace_conflict" ? 409 : 400 };
@@ -315,6 +330,16 @@ export function createProjectRegistry(options: ProjectRegistryOptions): ProjectR
 			return transportOf(resolved);
 		},
 		ensureFolder: registerFolder,
+		hostCall,
+		workbench: async (binding, request) => {
+			// Every workbench operation reads, so nothing here may run twice: a lost answer is only an unreachable host,
+			// and the host's own refusal keeps the code it stated.
+			try {
+				return await new GatewayHostClient({ gatewayOrigin: binding.gatewayOrigin, gatewayToken: binding.gatewayToken }).control.workbench(request);
+			} catch {
+				return { ok: false, code: "gateway_offline" };
+			}
+		},
 		create: async (request, hostId) => {
 			// The host a Web origin named is resolved before anything else, exactly as this route always did: an origin
 			// that named no host, or one this deployment does not configure, cannot be turned into a guessed one.

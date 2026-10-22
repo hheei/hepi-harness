@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createDiagnosticsHttp, createDiagnosticsPages } from "./diagnostics-http.ts";
 import { createWorkspaceHttp } from "./workspace-http.ts";
@@ -6,28 +5,28 @@ import { createSettingsHttp } from "./settings-http.ts";
 import { createConversationHistoryHttp } from "./conversation-history-http.ts";
 import { createConversationCommandHttp } from "./conversation-command-http.ts";
 import { createConversationExtensionsHttp } from "./conversation-extensions-http.ts";
+import { createConversationCatalogueHttp } from "./conversation-catalogue-http.ts";
+import { createExtensionsHttp } from "./extensions-http.ts";
+import { createProjectHttp } from "./project-http.ts";
+import { createConversationCatalogue, type CatalogueEntry } from "./conversation-catalogue.ts";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { type ImageContent, type Models, type TextContent } from "@earendil-works/pi-ai";
 import { safeFailure } from "./public-errors.ts";
 import { createConversationAttachments, type ConversationRuntime } from "./conversation-attachments.ts";
 export type { ServerSnapshot, ServerEntry, ServerDelta, ServerFrame, ServerFailure } from "./conversation-attachments.ts";
-import { type ConversationId, type TaskInspection, type Cursor, type ModelRef, type Extension } from "@earendil-works/pi-durable";
+import { type ConversationId, type Cursor, type ModelRef, type Extension } from "@earendil-works/pi-durable";
 import { GatewayHostClient, gatewayEnvironment, HostTransportError, type EnvironmentBinding, type ExecutionHostEnv } from "@hepi/gateway";
-import { DEFAULT_HOST_HEADER, HEARTBEAT_INTERVAL_MS, PROTOCOL_VERSION, type ConversationProvenance, type SubmitImage } from "@hepi/protocol";
-import type { McpToolList, WorkbenchOperation, WorkspaceRequest as HostRequest } from "@hepi/protocol/gateway";
-import { readSidebarState } from "./sidebar-state.ts";
-import { ConversationOperationRefusal, createConversationOperations, WorkspaceDoc } from "./conversation-operations.ts";
+import { HEARTBEAT_INTERVAL_MS, PROTOCOL_VERSION, type SubmitImage } from "@hepi/protocol";
+import type { McpToolList, WorkspaceRequest as HostRequest } from "@hepi/protocol/gateway";
+import { createConversationOperations, WorkspaceDoc } from "./conversation-operations.ts";
 import { type SubtreeChildOutcome, type SubtreeControlResult } from "./subtree-control.ts";
-import { conversationPage } from "./conversation-page.ts";
-import { catalogueListVersion, type CatalogueWorkspace } from "./catalogue-binding.ts";
 import { createConversationItemOperations } from "./conversation-items.ts";
-import { SearchQueryTooLong, searchConversationBodies } from "./session-search.ts";
 import { ensureAdoptedResources, resourceSummary, type WorkspaceResources } from "./workspace-resources.ts";
 import { ENVIRONMENT_EXTENSION, openServerHarness, type ExtensionInstallFailure, type ServerHarness, type HarnessConfiguration } from "./harness.ts";
 import { extensionNameList, ExtensionSelectionDoc, materializeSelection, readDefaultSelection, resolveDefaultSelection, writeDefaultSelection, type InstalledExtension } from "./extension-selection.ts";
 import { type ModelConfigTarget } from "./model-config.ts";
-import { skillMarketRoute, type SkillMarket } from "./skill-repository.ts";
-import { boundedMessage, createInstaller, installRequest, toggleRequest, updateRequest, type Installer } from "./skill-install.ts";
+import { type SkillMarket } from "./skill-repository.ts";
+import { createInstaller, type Installer } from "./skill-install.ts";
 import { createTerminalRelay } from "./terminal-relay.ts";
 import { createFileRelay } from "./file-relay.ts";
 import { createAgentDefinitionsHandler } from "./agent-definitions-http.ts";
@@ -35,113 +34,19 @@ import { createSubagentHost, type SubagentCatalogueRow } from "./subagents/compo
 import { createSubagentExtension } from "./subagents/extension.ts";
 import { DispatchDoc, SUBAGENT_ANCHOR_TASK, SUBAGENT_EXTENSION } from "./subagents/host.ts";
 import { createSubagentDelegation } from "./subagents/delegate.ts";
-import { projectRunStatus, type ConversationRunStatus } from "./subagents/status.ts";
 import { createMcpToolBridge, MCP_EXTENSION, MCP_TOOL_PREFIX, type McpCallTarget, type McpToolDeclaration } from "./mcp-conversation-tools.ts";
 import { grantEntriesOf, mcpConfigReadOf, mcpGrantSelection, mcpToolListOf, readMcpGrants, reconcileMcpOffer, writeMcpGrants } from "./mcp-grants.ts";
 
-/** The two per-catalogue facts a status needs, read once for a whole list. */
-type CatalogueFacts = { readonly tasks: ReadonlyMap<string, readonly TaskInspection[]>; readonly waitingReports: ReadonlySet<string> };
+import { createProjectRegistry, type GatewayConnection } from "./project-registry.ts";
+import type { ProjectStore } from "./project-store.ts";
+import type { DeviceCredentials } from "./device-credentials.ts";
 
 /** One child's outcome with its current session row attached, which is what a subtree answer projects. */
 type SubtreeProjectedOutcome = SubtreeChildOutcome & { readonly session?: CatalogueEntry };
-
-
 /** One subtree request's answer as the HTTP surface states it: the recorded outcomes plus each child's current row. */
 type SubtreeProjectedResult = Omit<SubtreeControlResult, "outcomes"> & { readonly outcomes: readonly SubtreeProjectedOutcome[] };
-import { createProjectRegistry, WEB_HOST_REQUIRED, type GatewayConnection, type ProjectMutation } from "./project-registry.ts";
-import type { ProjectRecord, ProjectStore } from "./project-store.ts";
-import type { DeviceCredentials } from "./device-credentials.ts";
 
 export type BackendServer = { readonly server: Server; close(): Promise<void> };
-/**
- * One conversation as the catalogue lists it: what the session list and the running poll both need, from one read.
- * The fork route answers the row this builds for its new conversation, so the row a caller is handed and the row the
- * next list read shows for the same conversation cannot be two different things. The hepi-owned title is part of the
- * row — the runtime's record has none — and a conversation with no title states the absence explicitly rather than
- * omitting the field, so a caller cannot read a missing field as "not loaded yet".
- *
- * `subagentParentConversationId` is the creator edge of a conversation a task created: a subagent's own conversation,
- * and the conversation whose task owns it. The row reports it rather than leaving a client to guess, because every
- * surface that asks "is this a subagent's?" — the completion sound, the notification, the unread marker, the session
- * tree — otherwise reads a set that is empty by construction. It is reported whether or not the owning conversation is
- * still listed: it is a fact about this conversation, and a client that could not see it would treat a subagent's
- * completion as the user's.
- *
- * It is **not** reported for a conversation the user branched from a child. That branch is task-owned — by its own
- * background anchor, in the source's scope — but its owner is not a delegation: nobody asked for it, so reporting the
- * edge would make a surface read the user's own branch as a subagent's, fold it into the source's family and treat its
- * answer as a silent completion. The branch states its source through `parentConversationId` and its place through
- * `displayParentId`; the native owner stays readable through the by-id read, where it is a fact and not a
- * classification (spec D14).
- *
- * `lastRunEndedAt` is when this conversation's newest finished run ended, from the committed task table. It is the one
- * fact that says a run happened at all: a run that starts and finishes between two polls is never seen as busy, so a
- * client that only compared running flags could not learn it ran, while a client comparing this can. It is reported
- * without a per-poll read — the value is read once when the conversation is attached and kept current from this
- * process's commit stream, exactly as the title and the removal are — and it states no outcome: whether a run answered,
- * aborted or failed is the transcript's and the submission's business, and a marker that said otherwise would be a
- * completion notice the durable facts do not support.
- */
-type CatalogueEntry = {
-  id: string;
-  workspaceId: string | null;
-  gatewayId: string | null;
-  /**
-   * The binding facts about `workspaceId`, from the same lookup that resolved it: the folder's recorded root, whether a
-   * removal retained it, and the Project it is a folder of. Absent for a conversation bound to no workspace, and the
-   * `gatewayId` above is kept beside it because every surface that names a host already reads it there.
-   */
-  workspace?: CatalogueWorkspace;
-  busy: boolean;
-  /**
-   * This conversation's own execution status, projected from facts about **it** — its own run, its own committed
-   * control, its own live tasks and whether its delegated result is waiting in its creator's queue. A surface reads
-   * this instead of inferring a child's state from a parent's busy flag (spec D15).
-   */
-  runStatus: ConversationRunStatus;
-  /**
-   * The extensions this conversation currently selects, from the runtime's own resolution of its stored choice. It is
-   * the same list the state frame already publishes, so a surface that has to know whether this conversation may
-   * delegate reads it here instead of making a second per-conversation request — and the delegate entry follows the
-   * conversation's own selection rather than a deployment-wide guess (spec D15).
-   */
-  extensions: readonly string[];
-  revision: number;
-  messageCount: number;
-  firstMessage: string;
-  title: string | null;
-  lastRunEndedAt?: number;
-  /**
-   * The hepi-owned creator edge: the conversation that asked for this one. It is separate from
-   * `subagentParentConversationId` (the native task ownership edge) because an ordinary conversation can create an
-   * independent one, and separate from `parentConversationId` (the native fork source).
-   */
-  createdBy?: string;
-  /**
-   * The conversation this one is displayed under, from its hepi-owned relations. It is kept even when that parent is
-   * tombstoned, with `displayParentDeleted` stating the parent is unavailable, so a child is never promoted to a
-   * conversation of its own and its relation stays readable (spec D03).
-   */
-  displayParentId?: string;
-  displayParentDeleted?: boolean;
-  /** The native immutable fork source, projected from the conversation record; absent when the conversation is no fork. */
-  parentConversationId?: string;
-  /** The native task ownership edge, absent for a conversation the user branched (see above). */
-  subagentParentConversationId?: string;
-};
-/**
- * A workspace a removed folder left behind. It resolves like any other binding, so a conversation already bound to it
- * keeps its host, its root and its execution environment; the marker is what keeps it out of every target picker and
- * out of the home and default-directory answers (spec decision 23).
- */
-/** The gateway id a Web origin named for the host it serves, as it arrives on a host-scoped request. */
-const namedHostId = (value: string | null | undefined): string | undefined => value === null || value === undefined || value.trim() === "" ? undefined : value.trim();
-/**
- * One folder of one project, as the unlink route addresses it: `/api/projects/<projectId>/folders/<folderId>`. The
- * folder is named inside the project's own path because it is the project's folder and not a workspace, and the two
- * ids are captured undecoded so a percent-encoded id reaches the store as the caller sent it.
- */
-const folderUnlinkPath = /^\/api\/projects\/([^/]+)\/folders\/([^/]+)$/;
 /**
  * The host requests and answers this backend sends and reads are declared once, for every consumer, in
  * `@hepi/protocol/gateway`: the routes are the gateway's, and a second declaration of the same JSON here could only
@@ -181,27 +86,6 @@ async function readBody(request: IncomingMessage, limitBytes = 1024 * 1024): Pro
 }
 function authorized(request: IncomingMessage, token: string): boolean { return request.headers.authorization === "Bearer " + token; }
 function json(response: ServerResponse, status: number, body: unknown): void { response.writeHead(status, { "content-type": "application/json" }); response.end(JSON.stringify(body)); }
-/**
- * One project as a client sees it: its identity and name, the host every folder is on, and each recorded folder with
- * the `/workspace/<id>` routing its conversations bind plus whether it is the project's default. The default is what a
- * new conversation uses; naming another folder the default (PATCH) never moves a binding an existing conversation
- * holds, so every folder here stays resolvable for the conversations already in it.
- */
-type ProjectFolderView = { id: string; workspaceId: string; root: string; cwd: string; default: boolean };
-type ProjectView = { id: string; name: string; hostId: string; profileId?: string; defaultFolderId: string; folders: ProjectFolderView[]; createdAt: string };
-
-function projectView(project: ProjectRecord): ProjectView {
-  return {
-    id: project.id,
-    name: project.name,
-    hostId: project.hostId,
-    ...(project.profileId === undefined ? {} : { profileId: project.profileId }),
-    defaultFolderId: project.defaultFolderId,
-    folders: project.folders.map(folder => ({ id: folder.id, workspaceId: folder.workspaceId, root: folder.root, cwd: "/workspace/" + folder.workspaceId, default: folder.id === project.defaultFolderId })),
-    createdAt: project.createdAt,
-  };
-}
-
 export async function createBackendServer(options: Options): Promise<BackendServer> {
   // The keepalive cadence one attached conversation stream writes at. A deployment that must sit under a stricter
   // idle bound states its own here; everything else reads the protocol's stated default.
@@ -254,12 +138,6 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     return listed.ok ? { ok: true, value: listed.value } : { ok: false, code: listed.code, status: listed.status };
   };
   /**
-   * The gateway a Web origin named for the host it serves, resolved against the configured connections. The Web UI
-   * server owns that mapping (`HEPI_WEB_LOCAL_GATEWAY_ID`), because the host a browser is served from is a property of
-   * the Web origin and not of this process: two origins can share one backend with a different local host each.
-   */
-  const webHostOf = (hostId: string | undefined): { ok: true; connection: GatewayConnection } | { ok: false; error: string } => {
-    if (hostId === undefined) return { ok: false, error: WEB_HOST_REQUIRED };
     const connection = gateways.get(hostId);
     return connection === undefined
       ? { ok: false, error: "the Web UI server named gateway " + hostId + ", which this deployment does not configure" }
@@ -310,7 +188,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // The Web's own delegation route commits on the same harness every other operation does, so a browser dispatch
     // writes the same kind of record a model tool writes, on the same store and with no second writer.
     commit: (change) => runtime.harness.commit(change, BACKGROUND_CONTEXT),
-    catalogue: (): readonly SubagentCatalogueRow[] => [...conversations.values()].filter(item => item.deletedAt() === undefined).map(item => catalogueEntry(item)),
+    catalogue: (): readonly SubagentCatalogueRow[] => [...conversations.values()].filter(item => item.deletedAt() === undefined).map(item => catalogue.entry(item)),
     workspace: async (conversationId) => runtime.harness.snapshot(WorkspaceDoc, Number(conversationId) as ConversationId, BACKGROUND_CONTEXT).then(stored => stored?.workspaceId),
     // The preparation's branch point: the newest visible entry of the delegating conversation, read through the
     // conversation's own fork-aware context so a fork and a compaction start from the same position the runtime would
@@ -724,85 +602,13 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     };
   };
   const attach = conversations.attach;
-  /**
-   * The two facts a status needs that are not in a conversation's own published snapshot, read **once** for a whole
-   * catalogue rather than once per row: the live tasks, from the runtime's own inspection, and the child conversations
-   * whose delegated result is sitting queued in their creator's inbox, which the creators' own snapshots already state.
-   *
-   * Neither is a second scheduler and neither is a per-row read: the inspection is one call for the whole list, and the
-   * waiting reports are collected from snapshots this backend already holds.
-   */
-  const NO_FACTS: CatalogueFacts = { tasks: new Map(), waitingReports: new Set() };
-  const catalogueFacts = async (): Promise<CatalogueFacts> => {
-    const inspection = await runtime.harness.inspect(BACKGROUND_CONTEXT);
-    const tasks = new Map<string, TaskInspection[]>();
-    for (const task of inspection.tasks) {
-      const id = String(task.record.conversationId);
-      const list = tasks.get(id);
-      if (list === undefined) tasks.set(id, [task]);
-      else list.push(task);
-    }
-    const waitingReports = new Set<string>();
-    for (const item of conversations.values()) {
-      if (item.deletedAt() !== undefined) continue;
-      for (const queued of item.snapshot().queuedItems) {
-        if (queued.source.kind === "report") waitingReports.add(queued.source.childConversationId);
-      }
-    }
-    return { tasks, waitingReports };
-  };
-
-  /**
-   * One conversation's catalogue row: the single read the session list and the running poll are both built from. The
-   * fork route answers the same row for its new conversation, so the row a caller is handed and the row the next list
-   * read shows cannot be two different things.
-   */
-  const catalogueEntry = (item: ConversationRuntime, facts: CatalogueFacts = NO_FACTS): CatalogueEntry => {
-    const current = item.snapshot();
-    const workspace = registry.catalogueOf(current.workspaceId);
-    const stats = item.catalogueStats();
-    // A fork is told apart from its source by this relation, so it is reported only while the source is still listed:
-    // a removed source leaves a row that reports no parent, which is what keeps a removed conversation from being
-    // named by a surface after it is gone. The immutable record keeps the ancestry either way.
-    const parent = item.parentConversationId === undefined ? undefined : getConversation(item.parentConversationId);
-    const parentConversationId = parent === undefined || parent.deletedAt() !== undefined ? undefined : item.parentConversationId;
-    const lastRunEndedAt = item.lastRunEndedAt();
-    // The display parent is stated even while it is tombstoned — unlike the fork source above — because a hidden parent
-    // is a fact about the relation, not a reason to erase it: the child keeps its place and is not promoted, and a
-    // surface that could not see the edge would show an independent conversation.
-    const relations = item.relations();
-    const displayParentId = relations.displayParentId;
-    const displayParentDeleted = displayParentId !== undefined && getConversation(displayParentId)?.deletedAt() !== undefined;
-    return {
-      id: String(item.conversation.id),
-      workspaceId: current.workspaceId ?? null,
-      // One resolution answers both fields: the row's `gatewayId` and its `workspace` facts are two statements about
-      // the same binding, so a row that resolved it twice could state two different ones.
-      gatewayId: workspace?.gatewayId ?? null,
-      ...(workspace === undefined ? {} : { workspace }),
-      busy: current.busy,
-      extensions: current.extensions,
-      runStatus: projectRunStatus({
-        busy: current.busy,
-        control: current.control,
-        tasks: facts.tasks.get(String(item.conversation.id)) ?? [],
-        waitingReport: facts.waitingReports.has(String(item.conversation.id)),
-      }),
-      revision: current.revision,
-      messageCount: stats.count,
-      firstMessage: stats.firstMessage,
-      title: item.title() ?? null,
-      ...(lastRunEndedAt === undefined ? {} : { lastRunEndedAt }),
-      ...(parentConversationId === undefined ? {} : { parentConversationId }),
-      ...(relations.createdBy === undefined ? {} : { createdBy: relations.createdBy }),
-      ...(displayParentId === undefined ? {} : { displayParentId }),
-      ...(displayParentDeleted ? { displayParentDeleted: true } : {}),
-      // A user branch is a conversation of its own that happens to be task-owned by its own anchor, so its owner edge
-      // is not the delegation edge the catalogue reports; a delegated child — whose provenance is the agent that asked
-      // for it — keeps reporting its creator (spec D14).
-      ...(item.subagentParentConversationId === undefined || relations.provenance?.origin === "user" ? {} : { subagentParentConversationId: item.subagentParentConversationId }),
-    };
-  };
+  /** The catalogue projection every list, poll, search hit and fork answer is read from. */
+  const catalogue = createConversationCatalogue({
+    registry,
+    inspect: async () => await runtime.harness.inspect(BACKGROUND_CONTEXT),
+    conversations: () => conversations.values(),
+    conversation: getConversation,
+  });
   /**
    * One subtree request answered as the wire states it: each child's durable outcome beside **the row the session list
    * shows for it now**, from one shared facts read.
@@ -816,11 +622,11 @@ export async function createBackendServer(options: Options): Promise<BackendServ
    * the outcome's own conflict, and a row would claim a surface shows a conversation that shows nothing.
    */
   const subtreeAnswer = async (controlled: SubtreeControlResult): Promise<SubtreeProjectedResult> => {
-    const facts = await catalogueFacts();
+    const facts = await catalogue.facts();
     const outcomes = controlled.outcomes.map((outcome): SubtreeProjectedOutcome => {
       const item = getConversation(outcome.conversationId);
       if (item === undefined || item.deletedAt() !== undefined) return { ...outcome };
-      return { ...outcome, session: catalogueEntry(item, facts) };
+      return { ...outcome, session: catalogue.entry(item, facts) };
     });
     return { ...controlled, outcomes };
   };
@@ -907,35 +713,15 @@ export async function createBackendServer(options: Options): Promise<BackendServ
   const agentDefinitions = createAgentDefinitionsHandler({
     readBody,
     resolveHost: async (hostId, workspaceId) => {
-      const workspace = namedHostId(workspaceId);
+      const workspace = workspaceId?.trim() || undefined;
       if (workspace === undefined) return { ok: false, status: 400, code: "invalid_request", error: "a workspaceId is required" };
       const binding = await ensureBinding(workspace);
       if (binding === undefined) return { ok: false, status: 404, code: "unknown_workspace", error: "this deployment binds no workspace " + workspace };
-      const named = namedHostId(hostId);
+      const named = hostId?.trim() || undefined;
       if (named !== undefined && named !== binding.gatewayId) return { ok: false, status: 409, code: "wrong_host", error: "the workspace " + workspace + " is on gateway " + binding.gatewayId + ", not " + named };
       return { ok: true, host: { gatewayId: binding.gatewayId, workspaceId: binding.id, env: gatewayEnvironment(binding, "/") } };
     },
   });
-  /**
-   * The execution host this Backend serves the caller of *this* request from, as the ingress that admitted it stated.
-   *
-   * Which computer a client is served from is the deployment's own fact, so the ingress states it as trusted
-   * configuration on the request it already authenticated; the caller's own request never carries it. It is resolved
-   * against the gateways this Backend was configured with, exactly like a host a caller named, so an id this deployment
-   * does not know is answered with the same `configuration_required` refusal instead of a route to somewhere else.
-   */
-  const statedDefaultHost = (request: IncomingMessage): string | undefined => {
-    const header = request.headers[DEFAULT_HOST_HEADER];
-    return namedHostId(typeof header === "string" ? header : undefined);
-  };
-  /**
-   * The host a host-scoped route acts on: the one the request named, or the one the ingress stated when it named none.
-   *
-   * A caller may still narrow a request to a host it knows — that is the existing `hostId` query and body field — but
-   * it cannot substitute one for the deployment's default, because naming a host the deployment does not serve is
-   * refused by the same resolution the stated one goes through.
-   */
-  const hostOfRequest = (request: IncomingMessage, named: string | undefined): string | undefined => named ?? statedDefaultHost(request);
   /**
    * The HTTP domain owners, composed once and dispatched in this fixed order. Each is a concrete handler over the
    * operations it uses — never a registry and never a shared context — so a route change touches its owner and this
@@ -966,6 +752,29 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     gateways: registry.connections,
     profiles: hostProfiles,
   });
+  const projects = createProjectHttp({ registry, gateways, readBody });
+  const extensions = createExtensionsHttp({
+    inventory: extensionInventory,
+    requestedSelection,
+    session: runtime.harness,
+    writeDefault: writeDefaultSelection,
+    market: options.skillMarket,
+    installer,
+    readBody,
+  });
+  const catalogueHttp = createConversationCatalogueHttp({
+    conversations: () => conversations.values(),
+    conversation: getConversation,
+    operations,
+    catalogue,
+    registry,
+    session: runtime.harness,
+    attach,
+    model: runtime.model,
+    defaultThinkingLevel: options.defaultThinkingLevel,
+    selectionFor,
+    readBody,
+  });
   const settings = createSettingsHttp({
     conversation: getConversation,
     models: runtime.models,
@@ -989,7 +798,7 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     models: runtime.models,
     stream: options.settings?.stream,
     attach,
-    catalogueRow: async (attached) => catalogueEntry(attached, await catalogueFacts()),
+    catalogueRow: async (attached) => catalogue.entry(attached, await catalogue.facts()),
     subtreeAnswer,
     submissionContent,
     imageRefusal,
@@ -1014,60 +823,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // The diagnostics surface: the descriptor, the device credentials and the authority check the ingress asks. It is
     // composed here because it is what this build states about itself, and it answers nothing about a conversation.
     if (await diagnostics(request, response, url)) return;
-    if (options.skillMarket !== undefined && url.pathname.startsWith("/api/skill-market/")) {
-      // Repository and market browsing are decoupled from conversations: no conversation is touched or listed here.
-      // Installation is the one exception, and it names the conversation it installs for: publication and that
-      // conversation's adoption are separate outcomes, and no other conversation is touched.
-      const method = request.method ?? "GET";
-      if (method === "POST" && url.pathname === "/api/skill-market/install") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const parsed = installRequest(await readBody(request));
-        if (parsed === undefined) { json(response, 400, { error: { code: "invalid_request", message: "a bundle id, an execution target and a scope are required" } }); return; }
-        const installed = await installer.install(parsed);
-        json(response, installed.status, installed.body); return;
-      }
-      // Updating an installed skill and asking what an update would do both name the installed skill, so they share
-      // one body shape: the initiating conversation, the scope, and the bundle to install in its place.
-      if (method === "GET" && url.pathname === "/api/skill-market/installed") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const status = await installer.status({ workspaceId: url.searchParams.get("workspaceId") ?? undefined, conversationId: url.searchParams.get("conversationId") ?? undefined }, url.searchParams.get("name"), url.searchParams.get("scope"));
-        json(response, status.status, status.body); return;
-      }
-      // The execution-side skill inventory of one workspace: what the host actually holds, with each installation's
-      // provenance, baseline state and source-revision state. No conversation is needed, so browsing does not require
-      // an active run; the workspace names the execution target explicitly.
-      if (method === "GET" && url.pathname === "/api/skill-market/inventory") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const inventory = await installer.inventory({ workspaceId: url.searchParams.get("workspaceId") ?? undefined, conversationId: url.searchParams.get("conversationId") ?? undefined });
-        json(response, inventory.status, inventory.body); return;
-      }
-      // What one installed skill's source revision is. Asked for explicitly, so browsing a host's skills lists them
-      // without reaching the repository: only this request resolves a current commit.
-      if (method === "GET" && url.pathname === "/api/skill-market/check") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const checked = await installer.check({ workspaceId: url.searchParams.get("workspaceId") ?? undefined, conversationId: url.searchParams.get("conversationId") ?? undefined }, url.searchParams.get("name"), url.searchParams.get("scope"));
-        json(response, checked.status, checked.body); return;
-      }
-      // Switching one or many installed skills' model-invocation key. Each directory is answered on its own, so a
-      // refusal applies to that directory alone; the edit is written on the execution host, never on this one.
-      if (method === "PATCH" && url.pathname === "/api/skill-market/skills") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const parsed = toggleRequest(await readBody(request));
-        if (parsed === undefined) { json(response, 400, { error: { code: "invalid_request", message: "an execution target, a scope, at least one skill directory and the state to switch to are required" } }); return; }
-        const toggled = await installer.toggle(parsed);
-        json(response, toggled.status, toggled.body); return;
-      }
-      if (method === "POST" && url.pathname === "/api/skill-market/update") {
-        if (installer === undefined) { json(response, 404, { error: "installation is not configured" }); return; }
-        const parsed = updateRequest(await readBody(request));
-        if (parsed === undefined) { json(response, 400, { error: { code: "invalid_request", message: "a bundle id, installed skill name, execution target and scope are required" } }); return; }
-        const updated = await installer.update(parsed);
-        json(response, updated.status, updated.body); return;
-      }
-      const result = await skillMarketRoute(options.skillMarket, method, url.pathname, url.searchParams, method === "POST" ? await readBody(request) : undefined);
-      if (result === undefined) { json(response, 404, { error: "not found" }); return; }
-      json(response, result.status, result.body); return;
-    }
+    // The extensions this backend installed, the global default selection and the skill market behind them: what this
+    // deployment offers, stated from the runtime's own registry rather than from a copy of it.
+    if (await extensions(request, response, url)) return;
     // The browser's terminal reaches the conversation's execution host through here. The relay resolves the routing
     // cwd the caller names to a binding on every request, so it keeps no session state of its own and a backend restart
     // loses no shell. A cwd that names no workspace, and a deployment that serves no terminal host, are named outcomes.
@@ -1082,120 +840,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // The deployment's execution targets: the workspaces it binds and the gateways it configured. Both are metadata,
     // and a workspace's account is the host's own answer rather than this process's identity.
     if (await workspaces(request, response, url)) return;
-    // The directories of the host named on the request, so a folder can be chosen on the computer that serves this Web
-    // origin or on a configured remote host. Browsing is that host's own read-only listing: the backend never reads a
-    // directory and never substitutes its own account, and the profile is passed through so the listing is the
-    // remote host's, not the profile's configured root served locally.
-    if (request.method === "GET" && url.pathname === "/api/host/directories") {
-      const host = webHostOf(hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
-      if (!host.ok) { json(response, 409, { code: "configuration_required", error: host.error }); return; }
-      const requested = url.searchParams.get("path");
-      const profileId = namedHostId(url.searchParams.get("profileId"));
-      const browsed = await hostRequest(host.connection, { operation: "browse", ...(requested === null ? {} : { path: requested }), ...(profileId === undefined ? {} : { profileId }) });
-      if (!browsed.ok) { json(response, browsed.status, { code: browsed.code, error: "the Web host could not list that folder: " + browsed.code }); return; }
-      json(response, 200, browsed.value); return;
-    }
-    // The recorded projects, each with the account of the host its folders live on. Listing is metadata for every
-    // project — every folder, and which one is the default — but the account is resolved only for the host the calling
-    // Web origin named: another host's projects are reported as belonging to that host instead of showing this origin
-    // an account it does not serve.
-    if (request.method === "GET" && url.pathname === "/api/projects") {
-      const hostId = hostOfRequest(request, namedHostId(url.searchParams.get("hostId")));
-      const listed = await Promise.all(registry.projects().map(async (project) => {
-        if (project.hostId !== hostId) return { ...projectView(project), hostError: "this project's folders are on gateway " + project.hostId + ", which this Web origin does not serve" };
-        // The account is the host's, and any folder of the project answers for it: they are all on that one host.
-        const firstFolder = project.folders[0];
-        const binding = firstFolder === undefined ? undefined : registry.bindingOfFolder(project, firstFolder);
-        if (binding === undefined) return { ...projectView(project), hostError: "the configured gateway " + project.hostId + " is not available" };
-        const result = await (gatewayEnvironment(binding, "/") as ExecutionHostEnv).executionHost(BACKGROUND_CONTEXT);
-        return result.ok ? { ...projectView(project), host: { user: result.value.user, home: result.value.home } } : { ...projectView(project), hostError: boundedMessage(result.error.message) };
-      }));
-      json(response, 200, { protocol: PROTOCOL_VERSION, projects: listed }); return;
-    }
-    // Creating a project records its identity, display name and the folders chosen on one computer, exactly one of
-    // which is its default. Every folder must already exist on the Web host: the gateway validates and canonicalizes
-    // each one, and nothing here creates or renames a directory. The request names one host, so a project can never
-    // combine folders of two computers; a folder that is not a directory on that host fails the whole request, and no
-    // project is recorded until every folder has been accepted.
-    if (request.method === "POST" && url.pathname === "/api/projects") {
-      const body = await readBody(request) as { name?: unknown; folders?: unknown; hostId?: unknown; profileId?: unknown } | undefined;
-      const folders = Array.isArray(body?.folders) ? body.folders.map(entry => { const folder = entry as { root?: unknown; default?: unknown }; return { root: typeof folder.root === "string" ? folder.root : "", isDefault: folder.default === true }; }) : undefined;
-      if (folders === undefined) { json(response, 400, { code: "invalid_request", error: "at least one folder on the Web host is required" }); return; }
-      const profileId = typeof body?.profileId === "string" && body.profileId.trim() !== "" ? body.profileId.trim() : undefined;
-      // The registry owns the whole creation: the host identity, the profile's validation, every folder's registration
-      // before anything is recorded, the Project row, the live snapshot it publishes and the revision — a route that
-      // wrote any of those itself could publish a Project no lookup resolves, or resolve one no store holds.
-      let created: ProjectMutation<ProjectRecord>;
-      try {
-        created = await registry.create({ name: typeof body?.name === "string" ? body.name : "", folders, ...(profileId === undefined ? {} : { profileId }) }, hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
-      } catch (error) { json(response, 500, { error: safeFailure(error) }); return; }
-      if (!created.ok) { json(response, created.status, { ...(created.code === undefined ? {} : { code: created.code }), error: created.error }); return; }
-      json(response, 201, { protocol: PROTOCOL_VERSION, project: projectView(created.value) }); return;
-    }
-    // Naming another of a project's own folders the default: new conversations bind it from then on, while every
-    // conversation already bound keeps the folder it has. This is the metadata contract ticket 08 defines; no editor
-    // for it is part of this phase.
-    if (request.method === "PATCH" && url.pathname.startsWith("/api/projects/")) {
-      const projectId = decodeURIComponent(url.pathname.slice("/api/projects/".length));
-      const body = await readBody(request) as { hostId?: unknown; defaultFolderId?: unknown } | undefined;
-      // The recorded Project names its host; a named one may only confirm it. Naming a remote Project's own host is what
-      // a Web origin does when it edits a folder there, and it stays accepted.
-      const changed = registry.setDefault(projectId, typeof body?.defaultFolderId === "string" ? body.defaultFolderId : "", hostOfRequest(request, namedHostId(typeof body?.hostId === "string" ? body.hostId : undefined)));
-      if (!changed.ok) { json(response, changed.status, { ...(changed.code === undefined ? {} : { code: changed.code }), error: changed.error }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(changed.value) }); return;
-    }
-    // Unlinking one folder of a project: the folder's own operation, separate from the default selector. A non-default
-    // folder goes on its own and the project's default is unchanged. The default folder may only go when the request
-    // names another folder of the same project as the replacement in this same call, so no project is ever left
-    // without a default. The last folder's removal removes the project record in the same transaction, so no request
-    // ever reads a project with no folders. Like a project removal this is metadata only — no directory is created,
-    // changed or deleted, no conversation is deleted, no workspace id is reused, no host registration is undone — and
-    // it writes the same retained binding for the folder that left, which is what keeps a conversation already bound
-    // to it executing while the folder is never a target for a new conversation again.
-    if (request.method === "DELETE" && folderUnlinkPath.test(url.pathname)) {
-      const [, projectId, folderId] = folderUnlinkPath.exec(url.pathname)!;
-      const unlinked = registry.unlink(decodeURIComponent(projectId!), decodeURIComponent(folderId!), namedHostId(url.searchParams.get("defaultFolderId")), hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
-      if (!unlinked.ok) { json(response, unlinked.status, { ...(unlinked.code === undefined ? {} : { code: unlinked.code }), error: unlinked.error }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: unlinked.value.project === null ? null : projectView(unlinked.value.project), removedFolderId: unlinked.value.removedFolderId }); return;
-    }
-    // Removing a project removes metadata only: the project record and its folder links go, in one transaction with
-    // the retained binding of every folder, and nothing else changes. No directory on the host is created, changed or
-    // deleted, no conversation is deleted, no workspace id is reused and no host registration is undone. Nothing is
-    // refused because conversations are bound — no conversation is read here at all — and the retained bindings keep
-    // the removed folders resolvable for the conversations that already hold them while never becoming a target for a
-    // new one.
-    if (request.method === "DELETE" && url.pathname.startsWith("/api/projects/")) {
-      const removed = registry.remove(decodeURIComponent(url.pathname.slice("/api/projects/".length)), hostOfRequest(request, namedHostId(url.searchParams.get("hostId"))));
-      if (!removed.ok) { json(response, removed.status, { ...(removed.code === undefined ? {} : { code: removed.code }), error: removed.error }); return; }
-      json(response, 200, { protocol: PROTOCOL_VERSION, project: projectView(removed.value) }); return;
-    }
-    if (request.method === "POST" && url.pathname === "/api/worktrees") {
-      const body = await readBody(request) as { workspaceId?: unknown; operation?: unknown; branch?: unknown; path?: unknown; force?: unknown } | undefined;
-      const workspaceId = typeof body?.workspaceId === "string" ? body.workspaceId : "";
-      const operation = typeof body?.operation === "string" ? body.operation : "";
-      const result = operation === "list" ? await registry.listCheckouts(workspaceId)
-        : operation === "create" ? await registry.createCheckout(workspaceId, typeof body?.branch === "string" ? body.branch : "")
-        : operation === "remove" ? await registry.removeCheckout(workspaceId, typeof body?.path === "string" ? body.path : "", body?.force === true)
-        : { ok: false as const, status: 400, code: "invalid_request", error: "unknown worktree operation" };
-      if (result.ok) json(response, 200, { ok: true, value: result.value });
-      else { const { status, ...body } = result; json(response, status, body); }
-      return;
-    }
-    if (request.method === "POST" && url.pathname === "/api/workbench") {
-      const body = await readBody(request) as { workspaceId?: string; operation?: string; path?: string } | undefined;
-      const binding = await ensureBinding(body?.workspaceId);
-      if (binding === undefined) { json(response, 404, { ok: false, code: "unknown_workspace" }); return; }
-      if (!["files", "read", "changes", "diff"].includes(body?.operation ?? "")) { json(response, 400, { ok: false, code: "invalid_request" }); return; }
-      const operation = body!.operation as WorkbenchOperation;
-      const target = body!.path;
-      // Every workbench operation reads, so nothing here may run twice and a lost answer is only an unreachable host.
-      // The host's own refusal keeps its code, and the route answers it with the status it always did.
-      try {
-        const result = await clientOf(binding).control.workbench({ workspaceId: binding.id, operation, ...(target === undefined ? {} : { path: target }) });
-        json(response, result.ok ? 200 : 409, result);
-      } catch { json(response, 503, { ok: false, code: "gateway_offline" }); }
-      return;
-    }
+    // The recorded Projects, their checkouts and the host directories a folder is chosen from: the registry owns every
+    // workflow, and these routes decode the request and state the answer it gave.
+    if (await projects(request, response, url)) return;
     // The agent definitions of one workspace's own execution host. The whole document is read, validated and written
     // there, so a refusal names its field and a dry run touches no disk on any host.
     if (url.pathname === "/api/agent-definitions" || url.pathname.startsWith("/api/agent-definitions/")) {
@@ -1205,131 +852,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     // The settings surface: this deployment's model catalog, the models.json it owns, the shared sidebar document, and
     // one conversation's own configuration and adopted resources.
     if (await settings(request, response, url)) return;
-    // The durable extensions this backend installed and the global default selection. The installed set is the
-    // runtime's registry and the tools and sections are those extensions' own, so nothing here can drift from what a
-    // conversation is offered. The default is hepi state: it is what a conversation created after a change selects, and
-    // it is never read again for a conversation that already exists.
-    if (url.pathname === "/api/extensions") {
-      if (request.method === "GET") { json(response, 200, extensionInventory()); return; }
-      if (request.method === "POST") {
-        const body = await readBody(request);
-        const asked = requestedSelection(body, true);
-        if (!asked.ok) { json(response, asked.status, { code: asked.code, error: asked.error }); return; }
-        await writeDefaultSelection(runtime.harness, asked.names);
-        json(response, 200, extensionInventory()); return;
-      }
-      json(response, 405, { error: "method not allowed" }); return;
-    }
-    // The catalogue states everything a session list needs about each conversation: its workspace and host, whether a
-    // run is in flight, its revision, and the summary the list shows. `snapshot()` returns the already-published view
-    // rather than rebuilding it, so this is one pass over this process's own map and no per-conversation request: a
-    // client asking which conversations are busy — the sidebar's running poll — reads one list instead of every
-    // transcript, and the same list still carries the preview it showed before.
-    if (request.method === "GET" && url.pathname === "/api/conversations") {
-      // The sidebar's own revision rides on this one read: a client that compares it with the revision it last saw
-      // knows its pins, archive and project order changed in another window, without a second request per poll.
-      const sidebar = await readSidebarState(runtime.harness);
-      // A removed conversation is not in the catalogue it was removed from; its records still read back through the
-      // conversation-scoped routes, which is what makes the removal a tombstone rather than a deletion.
-      const facts = await catalogueFacts();
-      const listed = [...conversations.values()].filter(item => item.deletedAt() === undefined).map(item => catalogueEntry(item, facts));
-      // The relation filters select rows this projection already holds — by creator, display parent, fork source, owner
-      // or workspace — and `limit`/`cursor` page them by conversation id. This is the filtered, paginated list the
-      // relations seam answers with, reusing the catalogue rather than a second graph service.
-      const wanted = (name: string): string | null => url.searchParams.get(name);
-      const filtered = listed.filter((entry) =>
-        (wanted("createdBy") === null || entry.createdBy === wanted("createdBy"))
-        && (wanted("displayParentId") === null || entry.displayParentId === wanted("displayParentId"))
-        && (wanted("forkSource") === null || entry.parentConversationId === wanted("forkSource"))
-        && (wanted("ownerConversationId") === null || entry.subagentParentConversationId === wanted("ownerConversationId"))
-        && (wanted("workspaceId") === null || entry.workspaceId === wanted("workspaceId")));
-      filtered.sort((left, right) => Number(left.id) - Number(right.id));
-      const limitParam = wanted("limit");
-      const limit = limitParam === null ? undefined : Number(limitParam);
-      if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) { json(response, 400, { code: "invalid_request", error: "limit must be a positive integer" }); return; }
-      const cursor = wanted("cursor");
-      if (cursor !== null && !/^[0-9]+$/.test(cursor)) { json(response, 400, { code: "invalid_request", error: "cursor must be a conversation id" }); return; }
-      // A poll asks which conversations are busy and nothing else, so it is answered from the flag the rows were
-      // already built with rather than from a second scan.
-      const compactRunning = wanted("running") === "compact";
-      // It answers the whole filtered list, so a page bound it cannot honour is refused rather than silently answered in full.
-      if (compactRunning && (limitParam !== null || cursor !== null)) { json(response, 400, { code: "invalid_request", error: "running=compact cannot be combined with limit or cursor" }); return; }
-      const { window, nextCursor } = conversationPage(filtered, limit, cursor ?? undefined);
-      // The version of this listing, so a client comparing it can tell "nothing changed" from "re-read": it is a
-      // property of the **list** rather than of one page of it, which is why it counts the filtered rows and not the
-      // window, and every surface that reports it reads this one function.
-      const sessionListVersion = catalogueListVersion(filtered);
-      // The scan is this backend's whole catalogue either way; only the answer is smaller.
-      if (compactRunning) {
-        json(response, 200, {
-          protocol: PROTOCOL_VERSION,
-          sidebarStateRevision: sidebar.revision,
-          projectsRevision: registry.revision(),
-          sessionListVersion,
-          runningConversationIds: filtered.filter(row => row.busy).map(row => row.id),
-        }); return;
-      }
-      json(response, 200, {
-        protocol: PROTOCOL_VERSION,
-        sidebarStateRevision: sidebar.revision,
-        projectsRevision: registry.revision(),
-        sessionListVersion,
-        conversations: window,
-        ...(nextCursor === undefined ? {} : { nextCursor }),
-      }); return;
-    }
-    // Full-body search over the conversations this catalogue lists, with no index: the entries are read through the
-    // runtime's public paginated reads, so an entry appended after a previous search is found by the next one with
-    // nothing to rebuild. A removed conversation is not in the catalogue it was removed from, so it is not searched;
-    // the matcher, the bounds and the response shape are upstream pi-web's (`./session-search.ts`).
-    if (request.method === "GET" && url.pathname === "/api/search") {
-      const query = (url.searchParams.get("q") ?? "").trim();
-      if (query === "") { json(response, 200, { protocol: PROTOCOL_VERSION, results: [], truncated: false }); return; }
-      try {
-        const searched = await searchConversationBodies([...conversations.values()].filter(item => item.deletedAt() === undefined).map(item => item.conversation), query);
-        const facts = await catalogueFacts();
-        json(response, 200, { protocol: PROTOCOL_VERSION, results: searched.results.map(hit => ({ ...hit, session: catalogueEntry(getConversation(hit.conversationId)!, facts) })), truncated: searched.truncated }); return;
-      } catch (error) {
-        // An over-long query is refused with the reason it was refused, not answered as an empty result.
-        if (error instanceof SearchQueryTooLong) { json(response, 400, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-    }
-    if (request.method === "POST" && url.pathname === "/api/conversations") {
-      const body = await readBody(request) as { workspaceId?: string; requestId?: string; createdBy?: string; displayParentId?: string; provenance?: unknown } | undefined;
-      // Only a configured workspace or a folder of a recorded project is a target for a new conversation. A binding a
-      // removal retained resolves for the conversations that already hold it, and a new conversation cannot be bound to
-      // a folder that is no longer a Project folder.
-      if (body?.workspaceId && !registry.isTarget(body.workspaceId)) { json(response, 400, { error: "unknown workspace" }); return; }
-      // A project's root is re-registered here: the gateway keeps its workspaces in memory, so a gateway restarted
-      // while this backend stayed up still serves the conversation that is about to bind that folder.
-      if (body?.workspaceId) await registry.ensureBinding(body.workspaceId);
-      // The relations a caller states are identities only. A value that is not a conversation id string is refused
-      // here; an identity that names no conversation is refused inside the same creation commit that would use it.
-      if (body?.createdBy !== undefined && (typeof body.createdBy !== "string" || body.createdBy.trim() === "")) { json(response, 400, { code: "invalid_request", error: "createdBy must be a conversation id" }); return; }
-      if (body?.displayParentId !== undefined && (typeof body.displayParentId !== "string" || body.displayParentId.trim() === "")) { json(response, 400, { code: "invalid_request", error: "displayParentId must be a conversation id" }); return; }
-      // The conversation's extension selection is materialized here, in the commit that creates it: the resolved global
-      // default is written into this conversation's own `pi.agent.extensions` as an explicit name list. That is what
-      // makes the selection this conversation's own state — a later change to the default is a change to what the *next*
-      // conversation selects, and this one is not re-read against it. Creation, relations, the workspace binding and the
-      // request dedupe are the one creation seam's commit; a replay of the same request id answers the same conversation.
-      try {
-        const spawned = await operations.spawn({
-          requestId: body?.requestId !== undefined && body.requestId.trim() !== "" ? body.requestId : randomUUID(),
-          ownership: { kind: "ownerless" },
-          agent: { model: runtime.model, thinkingLevel: options.defaultThinkingLevel, extensions: await selectionFor(body?.workspaceId), cwd: "/" },
-          ...(body?.createdBy === undefined ? {} : { createdBy: body.createdBy }),
-          ...(body?.displayParentId === undefined ? {} : { displayParentId: body.displayParentId }),
-          ...(body?.workspaceId === undefined ? {} : { workspaceId: body.workspaceId }),
-          ...(body?.provenance === undefined ? {} : { provenance: body.provenance as ConversationProvenance }),
-        });
-        const attached = await attach(spawned.conversation);
-        json(response, 201, { protocol: PROTOCOL_VERSION, conversationId: spawned.conversationId, conversation: catalogueEntry(attached, await catalogueFacts()) }); return;
-      } catch (error) {
-        if (error instanceof ConversationOperationRefusal) { json(response, error.status, { protocol: PROTOCOL_VERSION, code: error.code, error: safeFailure(error) }); return; }
-        throw error;
-      }
-    }
+    // The conversation catalogue: the session list and its running poll, search, and the creation of a conversation.
+    // These name no conversation yet, which is why they precede the handlers that resolve one identity first.
+    if (await catalogueHttp(request, response, url)) return;
     // The conversation-scoped routes. Each domain module resolves the conversation it is asked about and answers its
     // own paths, so a route change touches one module and this wiring; the entry keeps only the dispatch order and the
     // final fallback.
