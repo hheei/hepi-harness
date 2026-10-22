@@ -1,7 +1,7 @@
 # 系統驗收與交付記錄
 
 Type: implementation
-Status: resolved — source `255a61ac`, re-runs at `8f22ed70` and `64544a3e`; every N/C/R row has an executed result or a named limit
+Status: resolved — source `255a61ac`, re-runs after each documentation-only commit; every N/C/R row has an executed result or a named limit
 Blocked by: [Shell layout 與 panel 接線](11-shell-composition.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — 驗證與交付、完成條件
@@ -62,7 +62,7 @@ Status: resolved — 全部 N1–N10／C1–C9／R1–R11 已有本次執行的�
 | `8526bfca` | 整合 `8f19a31b`（Backend03）後的 merge revision；44 個讀共享 UI 樹的 browser driver 跑在此 |
 | `255a61ac` | 整合 `17fe24d4`（Ingress02）後的 revision；Web／App build、cargo debug binary、以及 5 個跨真實 ingress 的 driver 跑在此 |
 | `8f22ed70` | 僅文件的提交；五個 ingress driver 與真實 Tauri journey 在此重跑 |
-| `64544a3e` | 僅文件的提交；changed 選擇器與文件／入口檢查在此重跑 |
+| `64544a3e` 及之後 | 僅文件的提交；changed 選擇器與文件／入口檢查在每一個之後重跑（`packages`／`apps` diff 為空） |
 
 `ce5cb804` 的判準依 [review policy](../../../docs/agents/review-policy.md)：跟隨 citation／reference 是普通操作，
 每個目標視窗都是真實 Backend 的一次 bounded read，重複讀同一窗口是可觀察的多餘工作，屬 fix 而非 record。
@@ -89,8 +89,8 @@ Status: resolved — 全部 N1–N10／C1–C9／R1–R11 已有本次執行的�
 
 | 檢查 | 指令 | Revision（dirty） | Exit | Log |
 | --- | --- | --- | --- | --- |
-| changed 選擇器 | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `64544a3e`（clean） | 0 | `.dev/verify/ui12/verify-final2/verify.json`（UI 474、App 29、web-unit 14、check-docs 全 pass） |
-| 文件／入口 | `node scripts/check-docs.mjs`、`node scripts/check-entrypoints.mjs` | `64544a3e`（clean） | 0 | 466 Markdown／0 broken link；157 entry files／0 newly missing |
+| changed 選擇器 | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `255a61ac` source，之後每个僅文件提交後重跑 | 0 | `.dev/verify/ui12/verify-final3/verify.json`（UI 474、App 29、web-unit 14、check-docs 全 pass） |
+| 文件／入口 | `node scripts/check-docs.mjs`、`node scripts/check-entrypoints.mjs` | 同上 | 0 | 466 Markdown／0 broken link；157 entry files／0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | `255a61ac`（clean） | 0 | `.dev/verify/ui12/web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | `255a61ac`（clean） | 0 | `.dev/verify/ui12/app-build.log` |
 | App debug binary | `cargo build`（`CARGO_TARGET_DIR=<repo>/.dev/cargo-target`，jobs 6，incremental） | `255a61ac`（clean） | 0 | `.dev/verify/ui12/cargo-build.log` |

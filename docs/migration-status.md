@@ -1456,7 +1456,7 @@ Backend answers again. The rows that stack cannot reach through an ordinary life
 
 The twelve-ticket UI architecture refactor is integrated on `impl/ui-system-acceptance` and its acceptance is closed at
 `255a61ac` (clean tree), with the ingress-crossing drivers and the native journey re-run at the documentation-only commit
-`8f22ed70`, and the selector and document checks at `64544a3e`. The behaviour matrix in `.scratch/ui-architecture-refactor/acceptance.md` now carries an executed
+`8f22ed70`, and the selector and document checks after each documentation-only commit that followed. The behaviour matrix in `.scratch/ui-architecture-refactor/acceptance.md` now carries an executed
 result or a named limit for every N1–N10, C1–C9 and R1–R11 row; the command/revision/log table is in
 [verification](verification.md#ui-architecture-consolidation-system-acceptance-ticket-12-2026-10-22).
 
