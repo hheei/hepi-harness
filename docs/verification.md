@@ -5603,23 +5603,24 @@ These final runs supersede the earlier revision's evidence above.
 
 ## UI architecture consolidation: system acceptance (ticket 12, 2026-10-22)
 
-Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`, tested revision `255a61ac`
-(clean tree) over base `17fe24d4`. This is the acceptance record for the twelve UI architecture tickets: every
-N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now names an executed result or an
-explicit limit.
+Worktree `.dev/worktrees/ui-system-acceptance`, branch `impl/ui-system-acceptance`. Source tested at `255a61ac`
+(clean tree; integration of `17fe24d4`), with the drivers that cross the real ingress, and the native journey, re-run at the
+final commit `8f22ed70`, whose only difference from `255a61ac` is documentation. This is the acceptance record for the
+twelve UI architecture tickets: every N1–N10 / C1–C9 / R1–R11 row of `.scratch/ui-architecture-refactor/acceptance.md` now
+names an executed result or an explicit limit.
 
 | Check | Command | Revision (dirty) | Exit | Log |
 | --- | --- | --- | --- | --- |
-| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/verify-changed-ingress02/verify.json` |
-| Docs and entry points | `pnpm check-docs`, `node scripts/check-entrypoints.mjs` | `255a61ac` (clean) | 0 | 466+ Markdown, 0 broken links; 0 newly missing entry files |
+| Changed selector | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `8f22ed70` (clean) | 0 | `.dev/verify/ui12/verify-final/verify.json` — typecheck, `@hepi/ui` **474/474**, `@hepi/app` **29/29**, web-unit **14/14**, check-docs |
+| Docs and entry points | `node scripts/check-docs.mjs`, `node scripts/check-entrypoints.mjs` | `8f22ed70` (clean) | 0 | 466 Markdown, 0 broken links; 157 entry files, 0 newly missing |
 | Web build | `pnpm --filter @hepi/web build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/web-build.log` |
 | App build | `pnpm --filter @hepi/app build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/app-build.log` |
 | App debug binary | `cd apps/app/src-tauri && CARGO_TARGET_DIR=<repo>/.dev/cargo-target CARGO_BUILD_JOBS=6 CARGO_INCREMENTAL=1 cargo build` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/cargo-build.log` |
-| 49 browser drivers | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web source identical at `255a61ac`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
-| Real Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts --keep` | `8526bfca` (clean; UI/Web source identical at `255a61ac`) | 0 | `.dev/verify/ui12/native/native-acceptance.log` — 42 checks |
-| Real ingress after Ingress02 | `node apps/web/e2e/acceptance/ux-client-acceptance.ts` | `255a61ac` (clean) | 0 | `.dev/verify/ui12/browser/client-acceptance.log` — 58 checks |
+| 44 browser drivers over the shared tree | each driver's own `node apps/web/e2e/...` (or its `test:*` script) | `8526bfca` (clean; UI/Web/App source byte-identical at `8f22ed70`) | all 0 | `.dev/verify/ui12/browser/<driver>.log`; index `index-final.log`, `index-final2.log` |
+| Real Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts` | `8f22ed70` (clean) | 0 | `.dev/verify/ui12/native/native-acceptance.log` — 42 checks |
+| Five drivers over the real ingress | `ux-client-acceptance`, `ux-mcp-acceptance`, `ux-panel-ingress`, `ux-web-logout`, `ux-provider-connection-acceptance` | `255a61ac` and again `8f22ed70` (clean) | all 0 | same files; index `index-final3.log` |
 
-The 49 drivers are the ones the matrix names, each run rather than cited from an earlier revision:
+The drivers are the ones the matrix names, each run rather than cited from an earlier revision:
 `ux-workbench-selection` (36), `ux-navigation-retry` (8), `ux-chat-scroll` (15), `ux-transcript-presentation` (15),
 `ux-composer-interaction` (24), `ux-conversation-lifetime` (14), `ux-conversation-lifetime-shell` (12),
 `ux-message-copy` (12), `ux-quote-initial-prompt` (11, new), `ux-references` (43), `ux-references-acceptance` (45),
@@ -5656,6 +5657,11 @@ reopens `configure` and the run's own credential store holds no `dev.hepi.app` e
 
 The selection scene also gained the `GET /api/project-trust` answer it needed once UI11 moved that read onto the
 connection's client; that is a driver gap, not a product defect.
+
+**Why the split is not a shortcut.** `git diff --stat 8526bfca 8f22ed70 -- packages/ui apps/web apps/app packages/session`
+is empty: the 44 drivers that read the shared UI tree and the browser-emulated App ran against byte-identical source, and
+the two commits after them changed `packages/gateway/src/ingress/index.ts` (Ingress02) and documentation only. The five
+drivers that do cross the real ingress were re-run at the final commit rather than cited, and so was the native journey.
 
 **Not claimed.** No release artifact or `.deb` was built or verified; nothing was built or run on `remote-host`; no
 deployment was restarted; the real upstream OAuth flow and a live compaction of a real long conversation were not

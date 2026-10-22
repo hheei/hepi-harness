@@ -1,7 +1,7 @@
 # 系統驗收與交付記錄
 
 Type: implementation
-Status: resolved — tested revision `8526bfca`; every N/C/R row has an executed result or a named limit
+Status: resolved — source `255a61ac`, final commit `8f22ed70`; every N/C/R row has an executed result or a named limit
 Blocked by: [Shell layout 與 panel 接線](11-shell-composition.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — 驗證與交付、完成條件
@@ -59,7 +59,9 @@ Status: resolved — 全部 N1–N10／C1–C9／R1–R11 已有本次執行的�
 | `cad0d86b` | UI11 review P1：`ChatArea` 的 `onInitialPromptConsumed` 曾回傳 callback 而非呼叫它，pending quoted prompt 會在重掛時重播；改為直接傳遞。agent-292 窄幅複審確認修正，無其他 material finding |
 | `ce5cb804` | 本票發現：`AppShell` 每次 render 重建 `searchTarget` 物件，而 `ChatWindow` 以 identity 去重（`searchedRef`）。跟隨 reference／深層搜尋命中進入長對話時，同一個 bounded target window 被讀兩次。改為以 selection 的 `navigation` 記錄 memoize |
 | `9ede6815` | 原生 journey 補上 App 自身 logout：refused 介面的 Disconnect → 確認 → shell 重開為未設定，並讀回本次 run 的憑證 store 已空；inspector 連線改為「能回答一次 evaluate 才算可用」（重啟後舊 socket 不會回答） |
-| `8526bfca` | 整合 `8f19a31b`（Backend03）後的 merge revision，即本文所有證據的 tested revision |
+| `8526bfca` | 整合 `8f19a31b`（Backend03）後的 merge revision；44 個讀共享 UI 樹的 browser driver 跑在此 |
+| `255a61ac` | 整合 `17fe24d4`（Ingress02）後的 revision；Web／App build、cargo debug binary、以及 5 個跨真實 ingress 的 driver 跑在此 |
+| `8f22ed70` | 最終提交（僅文件）；changed 選擇器、文件／入口檢查、五個 ingress driver 與真實 Tauri journey 在此重跑 |
 
 `ce5cb804` 的判準依 [review policy](../../../docs/agents/review-policy.md)：跟隨 citation／reference 是普通操作，
 每個目標視窗都是真實 Backend 的一次 bounded read，重複讀同一窗口是可觀察的多餘工作，屬 fix 而非 record。
@@ -86,13 +88,13 @@ Status: resolved — 全部 N1–N10／C1–C9／R1–R11 已有本次執行的�
 
 | 檢查 | 指令 | Revision（dirty） | Exit | Log |
 | --- | --- | --- | --- | --- |
-| changed 選擇器 | `node scripts/verify.mjs --profile=changed --base=8f19a31b` | `8526bfca`（clean） | 0 | `.dev/verify/ui12/verify-changed-final/verify.json`（UI 474、App 29、web-unit 14 全 pass） |
-| 文件／入口 | `pnpm check:docs`、`node scripts/check-entrypoints.mjs` | `8526bfca`（clean） | 0 | 466 Markdown／0 broken link；155 entry files／0 newly missing |
-| Web build | `pnpm --filter @hepi/web build` | `8526bfca`（clean） | 0 | `.dev/verify/ui12/web-build.log` |
-| App build | `pnpm --filter @hepi/app build` | `8526bfca`（clean） | 0 | `.dev/verify/ui12/app-build.log` |
-| App debug binary | `cargo build`（`CARGO_TARGET_DIR=<repo>/.dev/cargo-target`，jobs 6，incremental） | `8526bfca`（clean） | 0 | `.dev/verify/ui12/cargo-build.log` |
-| 49 個 browser driver | 各 driver 的 `node apps/web/e2e/...`（或 package script） | `8526bfca`（clean） | 全 0 | `.dev/verify/ui12/browser/*.log`；索引 `index-final.log`、`index-final2.log`、`index-final3.log` |
-| 真實 Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts --keep` | `8526bfca`（clean） | 0 | `.dev/verify/ui12/native/native-acceptance.log`（42 checks） |
+| changed 選擇器 | `node scripts/verify.mjs --profile=changed --base=17fe24d4` | `8f22ed70`（clean） | 0 | `.dev/verify/ui12/verify-final/verify.json`（UI 474、App 29、web-unit 14、check-docs 全 pass） |
+| 文件／入口 | `node scripts/check-docs.mjs`、`node scripts/check-entrypoints.mjs` | `8f22ed70`（clean） | 0 | 466 Markdown／0 broken link；157 entry files／0 newly missing |
+| Web build | `pnpm --filter @hepi/web build` | `255a61ac`（clean） | 0 | `.dev/verify/ui12/web-build.log` |
+| App build | `pnpm --filter @hepi/app build` | `255a61ac`（clean） | 0 | `.dev/verify/ui12/app-build.log` |
+| App debug binary | `cargo build`（`CARGO_TARGET_DIR=<repo>/.dev/cargo-target`，jobs 6，incremental） | `255a61ac`（clean） | 0 | `.dev/verify/ui12/cargo-build.log` |
+| 49 個 browser driver | 各 driver 的 `node apps/web/e2e/...`（或 package script） | 44 個跑在 `8526bfca`，5 個跨 ingress 的在 `8f22ed70` 重跑（clean） | 全 0 | `.dev/verify/ui12/browser/*.log`；索引 `index-final.log`、`index-final2.log`、`index-final3.log` |
+| 真實 Tauri journey | `node apps/web/e2e/acceptance/ux-native-acceptance.ts` | `8f22ed70`（clean） | 0 | `.dev/verify/ui12/native/native-acceptance.log`（42 checks） |
 
 browser driver 與 check 數（`grep -c '  ok  '` 或 driver 自己的 PASS 行）：
 `workbench-selection` 36、`navigation-retry` 8、`chat-scroll` 15、`transcript-presentation` 15、
