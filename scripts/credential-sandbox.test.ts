@@ -117,15 +117,14 @@ test("packagedEnvironment hands over exactly the private store plus the driver's
   }
 });
 
-test("neither native driver keeps an empty-environment fallback or starts its store before its cleanup is registered", () => {
+test("native execution owners keep no empty-environment fallback and register cleanup before startup", () => {
   // The two seams the reviewer found: an artifact run that swallowed a store-start failure into `shellEnv = {}`, and a
   // native run that took a display and a whole stack before it owned any cleanup. Both are shape properties of the
   // drivers, asserted against their source because the failure only happens on a host where a tool is missing — and a
   // broken run must then touch no credential store at all rather than the developer's.
   const drivers = [
-    // The artifact journey's implementation, not its operational entry point: `verify-artifacts.mjs` resolves flags and
-    // exits, and the packaged environments it hands out are built here.
-    "../apps/app/scripts/verify-artifacts.operation.mjs",
+    // Packaged environments belong to the run owner; the operation delegates their construction to it.
+    "../apps/app/scripts/packaged-run.mjs",
     "../apps/web/e2e/acceptance/ux-native-acceptance.ts",
   ];
   for (const file of drivers) {
