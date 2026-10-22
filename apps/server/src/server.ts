@@ -249,9 +249,9 @@ export async function createBackendServer(options: Options): Promise<BackendServ
     }
   };
   /** The execution targets one configured gateway offers. A gateway with no remote profiles answers with an empty list. */
-  const hostProfiles = async (connection: GatewayConnection): Promise<{ ok: true; value: unknown } | { ok: false; code: string }> => {
+  const hostProfiles = async (connection: GatewayConnection): Promise<{ ok: true; value: unknown } | { ok: false; code: string; status: number }> => {
     const listed = await hostRequest(connection, { operation: "profiles" });
-    return listed.ok ? { ok: true, value: listed.value } : { ok: false, code: listed.code };
+    return listed.ok ? { ok: true, value: listed.value } : { ok: false, code: listed.code, status: listed.status };
   };
   /**
    * The gateway a Web origin named for the host it serves, resolved against the configured connections. The Web UI
