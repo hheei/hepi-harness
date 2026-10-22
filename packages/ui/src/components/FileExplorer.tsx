@@ -15,6 +15,7 @@ import { uploadFiles, type UploadError } from "../lib/file/file-seam";
 import { buildSearchTree, type SearchTreeNode } from "../lib/search-tree";
 import { displayPathUnder } from "../lib/display-path";
 import { isWorkspaceRoutingPath } from "@hepi/protocol/files";
+import { errorText } from "@hepi/protocol/error-text";
 import { useFileSave } from "../hooks/useFileBytes";
 import { FileSaveControl } from "./FileSaveControl";
 import { useWorkbenchChange, useWorkbenchConnection } from "../lib/workbench-scope";
@@ -181,7 +182,7 @@ export function TreeNode({
       })));
       setLoaded(true);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : String(error));
+      setLoadError(errorText(error));
     } finally {
       setLoading(false);
     }
@@ -664,7 +665,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
       setUploadProgress(100);
       applyUploadResult(data);
     } catch (uploadFailure) {
-      setUploadError(uploadFailure instanceof Error ? uploadFailure.message : String(uploadFailure));
+      setUploadError(errorText(uploadFailure));
     } finally {
       setUploadPhase("idle");
     }
@@ -693,7 +694,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
 
       await performUpload(dropped, "error");
     } catch (uploadFailure) {
-      setUploadError(uploadFailure instanceof Error ? uploadFailure.message : String(uploadFailure));
+      setUploadError(errorText(uploadFailure));
     } finally {
       setUploadPhase("idle");
     }
@@ -752,7 +753,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
           loaded: !entry.isDir,
         })));
       })
-      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); })
+      .catch((e) => { if (!cancelled) setError(errorText(e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [cwd, files, treeRefreshKey]);
@@ -771,7 +772,7 @@ export const FileExplorer = forwardRef<FileExplorerHandle, Props>(function FileE
     setChangesError(null);
     files.changedFiles(cwd)
       .then((status) => { if (!cancelled) { setGitFiles(status.isGitRepository ? status.files : []); setChangesError(null); } })
-      .catch((failure) => { if (!cancelled) { setGitFiles([]); setChangesError(failure instanceof Error ? failure.message : String(failure)); } });
+      .catch((failure) => { if (!cancelled) { setGitFiles([]); setChangesError(errorText(failure)); } });
     return () => { cancelled = true; };
   }, [cwd, files, treeRefreshKey, changesRetryKey]);
 

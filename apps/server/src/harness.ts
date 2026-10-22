@@ -7,6 +7,7 @@ import { CodingTools } from "@earendil-works/pi-durable/tools";
 import type { ExecutionEnv } from "@earendil-works/pi-durable/env";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import type { ExecutionHostEnv } from "@hepi/gateway";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * The extension whose tools reach the conversation's execution environment. A conversation bound to no workspace has no
@@ -108,7 +109,7 @@ export async function openServerHarness(dbPath: string, defaultModel?: ModelRef 
     try {
       registry.install(extension);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorText(error);
       failures.push({ name: extension.name, message });
       report("extension " + extension.name + " failed to install: " + message);
     }

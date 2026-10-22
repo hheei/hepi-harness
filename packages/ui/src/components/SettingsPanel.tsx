@@ -18,6 +18,7 @@ import { useEnterSendMode, setEnterSendMode } from "../hooks/useEnterSendMode";
 import { useConversationRefreshes, useWorkbenchConnection } from "../lib/workbench-scope";
 import { cookieLogoutOffered, endWebSession } from "../lib/web-logout";
 import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import type { ToolSettingsResponse } from "../lib/api-types";
 import {
   setLastSettingsSection,
@@ -151,7 +152,7 @@ function GeneralSettings({ sessionId, quoteSelectionEnabled, onQuoteSelectionCha
         if (!cancelled) setShellSettings(data);
       })
       .catch((cause) => {
-        if (!cancelled) setShellError(cause instanceof Error ? cause.message : String(cause));
+        if (!cancelled) setShellError(errorText(cause));
       });
     return () => { cancelled = true; };
   }, [request]);
@@ -178,7 +179,7 @@ function GeneralSettings({ sessionId, quoteSelectionEnabled, onQuoteSelectionCha
       // stated as the failure it reported.
       if (outcome.status === "failed") setReloadError(outcome.message);
     } catch (cause) {
-      setShellError(cause instanceof Error ? cause.message : String(cause));
+      setShellError(errorText(cause));
     } finally {
       setShellSaving(false);
     }

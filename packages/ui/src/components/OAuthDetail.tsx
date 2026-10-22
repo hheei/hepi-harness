@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProviderLoginInfo } from "@hepi/protocol/gateway";
+import { errorText } from "@hepi/protocol/error-text";
 import { capabilityNoticeKey, useCapabilityServed } from "../lib/capability-availability";
 import { useApiRequest } from "../lib/api-request";
 import { providerAuthNotice, type ProviderAuthNotice, type ProviderPanelRow } from "../lib/provider/provider-auth";
@@ -112,7 +113,7 @@ export function OAuthDetail({ provider, onRefresh, enabledModels }: {
     } catch (error) {
       // A request that never arrived says nothing about the flow or the deployment: the work is the host's and continues
       // regardless of this one path. The panel keeps the step it had and asks again on the next tick.
-      return { status: 0, body: { error: error instanceof Error ? error.message : String(error) } };
+      return { status: 0, body: { error: errorText(error) } };
     }
   }, [provider.id, request]);
 
@@ -281,7 +282,7 @@ export function OAuthDetail({ provider, onRefresh, enabledModels }: {
       const refusal = providerLoginRefusal({ status: response.status }, body);
       show(refusal === undefined ? IDLE : { notice: refusal });
     } catch (error) {
-      show({ notice: providerAuthNotice(undefined, error instanceof Error ? error.message : String(error)) });
+      show({ notice: providerAuthNotice(undefined, errorText(error)) });
     }
     onRefresh();
   }, [clear, onRefresh, provider.id, request, show]);

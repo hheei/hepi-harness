@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./error-text": "./src/error-text.ts",
     "./gateway": "./src/gateway.ts",
     "./files": "./src/files.ts",
     "./navigation": "./src/navigation.ts",

@@ -8,6 +8,7 @@ import {
   setTabOpenNewSession,
   setTabOpenSession,
 } from "./tab-session";
+import { errorText } from "@hepi/protocol/error-text";
 import type { NewSessionContext, NewSessionMove, WorktreeChoice } from "./new-session-context";
 import { mergeCatalogueRow } from "./conversation-catalogue";
 import type { SessionInfo } from "./types";
@@ -557,7 +558,7 @@ export function createWorkbenchSelection(deps: WorkbenchSelectionDeps): Workbenc
           initialCwd: {
             requested: requestedCwd,
             status: "error",
-            error: error instanceof Error ? error.message : String(error),
+            error: errorText(error),
           },
           restoring: false,
         });

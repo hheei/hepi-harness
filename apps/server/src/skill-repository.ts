@@ -156,7 +156,9 @@ const BINARY_EXTENSIONS = new Set([
   "so", "dylib", "dll", "exe", "bin", "wasm", "node", "pyc", "class",
 ]);
 
-/** Keyword categories adapted from PI-Desktop's skill market scan (see apps/server/vendor/pi-desktop/README.md). */
+/**
+ * Keyword categories adapted from PI-Desktop's skill market scan (LGPL-3.0; see docs/upstream-sources.md#execution-side-resource-provenance-2026-10-09).
+ */
 const CATEGORY_KEYWORDS: ReadonlyArray<readonly [MarketCategory, readonly string[]]> = [
   ["data", ["data", "sql", "database", "analytics", "dataset", "spreadsheet", "excel", "xlsx", "csv", "dashboard", "chart"]],
   ["workflow", ["workflow", "review", "planning", "checklist", "process", "handoff", "retro", "audit", "security", "triage", "verification"]],

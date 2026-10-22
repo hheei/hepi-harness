@@ -259,8 +259,9 @@ the worktree's own and the main repository's. Upstream loads only the worktree's
   tool and the harness-local `agentDir` loader and its module tests were removed in ticket 08.
 - Ignore matcher: `ignore@7.0.5` (MIT), the same package upstream `skills.js` and `package-manager.js` use.
 - Path/reference prompt formatting and `.agents/skills` shapes: PI-Desktop revision
-  `ed54ce9774c41cefb5d0cdcdf922de7e6df22621` (LGPL-3.0). Snapshots and the exact mapping are in
-  `apps/server/vendor/pi-desktop/README.md`.
+  `ed54ce9774c41cefb5d0cdcdf922de7e6df22621` (LGPL-3.0). The exact mapping is in
+  [upstream sources](upstream-sources.md#execution-side-resource-provenance-2026-10-09); the upstream files are
+  re-fetched at that revision rather than kept in the tree.
 
 ## Verification
 

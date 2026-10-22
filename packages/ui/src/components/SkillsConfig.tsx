@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useI18n } from "../hooks/useI18n";
 import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import { displayPathWithin, shortenPath } from "../lib/display-path";
 import {
   getLastSettingsSelection,
@@ -350,7 +351,7 @@ function AddSkillPanel({
       const body = answer.value;
       setListing({ skills: body.skills, unavailableSources: body.unavailableSources });
     } catch (failure) {
-      setLoadError(failure instanceof Error ? failure.message : String(failure));
+      setLoadError(errorText(failure));
     } finally {
       setLoading(false);
     }
@@ -378,7 +379,7 @@ function AddSkillPanel({
           setCatalog({ skills: answer.value.skills, unavailable: searchMisses(answer.value.unavailable) });
         } catch (failure) {
           if (controller.signal.aborted) return;
-          setCatalogError(failure instanceof Error ? failure.message : String(failure));
+          setCatalogError(errorText(failure));
           setCatalog(null);
         } finally {
           if (!controller.signal.aborted) setCatalogLoading(false);
@@ -395,7 +396,7 @@ function AddSkillPanel({
       if (!answer.ok) throw new Error(refusalText(answer.error));
       setPreview({ id: skill.id, document: { markdown: answer.value.markdown, files: answer.value.files }, error: null });
     } catch (failure) {
-      setPreview({ id: skill.id, document: null, error: failure instanceof Error ? failure.message : String(failure) });
+      setPreview({ id: skill.id, document: null, error: errorText(failure) });
     }
   }, []);
 
@@ -437,7 +438,7 @@ function AddSkillPanel({
       // The list is read again so the panel shows the host's state; the outcome stays, because it is not list state.
       onChanged();
     } catch (failure) {
-      setOutcomes((current) => ({ ...current, [skill.id]: { notice: null, error: t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure)) } }));
+      setOutcomes((current) => ({ ...current, [skill.id]: { notice: null, error: t("skills.operationFailed") + ": " + errorText(failure) } }));
     } finally {
       setBusy(null);
     }
@@ -650,7 +651,7 @@ export function SkillsConfig({
         setWorkspaces(list);
         setWorkspaceId((current) => current ?? initialWorkspaceId(list, cwd));
       } catch (failure) {
-        if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure));
+        if (!cancelled) setError(errorText(failure));
       }
     })();
     return () => { cancelled = true; };
@@ -705,7 +706,7 @@ export function SkillsConfig({
       });
     } catch (failure) {
       if (!stillShown()) return;
-      setError(failure instanceof Error ? failure.message : String(failure));
+      setError(errorText(failure));
       setInventory(null);
     } finally {
       if (stillShown()) setLoading(false);
@@ -842,7 +843,7 @@ export function SkillsConfig({
       // The host's state is read again; the outcome above is panel state, so it survives this refresh.
       refreshInventory();
     } catch (failure) {
-      setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: { notice: null, error: t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure)) } }));
+      setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: { notice: null, error: t("skills.operationFailed") + ": " + errorText(failure) } }));
     } finally {
       setBusy(false);
     }
@@ -898,7 +899,7 @@ export function SkillsConfig({
       }
       refreshInventory();
     } catch (failure) {
-      const message = t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure));
+      const message = t("skills.operationFailed") + ": " + errorText(failure);
       if (group === null) setOutcomes((current) => ({ ...current, [outcomeKey(targets[0]!)]: { notice: null, error: message } }));
       else setGroupStatus({ group, error: message, note: null });
     } finally {
@@ -924,7 +925,7 @@ export function SkillsConfig({
       // shows, so a check that moved nothing leaves an already listed installation exactly as it was.
       setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: checkOutcome({ check: body, error: null, skill }) }));
     } catch (failure) {
-      setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: checkOutcome({ check: undefined, error: t("skills.operationFailed") + ": " + (failure instanceof Error ? failure.message : String(failure)), skill }) }));
+      setOutcomes((current) => ({ ...current, [outcomeKey(skill)]: checkOutcome({ check: undefined, error: t("skills.operationFailed") + ": " + errorText(failure), skill }) }));
     } finally {
       setChecking(false);
     }

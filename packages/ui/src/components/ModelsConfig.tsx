@@ -8,6 +8,7 @@ import {
   getLastSettingsSelection,
   setLastSettingsSelection,
 } from "../lib/settings-navigation";
+import { errorText } from "@hepi/protocol/error-text";
 import {
   hasModelCostDraftValue,
   modelCostToDraft,
@@ -354,7 +355,7 @@ function ProviderDetail({ name, editingName, provider, onChange, onEditingNameCh
       setDiscoveryState({ phase: "success", models: data.models, endpoint: data.endpoint ?? provider.baseUrl ?? "" });
     } catch (error) {
       if (requestId !== discoveryRequestIdRef.current) return;
-      setDiscoveryState({ phase: "error", message: error instanceof Error ? error.message : String(error) });
+      setDiscoveryState({ phase: "error", message: errorText(error) });
     }
   }, [discoveryState.phase, name, provider, request]);
 
@@ -943,7 +944,7 @@ function ModelDetail({
         responseText: d.responseText,
       });
     } catch (e) {
-      setTestState({ phase: "error", message: e instanceof Error ? e.message : String(e) });
+      setTestState({ phase: "error", message: errorText(e) });
     }
   }, [model, provider, providerName, request, testState.phase]);
 
@@ -975,7 +976,7 @@ function ModelDetail({
       });
     } catch (error) {
       if (requestId !== catalogRequestIdRef.current) return;
-      setCatalogState({ phase: "error", message: error instanceof Error ? error.message : String(error) });
+      setCatalogState({ phase: "error", message: errorText(error) });
     }
   }, [catalogState.phase, model, onChange, provider.baseUrl, providerName, request]);
 
@@ -1795,7 +1796,7 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
           ? { type: "provider", name: keys[0] }
           : null);
     })
-    .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e))), [request]);
+    .catch((e: unknown) => setLoadError(errorText(e))), [request]);
 
   useEffect(() => {
     readConfig().finally(() => setLoading(false));

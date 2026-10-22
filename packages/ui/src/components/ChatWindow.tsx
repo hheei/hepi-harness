@@ -38,6 +38,7 @@ import { findChatScrollAnchor, type ChatScrollPosition } from "../lib/chat/chat-
 import { isScrollAtTail } from "../lib/chat/chat-lazy-load";
 import { useTranscriptWindow } from "../lib/transcript-window";
 import { startScrollSettlement, type ScrollSettlementHandle } from "../lib/scroll-settlement";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * Subscribe to the reader's own scrolling gestures on a container.
@@ -507,7 +508,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
       closeQuotedSelection();
     } catch (error) {
       quoteChatInputRef.current?.restoreSubmission(prompt);
-      setQuoteError(error instanceof Error ? error.message : String(error));
+      setQuoteError(errorText(error));
     } finally {
       setQuoteSubmitting(false);
     }
@@ -1049,7 +1050,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, onRea
         addNotice({ type: "error", message: t("chat.dropFailed", { message: `${failure.name}: ${failure.error}` }) });
       }
     } catch (uploadError) {
-      addNotice({ type: "error", message: t("chat.dropFailed", { message: uploadError instanceof Error ? uploadError.message : String(uploadError) }) });
+      addNotice({ type: "error", message: t("chat.dropFailed", { message: errorText(uploadError) }) });
     }
   }, [addNotice, chatInputRef, connection.client, filesChange, newSessionCwd, session?.cwd, t]);
 

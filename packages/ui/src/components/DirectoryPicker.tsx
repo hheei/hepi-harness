@@ -4,6 +4,7 @@ import { type CSSProperties, type FormEvent, useCallback, useEffect, useState } 
 import { createPortal } from "react-dom";
 import { useI18n } from "../hooks/useI18n";
 import { useWorkspaceApi, type DirectoryListing } from "../lib/workspace-api";
+import { errorText } from "@hepi/protocol/error-text";
 
 interface DirectoryEntry {
   name: string;
@@ -105,7 +106,7 @@ export function DirectoryPicker({ onCancel, onSelect, initialPath, busy = false,
       setPathInput(nextPath);
       setDirectories(data.directories ?? []);
     } catch (cause) {
-      setLoadError(cause instanceof Error ? cause.message : String(cause));
+      setLoadError(errorText(cause));
     } finally {
       setLoading(false);
     }

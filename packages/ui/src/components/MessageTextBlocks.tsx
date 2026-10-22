@@ -7,6 +7,7 @@ import { isDeferredTextBlock, loadDeferredText } from "../lib/deferred-text";
 import { ResourceReadError, resourceRefusalKey } from "../lib/resource-read";
 import { useOptionalResourceReader } from "../lib/workbench-scope";
 import type { TextContent } from "../lib/types";
+import { errorText } from "@hepi/protocol/error-text";
 
 // Messages larger than this skip markdown rendering entirely. react-markdown +
 // KaTeX + syntax highlighting on multi-hundred-KB payloads (e.g. pasted HAR or
@@ -105,7 +106,7 @@ export function DeferredText({ block, className, markdown, keepLineBreaks, cwd, 
       .catch((loadError) => {
         // A refusal is named rather than shown as an empty failure: the reader says which one it was, and the surface
         // says that out loud instead of "something went wrong".
-        setError(loadError instanceof ResourceReadError ? t(resourceRefusalKey(loadError.reason)) : loadError instanceof Error ? loadError.message : String(loadError));
+        setError(loadError instanceof ResourceReadError ? t(resourceRefusalKey(loadError.reason)) : errorText(loadError));
         setLoading(false);
       });
   };

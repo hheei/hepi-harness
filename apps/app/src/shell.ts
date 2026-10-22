@@ -49,13 +49,18 @@ export function readBuild(): Promise<ShellBuild> {
 }
 
 /**
- * Send one readiness report to the shell, and never to a person's console.
+ * Send one readiness report to the shell, and leave a failure readable somewhere.
  *
- * A packaged run's only channel out of the WebView is the process's stdout, which the shell owns; a failed IPC is not a
- * reason to break the page the person is looking at.
+ * A packaged run's only channel out of the WebView is the process's stdout, which the shell owns, so a report that never
+ * arrived leaves the run with no evidence of the surface the page reached. It is telemetry rather than a step the page
+ * waits on — a shell whose command set does not carry this report yet must not break the page a person is looking at —
+ * so the failure is stated to the console and dropped. Swallowing it outright would make the one case a packaged run
+ * cannot read from stdout look exactly like a document that never mounted.
  */
 function reportReady(report: ReadyReport): void {
-  void invoke("app_ready", { ...report }).catch(() => undefined);
+  void invoke("app_ready", { ...report }).catch((cause: unknown) => {
+    console.error("[hepi-app] the shell did not answer the " + report.surface + " readiness report: " + (cause instanceof Error ? cause.message : String(cause)));
+  });
 }
 
 /**

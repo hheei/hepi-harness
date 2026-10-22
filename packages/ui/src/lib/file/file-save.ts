@@ -1,6 +1,7 @@
 import { fileApiPath } from "./file-paths";
 import type { WorkbenchClient } from "../../client";
 import { workspaceRoutingLocation } from "@hepi/protocol/files";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * Saving one file's bytes to a destination the person chose.
@@ -149,7 +150,7 @@ export async function saveFile(client: WorkbenchClient, request: SaveRequest): P
     // the file's own bytes rather than a preview of them.
     response = await client.request(fileApiPath(request.routingPath, "download"), request.signal === undefined ? {} : { signal: request.signal });
   } catch (error) {
-    return { kind: "failed", path: null, reason: error instanceof Error ? error.message : String(error) };
+    return { kind: "failed", path: null, reason: errorText(error) };
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({})) as { error?: unknown; message?: unknown };
@@ -164,7 +165,7 @@ export async function saveFile(client: WorkbenchClient, request: SaveRequest): P
     handle = await request.host.begin(destination);
   } catch (error) {
     await response.body?.cancel().catch(() => undefined);
-    return { kind: "failed", path: destination.path, reason: error instanceof Error ? error.message : String(error) };
+    return { kind: "failed", path: destination.path, reason: errorText(error) };
   }
 
   const written = await writeSlices(response, request, handle);
@@ -180,7 +181,7 @@ export async function saveFile(client: WorkbenchClient, request: SaveRequest): P
     await request.host.finish(handle);
   } catch (error) {
     await request.host.abort(handle).catch(() => undefined);
-    return { kind: "failed", path: destination.path, reason: error instanceof Error ? error.message : String(error) };
+    return { kind: "failed", path: destination.path, reason: errorText(error) };
   }
   return { kind: "saved", path: destination.path, bytes: written.bytes };
 }
@@ -224,7 +225,7 @@ async function writeSlices(
     await reader.cancel().catch(() => undefined);
     // A connection disposed under a save is not a transport fault to retry: the bytes already written belong to a
     // connection that is gone, and the destination is this run's to remove.
-    return { kind: "failed", reason: error instanceof Error ? error.message : String(error) };
+    return { kind: "failed", reason: errorText(error) };
   }
   return { kind: "written", bytes };
 }

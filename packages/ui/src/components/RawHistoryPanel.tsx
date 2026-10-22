@@ -7,6 +7,7 @@ import { useWorkbenchConnection } from "../lib/workbench-scope";
 import { forkAttemptKey, forkRequestId, forkSettled } from "../lib/fork-attempt";
 import { ImagePreview } from "./ImagePreview";
 import { ReferenceSurface } from "./ReferencePanel";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * The raw history behind the transcript's window, as the backend's own bounded read states it.
@@ -118,7 +119,7 @@ export function RawHistoryPanel({ sessionId, focusEntryId = null, onOpenSession,
       setNext(body.details.next ?? null);
       return body;
     } catch (cause) {
-      if (requestRef.current === generation) setError(cause instanceof Error ? cause.message : String(cause));
+      if (requestRef.current === generation) setError(errorText(cause));
       return null;
     } finally {
       if (requestRef.current === generation) setLoading(false);
@@ -205,7 +206,7 @@ export function RawHistoryPanel({ sessionId, focusEntryId = null, onOpenSession,
     } catch (cause) {
       // A current failure is kept: it is what the reader retries from. Only an older request's answer is dropped.
       if (blockReadRef.current !== generation) return;
-      setBlockError(cause instanceof Error ? cause.message : String(cause));
+      setBlockError(errorText(cause));
     }
   }, [sessionId, api]);
 
@@ -228,7 +229,7 @@ export function RawHistoryPanel({ sessionId, focusEntryId = null, onOpenSession,
       onForked?.(answered.value.conversationId);
     } catch (cause) {
       // The identity is deliberately kept: the retry of this attempt is what the user is about to make.
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorText(cause));
     } finally {
       setForking(null);
     }

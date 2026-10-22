@@ -13,6 +13,7 @@ import {
   type ProjectWorktreeContext,
   type WorktreeChoice,
 } from "../lib/new-session-context";
+import { errorText } from "@hepi/protocol/error-text";
 import { projectNameOf } from "../lib/session-tree";
 import { ActivitySummary } from "./SessionTree";
 import { SidebarMenu, type SidebarMenuAnchor, type SidebarMenuItem } from "./SidebarMenu";
@@ -298,7 +299,7 @@ export function ProjectWorktreePicker({
     try {
       result = await onCreateWorktree(project, branch);
     } catch (e) {
-      result = { error: e instanceof Error ? e.message : String(e) };
+      result = { error: errorText(e) };
     }
     if (!mountedRef.current) return;
     if ("error" in result) {
@@ -328,7 +329,7 @@ export function ProjectWorktreePicker({
     try {
       result = await onRemoveWorktree(project, worktree.path, force);
     } catch (e) {
-      result = { error: e instanceof Error ? e.message : String(e) };
+      result = { error: errorText(e) };
     }
     if (!mountedRef.current) return;
     updateMenu(id, (menuState) => {

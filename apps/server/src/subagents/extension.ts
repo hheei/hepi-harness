@@ -34,6 +34,7 @@ import {
   type ToolExecutionResult,
   type ToolRegistration,
 } from "@earendil-works/pi-durable";
+import { errorText } from "@hepi/protocol/error-text";
 import { SubagentAnchorTask } from "./anchor.ts";
 import { createSubagentDelegation, delegateDetails } from "./delegate.ts";
 import { DispatchDoc, preparationUnretried, SUBAGENT_ANCHOR_TASK, SUBAGENT_EXTENSION, type ExistingDispatch, type SubagentHost } from "./host.ts";
@@ -243,7 +244,7 @@ export function createSubagentExtension(host: SubagentHost, delegation = createS
         return { output: readOutput(result), details: copyJson(result as unknown as JsonValue, { omitUndefinedProperties: true }) as JsonValue };
       } catch (error) {
         const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "read_failed";
-        return refusal(code, error instanceof Error ? error.message : String(error));
+        return refusal(code, errorText(error));
       }
     },
   });

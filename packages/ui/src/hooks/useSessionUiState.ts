@@ -10,6 +10,7 @@ import {
   type SessionUiFlagsSnapshot,
   type SessionUiState,
 } from "@hepi/protocol";
+import { errorText } from "@hepi/protocol/error-text";
 import { useWorkbenchConnection } from "../lib/workbench-scope";
 
 /**
@@ -56,10 +57,6 @@ async function responseError(response: Response): Promise<string> {
     // Not JSON: fall back to the status.
   }
   return `HTTP ${response.status}`;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 async function readState(response: Response): Promise<SessionUiState> {
@@ -120,7 +117,7 @@ export function useSessionUiState(): SessionUiStateApi {
       setSynced(true);
     } catch (err) {
       if (loadId !== loadIdRef.current) return;
-      setError(errorMessage(err));
+      setError(errorText(err));
       setLoaded(true);
     } finally {
       if (refreshInFlightRef.current === loadId) refreshInFlightRef.current = null;
@@ -161,7 +158,7 @@ export function useSessionUiState(): SessionUiStateApi {
         setSynced(true);
         ok = true;
       } catch (err) {
-        setError(errorMessage(err));
+        setError(errorText(err));
       }
       pendingRef.current = pendingRef.current.filter((item) => item !== pending);
       publish();

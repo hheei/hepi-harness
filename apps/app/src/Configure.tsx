@@ -35,7 +35,13 @@ export function Configure(props: {
   useEffect(() => {
     // Provenance is on the surface a person sees when something is wrong, not only in a build log: this binary names the
     // two revisions it was built from.
-    readBuild().then(setBuild).catch(() => setBuild(null));
+    readBuild().then(setBuild).catch((cause: unknown) => {
+      // Provenance is a line on this surface, not a step a person waits on, so a shell that does not answer leaves it out
+      // rather than blocking the form. It is still stated to the console: an absent version line is otherwise
+      // indistinguishable from a build that carries no stamp, and that difference is what a packaged run needs to know.
+      console.error("[hepi-app] the shell did not answer the build report: " + (cause instanceof Error ? cause.message : String(cause)));
+      setBuild(null);
+    });
   }, []);
 
   const submit = async (event: React.FormEvent) => {

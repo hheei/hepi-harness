@@ -26,6 +26,7 @@ Dated records below describe their own revision and host; they do not establish 
 | --- | --- |
 | Get oriented as a developer | [Developer handbook](developer-handbook.md) |
 | Understand the implementation layer by layer | [Developer guide](developer-guide.md) |
+| Render a caught value as text | [Error message text](error-message-text.md) |
 | Go from a checkout to a running development stack | [Onboarding](development/onboarding.md) |
 | Diagnose a symptom | [Troubleshooting](development/troubleshooting.md) |
 | Use the product: sign in, projects, chat, files, terminal, MCP | [User guide](user-guide.md) |

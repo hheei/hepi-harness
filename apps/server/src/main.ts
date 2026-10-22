@@ -7,6 +7,7 @@ import { createSkillMarket, type SkillMarket } from "./skill-repository.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 import { createDeviceCredentials, type DeviceCredentials } from "./device-credentials.ts";
 import { parseMcpToolDeclarations } from "./mcp-declarations.ts";
+import { errorText } from "@hepi/protocol/error-text";
 
 const dbPath = process.env.HEPI_DB ?? resolve(process.cwd(), "data/hepi.sqlite");
 const bindHost = process.env.HEPI_BIND_HOST ?? "127.0.0.1";
@@ -79,7 +80,7 @@ let skillMarket: SkillMarket | undefined;
 try {
   skillMarket = createSkillMarket({ path: repositoryPath });
 } catch (error) {
-  console.warn("Skill repository unavailable at " + repositoryPath + ": " + (error instanceof Error ? error.message : String(error)));
+  console.warn("Skill repository unavailable at " + repositoryPath + ": " + errorText(error));
 }
 // Project metadata has its own SQLite file next to the conversation database, the same way repository metadata does
 // (ADR 0002). A failed open must not stop the backend: without it no project can be created, and everything else works.
@@ -88,7 +89,7 @@ let projects: ProjectStore | undefined;
 try {
   projects = createProjectStore({ path: projectsPath });
 } catch (error) {
-  console.warn("Project store unavailable at " + projectsPath + ": " + (error instanceof Error ? error.message : String(error)));
+  console.warn("Project store unavailable at " + projectsPath + ": " + errorText(error));
 }
 // Device credentials have their own SQLite file beside the conversation database, the same ownership split the project
 // and repository stores use (ADR 0002): a credential is not durable conversation state, so it never shares the
@@ -98,7 +99,7 @@ let deviceCredentials: DeviceCredentials | undefined;
 try {
   deviceCredentials = createDeviceCredentials({ path: credentialsPath });
 } catch (error) {
-  console.warn("Device credential store unavailable at " + credentialsPath + ": " + (error instanceof Error ? error.message : String(error)));
+  console.warn("Device credential store unavailable at " + credentialsPath + ": " + errorText(error));
 }
 // The keepalive cadence this deployment states for its conversation streams, in milliseconds. It exists because a
 // hop in front of the backend bounds how long a response body may stay silent; `0` states no keepalive at all, and an

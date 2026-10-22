@@ -70,6 +70,7 @@ import { defineTool, type Extension, type ToolDiagnostic, type ToolExecutionResu
  */
 
 import { MCP_INVOKE_MAX_ARGUMENT_BYTES, type McpScope, type McpToolCallOutcome, type McpToolCallRequest, type McpToolCallResult } from "@hepi/protocol/gateway";
+import { errorText } from "@hepi/protocol/error-text";
 import { HostTransportError } from "@hepi/gateway";
 
 /** The one extension every MCP tool is registered by, and the name a conversation selects to be offered any of them. */
@@ -569,7 +570,7 @@ function mcpToolRegistration(tool: McpUsableTool, host: McpToolHost): ToolRegist
         // uncertain: a gateway that was never reached and a rejected credential ran nothing, and a connection that was
         // lost after the request was admitted may not have.
         if (error instanceof HostTransportError) return refusal(error.code, error.message + (UNCERTAIN_TRANSPORT.has(error.code) ? UNCERTAIN_SUFFIX : ""));
-        return refusal("operation_failed", "the MCP host call failed: " + (error instanceof Error ? error.message : String(error)) + UNCERTAIN_SUFFIX);
+        return refusal("operation_failed", "the MCP host call failed: " + errorText(error) + UNCERTAIN_SUFFIX);
       }
       return mcpSettle(answer, tool);
     },

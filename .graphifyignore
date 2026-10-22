@@ -3,7 +3,6 @@
 # would only add nodes that no question here is about.
 .pi/skills/
 apps/web/vendor/
-apps/server/vendor/
 packages/gateway/vendor/
 
 # graphify's own output, caches and sidecars: the default AST graph and the

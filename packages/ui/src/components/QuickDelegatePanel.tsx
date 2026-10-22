@@ -8,6 +8,7 @@ import { workspaceIdFromCwd } from "../lib/skill-inventory";
 import { useExecutionTarget, useTargetFence, useWorkbenchConnection } from "../lib/workbench-scope";
 import type { SessionInfo } from "../lib/types";
 import { ConfigButton, ConfigDetailStack, ConfigEmptyState, ConfigField } from "./SettingsUi";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * The main conversation's quick delegate: pick a configured agent definition, write the task, and get a child.
@@ -108,7 +109,7 @@ export function QuickDelegatePanel({
       setSelected((current) => runnable.some((definition) => definition.name === current) ? current : runnable[0]?.name ?? "");
     } catch (error) {
       if (!stillShown()) return;
-      setLoadError(error instanceof Error ? error.message : String(error));
+      setLoadError(errorText(error));
     } finally {
       if (stillShown()) setLoading(false);
     }

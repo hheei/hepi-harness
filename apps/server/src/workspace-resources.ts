@@ -6,6 +6,7 @@ import { FileError } from "@earendil-works/pi-durable/env";
 import { ResourceIgnoreRules } from "@hepi/gateway";
 import type { ExecutionHost, ExecutionHostEnv, ResourceRoot, ResourceSnapshot, SnapshotEntry, SnapshotFile, SnapshotFailure } from "@hepi/gateway";
 import { parseCommandArgs, substituteArgs } from "./prompt-templates.ts";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * The Workspace Resource Loader (ADR 0002): skills, prompt templates, system/append prompts and context files are all
@@ -466,7 +467,7 @@ async function discoverOrFail(resources: WorkspaceResources, env: ExecutionHostE
   try {
     return await resources.discover(env, context);
   } catch (error) {
-    return { status: "failed", error: error instanceof Error ? error.message : String(error), loadedAtMs: Date.now() };
+    return { status: "failed", error: errorText(error), loadedAtMs: Date.now() };
   }
 }
 

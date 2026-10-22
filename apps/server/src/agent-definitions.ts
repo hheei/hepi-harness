@@ -16,6 +16,7 @@
 
 import { CodingTools } from "@earendil-works/pi-durable/tools";
 import { dump as stringifyYaml, load as parseYaml } from "js-yaml";
+import { errorText } from "@hepi/protocol/error-text";
 
 export type AgentDefinitionScope = "project" | "user";
 export const AGENT_DEFINITION_SCOPES: readonly AgentDefinitionScope[] = ["project", "user"];
@@ -158,7 +159,7 @@ export function parseAgentDefinitionDocument(source: string, fallbackName?: stri
         frontmatter = parsed as Record<string, unknown>;
       }
     } catch (error) {
-      issues.push({ field: "frontmatter", code: "invalid_frontmatter", message: "the frontmatter is not valid YAML: " + (error instanceof Error ? error.message : String(error)) });
+      issues.push({ field: "frontmatter", code: "invalid_frontmatter", message: "the frontmatter is not valid YAML: " + errorText(error) });
     }
   }
   for (const [key, capability] of UNSUPPORTED_KEYS) {

@@ -25,6 +25,7 @@ import {
   type ConversationMcpView,
   type McpSeamRefusal,
 } from "../lib/conversation-mcp";
+import { errorText } from "@hepi/protocol/error-text";
 import { ConfigButton, ConfigNotice, ConfigSectionTitle, ConfigStatusDot } from "./SettingsUi";
 
 /**
@@ -128,7 +129,7 @@ export function McpConversationTools({
       else setReadError(read.refusal);
     } catch (error) {
       if (conversationRef.current !== at || readRef.current !== attempt) return;
-      setReadError({ code: "operation_failed", error: error instanceof Error ? error.message : String(error), status: 0 });
+      setReadError({ code: "operation_failed", error: errorText(error), status: 0 });
     } finally {
       if (conversationRef.current === at && readRef.current === attempt && mountedRef.current) setBusy(null);
     }
@@ -211,7 +212,7 @@ export function McpConversationTools({
     } catch (error) {
       if (stale()) return;
       listingRef.current.delete(server);
-      setRefusals((current) => ({ ...current, [server]: { code: "operation_failed", error: error instanceof Error ? error.message : String(error), status: 0 } }));
+      setRefusals((current) => ({ ...current, [server]: { code: "operation_failed", error: errorText(error), status: 0 } }));
     } finally {
       if (conversationRef.current === at && mountedRef.current) {
         setBusy((current) => (current?.kind === "list" && current.key === server ? null : current));
@@ -264,7 +265,7 @@ export function McpConversationTools({
       setView(applied.view);
     } catch (error) {
       if (stale()) { drop(); return; }
-      setWriteError({ key, refusal: { code: "operation_failed", error: error instanceof Error ? error.message : String(error), status: 0 } });
+      setWriteError({ key, refusal: { code: "operation_failed", error: errorText(error), status: 0 } });
     } finally {
       if (conversationRef.current === at && writeRef.current === attempt && mountedRef.current) setBusy(null);
     }

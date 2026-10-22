@@ -4,6 +4,7 @@ import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { GatewayHostClient, gatewayEnvironment, installFailure, sameDigests, safeInstallPath, type DirectoryInspection, type ExecutionHostEnv, type ExpectedDigests, type GatewayControl, type EnvironmentBinding, type InstallLockDocument, type InstallLockEntry, type InstallResult, type InstallScope, type PublishedDirectory, type PublishFile, type ToggledSkill } from "@hepi/gateway";
 import { reloadResources, type ConversationTx, type WorkspaceResources } from "./workspace-resources.ts";
 import type { Bundle, MarketFile, MarketPreview, SkillMarket } from "./skill-repository.ts";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * Explicit installation of one Skill Bundle onto the execution host of the conversation that asked for it (ADR 0002,
@@ -136,7 +137,7 @@ const SKILL_DOCUMENT = "SKILL.md";
 /**
  * The install-time content baseline of one published directory: a sha256 per bundle-relative path, and one hash over
  * the directory's sorted path/hash pairs. Adapted from cc-switch `services/skill.rs` `compute_dir_hash` and
- * `collect_files_for_hash` (MIT, see apps/server/vendor/cc-switch/README.md), which hash a directory's entries in
+ * `collect_files_for_hash` (MIT; provenance: docs/upstream-sources.md#cc-switch-provenance-2026-10-09-tickets-06-and-07), which hash a directory's entries in
  * sorted order the same way. Ticket 07 compares a host directory against this baseline to tell an unchanged
  * installation from a locally modified one; a missing baseline is unknown, never proof of modification.
  */
@@ -489,7 +490,7 @@ export function createInstaller(options: InstallerOptions) {
     try {
       state = await options.resources.discover(env, BACKGROUND_CONTEXT);
     } catch (error) {
-      return { status: 502, body: { error: { code: "unreachable_host", message: boundedMessage(error instanceof Error ? error.message : String(error)) } } };
+      return { status: 502, body: { error: { code: "unreachable_host", message: boundedMessage(errorText(error)) } } };
     }
     if (state.status === "failed") return { status: 502, body: { error: { code: "unreachable_host", message: boundedMessage(state.error) } } };
     const control = installsOf(binding.value);
@@ -649,7 +650,7 @@ export function createInstaller(options: InstallerOptions) {
       await reloadResources(conversation, options.resources, gatewayEnvironment(binding, "/") as ExecutionHostEnv, BACKGROUND_CONTEXT);
       return { ok: true };
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      return { ok: false, error: errorText(error) };
     }
   }
 

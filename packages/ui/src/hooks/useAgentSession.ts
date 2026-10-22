@@ -83,6 +83,7 @@ import type { CompletionNotice } from "../lib/completion-delivery";
 import type { NoticeFact } from "../lib/notice-shelf";
 import type { AgentEventSubscription } from "@hepi/session/browser";
 import type { QueuedItemProjection, ServerSnapshot } from "@hepi/protocol";
+import { errorText } from "@hepi/protocol/error-text";
 import type { AgentEventLike } from "../lib/agent-event-wire";
 import { bareMcpOpensSettings } from "../lib/mcp-command";
 import { isShellCommandDraft } from "../lib/composer-limits";
@@ -1672,7 +1673,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // response was lost. The outcome is unknown, not a rejection, so the turn stays on screen and is looked up by its
       // own request id; it is never resent and its text is not restored as if the backend had refused it.
       if (!definitivelyRejected && sentSessionId) {
-        fold(unavailableStatement(acquisition, e instanceof Error ? e.message : String(e), requestId).input);
+        fold(unavailableStatement(acquisition, errorText(e), requestId).input);
         return;
       }
       // A readable rejection is the backend's answer about this submission: the staged turn leaves the screen and its
@@ -1684,7 +1685,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         kind: "refusal",
         ...(sentSessionId === null ? {} : { conversationId: sentSessionId }),
         requestId,
-        reason: e instanceof Error ? e.message : String(e),
+        reason: errorText(e),
       });
       // A refusal only describes this submission, so the stream stays: another tab or a missed frame may still have a
       // real run active for the same conversation.
@@ -1717,7 +1718,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (!stopped.ok) throw operationFailure(stopped);
     } catch (e) {
       console.error("Failed to stop:", e);
-      addNotice({ type: "error", message: "Could not stop: " + (e instanceof Error ? e.message : String(e)) });
+      addNotice({ type: "error", message: "Could not stop: " + errorText(e) });
     }
   }, [addNotice]);
 
@@ -1731,7 +1732,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       onSessionForked?.(forked.value.conversationId);
     } catch (e) {
       console.error("Fork failed:", e);
-      addNotice({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      addNotice({ type: "error", message: errorText(e) });
     } finally {
       setForkingEntryId(null);
     }
@@ -1777,7 +1778,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setCurrentModelOverride(previousOverride);
       addNotice({
         type: "error",
-        message: `Failed to switch model: ${e instanceof Error ? e.message : String(e)}`,
+        message: `Failed to switch model: ${errorText(e)}`,
       });
       // A failed response can still follow a server-side write (for example, a
       // dropped connection), so let the session file settle the displayed model.
@@ -1820,7 +1821,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // A failure is the same fact as an answer: it belongs to the read that asked, and states nothing once a newer read
       // has claimed the surface — a change applied in between is not undone by a read it superseded going wrong.
       if (!signal?.aborted && !(e instanceof DOMException && e.name === "AbortError") && read === modelReadSeqRef.current) {
-        setModelError(e instanceof Error ? e.message : String(e));
+        setModelError(errorText(e));
       }
       throw e;
     }
@@ -1889,7 +1890,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // before the notice rather than after it — so the replaced connection's answer is not stated as the current one's.
       if (!fromCurrentConnection(conversation) || sessionIdRef.current !== sid) return { status: "superseded" };
       // A route that did not answer says nothing about the conversation, so the failure is the whole statement.
-      const message = `Reload failed: ${e instanceof Error ? e.message : String(e)}`;
+      const message = `Reload failed: ${errorText(e)}`;
       addNotice({ type: "error", message });
       return { status: "failed", message };
     }
@@ -1995,7 +1996,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           return { handled: false };
       }
     } catch (e) {
-      return complete({ handled: true, error: e instanceof Error ? e.message : String(e) });
+      return complete({ handled: true, error: errorText(e) });
     }
   }, [addNotice, conversation, ensureNewSession, loadModels, loadSlashCommands, loadTools, promoteNewSession, onOpenSettings, reloadResources, slashCommandsForMcp]);
 
@@ -2047,9 +2048,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       // response was lost, so the turn stays and is looked up by its own request id rather than resent.
       if (isRefusal(e)) {
         // The refusal's own notice restores the staged text and images; restoring beside it is what duplicates them.
-        fold({ kind: "refusal", conversationId: sid, requestId, reason: e instanceof Error ? e.message : String(e) });
+        fold({ kind: "refusal", conversationId: sid, requestId, reason: errorText(e) });
       } else {
-        fold(unavailableStatement(acquisition, e instanceof Error ? e.message : String(e), requestId).input);
+        fold(unavailableStatement(acquisition, errorText(e), requestId).input);
       }
     }
   }, [addNotice, beginRead, composerDraftKey, fold, refuseShellCommandDraft, restoreSubmission]);
@@ -2095,7 +2096,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (edited.value.item !== undefined) setQueuedItems((previous) => previous.map((item) => item.submissionId === edited.value.item!.submissionId ? edited.value.item! : item));
       return { ok: true };
     } catch (e) {
-      return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+      return { ok: false, reason: errorText(e) };
     }
   }, []);
 
@@ -2112,7 +2113,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setQueuedItems((previous) => previous.filter((item) => item.submissionId !== submissionId));
       return { ok: true };
     } catch (e) {
-      return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+      return { ok: false, reason: errorText(e) };
     }
   }, []);
 
@@ -2132,7 +2133,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       return result.ok && result.value.status !== "rejected" ? result.value.status : "failed";
     } catch (e) {
       console.error("Failed to continue:", e);
-      addNotice({ type: "error", message: "Could not continue: " + (e instanceof Error ? e.message : String(e)) });
+      addNotice({ type: "error", message: "Could not continue: " + errorText(e) });
       return "failed";
     }
   }, [addNotice]);
@@ -2155,7 +2156,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       console.error("Failed to recall queued messages:", e);
       // The reason, not just the fact: the queued messages are still queued, and a bare "failed" leaves the user
       // unable to tell that from an empty queue.
-      addNotice({ type: "error", message: "Failed to recall queued messages: " + (e instanceof Error ? e.message : String(e)) });
+      addNotice({ type: "error", message: "Failed to recall queued messages: " + errorText(e) });
     }
   }, [opts.chatInputRef, addNotice]);
 

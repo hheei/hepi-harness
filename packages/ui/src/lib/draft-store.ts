@@ -2,6 +2,7 @@ import {
   MAX_ATTACHED_IMAGES,
   isBase64ImageWithinLimits,
 } from "./image-attachments";
+import { errorText } from "@hepi/protocol/error-text";
 import { scopedKey } from "./connection-scope";
 
 export interface ChatDraftImage {
@@ -199,7 +200,7 @@ export function createDraftStore(scope: string, initialStorage?: StorageLike | n
       removeStoredDraft(key);
       refusedImages.set(key, draft.images.map((image) => ({ ...image })));
       if (storageIssues.has(key)) return;
-      storageIssues.set(key, error instanceof Error ? error.message : String(error));
+      storageIssues.set(key, errorText(error));
       notifyDraftStorageIssue();
     }
   }

@@ -1,5 +1,6 @@
 import type { Message } from "@earendil-works/pi-ai";
 import { getApiProvider } from "@earendil-works/pi-ai/compat";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * Upstream credential and configuration failures embed the offending auth.json/models.json value in the thrown
@@ -53,6 +54,6 @@ export function safeEntry(message: Message): Message {
 
 /** A rejected request keeps a protocol or provider message; a credential/configuration one is replaced. */
 export function safeFailure(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorText(error);
   return isCredentialFailure(message) ? SAFE_CREDENTIAL_ERROR : message;
 }

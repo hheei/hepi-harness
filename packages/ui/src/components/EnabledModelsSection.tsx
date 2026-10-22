@@ -10,6 +10,7 @@ import {
   findProviderView,
   isLastEnabledModel,
 } from "./enabled-models-helpers";
+import { errorText } from "@hepi/protocol/error-text";
 import { unsupportedCapability, useCapabilityServed } from "../lib/capability-availability";
 import { useApiRequest } from "../lib/api-request";
 import { invalidateModelCatalog } from "../lib/models-cache";
@@ -125,7 +126,7 @@ export function useEnabledModels(cwd?: string | null): EnabledModelsController {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setFailure({ message: error instanceof Error ? error.message : String(error) });
+        setFailure({ message: errorText(error) });
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -169,7 +170,7 @@ export function useEnabledModels(cwd?: string | null): EnabledModelsController {
         // above returns before this, so a save that did not happen claims no refresh.
         invalidateModelCatalog();
       } catch (error) {
-        setFailure({ message: error instanceof Error ? error.message : String(error) });
+        setFailure({ message: errorText(error) });
       } finally {
         pendingRef.current = null;
         setPending(null);

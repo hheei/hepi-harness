@@ -39,7 +39,9 @@ type Sandbox = {
   globalThis?: Sandbox;
   __TAURI_INTERNALS__?: { invoke(command: string, args: Record<string, unknown>): Promise<unknown> };
 };
-function loadShellModule(withShell: boolean) {
+/** What a shell answers, so one case can be a shell that refuses the report rather than one that takes it. */
+type Answers = { readonly refuseReady?: boolean };
+function loadShellModule(withShell: boolean, answers: Answers = {}) {
   const bundle = buildSync({
     entryPoints: [path.join(appRoot, "src", "shell.ts")],
     bundle: true,
@@ -50,10 +52,14 @@ function loadShellModule(withShell: boolean) {
     tsconfig: path.join(appRoot, "tsconfig.json"),
   }).outputFiles[0].text;
   const calls: Sent[] = [];
+  const complaints: string[] = [];
+  // The page's own console, recorded: a readiness report that never arrives is only observable there.
+  const pageConsole = Object.create(console) as Console;
+  pageConsole.error = (...args: unknown[]): void => { complaints.push(args.map(String).join(" ")); };
   const sandbox: Sandbox = {
     module: { exports: {} },
     exports: {},
-    console,
+    console: pageConsole,
     Promise,
     Error,
   };
@@ -62,6 +68,8 @@ function loadShellModule(withShell: boolean) {
     sandbox.__TAURI_INTERNALS__ = {
       invoke: async (command: string, args: Record<string, unknown>): Promise<unknown> => {
         calls.push({ command, args });
+        // A shell whose command set does not carry this report rejects the way Tauri does, rather than answering.
+        if (answers.refuseReady === true && command === "app_ready") throw new Error("command app_ready not found");
         return command === "app_build" ? { version: "0.1.0", client_revision: "c", shell_revision: "s", target: "x86_64" } : undefined;
       },
     };
@@ -70,7 +78,11 @@ function loadShellModule(withShell: boolean) {
   sandbox.globalThis = sandbox;
   vm.runInNewContext(bundle, sandbox);
   // The calls crossed a VM boundary, so they are compared as JSON rather than by prototype identity.
-  return { shell: sandbox.module.exports as typeof shellModule, sent: () => calls.map(call => JSON.stringify(call)) };
+  return {
+    shell: sandbox.module.exports as typeof shellModule,
+    sent: () => calls.map(call => JSON.stringify(call)),
+    complaints: () => complaints,
+  };
 }
 
 test("the page asks the shell for exactly the commands the shell registers", async () => {
@@ -109,6 +121,28 @@ test("the bearer never reaches the readiness line", async () => {
   const bearer = "device-token-that-must-not-be-reported";
   assert.ok(!line.includes(bearer), "the report names the identity the deployment stated, not the credential");
   assert.ok(!line.includes("token"), "no field of the report is a credential field");
+});
+
+test("a readiness report the shell refuses is stated on the page's console, and never fails the page", async () => {
+  // The report is telemetry, so a shell that does not answer it must not become a crash or a surface a person is blocked
+  // on. It must not vanish either: the process's stdout is a packaged run's only channel, so a report that never arrived
+  // is the difference between "the WebView mounted and said nothing" and "the page never mounted" — and only the console
+  // can state it.
+  const { shell, sent, complaints } = loadShellModule(true, { refuseReady: true });
+  assert.doesNotThrow(() => shell.reportSurface("connecting"));
+  assert.doesNotThrow(() => shell.reportConnection({ kind: "refused", reason: "This App's device credential was refused." }));
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(sent().length, 2, "both reports were still attempted");
+  assert.deepEqual(complaints().map(line => line.replace(/^\[hepi-app\] /, "")), [
+    "the shell did not answer the connecting readiness report: command app_ready not found",
+    "the shell did not answer the refused readiness report: command app_ready not found",
+  ], "each failure names its surface and carries the shell's own words");
+
+  // The page is still usable afterwards: the next report is attempted rather than suppressed by the first failure.
+  shell.reportSurface("configure");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(sent().length, 3);
 });
 
 test("a page outside the shell reports that it has none, rather than pretending to have stored a connection", async () => {

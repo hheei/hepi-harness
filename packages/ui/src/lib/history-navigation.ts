@@ -9,6 +9,7 @@ import {
   type NavigationOutlinePage,
   type NavigationTargetWindow,
 } from "@hepi/protocol/navigation";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * The navigation state and jump coordinator (history-navigation ticket 03).
@@ -415,7 +416,7 @@ export class NavigationCoordinator {
       // A reason the surface has a word for is reported as that word; anything else is the read's failure, with the
       // answer's own sentence kept, because a refusal is a fact a caller shows rather than an empty failure.
       if (reason !== null) fail(reason.code, reason.message);
-      else fail("error", error instanceof Error ? error.message : String(error));
+      else fail("error", errorText(error));
       return;
     }
     if (generation !== this.#generation) return;

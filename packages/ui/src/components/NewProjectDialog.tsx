@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { DirectoryPicker } from "./DirectoryPicker";
 import { useI18n } from "../hooks/useI18n";
 import { useWorkspaceApi } from "../lib/workspace-api";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * A project as the backend recorded it: its identity and name, the host its folders are on, and each folder with the
@@ -131,7 +132,7 @@ export function NewProjectDialog({ onCancel, onCreated }: Props) {
     // remote computer; without one the deployment's stated host answers.
     workspaceApi.browse(target.kind === "remote" ? { hostId: target.gatewayId, profileId: target.profileId } : undefined)
       .then((data) => { if (!cancelled) setHost(data.host ?? null); })
-      .catch((cause: unknown) => { if (!cancelled) setHostError(cause instanceof Error ? cause.message : String(cause)); });
+      .catch((cause: unknown) => { if (!cancelled) setHostError(errorText(cause)); });
     return () => { cancelled = true; };
   }, [target, workspaceApi]);
 
@@ -161,7 +162,7 @@ export function NewProjectDialog({ onCancel, onCreated }: Props) {
       });
       onCreated(project as CreatedProject);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorText(cause));
     } finally {
       setCreating(false);
     }

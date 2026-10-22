@@ -7,6 +7,7 @@ import type {
   McpSignInFlowInfo,
   McpSignInPhase,
 } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import {
   mcpTestBlock,
   mcpWriteBlock,
@@ -295,7 +296,7 @@ async function requestSignIn(url: string, init: RequestInit, fetchImpl: FetchLik
   try {
     response = await fetchImpl(url, { ...init, cache: "no-store", signal });
   } catch (error) {
-    return { ok: false, error: { error: error instanceof Error ? error.message : String(error) } };
+    return { ok: false, error: { error: errorText(error) } };
   }
   let data: unknown;
   try {

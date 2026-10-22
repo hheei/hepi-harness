@@ -9,6 +9,7 @@ import { readResourceText, ResourceReadError, resourceRefusalKey } from "../lib/
 import { useOptionalResourceReader } from "../lib/workbench-scope";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "../lib/thinking-expansion-preference";
 import { thinkingUrl } from "@hepi/protocol";
+import { errorText } from "@hepi/protocol/error-text";
 import type { ThinkingContent } from "../lib/types";
 
 /**
@@ -67,7 +68,7 @@ export function ThinkingBlock({ block, duration, sessionId, entryId, blockIndex 
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof ResourceReadError ? tRef.current(resourceRefusalKey(err.reason)) : err instanceof Error ? err.message : String(err));
+          setError(err instanceof ResourceReadError ? tRef.current(resourceRefusalKey(err.reason)) : errorText(err));
           setLoading(false);
         }
       });

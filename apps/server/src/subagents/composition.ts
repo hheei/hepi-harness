@@ -17,6 +17,7 @@ import { AGENT_DEFINITION_THINKING, buildEffectiveAgentConfiguration } from "../
 import type { ConversationOperations } from "../conversation-operations.ts";
 import { SUBAGENT_EXTENSION, type DispatchRecord, type SubagentDeliverAnswer, type SubagentDeliverRequest, type SubagentHost, type SubagentListAnswer, type SubagentListRequest, type SubagentSendAnswer, type SubagentStopAnswer } from "./host.ts";
 import { SUBAGENT_LIMITS } from "./extension.ts";
+import { errorText } from "@hepi/protocol/error-text";
 
 /** One catalogue row as the listing projects it, in the same shape the HTTP catalogue route answers with. */
 export type SubagentCatalogueRow = {
@@ -134,8 +135,8 @@ async function deliver(deps: SubagentCompositionDeps, request: SubagentDeliverRe
     return { ok: true, submissionId: result.submissionId, status: result.status };
   } catch (error) {
     const code = (error as { code?: unknown }).code;
-    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: error instanceof Error ? error.message : String(error) };
-    if (code === "not_found") return { ok: false, code: "not_found", message: error instanceof Error ? error.message : String(error) };
+    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: errorText(error) };
+    if (code === "not_found") return { ok: false, code: "not_found", message: errorText(error) };
     throw error;
   }
 }
@@ -161,9 +162,9 @@ async function send(deps: SubagentCompositionDeps, conversationId: string, reque
     const code = (error as { code?: unknown }).code;
     // A user's stop is the one refusal the model has to be told apart from a real failure: it is the user's decision
     // and it stays the user's, so the model is answered rather than handed an error it could retry around.
-    if (code === "source_locked") return { ok: false, code: "user_stopped", message: error instanceof Error ? error.message : String(error) };
-    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: error instanceof Error ? error.message : String(error) };
-    if (code === "not_found") return { ok: false, code: "not_found", message: error instanceof Error ? error.message : String(error) };
+    if (code === "source_locked") return { ok: false, code: "user_stopped", message: errorText(error) };
+    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: errorText(error) };
+    if (code === "not_found") return { ok: false, code: "not_found", message: errorText(error) };
     throw error;
   }
 }
@@ -182,8 +183,8 @@ async function stop(deps: SubagentCompositionDeps, conversationId: string, reque
     };
   } catch (error) {
     const code = (error as { code?: unknown }).code;
-    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: error instanceof Error ? error.message : String(error) };
-    if (code === "not_found") return { ok: false, code: "not_found", message: error instanceof Error ? error.message : String(error) };
+    if (code === "session_deleted") return { ok: false, code: "recipient_deleted", message: errorText(error) };
+    if (code === "not_found") return { ok: false, code: "not_found", message: errorText(error) };
     throw error;
   }
 }
@@ -245,7 +246,7 @@ export function createSubagentHost(deps: SubagentCompositionDeps): SubagentHost 
           },
         };
       } catch (error) {
-        return { ok: false, code: "host_unreachable", message: error instanceof Error ? error.message : String(error) };
+        return { ok: false, code: "host_unreachable", message: errorText(error) };
       }
     },
     async childExtensions(workspaceId) {

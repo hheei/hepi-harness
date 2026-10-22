@@ -11,9 +11,10 @@ import { cleanupInstallRoot, runOfflineInstall } from "./offline-install.mjs";
 
 const run = promisify(execFile);
 
-/** The fixture client ingress: enough of the real contract to see what the App sends, and to answer it. */
 /**
- * A fixture ingress, optionally one that does not admit every bearer.
+ * The fixture client ingress: enough of the real contract to see what the App sends, and to answer it.
+ *
+ * It is optionally one that does not admit every bearer.
  *
  * `admitted` is what lets this test stand in for a Gateway whose device credential was revoked: the descriptor answers
  * 401 for a bearer it does not know and 200 for one it does, which is exactly the state ticket 19's recovery surface is
@@ -134,12 +135,8 @@ export function createPackagedRun({ logDir }) {
 
   /** The window the packaged App opened, as X sees it, so a first-run form can be driven through the real UI. */
   async function findWindow() {
-    for (const name of ["Hepi", "Pi"]) {
-      const found = await run("xdotool", ["search", "--name", name], { env: { ...process.env, DISPLAY: display.display } }).catch(() => ({ stdout: "" }));
-      const id = String(found.stdout).trim().split("\n").filter(Boolean).pop();
-      if (id !== undefined) return id;
-    }
-    return null;
+    const found = await run("xdotool", ["search", "--name", "Hepi"], { env: { ...process.env, DISPLAY: display.display } }).catch(() => ({ stdout: "" }));
+    return String(found.stdout).trim().split("\n").filter(Boolean).pop() ?? null;
   }
 
   /**
@@ -192,12 +189,11 @@ export function createPackagedRun({ logDir }) {
     }
   }
   /** One packaged run: start the extracted binary under Xvfb and read the lines it reports on stdout. */
-  function launch(binary, { logName, extraEnv = {} }) {
+  function launch(binary, { logName }) {
     const env = packagedEnv({
       GDK_BACKEND: "x11",
       WEBKIT_DISABLE_DMABUF_RENDERER: "1",
       WEBKIT_DISABLE_COMPOSITING_MODE: "1",
-      ...extraEnv,
     });
     // Asked before the process exists: a window run restarts into the stored connection, so it writes the same store the
     // headless paths do and must not be spawned with an environment that names somebody else's.
@@ -304,7 +300,7 @@ export function createPackagedRun({ logDir }) {
         try { cleanupInstallRoot(installRoot); } catch (error) { failures.push(error); }
       }
       if (failures.length) throw new AggregateError(failures, "packaged run cleanup failed");
-      return { completed: true, packagedRunsStopped: true, fixturesStopped: true, displayStopped: true, credentialStoreStopped: true };
+      return { completed: true };
     },
   };
 }

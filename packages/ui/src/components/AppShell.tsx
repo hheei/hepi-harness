@@ -47,6 +47,7 @@ import {
 } from "../lib/workbench-selection";
 import type { SessionInfo } from "../lib/types";
 import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import type { ChatInputHandle } from "./ChatInput";
 import type { NewSessionChoices } from "../hooks/useAgentSession";
 import type { SessionStatsInfo } from "../lib/pi-types";
@@ -767,7 +768,7 @@ export function AppShell() {
       autoNameTimerRef.current = setTimeout(() => setAutoNameStatus({ kind: "idle" }), 1800);
     } catch (error) {
       if (activeSessionIdRef.current !== sessionId) return;
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorText(error);
       setAutoNameStatus({ kind: "error", message });
       autoNameTimerRef.current = setTimeout(() => setAutoNameStatus({ kind: "idle" }), 5000);
     }

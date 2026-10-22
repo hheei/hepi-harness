@@ -19,7 +19,7 @@ const args = process.argv.slice(2);
 const arg = (name, fallback) => args.find(a => a.startsWith("--" + name + "="))?.split("=").slice(1).join("=") ?? fallback;
 
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-const artifactDir = path.resolve(arg("artifact-dir", await newestArtifactDir()));
+const artifactDir = path.resolve(arg("artifact-dir", null) ?? await newestArtifactDir());
 const logDir = path.resolve(arg("log-dir", path.join(artifactDir, "verify-" + stamp)));
 
 const report = await runArtifactVerification({ artifactDir, logDir });

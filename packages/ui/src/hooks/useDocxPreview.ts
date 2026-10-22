@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadDocxText, type DocxText } from "../lib/docx-preview";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * One workspace Word document, as far as its bytes have already been reached.
@@ -29,7 +30,7 @@ export function useDocxPreview(address: string | null): DocxPreviewState {
     setState({ loading: true, answer: null });
     void loadDocxText(address, { signal: controller.signal, init: { credentials: "same-origin" } }).then(
       (answer) => { if (!controller.signal.aborted) setState({ loading: false, answer }); },
-      (error: unknown) => { if (!controller.signal.aborted) setState({ loading: false, answer: { ok: false, reason: "unavailable", message: error instanceof Error ? error.message : String(error) } }); },
+      (error: unknown) => { if (!controller.signal.aborted) setState({ loading: false, answer: { ok: false, reason: "unavailable", message: errorText(error) } }); },
     );
     return () => controller.abort();
   }, [address]);

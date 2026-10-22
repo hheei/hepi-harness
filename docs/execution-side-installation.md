@@ -68,7 +68,8 @@ confirmed overwrite reuses this staging seam and adds the backup step, not a dif
 The entry shape is borrowed from pi-web's `.skill-lock.json` (`apps/web/vendor/pi-web/lib/skill-lock.ts`: source,
 sourceType, skillPath, ref, folder hash) with the install-time baseline spelled out per file. The per-file hashes and
 the directory hash are adapted from cc-switch `services/skill.rs` `compute_dir_hash` / `collect_files_for_hash`
-(see `apps/server/vendor/cc-switch/README.md`).
+(MIT, github.com/farion1231/cc-switch at revision `b4a079430ce85a604e10d97d4b7530774e00e112`; see
+[upstream sources](upstream-sources.md#cc-switch-provenance-2026-10-09-tickets-06-and-07)).
 
 An **absent entry or absent baseline is unknown provenance**, never proof that content was locally modified. Ticket 07
 compares a host directory against this baseline to distinguish unchanged from locally modified content.
@@ -153,7 +154,7 @@ covers it and no download ever runs in the Web or backend process.
 A catalog row names a repository and a skill id, never content. **Field mapping is from the reference implementations,
 not assumed**: `owner/repo` comes from the row's `source`, the skill id from `skillId` (falling back to `name`), and
 the listing metadata (`query`, `searchType`, `count`, `duration_ms`) is not read at all — see cc-switch
-`services/skill.rs` `SkillsShApiResponse` / `SkillsShApiSkill` in the vendor snapshot. A row whose `source` is not a
+`services/skill.rs` `SkillsShApiResponse` / `SkillsShApiSkill` at the cc-switch revision above. A row whose `source` is not a
 GitHub coordinate is not offered.
 
 Each row is resolved before it is offered: the repository's **own default branch** is read (`master` is a default

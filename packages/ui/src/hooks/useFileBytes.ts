@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useOptionalWorkbenchConnection, useWorkbenchConnection } from "../lib/workbench-scope";
 import { useWorkbenchHostCapabilities } from "../lib/navigation";
 import { saveFile, type FileSaveHost, type SaveOutcome } from "../lib/file/file-save";
+import { errorText } from "@hepi/protocol/error-text";
 
 /**
  * One file's bytes, as a browser element may show them on this connection.
@@ -61,7 +62,7 @@ export function useFileBytes(routingPath: string | null | undefined): FileBytesS
       if (answer.kind === "lease") { release = answer.release; setState({ url: answer.url, error: null }); return; }
       setState(unsupported(answer.reason));
     }, (error: unknown) => {
-      if (!controller.signal.aborted) setState(unsupported(error instanceof Error ? error.message : String(error)));
+      if (!controller.signal.aborted) setState(unsupported(errorText(error)));
     });
     return () => {
       controller.abort();
@@ -90,7 +91,7 @@ export function useFileMeta(routingPath: string | null | undefined): { readonly 
       if (controller.signal.aborted) return;
       setMeta({ size: typeof answer.size === "number" ? answer.size : null, previewKind: answer.previewKind ?? null, error: null });
     }, (error: unknown) => {
-      if (!controller.signal.aborted) setMeta({ size: null, previewKind: null, error: error instanceof Error ? error.message : String(error) });
+      if (!controller.signal.aborted) setMeta({ size: null, previewKind: null, error: errorText(error) });
     });
     return () => controller.abort();
   }, [files, routingPath]);
@@ -184,7 +185,7 @@ export function useFileSave(routingPath: string | null | undefined, suggestedNam
       else setState({ kind: "idle" });
       return outcome;
     } catch (error) {
-      if (mountedRef.current) setState({ kind: "failed", reason: error instanceof Error ? error.message : String(error) });
+      if (mountedRef.current) setState({ kind: "failed", reason: errorText(error) });
       return null;
     } finally {
       controllerRef.current = null;

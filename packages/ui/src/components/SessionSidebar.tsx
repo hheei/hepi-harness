@@ -53,6 +53,7 @@ import {
 } from "@hepi/protocol";
 import { projectGroup, projectGroupKey, projectGroupOfPath, projectGroups, type ProjectRouting } from "../lib/project-routing";
 import { isWorkspaceRoutingPath, workspaceIdOfRoutingPath } from "@hepi/protocol/files";
+import { errorText } from "@hepi/protocol/error-text";
 import {
   applyFolderUnlink,
   removalRefusal,
@@ -950,7 +951,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
         displayRoot: data.displayRoot ?? null,
       });
     } catch (e) {
-      setCustomPathError(e instanceof Error ? e.message : String(e));
+      setCustomPathError(errorText(e));
     } finally {
       setCustomPathValidating(false);
     }
@@ -988,7 +989,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
       setWtRefreshKey((k) => k + 1);
       return created;
     } catch (e) {
-      return { error: e instanceof Error ? e.message : String(e) };
+      return { error: errorText(e) };
     }
   }, [workspaceApi, t]);
 
@@ -1012,7 +1013,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
     } catch (e) {
       // Git's own refusal of a checkout that holds uncommitted work: the picker asks before retrying with force.
       if (e instanceof WorkspaceRefusal && e.dirty && !force) return "dirty";
-      return { error: e instanceof Error ? e.message : String(e) };
+      return { error: errorText(e) };
     }
   }, [currentWorktreePath, workspaceApi, t, listProjects, selection]);
 
@@ -1468,7 +1469,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
       // from this one list, so the change is visible without a reload and without a second round trip.
       setAllSessions((current) => current.map((item) => (item.id === session.id ? { ...item, name } : item)));
     } catch (error) {
-      showToast(t("sidebar.renameFailed", { error: error instanceof Error ? error.message : String(error) }));
+      showToast(t("sidebar.renameFailed", { error: errorText(error) }));
     }
   }, [showToast, t]);
 
@@ -1496,7 +1497,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
       selection.conversationDeleted(session.id);
       void loadSessions();
     } catch (error) {
-      showToast(t("sidebar.deleteFailed", { error: error instanceof Error ? error.message : String(error) }));
+      showToast(t("sidebar.deleteFailed", { error: errorText(error) }));
     }
   }, [loadSessions, refreshUiState, selection, showToast, t]);
 
@@ -1603,7 +1604,7 @@ export function SessionSidebar({ controlRef, onOpenFile, onOpenTerminal, onAtMen
       openForkedRef.current(forked, row.key);
       showToast(message, [], tail);
     } catch (error) {
-      showToast(t("sidebar.forkFailed", { error: error instanceof Error ? error.message : String(error) }));
+      showToast(t("sidebar.forkFailed", { error: errorText(error) }));
     } finally {
       forkingIdsRef.current.delete(source.id);
     }

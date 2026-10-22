@@ -32,6 +32,7 @@ import {
   type AgentDefinitionScope,
   type AgentDefinitionValidationIssue,
 } from "./agent-definitions.ts";
+import { errorText } from "@hepi/protocol/error-text";
 import {
   deleteAgentDefinition,
   listAgentDefinitions,
@@ -85,7 +86,7 @@ function refusal(error: unknown): AgentDefinitionAnswer {
     const status = error.code === "host_unreachable" ? 503 : 400;
     return { status, body: { code: error.code, error: error.message, ...(error.field === undefined ? {} : { field: error.field }) } };
   }
-  return { status: 502, body: { code: "host_error", error: error instanceof Error ? error.message : String(error) } };
+  return { status: 502, body: { code: "host_error", error: errorText(error) } };
 }
 
 function validationRefusal(issues: readonly AgentDefinitionValidationIssue[]): AgentDefinitionAnswer {

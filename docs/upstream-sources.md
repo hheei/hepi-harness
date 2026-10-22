@@ -33,7 +33,7 @@ pin remains at the initial revision `6fb2e7815167e6b19006fc526d1a5d0f5f998787`; 
 
 License and version were read from each installed package's own package.json; the repository LICENSE covers the source tree. This project consumes the published packages and copies no coding-agent source into executable paths. It does not claim CLI, TUI, extension, package, or MCP parity: the backend uses the package for provider and runtime interfaces only (docs/pi-config.md).
 
-One upstream file is preserved as a verbatim source snapshot, not as an imported module: `apps/server/vendor/pi-coding-agent/prompt-templates.ts` is byte-identical (md5 `4f3857e169fe5c85329b50bc2cf6ec53`) to `packages/coding-agent/src/core/prompt-templates.ts` at revision 6fb2e7815167e6b19006fc526d1a5d0f5f998787, with the pi repository `LICENSE` (MIT, Copyright (c) 2025 Mario Zechner) alongside it. The package root re-exports neither `substituteArgs` nor `parseCommandArgs`, and the `core/prompt-templates` subpath is not an export, so `apps/server/src/prompt-templates.ts` carries behavior-equivalent implementations of those two functions for `/skill:` and prompt-template expansion; the snapshot exists so the adapted behavior can be compared against upstream source. Nothing imports the snapshot at runtime and it is outside the TypeScript include list.
+`apps/server/src/prompt-templates.ts` was adapted against one upstream file, `packages/coding-agent/src/core/prompt-templates.ts` at revision 6fb2e7815167e6b19006fc526d1a5d0f5f998787 (MIT, Copyright (c) 2025 Mario Zechner), which was held as a byte-identical snapshot (md5 `4f3857e169fe5c85329b50bc2cf6ec53`) beside the pi repository `LICENSE` while the adaptation was written. The package root re-exports neither `substituteArgs` nor `parseCommandArgs`, and the `core/prompt-templates` subpath is not an export, so `apps/server/src/prompt-templates.ts` carries behavior-equivalent implementations of those two functions for `/skill:` and prompt-template expansion. The snapshot was a read-only provenance copy, never imported at runtime and outside the TypeScript include list, and was removed on 2026-10-22; re-fetch that path at the pinned revision to compare the adapted behavior against upstream source.
 
 The initial revisions and license findings agree with the research record at docs/research/durable-harness-upstream-research.md. The runtime pin was subsequently upgraded on 2026-10-16. The upstream repositories remain authoritative for source and licenses; this project consumes published pi-durable packages rather than vendoring runtime source.
 
@@ -60,10 +60,11 @@ contract is documented in [native input admission](chat.md#native-input-admissio
 upstream implementation and re-run those checks as soon as upstream publishes an equivalent public contract; until then
 no product code depends on a private runtime method or a monkey patch.
 
-## Execution-side resource snapshots (2026-10-09)
+## Execution-side resource provenance (2026-10-09)
 
-Two PI-Desktop files are preserved as verbatim source snapshots, not imported modules, under
-`apps/server/vendor/pi-desktop/` with the repository's LGPL-3.0 `LICENSE`, and are outside the TypeScript include list:
+Two PI-Desktop files are the upstream source of `apps/server/src/workspace-resources.ts`. Both were held as verbatim
+snapshots (LGPL-3.0, repository `LICENSE`) while the adaptation was written and were removed on 2026-10-22; re-fetch
+them at the pinned revision to compare:
 
 | File | md5 | Source |
 | --- | --- | --- |
@@ -74,8 +75,9 @@ Two PI-Desktop files are preserved as verbatim source snapshots, not imported mo
 "references are relative to" line) and uses the second only as a reference for `~/.agents/skills` and project
 `.agents/skills` shapes. Discovery rules, ignore-file handling, frontmatter parsing, prompt templates, context
 precedence and prompt formatting come from the installed `@earendil-works/pi-coding-agent@1.1.0` instead, with
-`ignore@7.0.5` (MIT) as the same matcher upstream uses. The mapping and the behaviors deliberately not copied are
-recorded in `apps/server/vendor/pi-desktop/README.md`; see docs/execution-side-skills.md for the limits.
+`ignore@7.0.5` (MIT) as the same matcher upstream uses. The behaviors deliberately not copied — the scanner's
+Electron/desktop plumbing, its `claude-*` sources, its size caps, its slugging and its own frontmatter reader — are
+recorded here; see docs/execution-side-skills.md for the limits.
 
 ### Sidebar UI-state rules (ticket 01, 2026-10-11)
 
@@ -322,18 +324,18 @@ The demo is not an upstream baseline. It is a local vertical-slice reference and
 5. When running pi-gui guards, set `npm_execpath` to `<clone>/node_modules/pnpm/bin/pnpm.cjs` so the pnpm-spawning guards do not exec the shell shim with node.
 6. Update the reuse matrix only when an implementation decision changes; record hard-to-reverse changes in an ADR.
 
-## PI-Desktop market snapshots (2026-10-09)
+## PI-Desktop market provenance (2026-10-09)
 
-The execution-resources Skill Repository vendors two PI-Desktop files as provenance only, not as imported modules:
+The execution-resources Skill Repository adapted two PI-Desktop files as reference only, never as imported modules:
 
-| Project | URL | Revision | License | Snapshot |
+| Project | URL | Revision | License | Upstream file (md5) |
 | --- | --- | --- | --- | --- |
-| PI-Desktop | https://github.com/vastsa/PI-Desktop | ed54ce9774c41cefb5d0cdcdf922de7e6df22621 (main) | LGPL-3.0, repository LICENSE | `apps/server/vendor/pi-desktop/skill-market-scan.ts` (md5 7b5f72f35daa23be2d77180e19627968), `apps/server/vendor/pi-desktop/SkillMarketPanel.tsx` (md5 cf0a15ce61b24af605641b1beddb7f39) |
+| PI-Desktop | https://github.com/vastsa/PI-Desktop | ed54ce9774c41cefb5d0cdcdf922de7e6df22621 (main) | LGPL-3.0, repository LICENSE | `skill-market-scan.ts` (7b5f72f35daa23be2d77180e19627968), `SkillMarketPanel.tsx` (cf0a15ce61b24af605641b1beddb7f39) |
 
-Both snapshots are outside the TypeScript include lists and nothing imports them; each vendor directory carries the LGPL-3.0
-LICENSE and a README recording the same revision. `apps/server/src/skill-repository.ts` adapts only the keyword category
-table and the five-minute cache idea from the scan module; the Market panel that reimplemented the layout it illustrates
-was removed in ticket 14 (the snapshot is kept as provenance; client-app ticket 17 moved it from
+Both were held as byte-identical snapshots outside the TypeScript include lists, imported by nothing, and were removed
+on 2026-10-22; re-fetch them at the pinned revision to compare. `apps/server/src/skill-repository.ts` adapts only the
+keyword category table and the five-minute cache idea from the scan module; the Market panel that reimplemented the
+layout it illustrates was removed in ticket 14 (client-app ticket 17 had moved the snapshot from
 `apps/web/vendor/pi-desktop` to `apps/server/vendor/pi-desktop` with the same bytes when it retired the Next app). `packages/gateway/src/skill-frontmatter.ts`
 adapts pi-web's `lib/skill-frontmatter.ts` under MIT and is listed in `packages/client/THIRD_PARTY_NOTICES.md`, because the
 gateway (and so the published client bundle) contains it. Deliberately not borrowed: the fake-IP/TUN network policy classifier, jsDelivr document
@@ -342,15 +344,15 @@ management equivalent here: publishing, listing, inspecting and retrieving expli
 whole-directory bundle storage behind them, are implemented natively in this repository. See
 `.scratch/execution-resources/issues/05-cloud-skill-repository.md`.
 
-## cc-switch snapshots (2026-10-09, tickets 06 and 07)
+## cc-switch provenance (2026-10-09, tickets 06 and 07)
 
-The execution-side installation capability vendors three cc-switch files as provenance only, not as imported modules,
-under `apps/server/vendor/cc-switch/` with the repository's MIT `LICENSE`; they are outside the TypeScript include list
-and nothing imports them.
+The execution-side installation capability adapted three cc-switch files as reference only, never as imported modules.
+They were held as byte-identical snapshots with the repository's MIT `LICENSE`, outside the TypeScript include list and
+imported by nothing, and were removed on 2026-10-22; re-fetch them at the pinned revision to compare.
 
-| Project | URL | Revision | License | Snapshot (md5) |
+| Project | URL | Revision | License | Upstream file (md5, path) |
 | --- | --- | --- | --- | --- |
-| cc-switch | https://github.com/farion1231/cc-switch | b4a079430ce85a604e10d97d4b7530774e00e112 (main) | MIT, repository LICENSE | `skill.rs` (9fcb2c3275f128ec1ca372cef6f2605f), `skills.ts` (27e107203cfc597fa71a6585ac3500b4), `SkillsPage.tsx` (d4774614a026db7c0847c596c5ee8b41) |
+| cc-switch | https://github.com/farion1231/cc-switch | b4a079430ce85a604e10d97d4b7530774e00e112 (main) | MIT, repository LICENSE | `skill.rs` (9fcb2c3275f128ec1ca372cef6f2605f, `src-tauri/src/services/skill.rs`), `skills.ts` (27e107203cfc597fa71a6585ac3500b4, `src/lib/api/skills.ts`), `SkillsPage.tsx` (d4774614a026db7c0847c596c5ee8b41, `src/components/skills/SkillsPage.tsx`) |
 
 `apps/server/src/skill-install.ts` adapts the install-time content baseline idea (one sha256 per file plus one over the
 directory's sorted entries) from `services/skill.rs` `compute_dir_hash`/`collect_files_for_hash`, `updateState` adapts
@@ -358,16 +360,14 @@ its update detection, and `packages/gateway/src/install.ts` adapts the scope-awa
 move-aside-before-replace shape of `create_uninstall_backup` / `SkillBackupEntry`. Deliberately not borrowed: Rust
 archive extraction and ZIP budgets, the `~/.cc-switch` SSOT directory, symlinked multi-app deployment, the
 app matrix and migration tooling, and the backup list / restore / delete API with its metadata and
-retention. No cc-switch code executes here. See `apps/server/vendor/cc-switch/README.md` and
-docs/execution-side-installation.md.
+retention. No cc-switch code executes here. See docs/execution-side-installation.md.
 
 **Update (ticket 10, UX follow-up):** the exclusion above covered `skills.sh` search, and it read that way when written.
 The dual-source skill catalog later did implement a skills.sh query, and it took the response field mapping
-(`source` → owner/repo, `skillId` → name) from this snapshot's `SkillsShApiResponse` typing —
+(`source` → owner/repo, `skillId` → name) from the `SkillsShApiResponse` typing in the `skill.rs` reference above —
 `apps/server/src/skill-repository.ts` now owns that query against `https://skills.sh/api/search`. What stays excluded
 is cc-switch's `invoke`-based Tauri path: this repository resolves each hit to its repository's own default-branch
-commit through the injected fetch, and still executes no cc-switch code. The vendored snapshot's md5 table above is
-unchanged.
+commit through the injected fetch, and still executes no cc-switch code. The md5 table above is unchanged.
 
 Selected pi-gui file/Git helpers are now preserved under packages/gateway/vendor/pi-gui/ and adapted under packages/gateway/src/workbench/. The revision, MIT license, source mapping, verification and limits are recorded in docs/workbench.md. No upstream application runtime, Electron host or desktop session supervisor is imported.
 

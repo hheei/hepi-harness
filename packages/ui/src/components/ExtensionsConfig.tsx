@@ -36,6 +36,7 @@ import {
   ConfigStatusDot,
   ConfigSwitch,
 } from "./SettingsUi";
+import { errorText } from "@hepi/protocol/error-text";
 
 /** Which selection the panel edits: the backend's default for new conversations, or the open conversation's own. */
 export type ExtensionScope = "default" | "conversation";
@@ -209,7 +210,7 @@ export function ExtensionsConfig({
         ? current
         : body.installed[0]?.name ?? null));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : String(error));
+      setLoadError(errorText(error));
     } finally {
       setLoading(false);
     }
@@ -241,7 +242,7 @@ export function ExtensionsConfig({
         if (!response.ok || body.error || !Array.isArray(body.extensions)) throw new Error(body.error ?? `HTTP ${response.status}`);
         if (!cancelled) setConversation({ sessionId, extensions: body.extensions });
       } catch (error) {
-        if (!cancelled) setConversationError(error instanceof Error ? error.message : String(error));
+        if (!cancelled) setConversationError(errorText(error));
       }
     })();
     return () => { cancelled = true; };
@@ -293,7 +294,7 @@ export function ExtensionsConfig({
       // A failure about a conversation the reader has left is not this panel's error to state: the conversation they are
       // looking at did not ask for this write, so reporting it here would attribute it to the wrong selection.
       if (belongsToShown()) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorText(error);
         if (bulk) setGroupError(message); else setActionError(message);
       }
     } finally {

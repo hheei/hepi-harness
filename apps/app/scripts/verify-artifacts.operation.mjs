@@ -21,12 +21,10 @@
  */
 import { execFile, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
-import { readFileSync } from "node:fs";
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { copyFileSync, createReadStream, mkdirSync, readFileSync } from "node:fs";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { createHash, randomBytes } from "node:crypto";
-import { createReadStream } from "node:fs";
 import path from "node:path";
-import process from "node:process";
 import { CONNECTION_ATTRIBUTES, loginKeyringDigest } from "../../../scripts/lib/credential-sandbox.mjs";
 import { installSupport } from "./offline-install.mjs";
 
@@ -101,7 +99,7 @@ async function sha256(file) {
  * run's display, fixture listeners and packaged process groups have been stopped and the evidence is written.
  */
 export async function runArtifactVerification({ artifactDir, logDir }) {
-  await mkdir(logDir, { recursive: true });
+  mkdirSync(logDir, { recursive: true });
 
   // Taken before any packaged process runs, so the report can state at the end that the developer's own login keyring —
   // the store this test used to write into through the inherited session bus — is byte-for-byte what it found.
@@ -114,10 +112,10 @@ export async function runArtifactVerification({ artifactDir, logDir }) {
     try {
       const result = await run(command, commandArgs, { maxBuffer: 64 * 1024 * 1024, ...options });
       await writeFile(log, String(result.stdout ?? "") + String(result.stderr ?? ""));
-      return { ok: true, stdout: String(result.stdout ?? ""), stderr: String(result.stderr ?? ""), log };
+      return { ok: true, stdout: String(result.stdout ?? ""), stderr: String(result.stderr ?? "") };
     } catch (error) {
       await writeFile(log, String(error.stdout ?? "") + String(error.stderr ?? "") + String(error?.stack ?? error));
-      return { ok: false, stdout: String(error.stdout ?? ""), stderr: String(error.stderr ?? ""), log };
+      return { ok: false, stdout: String(error.stdout ?? ""), stderr: String(error.stderr ?? "") };
     }
   }
 
@@ -225,7 +223,7 @@ export async function runArtifactVerification({ artifactDir, logDir }) {
         // about to be deleted would be a statement no later reader could check.
         const retained = path.join(logDir, "dpkg-transaction.log");
         let retainedText = "";
-        try { await copyFile(installed.logFile, retained); retainedText = readFileSync(retained, "utf8"); }
+        try { copyFileSync(installed.logFile, retained); retainedText = readFileSync(retained, "utf8"); }
         catch (error) { retainedText = "copy failed: " + String(error?.code ?? error?.message ?? error); }
         report.offlineDpkgInstall.log = retained;
         assert("the-dpkg-transaction-log-survives-the-private-root", /status installed hepi:/.test(retainedText),

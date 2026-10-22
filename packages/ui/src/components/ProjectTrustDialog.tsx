@@ -12,6 +12,7 @@ import type {
   ProjectTrustResponse,
   ProjectTrustStatus,
 } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import {
   mcpFieldLabel,
   mcpFileProblemDetail,
@@ -41,10 +42,6 @@ export type ProjectTrustMcpListing =
 
 const STATUS_ID = "project-trust-mcp-status";
 const NOTICE_ID = "project-trust-notice";
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function trustStatusFrom(data: ProjectTrustResponse): ProjectTrustStatus {
   const status: ProjectTrustStatus = {
@@ -147,7 +144,7 @@ export function ProjectTrustDialog({
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setListing(timedOut ? { state: "failed", timedOut: true } : { state: "failed", error: errorMessage(reason) });
+        setListing(timedOut ? { state: "failed", timedOut: true } : { state: "failed", error: errorText(reason) });
       })
       .finally(() => window.clearTimeout(timer));
     return () => {

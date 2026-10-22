@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { useI18n } from "../hooks/useI18n";
 import { useIsMobile } from "../hooks/useIsMobile";
 import type { ProjectTrustStatus } from "@hepi/protocol/mcp-ui";
+import { errorText } from "@hepi/protocol/error-text";
 import { shortenPath } from "../lib/display-path";
 import {
   AGENT_DEFINITION_SCOPES,
@@ -213,7 +214,7 @@ export function AgentsConfig({
       }
     } catch (cause) {
       if (!stillShown()) return;
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorText(cause));
     } finally {
       if (stillShown()) setLoading(false);
     }
@@ -283,7 +284,7 @@ export function AgentsConfig({
     setError(null);
     setValid(false);
     try { await request(true); setValid(true); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(errorText(cause)); }
     finally { setValidating(false); }
   };
 
@@ -315,7 +316,7 @@ export function AgentsConfig({
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2000);
       await readConversation();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    } catch (cause) { setError(errorText(cause)); }
     finally { setSaving(false); }
   };
 
@@ -330,7 +331,7 @@ export function AgentsConfig({
       if (!answer.ok) throw new Error(answer.error.message === "" ? answer.error.code ?? answer.error.kind : answer.error.message);
       await load(target);
       await readConversation();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    } catch (cause) { setError(errorText(cause)); }
     finally { setSaving(false); }
   };
 

@@ -21,6 +21,7 @@ import {
   type AgentDefinitionScope,
   type AgentDefinitionValidationIssue,
 } from "./agent-definitions.ts";
+import { errorText } from "@hepi/protocol/error-text";
 
 /** The execution host one definition set lives on, with the environment that reaches it. */
 export interface AgentDefinitionHost {
@@ -64,7 +65,7 @@ export function agentDefinitionPath(host: ExecutionHost, scope: AgentDefinitionS
 
 function failure(error: unknown): never {
   if (error instanceof AgentDefinitionError) throw error;
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorText(error);
   throw new AgentDefinitionError("host_unreachable", "the execution host could not serve the agent definition: " + message);
 }
 
