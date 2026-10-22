@@ -164,11 +164,13 @@ Backend 资源路由加在 `apps/server/src/server.ts`;主机资源加在 ingres
 | `GET …/:id/{read,navigation,navigation/around}`, `…/entries/:entryId/{text,thinking,tool-result-image}` | `conversation-history-http.ts`、`conversation-read.ts`、`conversation-navigation.ts`、`read-block.ts`:历史、窗口、延迟块 |
 | `/api/terminal*`, `/api/files/{upload,upload-check,bytes}` | `terminal-relay.ts`、`file-relay.ts`:主机中继 |
 | `/api/{workspaces,hosts,host/directories,workbench}` | `workspace-http.ts`:执行目标与只读操作 |
+| `GET /api/workspaces/:workspaceId/locality?gatewayId=` | `workspace-http.ts`:一个 workspace 是否为该 gateway 本机的目录,client ingress 唯一询问的 locality 结论 |
 | `/api/{projects,worktrees}` | `server.ts` wire dispatch delegates mutation and checkout lifecycles to `project-registry.ts` |
 | `/api/{models,models-config,extensions,agent-definitions,sidebar-state,search,skill-market/*}` | `settings-http.ts` 与各领域操作模块,如 `model-config.ts`、`extension-selection.ts`、`skill-install.ts` |
 | `/api/descriptor`, `/api/device-credentials/*`, `/internal/credentials/verify`, `/diagnostics*`, `/workbench*` | `diagnostics-http.ts`:诊断页、descriptor 与 credential routes |
 
 `server.ts` 保留 `createBackendServer(options)` composition、admission、direct fixed dispatch、safe outer errors 与 unknown-route fallback。各 HTTP domain module 接收所需操作并以 `handle(request, response, url): Promise<boolean>` 声明是否拥有 response;不设 route registry。`conversation-attachments.ts` 拥有 live view attachment 和关闭顺序,不替代 durable conversation writer。
+
 
 `ConversationOperations.spawn` 在一次 commit 中写 `pi.agent`、`hepi.workspace`、relations、references 与会话作用域
 request 索引;稳定 `requestId` 重放返回原会话。调用方解析 Agent Definition/context strategy。
