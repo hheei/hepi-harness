@@ -1,7 +1,7 @@
 # Definitions target 與刷新接線
 
 Type: implementation
-Status: planned
+Status: resolved
 Blocked by: [對話 I/O 與 view attachment](03-conversation-lifetime.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — R6 Skills/Agents/Extensions、R3 reload
@@ -24,10 +24,10 @@ Acceptance: [行為矩陣](../acceptance.md) — R6、C5
 
 ## 驗收條件
 
-- [ ] 更新成功影響正確 target；失敗不虛報 reload，切換後不污染新的 conversation。
-- [ ] Skills/Agents/Extensions 與 SettingsPanel 不知道 sessionKey 或對話初始化細節。
-- [ ] 既有 installed/enabled、reload/error 狀態與 focus 保留。
-- [ ] ExecutionTarget 沒被模型／MCP 通用 CRUD 化。
+- [x] 更新成功影響正確 target；失敗不虛報 reload，切換後不污染新的 conversation。
+- [x] Skills/Agents/Extensions 與 SettingsPanel 不知道 sessionKey 或對話初始化細節。
+- [x] 既有 installed/enabled、reload/error 狀態與 focus 保留。
+- [x] ExecutionTarget 沒被模型／MCP 通用 CRUD 化。
 
 ## 驗證與證據
 
@@ -47,4 +47,8 @@ target-fence 現有案例、skills-project-target、skills-inventory-race、exte
 
 ## 交付記錄
 
-待實作填寫：變更修訂、changed paths、scenario evidence、已刪路徑、checks/logs、已解決 material findings 及剩餘限制。完成以上條件後才改 Status 為 resolved。
+UI08 branch `impl/ui-definitions`, worker tested `02b95822`: connection-scoped `conversation-refreshes` replaces Shell reload ref; panels name their own conversation. Removed `onSessionReloaded`, session-keyed Extensions remount, Skills reloadKey. Five registry cases and 15 production-panel browser assertions cover failed, superseded, not-open and switched targets. Worker journey logs `.dev/worktrees/ui-definitions/.dev/verify/ticket08/`.
+
+Integrated at `b3ab7871` in `.dev/worktrees/architecture-consolidation`. Combined `pnpm verify:changed --base=ddc82d03` exit 0 (typecheck, tests, web-unit, docs); raw report `.dev/verify/2026-10-21T17-08-21-052-verify-changed/`.
+
+On unchanged integrated revision `b3ab7871`, `pnpm --filter @hepi/web test:transcript-presentation && pnpm --filter @hepi/web test:composer-interaction && pnpm --filter @hepi/web test:definition-refresh` exit 0. Full raw log `/home/chlo/.pi/agent/sessions/--home-chlo-Documents-dev-hepi-harness--/tasks/01a15c17-51ee-75d2-80b8-9ae57d3c15af/bash-f4a6b0-15.log`. Cross-ticket ReloadOutcome registration variance resolved by integrating UI04 and UI08 together. Real Backend long-history/native acceptance remains ticket12.

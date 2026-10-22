@@ -1,7 +1,7 @@
 # 系統驗收與交付記錄
 
 Type: implementation
-Status: planned
+Status: in-progress — agent-293, `impl/ui-system-acceptance`, source base `8a1ef5b`; final completion awaits UI11 independent review
 Blocked by: [Shell layout 與 panel 接線](11-shell-composition.md)
 Baseline: a57100bb4917d408ee51c19beeda30d3efecc857
 Spec: [架構收斂規格](../spec.md) — 驗證與交付、完成條件

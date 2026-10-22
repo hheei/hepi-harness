@@ -50,3 +50,17 @@ Ticket 01 closeout：agent-230 第一次複審確認原 findings 1／2／3／5�
 `pnpm check:docs --json=.dev/verify/ui-architecture-plan/docs.json` 在 `a57100bb4917d408ee51c19beeda30d3efecc857` 加本次未提交規劃文件的工作樹執行，exit 0；raw log：`.dev/verify/ui-architecture-plan/docs.log`，JSON：`.dev/verify/ui-architecture-plan/docs.json`。`git diff --check` 同一工作樹 exit 0，raw log：`.dev/verify/ui-architecture-plan/diff-check.log`。工作樹另有先前的 durable-ledger scratch，未納入本次編寫／審閱範圍。
 
 未執行產品測試、build 或 browser/native journey：本次僅建立規格及 tickets，矩陣仍是未執行需求。以上本地 `.dev` 檔案是當前工作區證據，不保證在新 checkout 中存在。
+
+
+## Ticket 03 integration review
+
+Agent-248 reviewed integrated Ticket 03 against R3 and acceptance C1/C3-C5/N8/N10 without running tests. Four material findings in ordinary connection/settings workflows; ticket reopened and corrections required at owner boundaries.
+
+| Finding | Trigger and user impact | Required correction |
+| --- | --- | --- |
+| CompletionDelivery registry remains initialized once in AppShell while WorkbenchConnection can change without remounting AppShell. | Switch connection in the same shell; new ChatWindow joins old-client registry, losing new connection completion/background watches. | Key or recreate registry by connection identity; dispose old registry interest and subscribe through new client. |
+| ConversationSession changes with API identity, but mount read effect is empty-dependency and loadSession validates only conversation id on null/error paths. | Same conversation ID across connection switch while old read is in flight; old answer can clear/rewind new transcript or publish old failure. | Add connection-generation/owner fence to all read success, null and error publication, including post-read agent state. |
+| Settings General reload calls `api.reload(sessionId)` before registered onSessionReloaded, which calls conversation.reload again. | Ordinary setting mutation reloads resources; duplicate route mutation violates one-operation behavior and may duplicate work. | Put reload ownership in one caller; callback performs follow-up read/report only, or Settings delegates full operation to chat. |
+| reloadConversation ignores `loadSession` result then unconditionally emits success. | Backend reload succeeds but follow-up read fails; UI reports success despite unreadable/unknown updated state. | Gate success notice on accepted read; surface read failure without claiming success. |
+
+C3 and N8 pass by source/test review. C1 and C5 fail pending fixes; C4 partial due registry lifetime. N10 has no material regression found but was not independently verified. Browser fixture mounts ChatWindow with custom registry, not production AppShell/SettingsPanel; add ordinary public-shell interaction coverage for connection switch and exactly-once reload if seam permits. No bypass probes or test execution by reviewer.

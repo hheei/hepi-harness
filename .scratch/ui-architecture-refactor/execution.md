@@ -17,7 +17,7 @@ Authorization: 使用者已同意規格，要求使用 workers 實作。部署�
 | 工作 | Worker | Worktree（主工作區下） | 狀態 |
 | --- | --- | --- | --- |
 | 工作台選擇與草稿 | agent-221 | `.dev/worktrees/ui-selection` | resolved／integrated；全部 material findings 已修正並複審 |
-| 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | in-progress；基於已確認核心契約，最終整合仍待 01 |
+| 對話 I/O 與 view attachment | agent-233 | `.dev/worktrees/ui-lifetime` | integrated; changed verification + 11 browser assertions pass; independent review pending |
 | 訊息 block 呈現 | agent-232 | `.dev/worktrees/ui-message-views` | resolved／integrated；clipboard 修正已通過複審 |
 | Accepted conversation readout | agent-222 | `.dev/worktrees/ui-readout` | resolved／integrated；review finding 已修正 |
 | MCP 工作流 | agent-223 | `.dev/worktrees/ui-mcp` | resolved／integrated；agent-228 無 material findings |
@@ -89,3 +89,9 @@ agent-230 對 clean `1179fdcb` 的複審確認原 findings 1／2／3／5／6 fix
 在 `daa355e` 的工作站環境，`command -v cargo rustc Xvfb xdpyinfo xdotool xwd ffmpeg dbus-daemon gnome-keyring-daemon gdbus` 及 `ls -l .dev/cargo-target/debug/hepi-app` 均 exit 0；raw log：`.dev/verify/ui-architecture-refactor/environment.log`。共用 debug binary 存在，但未將它當作本次 source 的建置證據。最終整合後需依既有 artifact build script 重新嵌入 App UI 並標記修訂，再跑普通 native journey。
 
 對話 I/O 接線採安全方向：可保留 identity-keyed 的內部容器隔離跨 conversation state；同 identity reload 改走明確 read/reacquire。只移除 key 並加 effect dependencies，卻不處理數十個 state/ref 的重新初始化，不能算完成。
+
+### Ticket 03 integration
+
+- Worker patch based on `3d3d1206` integrated into `impl/ui-architecture-refactor` at `5ec7ffe6`; `apps/web/package.json` merge retained both existing `test:message-copy` and new `test:conversation-lifetime` scripts. Obsolete `WorkbenchSelection.reloadAttachment` declaration and implementation removed at owning selection boundary after repository search found no runtime callers or behavior test.
+- Root `pnpm verify:changed --base=5ec7ffe6 --quiet` passed changed-typecheck, App/UI tests, Web unit tests and docs; report `.dev/verify/2026-10-21T12-36-07-614-verify-changed/verify.json`. Browser `node apps/web/e2e/chat/ux-conversation-lifetime.ts` passed 11 assertions. `node scripts/check-entrypoints.mjs` found 142 entry files and zero newly missing; `git diff --check` clean. Commands rerun against integrated dirty tree, not worker-only evidence.
+- Independent reviewer agent-248 found material connection replacement and settings reload issues; ticket 03 remains open while worker is instructed to correct owners and add production-shell regression coverage.
